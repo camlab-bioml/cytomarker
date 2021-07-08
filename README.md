@@ -2,7 +2,7 @@
 
 Antibody panel selection for mass cytometry using scRNA-seq
 
-# Dependencies
+### Dependencies
 
 To install dependencies:
 
@@ -27,7 +27,7 @@ dependencies <- c(
 BiocManager::install(dependencies)
 ```
 
-# To run
+### To run
 
 In the command line, run
 
