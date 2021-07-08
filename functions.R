@@ -2,8 +2,14 @@
 library(scran)
 library(SingleCellExperiment)
 library(tibble)
+library(caret)
+library(yardstick)
+library(naivebayes)
+library(ComplexHeatmap)
+library(viridis)
+library(dplyr)
 
-sce <- readRDS("data/sce.rds")
+# sce <- readRDS("data/sce.rds")
 
 
 get_markers <- function(sce, column, panel_size) {
@@ -14,7 +20,7 @@ get_markers <- function(sce, column, panel_size) {
     
     n <- length(fm)
     
-    top_select <- round(panel_size / n)
+    top_select <- round(2 * panel_size / n)
     all_select <- round(100 / n)
     
     top_markers <- c()
@@ -51,6 +57,59 @@ get_umap <- function(sce, column) {
   df
 }
 
+get_scores <- function(sce, column, mrkrs, max_cells = 5000, pref_assay = 'logcounts') {
+  max_cells <- min(ncol(sce), max_cells)
+  sce_tr <- sce[mrkrs, sample(ncol(sce), max_cells, replace=FALSE)]
+  
+  x <- t(assay(sce_tr, pref_assay))
+  x <- as.matrix(x)
+  y <- factor(colData(sce_tr)[[ column ]])
+  
+  cell_types <- sort(unique(colData(sce)[[column]]))
+  
+  train_nb(x,y, cell_types)
+  
+}
 
+train_nb <- function(x,y, cell_types) {
+  flds <- createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
+  
+  metrics <- lapply(flds, function(test_idx) {
+  
+    fit <- naive_bayes(x[-test_idx,], y[-test_idx])
+    
+    p <- predict(fit, newdata = x[test_idx,])
+    
+    overall <- bal_accuracy_vec(y[test_idx], p)
+    scores <- sapply(cell_types, function(ct) {
+      ppv_vec(factor(y[test_idx] == ct, levels=c("TRUE", "FALSE")), 
+              factor(p == ct, levels = c("TRUE", "FALSE")))
+    })
+    tibble(
+      what = c("Overall", cell_types),
+      score=c(overall, scores)
+    )
+  }) %>% bind_rows()
 
+  metrics
+}
 
+create_heatmap <- function(sce, markers, column) {
+  mat <- scuttle::summarizeAssayByGroup(
+    sce,
+    id = colData(sce)[[column]],
+    subset.row = markers$top_markers,
+    statistics = 'mean',
+    assay.type='logcounts'
+  )
+  mat <- (assay(mat, 'mean'))
+  
+  expression_mat <- Heatmap(mat,
+                            col = viridis(100),
+                            name="Mean\nexpression")
+  cor_mat <- Heatmap(cor(t(mat)),
+                     name="Correlation")
+  expression_mat + cor_mat  
+}
+
+round3 <- function(x) format(round(x, 1), nsmall = 3)
