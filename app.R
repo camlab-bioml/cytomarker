@@ -18,7 +18,7 @@ theme_set(theme_cowplot())
 
 source("functions.R")
 
-options(shiny.maxRequestSize = 200 * 1024 ^ 2)
+options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
