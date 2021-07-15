@@ -27,7 +27,6 @@ get_markers <- function(sce, column, panel_size) {
     all_markers <- c()
     
     for(i in seq_len(n)) {
-      print(i)
       f <- fm[[i]]
       top_markers <- c(top_markers, rownames(f)[seq_len(top_select)])
       all_markers <- c(all_markers, rownames(f)[seq_len(all_select)])
@@ -94,7 +93,9 @@ train_nb <- function(x,y, cell_types) {
   metrics
 }
 
-create_heatmap <- function(sce, markers, column) {
+create_heatmap <- function(sce, markers, column, normalization) {
+  normalization <- match.arg(normalization, c("Expression", "z-score"))
+  
   mat <- scuttle::summarizeAssayByGroup(
     sce,
     id = colData(sce)[[column]],
@@ -104,9 +105,15 @@ create_heatmap <- function(sce, markers, column) {
   )
   mat <- (assay(mat, 'mean'))
   
+  legend <- "Mean\nexpression"
+  if(normalization == "z-score") {
+    mat <- t(scale(t(mat)))
+    legend <- "z-score\nexpression"
+  }
+  
   expression_mat <- Heatmap(mat,
                             col = viridis(100),
-                            name="Mean\nexpression")
+                            name="legend")
   cor_mat <- Heatmap(cor(t(mat)),
                      name="Correlation")
   expression_mat + cor_mat  

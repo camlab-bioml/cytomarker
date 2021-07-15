@@ -21,46 +21,57 @@ source("functions.R")
 options(shiny.maxRequestSize = 200 * 1024 ^ 2)
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(titlePanel("cytosel"),
-                tags$head(
-                  tags$link(rel = "stylesheet", type = "text/css", href = "cytocell.css")
-                ),
-                sidebarLayout(
-                  sidebarPanel(
-                    fileInput("input_scrnaseq",
-                              "Input scRNA-seq",
-                              accept = c(".rds")),
-                    selectInput("coldata_column",
-                                "Cluster ID",
-                                NULL),
-                    numericInput(
-                      "panel_size",
-                      "Panel size",
-                      32,
-                      min = 1,
-                      max = 200,
-                      step = NA,
-                      width = NULL
-                    ),
-                    actionButton("start_analysis", "Go"),
-                    actionButton("refresh_analysis", "Refresh"),
-                    width = 3
-                  ),
-                  mainPanel(tabsetPanel(
-                    tabPanel("Marker selection", fluidRow(column(12,
-                                                                 uiOutput(
-                                                                   "BL"
-                                                                 )))),
-                    tabPanel("UMAP",
-                             fluidRow(
-                               column(6, plotOutput("all_plot")),
-                               column(6, plotOutput("top_plot"))
-                             )),
-                    tabPanel("Heatmap", plotOutput("heatmap")),
-                    tabPanel("Metrics",
-                             plotOutput("metric_plot"))
-                  ))
-                ))
+ui <- fluidPage(
+  titlePanel("cytosel"),
+  tags$head(
+    tags$link(rel = "stylesheet", type = "text/css", href = "cytocell.css")
+  ),
+  sidebarLayout(
+    sidebarPanel(
+      fileInput("input_scrnaseq",
+                "Input scRNA-seq",
+                accept = c(".rds")),
+      selectInput("coldata_column",
+                  "Cluster ID",
+                  NULL),
+      numericInput(
+        "panel_size",
+        "Panel size",
+        32,
+        min = 1,
+        max = 200,
+        step = NA,
+        width = NULL
+      ),
+      checkboxInput("subsample_for_umap", "Subsample for UMAP", value = TRUE),
+      actionButton("start_analysis", "Go"),
+      actionButton("refresh_analysis", "Refresh"),
+      width = 3
+    ),
+    mainPanel(tabsetPanel(
+      tabPanel("Marker selection", fluidRow(column(12,
+                                                   uiOutput(
+                                                     "BL"
+                                                   )))),
+      tabPanel("UMAP",
+               fluidRow(
+                 column(6, plotOutput("all_plot")),
+                 column(6, plotOutput("top_plot"))
+               )),
+      tabPanel(
+        "Heatmap",
+        selectInput(
+          "heatmap_expression_norm",
+          label = "Heatmap expression normalization",
+          choices = c("Expression", "z-score")
+        ),
+        plotOutput("heatmap")
+      ),
+      tabPanel("Metrics",
+               plotOutput("metric_plot"))
+    ))
+  )
+)
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
@@ -70,6 +81,8 @@ server <- function(input, output, session) {
   metrics <- reactiveVal()
   
   heatmap <- reactiveVal()
+  current_markers <- reactiveVal()
+  # heatmap_expression_norm <- reactiveVal()
   
   output$all_plot <- renderPlot({
     req(umap_all)
@@ -106,7 +119,7 @@ server <- function(input, output, session) {
   output$heatmap <- renderPlot({
     req(heatmap)
     req(column)
-
+    
     col <- column()
     
     if (is.null(heatmap())) {
@@ -119,15 +132,16 @@ server <- function(input, output, session) {
   output$metric_plot <- renderPlot({
     req(metrics)
     m <- metrics()
-    if(is.null(m)) {
+    if (is.null(m)) {
       return(NULL)
     }
     m$what <- fct_reorder(m$what, desc(m$score))
     m$what <- fct_relevel(m$what, "Overall")
     
     ggplot(m, aes(y = fct_rev(what), x = score)) +
-      geom_boxplot(fill='grey90') +
-      labs(x = "Score", y = "Cell type",
+      geom_boxplot(fill = 'grey90') +
+      labs(x = "Score",
+           y = "Cell type",
            subtitle = "Score for selected panel")
   })
   
@@ -136,6 +150,11 @@ server <- function(input, output, session) {
     req(input$coldata_column)
     req(input$panel_size)
     req(sce())
+    
+    ## Set initial markers:
+    column(input$coldata_column)
+    markers <- get_markers(sce(), column(), input$panel_size)
+    current_markers(markers)
     
     update_analysis()
     
@@ -146,6 +165,12 @@ server <- function(input, output, session) {
     req(input$panel_size)
     req(sce())
     
+    ## Need to update markers:
+    current_markers(
+      list(top_markers = input$bl_top,
+         all_markers = input$bl_all)
+    )
+    
     update_analysis()
     
   })
@@ -153,10 +178,7 @@ server <- function(input, output, session) {
   sce <- reactiveVal()
   
   observeEvent(input$input_scrnaseq, {
-    print("Calling upload")
-    print(input$input_scrnaseq$datapath)
     sce(readRDS(input$input_scrnaseq$datapath))
-    
     
     updateSelectInput(
       session = session,
@@ -166,39 +188,64 @@ server <- function(input, output, session) {
     
   })
   
+  observeEvent(input$heatmap_expression_norm, {
+    ## What to do when heatmap selection is made
+    req(sce())
+    heatmap(
+      create_heatmap(
+        sce(),
+        current_markers(),
+        column(),
+        input$heatmap_expression_norm
+      )
+    )
+  })
+  
   update_analysis <- function() {
     column(input$coldata_column)
     
     withProgress(message = 'Processing data', value = 0, {
-      incProgress(1, detail = "Finding markers")
-      markers <- get_markers(sce(), column(), input$panel_size)
+      markers <- current_markers()
       
       output$BL <- renderUI({
         bucket_list(
           header = "Marker selection",
           orientation = "horizontal",
           group_name = "bucket_list_group",
-          add_rank_list(text = "All genes/proteins",
-                        labels = markers$all_markers,
-                        class=c("default-sortable", "cytocellbl")),
-          add_rank_list(text = "Selected markers",
-                        labels = markers$top_markers,
-                        class=c("default-sortable", "cytocellbl"))
+          add_rank_list(
+            text = "All genes/proteins",
+            labels = markers$all_markers,
+            input_id = "bl_all",
+            class = c("default-sortable", "cytocellbl")
+          ),
+          add_rank_list(
+            text = "Selected markers",
+            labels = markers$top_markers,
+            input_id = "bl_top",
+            class = c("default-sortable", "cytocellbl")
+          )
         )
       })
       
       incProgress(2, detail = "Computing UMAP")
-      umap_all(get_umap(sce(), column()))
-      umap_top(get_umap(sce()[markers$top_markers, ], column()))
+      
+      if (input$subsample_for_umap) {
+        nc <- ncol(sce())
+        to_subsample <-
+          sample(seq_len(nc), min(nc, 2000), replace = FALSE)
+        umap_all(get_umap(sce()[, to_subsample], column()))
+        umap_top(get_umap(sce()[markers$top_markers, to_subsample], column()))
+      } else {
+        umap_all(get_umap(sce(), column()))
+        umap_top(get_umap(sce()[markers$top_markers,], column()))
+      }
       
       incProgress(3, detail = "Drawing heatmap")
-      heatmap(create_heatmap(sce(), markers, column()))
+      heatmap(create_heatmap(sce(), markers, column(), input$heatmap_expression_norm))
       
       incProgress(4, detail = "Computing panel score")
       
       metrics(get_scores(sce(), column(), markers$top_markers))
-      print(metrics())
-      
     })
   }
   
