@@ -21,7 +21,7 @@ get_markers <- function(sce, column, panel_size) {
     n <- length(fm)
     
     top_select <- round(2 * panel_size / n)
-    all_select <- round(100 / n)
+    all_select <- round(1000 / n)
     
     top_markers <- c()
     all_markers <- c()

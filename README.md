@@ -23,9 +23,11 @@ dependencies <- c(
 "scater",
 "forcats",
 "cowplot",
-"readr"
+"readr",
+"stringr"
 )
 BiocManager::install(dependencies)
+remotes::install_github("daqana/dqshiny")
 ```
 
 ### To run

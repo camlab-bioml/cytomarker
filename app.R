@@ -14,6 +14,7 @@ library(scater)
 library(forcats)
 library(cowplot)
 library(readr)
+library(dqshiny)
 
 theme_set(theme_cowplot())
 
@@ -52,7 +53,11 @@ ui <- fluidPage(
       width = 3
     ),
     mainPanel(tabsetPanel(
-      tabPanel("Marker selection", fluidRow(column(12,
+      tabPanel("Marker selection",
+               fluidRow(column(12, 
+                               autocomplete_input("add_markers", "Add markers", options=c()),
+                               )),
+               fluidRow(column(12,
                                                    uiOutput(
                                                      "BL"
                                                    )))),
@@ -183,6 +188,9 @@ server <- function(input, output, session) {
   observeEvent(input$input_scrnaseq, {
     sce(readRDS(input$input_scrnaseq$datapath))
     
+    update_autocomplete_input(session, "add_markers",
+                              options = rownames(sce()))
+    
     updateSelectInput(
       session = session,
       inputId = "coldata_column",
@@ -204,31 +212,51 @@ server <- function(input, output, session) {
     )
   })
   
+  observeEvent(input$add_markers, {
+    new_marker <- input$add_markers
+    if(!is.null(new_marker) && stringr::str_length(new_marker) > 1 && (new_marker %in% rownames(sce()))) {
+      ## Need to update markers:
+      print(new_marker)
+      cm <- current_markers()
+      
+      current_markers(
+        list(all_markers = setdiff(cm$all_markers, new_marker),
+              top_markers = c(new_marker, setdiff(cm$top_markers, new_marker)))
+      )
+      
+      update_BL(current_markers())
+    }
+  })
+  
+  update_BL <- function(markers) {
+    output$BL <- renderUI({
+      bucket_list(
+        header = "Marker selection",
+        orientation = "horizontal",
+        group_name = "bucket_list_group",
+        add_rank_list(
+          text = "All genes/proteins",
+          labels = markers$all_markers,
+          input_id = "bl_all",
+          class = c("default-sortable", "cytocellbl")
+        ),
+        add_rank_list(
+          text = "Selected markers",
+          labels = markers$top_markers,
+          input_id = "bl_top",
+          class = c("default-sortable", "cytocellbl")
+        )
+      )
+    })
+  }
+  
   update_analysis <- function() {
     column(input$coldata_column)
     
     withProgress(message = 'Processing data', value = 0, {
       markers <- current_markers()
       
-      output$BL <- renderUI({
-        bucket_list(
-          header = "Marker selection",
-          orientation = "horizontal",
-          group_name = "bucket_list_group",
-          add_rank_list(
-            text = "All genes/proteins",
-            labels = markers$all_markers,
-            input_id = "bl_all",
-            class = c("default-sortable", "cytocellbl")
-          ),
-          add_rank_list(
-            text = "Selected markers",
-            labels = markers$top_markers,
-            input_id = "bl_top",
-            class = c("default-sortable", "cytocellbl")
-          )
-        )
-      })
+      update_BL(markers)
       
       incProgress(2, detail = "Computing UMAP")
       
