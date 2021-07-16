@@ -13,6 +13,7 @@ library(ggplot2)
 library(scater)
 library(forcats)
 library(cowplot)
+library(readr)
 
 theme_set(theme_cowplot())
 
@@ -46,6 +47,8 @@ ui <- fluidPage(
       checkboxInput("subsample_for_umap", "Subsample for UMAP", value = TRUE),
       actionButton("start_analysis", "Go"),
       actionButton("refresh_analysis", "Refresh"),
+      hr(),
+      downloadButton('downloadData', 'Download\nmarkers'),
       width = 3
     ),
     mainPanel(tabsetPanel(
@@ -248,6 +251,16 @@ server <- function(input, output, session) {
       metrics(get_scores(sce(), column(), markers$top_markers))
     })
   }
+  
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste('markers-', Sys.Date(), '.txt', sep='')
+    },
+    content = function(con) {
+      selected_markers <- current_markers()$top_markers
+      write_lines(selected_markers, con)
+    }
+  )
   
 }
 

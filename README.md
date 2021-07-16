@@ -22,7 +22,8 @@ dependencies <- c(
 "ggplot2",
 "scater",
 "forcats",
-"cowplot"
+"cowplot",
+"readr"
 )
 BiocManager::install(dependencies)
 ```
