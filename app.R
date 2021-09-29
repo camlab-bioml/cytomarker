@@ -92,6 +92,21 @@ server <- function(input, output, session) {
   current_markers <- reactiveVal()
   # heatmap_expression_norm <- reactiveVal()
   
+  assay_modal <- function(failed = FALSE, assays) {
+    modalDialog(
+      # tags$script(HTML(enter_assay_selection)),
+      selectInput("assay",
+                  "Choose which assay to load",
+                  assays),
+      if (failed) {
+        div(tags$b("Error", style = "color: red;"))
+      },
+      footer = tagList(
+        actionButton("assay_select", "Select")
+      )
+    )
+  }
+
   output$all_plot <- renderPlot({
     req(umap_all)
     req(column)
@@ -184,9 +199,15 @@ server <- function(input, output, session) {
   })
   
   sce <- reactiveVal()
+  input_assays <- reactiveVal()
+  pref_assays <- reactiveVal()
   
   observeEvent(input$input_scrnaseq, {
     sce(readRDS(input$input_scrnaseq$datapath))
+    
+    # Pop-up dialog box for assay selection
+    input_assays(names(assays(sce())))
+    showModal(assay_modal(assays = input_assays()))
     
     update_autocomplete_input(session, "add_markers",
                               options = rownames(sce()))
@@ -197,6 +218,16 @@ server <- function(input, output, session) {
       choices = colnames(colData(sce()))
     )
     
+  })
+  
+  observeEvent(input$assay_select, {
+    # select the assay
+    if (!is.null(input$assay)) {
+      pref_assay <- get(input$assay)
+      removeModal()
+    } else {
+      showModal(assay_modal(failed = TRUE, input_assays()))
+    }
   })
   
   observeEvent(input$heatmap_expression_norm, {
