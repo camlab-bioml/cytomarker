@@ -132,15 +132,10 @@ server <- function(input, output, session) {
     )
     
   })
-  
-  observeEvent(input$assay, {
-    pref_assays(input$assay)
-  })
-  
+
   observeEvent(input$assay_select, {
-    # select the assay
     if (!is.null(input$assay)) {
-      pref_assays()
+      pref_assays(input$assay)
       removeModal()
     } else {
       showModal(assay_modal(failed = TRUE, input_assays()))
@@ -293,16 +288,22 @@ server <- function(input, output, session) {
       )
     })
   }
-
-  # output$alternative_markers <- renderDT({
+  
+  gene_to_replace <- reactiveVal()
+  
+  
+  # observeEvent(input$enter_gene, {
   #   gene_to_replace <- input$enter_gene
   #   x <- assay(sce, selected_assay)
   #   y <- x[gene_to_replace,]
   #   yo <- x[rownames(x) != gene_to_replace,]
   #   correlations <- cor(t(yo), y)
-  #   
-  #   
   # })
+
+  output$alternative_markers <- renderDT({
+    
+
+  })
   
   update_analysis <- function() {
     column(input$coldata_column)
