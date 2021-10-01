@@ -15,6 +15,7 @@ library(forcats)
 library(cowplot)
 library(readr)
 library(dqshiny)
+library(DT)
 
 theme_set(theme_cowplot())
 
@@ -33,6 +34,8 @@ ui <- fluidPage(
       fileInput("input_scrnaseq",
                 "Input scRNA-seq",
                 accept = c(".rds")),
+      textOutput("selected_assay"),
+      br(),
       selectInput("coldata_column",
                   "Cluster ID",
                   NULL),
@@ -58,9 +61,7 @@ ui <- fluidPage(
                                autocomplete_input("add_markers", "Add markers", options=c()),
                                )),
                fluidRow(column(12,
-                                                   uiOutput(
-                                                     "BL"
-                                                   )))),
+                              uiOutput("BL")))),
       tabPanel("UMAP",
                fluidRow(
                  column(6, plotOutput("all_plot")),
@@ -76,7 +77,10 @@ ui <- fluidPage(
         plotOutput("heatmap")
       ),
       tabPanel("Metrics",
-               plotOutput("metric_plot"))
+               plotOutput("metric_plot")),
+      tabPanel("Alternative Markers",
+               autocomplete_input("enter_gene", "Enter gene", options = c()),
+               DTOutput("alternative_markers"))
     ))
   )
 )
@@ -106,6 +110,46 @@ server <- function(input, output, session) {
       )
     )
   }
+  
+  sce <- reactiveVal()
+  input_assays <- reactiveVal()
+  pref_assays <- reactiveVal("logcounts")
+  
+  observeEvent(input$input_scrnaseq, {
+    sce(readRDS(input$input_scrnaseq$datapath))
+    
+    # Pop-up dialog box for assay selection
+    input_assays(names(assays(sce())))
+    showModal(assay_modal(assays = input_assays()))
+    
+    update_autocomplete_input(session, "add_markers",
+                              options = rownames(sce()))
+    
+    updateSelectInput(
+      session = session,
+      inputId = "coldata_column",
+      choices = colnames(colData(sce()))
+    )
+    
+  })
+  
+  observeEvent(input$assay, {
+    pref_assays(input$assay)
+  })
+  
+  observeEvent(input$assay_select, {
+    # select the assay
+    if (!is.null(input$assay)) {
+      pref_assays()
+      removeModal()
+    } else {
+      showModal(assay_modal(failed = TRUE, input_assays()))
+    }
+  })
+  
+  output$selected_assay <- renderText({
+    paste("Assay type: ", pref_assays())
+  })
 
   output$all_plot <- renderPlot({
     req(umap_all)
@@ -176,7 +220,7 @@ server <- function(input, output, session) {
     
     ## Set initial markers:
     column(input$coldata_column)
-    markers <- get_markers(sce(), column(), input$panel_size)
+    markers <- get_markers(sce(), column(), input$panel_size, pref_assays())
     current_markers(markers)
     
     update_analysis()
@@ -198,38 +242,6 @@ server <- function(input, output, session) {
     
   })
   
-  sce <- reactiveVal()
-  input_assays <- reactiveVal()
-  pref_assays <- reactiveVal()
-  
-  observeEvent(input$input_scrnaseq, {
-    sce(readRDS(input$input_scrnaseq$datapath))
-    
-    # Pop-up dialog box for assay selection
-    input_assays(names(assays(sce())))
-    showModal(assay_modal(assays = input_assays()))
-    
-    update_autocomplete_input(session, "add_markers",
-                              options = rownames(sce()))
-    
-    updateSelectInput(
-      session = session,
-      inputId = "coldata_column",
-      choices = colnames(colData(sce()))
-    )
-    
-  })
-  
-  observeEvent(input$assay_select, {
-    # select the assay
-    if (!is.null(input$assay)) {
-      pref_assay <- get(input$assay)
-      removeModal()
-    } else {
-      showModal(assay_modal(failed = TRUE, input_assays()))
-    }
-  })
-  
   observeEvent(input$heatmap_expression_norm, {
     ## What to do when heatmap selection is made
     req(sce())
@@ -238,7 +250,8 @@ server <- function(input, output, session) {
         sce(),
         current_markers(),
         column(),
-        input$heatmap_expression_norm
+        input$heatmap_expression_norm,
+        pref_assays()
       )
     )
   })
@@ -280,6 +293,16 @@ server <- function(input, output, session) {
       )
     })
   }
+
+  # output$alternative_markers <- renderDT({
+  #   gene_to_replace <- input$enter_gene
+  #   x <- assay(sce, selected_assay)
+  #   y <- x[gene_to_replace,]
+  #   yo <- x[rownames(x) != gene_to_replace,]
+  #   correlations <- cor(t(yo), y)
+  #   
+  #   
+  # })
   
   update_analysis <- function() {
     column(input$coldata_column)
@@ -307,7 +330,7 @@ server <- function(input, output, session) {
       
       incProgress(4, detail = "Computing panel score")
       
-      metrics(get_scores(sce(), column(), markers$top_markers))
+      metrics(get_scores(sce(), column(), markers$top_markers, pref_assays()))
     })
   }
   

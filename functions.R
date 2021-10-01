@@ -12,11 +12,11 @@ library(dplyr)
 # sce <- readRDS("data/sce.rds")
 
 
-get_markers <- function(sce, column, panel_size, pref_assay = "logcounts") {
+get_markers <- function(sce, column, panel_size, pref_assays = "logcounts") {
   
     
-    test_type <- ifelse(pref_assay == "counts", "binom", "t")
-    fm <- findMarkers(sce, colData(sce)[[column]], test.type = test_type, assay.type = pref_assay)
+    test_type <- ifelse(pref_assays == "counts", "binom", "t")
+    fm <- findMarkers(sce, colData(sce)[[column]], test.type = test_type, assay.type = pref_assays)
 
     
     n <- length(fm)
@@ -46,8 +46,8 @@ get_markers <- function(sce, column, panel_size, pref_assay = "logcounts") {
 
 }
 
-get_umap <- function(sce, column, pref_assay = "logcounts") {
-  sce <- runUMAP(sce, exprs_values = pref_assay)
+get_umap <- function(sce, column, pref_assays = "logcounts") {
+  sce <- runUMAP(sce, exprs_values = pref_assays)
   df <- tibble(
     UMAP1 = reducedDim(sce, 'UMAP')[,1],
     UMAP2 = reducedDim(sce, 'UMAP')[,2],
@@ -57,11 +57,11 @@ get_umap <- function(sce, column, pref_assay = "logcounts") {
   df
 }
 
-get_scores <- function(sce, column, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
+get_scores <- function(sce, column, mrkrs, max_cells = 5000, pref_assays = "logcounts") {
   max_cells <- min(ncol(sce), max_cells)
   sce_tr <- sce[mrkrs, sample(ncol(sce), max_cells, replace=FALSE)]
   
-  x <- t(assay(sce_tr, pref_assay))
+  x <- t(assay(sce_tr, pref_assays))
   x <- as.matrix(x)
   y <- factor(colData(sce_tr)[[ column ]])
   
@@ -94,7 +94,7 @@ train_nb <- function(x,y, cell_types) {
   metrics
 }
 
-create_heatmap <- function(sce, markers, column, normalization, pref_assay = "logcounts") {
+create_heatmap <- function(sce, markers, column, normalization, pref_assays = "logcounts") {
   normalization <- match.arg(normalization, c("Expression", "z-score"))
   
   mat <- scuttle::summarizeAssayByGroup(
@@ -102,7 +102,7 @@ create_heatmap <- function(sce, markers, column, normalization, pref_assay = "lo
     id = colData(sce)[[column]],
     subset.row = markers$top_markers,
     statistics = 'mean',
-    assay.type = pref_assay
+    assay.type = pref_assays
   )
   mat <- (assay(mat, 'mean'))
   
