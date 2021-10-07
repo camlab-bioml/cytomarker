@@ -298,12 +298,17 @@ server <- function(input, output, session) {
     
     if(input$input_gene %in% rownames(sce())) {
       gene_to_replace(input$input_gene)
-      x <- assay(sce(), pref_assay())
-      y <- x[gene_to_replace(),]
+      
+      #' Make this sampling dependent on the input sample argument
+      x <- as.matrix(assay(sce(), pref_assay())[,sample(ncol(sce()), min(5000, ncol(sce())))])
+      
+      y <- x[gene_to_replace(), ]
+      
       yo <- x[rownames(x) != gene_to_replace(),]
+      
       correlations <- cor(t(yo), y)
       
-      alternatives <- data.frame(rownames(x), correlations)
+      alternatives <- data.frame(rownames(yo), correlations[,1])
 
       output$alternative_markers <- renderDT(alternatives[1:10,], server = FALSE) 
     }
