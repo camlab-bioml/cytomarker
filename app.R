@@ -79,7 +79,7 @@ ui <- fluidPage(
       tabPanel("Metrics",
                plotOutput("metric_plot")),
       tabPanel("Alternative Markers",
-               textInput("input_gene", "Input gene"),
+               autocomplete_input("input_gene", "Input gene", options=c()),
                actionButton("enter_gene", "Enter"),
                DTOutput("alternative_markers"))
     ))
@@ -124,6 +124,9 @@ server <- function(input, output, session) {
     showModal(assay_modal(assays = input_assays()))
     
     update_autocomplete_input(session, "add_markers",
+                              options = rownames(sce()))
+    
+    update_autocomplete_input(session, "input_gene",
                               options = rownames(sce()))
     
     updateSelectInput(
@@ -299,7 +302,7 @@ server <- function(input, output, session) {
     if(input$input_gene %in% rownames(sce())) {
       gene_to_replace(input$input_gene)
       
-      #' Make this sampling dependent on the input sample argument
+      # Make this sampling dependent on the input sample argument
       x <- as.matrix(assay(sce(), pref_assay())[,sample(ncol(sce()), min(5000, ncol(sce())))])
       
       y <- x[gene_to_replace(), ]
