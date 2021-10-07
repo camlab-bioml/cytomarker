@@ -79,7 +79,8 @@ ui <- fluidPage(
       tabPanel("Metrics",
                plotOutput("metric_plot")),
       tabPanel("Alternative Markers",
-               autocomplete_input("enter_gene", "Enter gene", options = c()),
+               textInput("input_gene", "Input gene"),
+               actionButton("enter_gene", "Enter"),
                DTOutput("alternative_markers"))
     ))
   )
@@ -113,7 +114,7 @@ server <- function(input, output, session) {
   
   sce <- reactiveVal()
   input_assays <- reactiveVal()
-  pref_assays <- reactiveVal("logcounts")
+  pref_assay <- reactiveVal("logcounts")
   
   observeEvent(input$input_scrnaseq, {
     sce(readRDS(input$input_scrnaseq$datapath))
@@ -135,7 +136,7 @@ server <- function(input, output, session) {
 
   observeEvent(input$assay_select, {
     if (!is.null(input$assay)) {
-      pref_assays(input$assay)
+      pref_assay(input$assay)
       removeModal()
     } else {
       showModal(assay_modal(failed = TRUE, input_assays()))
@@ -143,7 +144,7 @@ server <- function(input, output, session) {
   })
   
   output$selected_assay <- renderText({
-    paste("Assay type: ", pref_assays())
+    paste("Assay type: ", pref_assay())
   })
 
   output$all_plot <- renderPlot({
@@ -215,7 +216,7 @@ server <- function(input, output, session) {
     
     ## Set initial markers:
     column(input$coldata_column)
-    markers <- get_markers(sce(), column(), input$panel_size, pref_assays())
+    markers <- get_markers(sce(), column(), input$panel_size, pref_assay())
     current_markers(markers)
     
     update_analysis()
@@ -246,7 +247,7 @@ server <- function(input, output, session) {
         current_markers(),
         column(),
         input$heatmap_expression_norm,
-        pref_assays()
+        pref_assay()
       )
     )
   })
@@ -291,18 +292,22 @@ server <- function(input, output, session) {
   
   gene_to_replace <- reactiveVal()
   
-  
-  # observeEvent(input$enter_gene, {
-  #   gene_to_replace <- input$enter_gene
-  #   x <- assay(sce, selected_assay)
-  #   y <- x[gene_to_replace,]
-  #   yo <- x[rownames(x) != gene_to_replace,]
-  #   correlations <- cor(t(yo), y)
-  # })
-
-  output$alternative_markers <- renderDT({
+  observeEvent(input$enter_gene, {
+    req(input$input_gene)
+    req(sce())
     
+    if(input$input_gene %in% rownames(sce())) {
+      gene_to_replace(input$input_gene)
+      x <- assay(sce(), pref_assay())
+      y <- x[gene_to_replace(),]
+      yo <- x[rownames(x) != gene_to_replace(),]
+      correlations <- cor(t(yo), y)
+      
+      alternatives <- data.frame(rownames(x), correlations)
 
+      output$alternative_markers <- renderDT(alternatives[1:10,], server = FALSE) 
+    }
+    
   })
   
   update_analysis <- function() {
@@ -331,7 +336,7 @@ server <- function(input, output, session) {
       
       incProgress(4, detail = "Computing panel score")
       
-      metrics(get_scores(sce(), column(), markers$top_markers, pref_assays()))
+      metrics(get_scores(sce(), column(), markers$top_markers, pref_assay()))
     })
   }
   
