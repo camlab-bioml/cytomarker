@@ -80,6 +80,7 @@ ui <- fluidPage(
                plotOutput("metric_plot")),
       tabPanel("Alternative Markers",
                autocomplete_input("input_gene", "Input gene", options=c()),
+               numericInput("number_correlations", "Number of correlations", 10, min = 1),
                actionButton("enter_gene", "Enter"),
                DTOutput("alternative_markers"))
     ))
@@ -311,9 +312,11 @@ server <- function(input, output, session) {
       
       correlations <- cor(t(yo), y)
       
-      alternatives <- data.frame(rownames(yo), correlations[,1])
-
-      output$alternative_markers <- renderDT(alternatives[1:10,], server = FALSE) 
+      alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
+      alternatives <- alternatives[!is.na(alternatives$Correlation),]
+      alternatives <- alternatives[order(-(alternatives$Correlation)),]
+      
+      output$alternative_markers <- renderDT(alternatives[1:input$number_correlations,], server = FALSE) 
     }
     
   })
