@@ -79,8 +79,15 @@ ui <- fluidPage(
       tabPanel("Metrics",
                plotOutput("metric_plot")),
       tabPanel("Alternative Markers",
-               autocomplete_input("input_gene", "Input gene", options=c()),
-               numericInput("number_correlations", "Number of correlations", 10, min = 1),
+               div(style = "display:inline-block; horizontal-align:top; width:35%",
+                   autocomplete_input("input_gene", "Input gene", options=c())
+               ),
+               div(style = "display:inline-block; horizontal-align:top; width:60%",
+                   numericInput("number_correlations", "Number of alternative markers", 
+                                value = 10, min = 1,
+                                width = "150px")
+               ),
+               
                actionButton("enter_gene", "Enter"),
                DTOutput("alternative_markers"))
     ))
@@ -301,22 +308,27 @@ server <- function(input, output, session) {
     req(sce())
     
     if(input$input_gene %in% rownames(sce())) {
-      gene_to_replace(input$input_gene)
       
-      # Make this sampling dependent on the input sample argument
-      x <- as.matrix(assay(sce(), pref_assay())[,sample(ncol(sce()), min(5000, ncol(sce())))])
+      withProgress(message = 'Processing data', value = 0, {
+        gene_to_replace(input$input_gene)
+        
+        incProgress(6, detail = "Computing alternatives")
       
-      y <- x[gene_to_replace(), ]
-      
-      yo <- x[rownames(x) != gene_to_replace(),]
-      
-      correlations <- cor(t(yo), y)
-      
-      alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
-      alternatives <- alternatives[!is.na(alternatives$Correlation),]
-      alternatives <- alternatives[order(-(alternatives$Correlation)),]
-      
-      output$alternative_markers <- renderDT(alternatives[1:input$number_correlations,], server = FALSE) 
+        # Make this sampling dependent on the input sample argument
+        x <- as.matrix(assay(sce(), pref_assay())[,sample(ncol(sce()), min(5000, ncol(sce())))])
+        
+        y <- x[gene_to_replace(), ]
+        
+        yo <- x[rownames(x) != gene_to_replace(),]
+        
+        correlations <- cor(t(yo), y)
+        
+        alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
+        alternatives <- alternatives[!is.na(alternatives$Correlation),]
+        alternatives <- alternatives[order(-(alternatives$Correlation)),]
+        
+        output$alternative_markers <- renderDT(alternatives[1:input$number_correlations,], server = FALSE)
+      })
     }
     
   })
