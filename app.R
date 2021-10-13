@@ -57,11 +57,11 @@ ui <- fluidPage(
     ),
     mainPanel(tabsetPanel(
       tabPanel("Marker selection",
-               fluidRow(column(12, 
-                               autocomplete_input("add_markers", "Add markers", options=c()),
-                               )),
-               fluidRow(column(12,
-                              uiOutput("BL")))),
+               div(style = "display:inline-block; horizontal-align:top; width:35%",
+                   autocomplete_input("add_markers", "Add markers", options=c())),
+               div(style = "display:inline-block; horizontal-align:top; width:35%",
+                   actionButton("enter_marker", "Add marker")),
+               fluidRow(column(12, uiOutput("BL")))),
       tabPanel("UMAP",
                fluidRow(
                  column(6, plotOutput("all_plot")),
@@ -78,16 +78,13 @@ ui <- fluidPage(
       ),
       tabPanel("Metrics",
                plotOutput("metric_plot")),
-      tabPanel("Alternative Markers",
+      tabPanel("Alternative markers",
                div(style = "display:inline-block; horizontal-align:top; width:35%",
-                   autocomplete_input("input_gene", "Input gene", options=c())
-               ),
+                   autocomplete_input("input_gene", "Input gene", options=c())),
                div(style = "display:inline-block; horizontal-align:top; width:60%",
                    numericInput("number_correlations", "Number of alternative markers", 
-                                value = 10, min = 1,
-                                width = "150px")
-               ),
-               
+                                value = 10, min = 1, 
+                                width = "150px")),
                actionButton("enter_gene", "Enter"),
                DTOutput("alternative_markers"))
     ))
@@ -149,13 +146,10 @@ server <- function(input, output, session) {
     if (!is.null(input$assay)) {
       pref_assay(input$assay)
       removeModal()
+      output$selected_assay <- renderText({paste("Assay type: ", pref_assay())})
     } else {
       showModal(assay_modal(failed = TRUE, input_assays()))
     }
-  })
-  
-  output$selected_assay <- renderText({
-    paste("Assay type: ", pref_assay())
   })
 
   output$all_plot <- renderPlot({
@@ -263,10 +257,11 @@ server <- function(input, output, session) {
     )
   })
   
-  observeEvent(input$add_markers, {
-    new_marker <- input$add_markers
-    if(!is.null(new_marker) && stringr::str_length(new_marker) > 1 && (new_marker %in% rownames(sce()))) {
+  observeEvent(input$enter_marker, {
+    
+    if(!is.null(input$add_markers) && stringr::str_length(input$add_markers) > 1 && (input$add_markers %in% rownames(sce()))) {
       ## Need to update markers:
+      new_marker <- input$add_markers
       print(new_marker)
       cm <- current_markers()
       
@@ -286,8 +281,14 @@ server <- function(input, output, session) {
         orientation = "horizontal",
         group_name = "bucket_list_group",
         add_rank_list(
+          text = "Recommended markers",
+          labels = markers$top_markers,
+          input_id = "bl_recommended",
+          class = c("default-sortable", "cytocellbl")
+        ),
+        add_rank_list(
           text = "All genes/proteins",
-          labels = markers$all_markers,
+          labels = NULL,
           input_id = "bl_all",
           class = c("default-sortable", "cytocellbl")
         ),
