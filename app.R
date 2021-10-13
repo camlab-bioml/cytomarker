@@ -326,8 +326,10 @@ server <- function(input, output, session) {
         alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
         alternatives <- alternatives[!is.na(alternatives$Correlation),]
         alternatives <- alternatives[order(-(alternatives$Correlation)),]
+        alternatives <- alternatives[1:input$number_correlations,]
+        rownames(alternatives) <- NULL
         
-        output$alternative_markers <- renderDT(alternatives[1:input$number_correlations,], server = FALSE)
+        output$alternative_markers <- renderDT(alternatives, server = FALSE)
       })
     }
     
