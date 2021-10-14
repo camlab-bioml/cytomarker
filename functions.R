@@ -13,17 +13,15 @@ library(dplyr)
 
 
 get_markers <- function(sce, column, panel_size, pref_assay = "logcounts") {
-  
-    
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
     fm <- findMarkers(sce, colData(sce)[[column]], test.type = test_type, assay.type = pref_assay)
 
-    
     n <- length(fm)
     
     top_select <- round(2 * panel_size / n)
     all_select <- round(1000 / n)
     
+    recommended_markers <- c()
     top_markers <- c()
     all_markers <- c()
     
@@ -31,17 +29,19 @@ get_markers <- function(sce, column, panel_size, pref_assay = "logcounts") {
       f <- fm[[i]]
       top_markers <- c(top_markers, rownames(f)[seq_len(top_select)])
       all_markers <- c(all_markers, rownames(f)[seq_len(all_select)])
+      recommended_markers <- c(top_markers, rownames(f)[seq_len(top_select)])
     }
     
     top_markers <- unique(top_markers)
     all_markers <- unique(all_markers)
+    recommended_markers <- unique(recommended_markers)
     
     all_markers <- setdiff(all_markers, top_markers)
     
     list(
+      recommended_markers = recommended_markers,
       top_markers = top_markers,
       all_markers = all_markers
-      
     )
 
 }

@@ -235,8 +235,9 @@ server <- function(input, output, session) {
     
     ## Need to update markers:
     current_markers(
-      list(top_markers = input$bl_top,
-         all_markers = input$bl_all)
+      list(recommended_markers = input$bl_recommended,
+           top_markers = input$bl_top,
+           all_markers = input$bl_all)
     )
     
     update_analysis()
@@ -266,8 +267,9 @@ server <- function(input, output, session) {
       cm <- current_markers()
       
       current_markers(
-        list(all_markers = setdiff(cm$all_markers, new_marker),
-              top_markers = c(new_marker, setdiff(cm$top_markers, new_marker)))
+        list(recommended_markers = cm$recommended_markers,
+             all_markers = setdiff(cm$all_markers, new_marker),
+             top_markers = c(new_marker, setdiff(cm$top_markers, new_marker)))
       )
       
       update_BL(current_markers())
@@ -282,7 +284,7 @@ server <- function(input, output, session) {
         group_name = "bucket_list_group",
         add_rank_list(
           text = "Recommended markers",
-          labels = markers$top_markers,
+          labels = markers$recommended_markers,
           input_id = "bl_recommended",
           class = c("default-sortable", "cytocellbl")
         ),
