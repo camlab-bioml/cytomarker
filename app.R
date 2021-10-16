@@ -237,7 +237,8 @@ server <- function(input, output, session) {
     current_markers(
       list(recommended_markers = input$bl_recommended,
            top_markers = input$bl_top,
-           all_markers = input$bl_all)
+           # all_markers = input$bl_all
+           scratch_markers = input$bl_scratch)
     )
     
     update_analysis()
@@ -268,7 +269,8 @@ server <- function(input, output, session) {
       
       current_markers(
         list(recommended_markers = cm$recommended_markers,
-             all_markers = setdiff(cm$all_markers, new_marker),
+             # all_markers = setdiff(cm$all_markers, new_marker),
+             scratch_markers = setdiff(cm$scratch_markers, new_marker),
              top_markers = c(new_marker, setdiff(cm$top_markers, new_marker)))
       )
       
@@ -290,8 +292,9 @@ server <- function(input, output, session) {
         ),
         add_rank_list(
           text = "All genes/proteins",
-          labels = NULL,
-          input_id = "bl_all",
+          labels = markers$scratch_markers,
+          # input_id = "bl_all",
+          input_id = "bl_scratch",
           class = c("default-sortable", "cytocellbl")
         ),
         add_rank_list(
