@@ -13,6 +13,10 @@ library(dplyr)
 
 
 get_markers <- function(sce, column, panel_size, pref_assay = "logcounts") {
+    ## TODO: support multiple columns
+    column <- column[1]
+  
+  
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
     fm <- findMarkers(sce, colData(sce)[[column]], test.type = test_type, assay.type = pref_assay)
 
@@ -49,26 +53,49 @@ get_markers <- function(sce, column, panel_size, pref_assay = "logcounts") {
 
 }
 
-get_umap <- function(sce, column, pref_assay = "logcounts") {
+get_umap <- function(sce, columns, pref_assay = "logcounts") {
   sce <- runUMAP(sce, exprs_values = pref_assay)
+  
   df <- tibble(
     UMAP1 = reducedDim(sce, 'UMAP')[,1],
-    UMAP2 = reducedDim(sce, 'UMAP')[,2],
-    x = colData(sce)[[column]]
+    UMAP2 = reducedDim(sce, 'UMAP')[,2]
   )
-  names(df) <- c("UMAP1", "UMAP2", column)
+  
+  for(column in columns) {
+    df[[column]] <- as.data.frame(colData(sce))[[column]]
+  }
+
   df
 }
 
-get_scores <- function(sce, column, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
+get_scores <- function(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
+  
+  ## TODO: support more than one column
+  # column <- column[1]
+  
   max_cells <- min(ncol(sce), max_cells)
   sce_tr <- sce[mrkrs, sample(ncol(sce), max_cells, replace=FALSE)]
   
+  scores <- list()
+  
+  for(column in columns) {
+    scores[[column]] <- get_scores_one_column(sce_tr, column, mrkrs, max_cells, pref_assay)
+  }
+  
+  scores
+}
+
+get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
+  
+  ## TODO: support more than one column
+  column <- column[1]
+  
+
   x <- t(assay(sce_tr, pref_assay))
   x <- as.matrix(x)
   y <- factor(colData(sce_tr)[[ column ]])
   
-  cell_types <- sort(unique(colData(sce)[[column]]))
+  cell_types <- sort(unique(colData(sce_tr)[[column]]))
   
   train_nb(x,y, cell_types)
   
@@ -100,6 +127,9 @@ train_nb <- function(x,y, cell_types) {
 create_heatmap <- function(sce, markers, column, normalization, pref_assay = "logcounts") {
   normalization <- match.arg(normalization, c("Expression", "z-score"))
   
+  ## TODO: support multiple columns -- currently takes first by default
+  column <- column[1]
+  
   mat <- scuttle::summarizeAssayByGroup(
     sce,
     id = colData(sce)[[column]],
@@ -115,9 +145,11 @@ create_heatmap <- function(sce, markers, column, normalization, pref_assay = "lo
     legend <- "z-score\nexpression"
   }
   
+  # top_annot <- HeatmapAnnotation()
+  
   expression_mat <- Heatmap(mat,
                             col = viridis(100),
-                            name="legend")
+                            name="Expresison")
   cor_mat <- Heatmap(cor(t(mat)),
                      name="Correlation")
   expression_mat + cor_mat  

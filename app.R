@@ -37,8 +37,9 @@ ui <- fluidPage(
       textOutput("selected_assay"),
       br(),
       selectInput("coldata_column",
-                  "Cluster ID",
-                  NULL),
+                  "Capture heterogeneity of:",
+                  NULL,
+                  multiple=TRUE),
       numericInput(
         "panel_size",
         "Panel size",
@@ -52,7 +53,7 @@ ui <- fluidPage(
       actionButton("start_analysis", "Go"),
       actionButton("refresh_analysis", "Refresh"),
       hr(),
-      downloadButton('downloadData', 'Download\nmarkers'),
+      downloadButton('downloadData', 'Save\npanel'),
       width = 3
     ),
     mainPanel(tabsetPanel(
@@ -64,8 +65,8 @@ ui <- fluidPage(
                fluidRow(column(12, uiOutput("BL")))),
       tabPanel("UMAP",
                fluidRow(
-                 column(6, plotOutput("all_plot")),
-                 column(6, plotOutput("top_plot"))
+                 column(6, plotOutput("all_plot", height="600px")),
+                 column(6, plotOutput("top_plot", height="600px"))
                )),
       tabPanel(
         "Heatmap",
@@ -155,16 +156,20 @@ server <- function(input, output, session) {
   output$all_plot <- renderPlot({
     req(umap_all)
     req(column)
-    
-    col <- column()
-    
+
+    columns <- column()
+
     if (is.null(umap_all())) {
       return(NULL)
     }
-    
-    ggplot(umap_all(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
-      geom_point() +
-      labs(subtitle = "UMAP all genes")
+
+    plts <- list()
+    for(col in columns) {
+      plts[[col]] <- ggplot(umap_all(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
+        geom_point() +
+        labs(subtitle = "UMAP all genes")
+    }
+    cowplot::plot_grid(plotlist = plts, ncol=1)
   })
   
   output$top_plot <- renderPlot({
@@ -173,15 +178,19 @@ server <- function(input, output, session) {
     
     req(column)
     
-    col <- column()
+    columns <- column()
     
     if (is.null(umap_top())) {
       return(NULL)
     }
     
-    ggplot(umap_top(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
-      geom_point() +
-      labs(subtitle = "UMAP selected markers")
+    plts <- list()
+    for(col in columns) {
+      plts[[col]] <- ggplot(umap_top(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
+        geom_point() +
+        labs(subtitle = "UMAP selected markers")
+    }
+    cowplot::plot_grid(plotlist = plts, ncol=1)
   })
   
   output$heatmap <- renderPlot({
@@ -199,18 +208,28 @@ server <- function(input, output, session) {
   
   output$metric_plot <- renderPlot({
     req(metrics)
-    m <- metrics()
-    if (is.null(m)) {
+    mm <- metrics()
+    if (is.null(mm)) {
       return(NULL)
     }
-    m$what <- fct_reorder(m$what, desc(m$score))
-    m$what <- fct_relevel(m$what, "Overall")
     
-    ggplot(m, aes(y = fct_rev(what), x = score)) +
-      geom_boxplot(fill = 'grey90') +
-      labs(x = "Score",
-           y = "Cell type",
-           subtitle = "Score for selected panel")
+    columns <- names(mm)
+    plots <- list()
+    
+    for(column in columns) {
+      m <- mm[[column]]
+    
+      m$what <- fct_reorder(m$what, desc(m$score))
+      m$what <- fct_relevel(m$what, "Overall")
+      
+      plots[[column]] <- ggplot(m, aes(y = fct_rev(what), x = score)) +
+                    geom_boxplot(fill = 'grey90') +
+                    labs(x = "Score",
+                         y = "Source")
+    }
+    
+    cowplot::plot_grid(plotlist = plots, ncol=1, labels = columns)
+    
   })
   
   
@@ -221,6 +240,8 @@ server <- function(input, output, session) {
     
     ## Set initial markers:
     column(input$coldata_column)
+    
+    ## TODO: get markers for all columns, not just 1
     markers <- get_markers(sce(), column(), input$panel_size, pref_assay())
     current_markers(markers)
     
@@ -264,7 +285,7 @@ server <- function(input, output, session) {
     if(!is.null(input$add_markers) && stringr::str_length(input$add_markers) > 1 && (input$add_markers %in% rownames(sce()))) {
       ## Need to update markers:
       new_marker <- input$add_markers
-      print(new_marker)
+      
       cm <- current_markers()
       
       current_markers(
@@ -363,6 +384,7 @@ server <- function(input, output, session) {
       }
       
       incProgress(3, detail = "Drawing heatmap")
+      ## TODO: add multi column support to the following
       heatmap(create_heatmap(sce(), markers, column(), input$heatmap_expression_norm))
       
       incProgress(4, detail = "Computing panel score")
