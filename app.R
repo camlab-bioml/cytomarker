@@ -242,10 +242,16 @@ server <- function(input, output, session) {
     column(input$coldata_column)
     
     ## TODO: get markers for all columns, not just 1
-    markers <- get_markers(sce(), column(), input$panel_size, pref_assay())
-    current_markers(markers)
+    columns <- column()
+    print(columns)
     
+    markers <- get_markers(sce(), columns, input$panel_size, pref_assay())
+    
+    print(markers)
+    current_markers(markers)
+    print(current_markers)
     update_analysis()
+    
     
   })
   
@@ -385,11 +391,14 @@ server <- function(input, output, session) {
       
       incProgress(3, detail = "Drawing heatmap")
       ## TODO: add multi column support to the following
+
       heatmap(create_heatmap(sce(), markers, column(), input$heatmap_expression_norm))
       
       incProgress(4, detail = "Computing panel score")
       
       metrics(get_scores(sce(), column(), markers$top_markers, pref_assay()))
+      
+      
     })
   }
   
