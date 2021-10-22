@@ -40,15 +40,10 @@ ui <- fluidPage(
                   "Capture heterogeneity of:",
                   NULL,
                   multiple=TRUE),
-      numericInput(
-        "panel_size",
-        "Panel size",
-        32,
-        min = 1,
-        max = 200,
-        step = NA,
-        width = NULL
-      ),
+      numericInput("panel_size",
+                   "Targeted panel size:",
+                   32, min = 1, max = 200,
+                   step = NA, width = NULL),
       checkboxInput("subsample_for_umap", "Subsample for UMAP", value = TRUE),
       actionButton("start_analysis", "Go"),
       actionButton("refresh_analysis", "Refresh"),
@@ -62,23 +57,21 @@ ui <- fluidPage(
                    autocomplete_input("add_markers", "Add markers", options=c())),
                div(style = "display:inline-block; horizontal-align:top; width:35%",
                    actionButton("enter_marker", "Add marker")),
-               fluidRow(column(12, uiOutput("BL")))),
+               fluidRow(column(12, uiOutput("BL")))
+               ),
       tabPanel("UMAP",
-               fluidRow(
-                 column(6, plotOutput("all_plot", height="600px")),
-                 column(6, plotOutput("top_plot", height="600px"))
-               )),
-      tabPanel(
-        "Heatmap",
-        selectInput(
-          "heatmap_expression_norm",
-          label = "Heatmap expression normalization",
-          choices = c("Expression", "z-score")
-        ),
-        plotOutput("heatmap")
-      ),
+               fluidRow(column(6, plotOutput("all_plot", height="600px")),
+                        column(6, plotOutput("top_plot", height="600px")))
+               ),
+      tabPanel("Heatmap",
+               selectInput("heatmap_expression_norm",
+                           label = "Heatmap expression normalization",
+                           choices = c("Expression", "z-score")),
+               plotOutput("heatmap")
+               ),
       tabPanel("Metrics",
-               plotOutput("metric_plot")),
+               plotOutput("metric_plot")
+               ),
       tabPanel("Alternative markers",
                div(style = "display:inline-block; horizontal-align:top; width:35%",
                    autocomplete_input("input_gene", "Input gene", options=c())),
@@ -87,7 +80,8 @@ ui <- fluidPage(
                                 value = 10, min = 1, 
                                 width = "150px")),
                actionButton("enter_gene", "Enter"),
-               DTOutput("alternative_markers"))
+               DTOutput("alternative_markers")
+               )
     ))
   )
 )
@@ -101,6 +95,7 @@ server <- function(input, output, session) {
   
   heatmap <- reactiveVal()
   current_markers <- reactiveVal()
+  num_selected <- reactiveVal()
   # heatmap_expression_norm <- reactiveVal()
   
   assay_modal <- function(failed = FALSE, assays) {
@@ -241,18 +236,14 @@ server <- function(input, output, session) {
     ## Set initial markers:
     column(input$coldata_column)
     
-    ## TODO: get markers for all columns, not just 1
     columns <- column()
-    print(columns)
     
     markers <- get_markers(sce(), columns, input$panel_size, pref_assay())
-    
-    print(markers)
     current_markers(markers)
-    print(current_markers)
+    
+    num_selected(length(current_markers()$top_markers))
+    
     update_analysis()
-    
-    
   })
   
   observeEvent(input$refresh_analysis, {
@@ -264,9 +255,10 @@ server <- function(input, output, session) {
     current_markers(
       list(recommended_markers = input$bl_recommended,
            top_markers = input$bl_top,
-           # all_markers = input$bl_all
            scratch_markers = input$bl_scratch)
     )
+    
+    num_selected(length(current_markers()$top_markers))
     
     update_analysis()
     
@@ -296,16 +288,17 @@ server <- function(input, output, session) {
       
       current_markers(
         list(recommended_markers = cm$recommended_markers,
-             # all_markers = setdiff(cm$all_markers, new_marker),
-             scratch_markers = setdiff(cm$scratch_markers, new_marker),
+             scratch_markers = c(cm$scratch_markers, setdiff(cm$scratch_markers, new_marker)),
              top_markers = c(new_marker, setdiff(cm$top_markers, new_marker)))
       )
       
-      update_BL(current_markers())
+      num_selected(length(current_markers()$top_markers))
+      
+      update_BL(current_markers(), num_selected())
     }
   })
   
-  update_BL <- function(markers) {
+  update_BL <- function(markers, selected) {
     output$BL <- renderUI({
       bucket_list(
         header = "Marker selection",
@@ -318,14 +311,13 @@ server <- function(input, output, session) {
           class = c("default-sortable", "cytocellbl")
         ),
         add_rank_list(
-          text = "All genes/proteins",
+          text = "Scratch space",
           labels = markers$scratch_markers,
-          # input_id = "bl_all",
           input_id = "bl_scratch",
           class = c("default-sortable", "cytocellbl")
         ),
         add_rank_list(
-          text = "Selected markers",
+          text = paste0("Selected markers (", selected, ")"),
           labels = markers$top_markers,
           input_id = "bl_top",
           class = c("default-sortable", "cytocellbl")
@@ -373,8 +365,9 @@ server <- function(input, output, session) {
     
     withProgress(message = 'Processing data', value = 0, {
       markers <- current_markers()
+      selected <- num_selected()
       
-      update_BL(markers)
+      update_BL(markers, selected)
       
       incProgress(2, detail = "Computing UMAP")
       
@@ -397,7 +390,6 @@ server <- function(input, output, session) {
       incProgress(4, detail = "Computing panel score")
       
       metrics(get_scores(sce(), column(), markers$top_markers, pref_assay()))
-      
       
     })
   }

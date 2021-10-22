@@ -13,13 +13,11 @@ library(dplyr)
 
 
 get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
-    ## TODO: support multiple columns
-    # column <- column[1]
     
-    tmp_marker <- list(recommended_markers = c(), top_markers = c(), scratch_markers = c())
+    marker <- list(recommended_markers = c(), top_markers = c(), scratch_markers = c())
   
     for(col in columns) {
-      if(length(unique(colData(sce)[[col]])) == 1) {
+      if(length(unique(colData(sce)[[col]])) == 1) { # need to fix this
         break
       } else {
         test_type <- ifelse(pref_assay == "counts", "binom", "t")
@@ -30,32 +28,29 @@ get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
         top_select <- round(2 * panel_size / n)
         # all_select <- round(1000 / n)
         
-        recommended <- tmp_marker$recommended_markers
-        top <- tmp_marker$top_markers
-        scratch <- tmp_marker$scratch_markers
+        recommended <- marker$recommended_markers
+        top <- marker$top_markers
+        scratch <- marker$scratch_markers
         
         for(i in seq_len(n)) {
           f <- fm[[i]]
           top <- c(top, rownames(f)[seq_len(top_select)])
           recommended <- c(top, rownames(f)[seq_len(top_select)])
-          # all_markers <- c(all_markers, rownames(f)[seq_len(all_select)])
         }
         
         top <- unique(top)
         recommended <- unique(recommended)
         scratch <- unique(scratch)
-        # all_markers <- unique(all_markers)
         
-        scratch <- setdiff(scratch, top)
-        # all_markers <- setdiff(all_markers, top_markers)
+        scratch <- c(scratch, setdiff(scratch, top))
         
-        tmp_marker <- list(recommended_markers = recommended,
-                           top_markers = top,
-                           scratch_markers = scratch)
+        marker <- list(recommended_markers = recommended,
+                       top_markers = top,
+                       scratch_markers = scratch)
       }
     }
     
-    tmp_marker
+    marker
 
 }
 
