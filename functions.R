@@ -42,8 +42,6 @@ get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
         recommended <- unique(recommended)
         scratch <- unique(scratch)
         
-        scratch <- c(scratch, setdiff(scratch, top))
-        
         marker <- list(recommended_markers = recommended,
                        top_markers = top,
                        scratch_markers = scratch)

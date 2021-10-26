@@ -238,7 +238,11 @@ server <- function(input, output, session) {
     
     columns <- column()
     
+    scratch_markers_to_keep <- input$bl_scratch
+    
     markers <- get_markers(sce(), columns, input$panel_size, pref_assay())
+    markers$scratch_markers <- scratch_markers_to_keep
+    
     current_markers(markers)
     
     num_selected(length(current_markers()$top_markers))
@@ -288,7 +292,7 @@ server <- function(input, output, session) {
       
       current_markers(
         list(recommended_markers = cm$recommended_markers,
-             scratch_markers = c(cm$scratch_markers, setdiff(cm$scratch_markers, new_marker)),
+             scratch_markers = cm$scratch_markers,
              top_markers = c(new_marker, setdiff(cm$top_markers, new_marker)))
       )
       
