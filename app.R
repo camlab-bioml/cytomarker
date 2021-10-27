@@ -48,7 +48,7 @@ ui <- fluidPage(
       actionButton("start_analysis", "Go"),
       actionButton("refresh_analysis", "Refresh"),
       hr(),
-      downloadButton('downloadData', 'Save\npanel'),
+      downloadButton("downloadData", "Save\npanel"),
       width = 3
     ),
     mainPanel(tabsetPanel(
@@ -57,6 +57,7 @@ ui <- fluidPage(
                    autocomplete_input("add_markers", "Add markers", options=c())),
                div(style = "display:inline-block; horizontal-align:top; width:35%",
                    actionButton("enter_marker", "Add marker")),
+               fluidRow(column(12, fileInput("uploadMarkers", "Upload markers"))),
                fluidRow(column(12, uiOutput("BL")))
                ),
       tabPanel("UMAP",
@@ -292,8 +293,8 @@ server <- function(input, output, session) {
       
       current_markers(
         list(recommended_markers = cm$recommended_markers,
-             scratch_markers = cm$scratch_markers,
-             top_markers = c(new_marker, setdiff(cm$top_markers, new_marker)))
+             scratch_markers = input$bl_scratch,
+             top_markers = c(new_marker, setdiff(cm$top_markers, input$bl_scratch)))
       )
       
       num_selected(length(current_markers()$top_markers))
