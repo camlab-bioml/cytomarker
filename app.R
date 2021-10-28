@@ -115,15 +115,19 @@ server <- function(input, output, session) {
   }
   
   sce <- reactiveVal()
-  input_assays <- reactiveVal()
   pref_assay <- reactiveVal("logcounts")
   
   observeEvent(input$input_scrnaseq, {
     sce(readRDS(input$input_scrnaseq$datapath))
     
     # Pop-up dialog box for assay selection
-    input_assays(names(assays(sce())))
-    showModal(assay_modal(assays = input_assays()))
+    input_assays <- c(names(assays(sce())))
+    
+    if("logcounts" %in% input_assays) {
+      input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
+    }
+    
+    showModal(assay_modal(assays = input_assays))
     
     update_autocomplete_input(session, "add_markers",
                               options = rownames(sce()))
@@ -193,13 +197,13 @@ server <- function(input, output, session) {
     req(heatmap)
     req(column)
     
-    col <- column()
+    columns <- column()
     
     if (is.null(heatmap())) {
       return(NULL)
     }
-    
     draw(heatmap())
+    
   })
   
   output$metric_plot <- renderPlot({
@@ -272,6 +276,7 @@ server <- function(input, output, session) {
   observeEvent(input$heatmap_expression_norm, {
     ## What to do when heatmap selection is made
     req(sce())
+    
     heatmap(
       create_heatmap(
         sce(),
@@ -281,6 +286,7 @@ server <- function(input, output, session) {
         pref_assay()
       )
     )
+    
   })
   
   observeEvent(input$enter_marker, {
@@ -389,11 +395,10 @@ server <- function(input, output, session) {
       
       incProgress(3, detail = "Drawing heatmap")
       ## TODO: add multi column support to the following
-
       heatmap(create_heatmap(sce(), markers, column(), input$heatmap_expression_norm))
       
-      incProgress(4, detail = "Computing panel score")
       
+      incProgress(4, detail = "Computing panel score")
       metrics(get_scores(sce(), column(), markers$top_markers, pref_assay()))
       
     })

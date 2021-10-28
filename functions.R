@@ -84,20 +84,18 @@ get_scores <- function(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logc
   scores
 }
 
-get_scores_one_column <- function(sce_tr, columns, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
+get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
   
   ## TODO: support more than one column
   # column <- column[1]
   
-  for(col in columns){
-    x <- t(assay(sce_tr, pref_assay))
-    x <- as.matrix(x)
-    y <- factor(colData(sce_tr)[[col]])
-    
-    cell_types <- sort(unique(colData(sce_tr)[[col]]))
-    
-    train_nb(x,y, cell_types)
-  }
+  x <- t(assay(sce_tr, pref_assay))
+  x <- as.matrix(x)
+  y <- factor(colData(sce_tr)[[column]])
+  
+  cell_types <- sort(unique(colData(sce_tr)[[column]]))
+  
+  train_nb(x,y, cell_types)
   
 }
 
@@ -129,32 +127,32 @@ create_heatmap <- function(sce, markers, columns, normalization, pref_assay = "l
   
   ## TODO: support multiple columns -- currently takes first by default
   # column <- column[1]
-  
   for(column in columns) {
     mat <- scuttle::summarizeAssayByGroup(
-      sce,
-      id = colData(sce)[[column]],
-      subset.row = markers$top_markers,
-      statistics = 'mean',
-      assay.type = pref_assay
-    )
-    mat <- (assay(mat, 'mean'))
-    
-    legend <- "Mean\nexpression"
-    if(normalization == "z-score") {
-      mat <- t(scale(t(mat)))
-      legend <- "z-score\nexpression"
-    }
-    
-    # top_annot <- HeatmapAnnotation()
-    
-    expression_mat <- Heatmap(mat,
-                              col = viridis(100),
-                              name="Expresison")
-    cor_mat <- Heatmap(cor(t(mat)),
-                       name="Correlation")
-    expression_mat + cor_mat
+    sce,
+    id = colData(sce)[[column]],
+    subset.row = markers$top_markers,
+    statistics = 'mean',
+    assay.type = pref_assay
+  )
+  mat <- (assay(mat, 'mean'))
+  
+  legend <- "Mean\nexpression"
+  if(normalization == "z-score") {
+    mat <- t(scale(t(mat)))
+    legend <- "z-score\nexpression"
   }
+  
+  # top_annot <- HeatmapAnnotation()
+  
+  expression_mat <- Heatmap(mat,
+                            col = viridis(100),
+                            name="Expression")
+  cor_mat <- Heatmap(cor(t(mat)),
+                     name="Correlation")
+  expression_mat + cor_mat
+  }
+  
     
 }
 
