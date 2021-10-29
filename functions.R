@@ -14,7 +14,7 @@ library(dplyr)
 
 get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
     
-    marker <- list(recommended_markers = c(), top_markers = c(), scratch_markers = c())
+    marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
   
     for(col in columns) {
       if(length(unique(colData(sce)[[col]])) == 1) { # need to fix this
@@ -34,17 +34,17 @@ get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
         
         for(i in seq_len(n)) {
           f <- fm[[i]]
-          top <- c(top, rownames(f)[seq_len(top_select)])
           recommended <- c(top, rownames(f)[seq_len(top_select)])
+          top <- c(top, rownames(f)[seq_len(top_select)])
         }
         
-        top <- unique(top)
         recommended <- unique(recommended)
         scratch <- unique(scratch)
+        top <- unique(top)
         
         marker <- list(recommended_markers = recommended,
-                       top_markers = top,
-                       scratch_markers = scratch)
+                       scratch_markers = scratch,
+                       top_markers = top)
       }
     }
     

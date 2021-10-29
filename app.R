@@ -55,9 +55,15 @@ ui <- fluidPage(
       tabPanel("Marker selection",
                div(style = "display:inline-block; horizontal-align:top; width:35%",
                    autocomplete_input("add_markers", "Add markers", options=c())),
+               div(style = "display:inline-block; horizontal-align:top; width:20%",
+                   actionButton("enter_marker", "Add")),
+               br(),
                div(style = "display:inline-block; horizontal-align:top; width:35%",
-                   actionButton("enter_marker", "Add marker")),
-               fluidRow(column(12, fileInput("uploadMarkers", "Upload markers"))),
+                   fileInput("uploadMarkers", "Upload markers")),
+               div(style = "display:inline-block; horizontal-align:top; width:c(20%,20%)",
+                   actionButton("add_to_selected", "Add"),
+                   actionButton("replace_selected", "Replace")),
+               br(),
                fluidRow(column(12, uiOutput("BL")))
                ),
       tabPanel("UMAP",
@@ -122,7 +128,6 @@ server <- function(input, output, session) {
     
     # Pop-up dialog box for assay selection
     input_assays <- c(names(assays(sce())))
-    
     if("logcounts" %in% input_assays) {
       input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
     }
@@ -263,8 +268,8 @@ server <- function(input, output, session) {
     ## Need to update markers:
     current_markers(
       list(recommended_markers = input$bl_recommended,
-           top_markers = input$bl_top,
-           scratch_markers = input$bl_scratch)
+           scratch_markers = input$bl_scratch,
+           top_markers = input$bl_top)
     )
     
     num_selected(length(current_markers()$top_markers))
@@ -307,6 +312,64 @@ server <- function(input, output, session) {
       
       update_BL(current_markers(), num_selected())
     }
+  })
+
+  observeEvent(input$add_to_selected, {
+    req(input$uploadMarkers)
+    
+    uploaded_markers <- readLines(input$uploadMarkers$datapath)
+    
+    not_sce <- c()
+    
+    for(i in seq_len(length(uploaded_markers))) {
+      if(!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && (uploaded_markers[i] %in% rownames(sce()))) {
+        cm <- current_markers()
+        current_markers(
+          list(recommended_markers = cm$recommended_markers,
+               scratch_markers = input$bl_scratch,
+               top_markers = c(uploaded_markers[i], setdiff(cm$top_markers, input$bl_scratch)))
+        )
+      } else if (!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && !(uploaded_markers[i] %in% rownames(sce()))) {
+        not_sce <- c(not_sce, uploaded_markers[i])
+      } 
+    }
+    
+    print(not_sce)
+    
+    num_selected(length(current_markers()$top_markers))
+        
+    update_BL(current_markers(), num_selected())
+    
+  })
+  
+  observeEvent(input$replace_selected, {
+    req(input$uploadMarkers)
+    
+    uploaded_markers <- readLines(input$uploadMarkers$datapath)
+    
+    marker <- c()
+    not_sce <- c()
+    
+    for(i in seq_len(length(uploaded_markers))) {
+      if(!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && (uploaded_markers[i] %in% rownames(sce()))) {
+        marker <- c(marker, uploaded_markers[i])
+        
+        cm <- current_markers()
+        current_markers(
+          list(recommended_markers = cm$recommended_markers,
+               scratch_markers = input$bl_scratch,
+               top_markers = marker)
+        )
+      } else if (!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && !(uploaded_markers[i] %in% rownames(sce()))) {
+        not_sce <- c(not_sce, uploaded_markers[i])
+      } 
+    }
+    
+    print(not_sce)
+    
+    num_selected(length(current_markers()$top_markers))
+    
+    update_BL(current_markers(), num_selected())
   })
   
   update_BL <- function(markers, selected) {
