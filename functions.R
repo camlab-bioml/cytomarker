@@ -53,6 +53,7 @@ get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
 }
 
 get_umap <- function(sce, columns, pref_assay = "logcounts") {
+  
   sce <- runUMAP(sce, exprs_values = pref_assay)
   
   df <- tibble(
@@ -69,9 +70,6 @@ get_umap <- function(sce, columns, pref_assay = "logcounts") {
 
 get_scores <- function(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
   
-  ## TODO: support more than one column
-  # column <- column[1]
-  
   max_cells <- min(ncol(sce), max_cells)
   sce_tr <- sce[mrkrs, sample(ncol(sce), max_cells, replace=FALSE)]
   
@@ -86,9 +84,6 @@ get_scores <- function(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logc
 
 get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
   
-  ## TODO: support more than one column
-  # column <- column[1]
-  
   x <- t(assay(sce_tr, pref_assay))
   x <- as.matrix(x)
   y <- factor(colData(sce_tr)[[column]])
@@ -100,6 +95,7 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_
 }
 
 train_nb <- function(x,y, cell_types) {
+  
   flds <- createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
   
   metrics <- lapply(flds, function(test_idx) {
@@ -123,6 +119,7 @@ train_nb <- function(x,y, cell_types) {
 }
 
 create_heatmap <- function(sce, markers, columns, normalization, pref_assay = "logcounts") {
+  
   normalization <- match.arg(normalization, c("Expression", "z-score"))
   
   ## TODO: support multiple columns -- currently takes first by default
@@ -153,6 +150,7 @@ create_heatmap <- function(sce, markers, columns, normalization, pref_assay = "l
   expression_mat + cor_mat
   }
   
+  # output
     
 }
 

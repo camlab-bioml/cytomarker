@@ -126,7 +126,6 @@ server <- function(input, output, session) {
   observeEvent(input$input_scrnaseq, {
     sce(readRDS(input$input_scrnaseq$datapath))
     
-    # Pop-up dialog box for assay selection
     input_assays <- c(names(assays(sce())))
     if("logcounts" %in% input_assays) {
       input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
@@ -307,11 +306,11 @@ server <- function(input, output, session) {
              scratch_markers = input$bl_scratch,
              top_markers = c(new_marker, setdiff(cm$top_markers, input$bl_scratch)))
       )
-      
-      num_selected(length(current_markers()$top_markers))
-      
-      update_BL(current_markers(), num_selected())
     }
+    
+    num_selected(length(current_markers()$top_markers))
+      
+    update_BL(current_markers(), num_selected())
   })
 
   observeEvent(input$add_to_selected, {
@@ -334,7 +333,7 @@ server <- function(input, output, session) {
       } 
     }
     
-    print(not_sce)
+    print(not_sce) # TODO: display on UI
     
     num_selected(length(current_markers()$top_markers))
         
@@ -365,7 +364,7 @@ server <- function(input, output, session) {
       } 
     }
     
-    print(not_sce)
+    print(not_sce) # TODO: display on UI
     
     num_selected(length(current_markers()$top_markers))
     
@@ -378,11 +377,12 @@ server <- function(input, output, session) {
         header = "Marker selection",
         orientation = "horizontal",
         group_name = "bucket_list_group",
-        add_rank_list(
+        add_rank_list( 
           text = "Recommended markers",
           labels = markers$recommended_markers,
           input_id = "bl_recommended",
-          class = c("default-sortable", "cytocellbl")
+          class = "cytocellbl",
+          options = sortable_options(disabled = TRUE)
         ),
         add_rank_list(
           text = "Scratch space",
