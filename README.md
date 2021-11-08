@@ -24,6 +24,9 @@ dependencies <- c(
 "forcats",
 "cowplot",
 "readr",
+"dqshiny",
+"DT",
+"shinyalert"
 "stringr"
 )
 BiocManager::install(dependencies)
