@@ -118,14 +118,11 @@ train_nb <- function(x,y, cell_types) {
   metrics
 }
 
-create_heatmap <- function(sce, markers, columns, normalization, pref_assay = "logcounts") {
+create_heatmap <- function(sce, markers, column, normalization, pref_assay = "logcounts") {
   
   normalization <- match.arg(normalization, c("Expression", "z-score"))
-  
-  ## TODO: support multiple columns -- currently takes first by default
-  # column <- column[1]
-  for(column in columns) {
-    mat <- scuttle::summarizeAssayByGroup(
+
+  mat <- scuttle::summarizeAssayByGroup(
     sce,
     id = colData(sce)[[column]],
     subset.row = markers$top_markers,
@@ -133,24 +130,21 @@ create_heatmap <- function(sce, markers, columns, normalization, pref_assay = "l
     assay.type = pref_assay
   )
   mat <- (assay(mat, 'mean'))
-  
+
   legend <- "Mean\nexpression"
-  if(normalization == "z-score") {
+    if(normalization == "z-score") {
     mat <- t(scale(t(mat)))
     legend <- "z-score\nexpression"
   }
   
   # top_annot <- HeatmapAnnotation()
-  
+
   expression_mat <- Heatmap(mat,
                             col = viridis(100),
                             name="Expression")
   cor_mat <- Heatmap(cor(t(mat)),
                      name="Correlation")
   expression_mat + cor_mat
-  }
-  
-  # output
     
 }
 

@@ -16,6 +16,7 @@ library(cowplot)
 library(readr)
 library(dqshiny)
 library(DT)
+library(shinyalert)
 
 theme_set(theme_cowplot())
 
@@ -25,6 +26,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
+  useShinyalert(),
   titlePanel("cytosel"),
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "cytocell.css")
@@ -53,17 +55,18 @@ ui <- fluidPage(
     ),
     mainPanel(tabsetPanel(
       tabPanel("Marker selection",
-               div(style = "display:inline-block; horizontal-align:top; width:35%",
-                   autocomplete_input("add_markers", "Add markers", options=c())),
-               div(style = "display:inline-block; horizontal-align:top; width:20%",
-                   actionButton("enter_marker", "Add")),
-               br(),
-               div(style = "display:inline-block; horizontal-align:top; width:35%",
+               div(style = "display:inline-block; horizontal-align:top; width:30%",
+                   autocomplete_input("add_markers", "Add markers", options=c(),
+                                       width = "150px")),
+               div(style = "display:inline-block; horizontal-align:top; width:65%",
                    fileInput("uploadMarkers", "Upload markers")),
-               div(style = "display:inline-block; horizontal-align:top; width:c(20%,20%)",
-                   actionButton("add_to_selected", "Add"),
-                   actionButton("replace_selected", "Replace")),
                br(),
+               div(style = "display:inline-block; horizontal-align:top; width:30%",
+                   actionButton("enter_marker", "Add")),
+               div(style = "display:inline-block; horizontal-align:top; width:c(30%,30%)",
+                   actionButton("add_to_selected", "Add"),
+                   actionButton("replace_selected", "Replace all selected markers")),
+               hr(),
                fluidRow(column(12, uiOutput("BL")))
                ),
       tabPanel("UMAP",
@@ -120,6 +123,14 @@ server <- function(input, output, session) {
     )
   }
   
+  warning_modal <- function(not_sce) {
+    shinyalert(title = "Warning", 
+               text = paste(c(not_sce, " are not in SCE.")), 
+               type = "warning", 
+               showConfirmButton = TRUE,
+               confirmButtonCol = "#337AB7")
+  }
+  
   sce <- reactiveVal()
   pref_assay <- reactiveVal("logcounts")
   
@@ -146,7 +157,7 @@ server <- function(input, output, session) {
     )
     
   })
-
+  
   observeEvent(input$assay_select, {
     if (!is.null(input$assay)) {
       pref_assay(input$assay)
@@ -156,6 +167,7 @@ server <- function(input, output, session) {
       showModal(assay_modal(failed = TRUE, input_assays()))
     }
   })
+  
 
   output$all_plot <- renderPlot({
     req(umap_all)
@@ -201,11 +213,10 @@ server <- function(input, output, session) {
     req(heatmap)
     req(column)
     
-    columns <- column()
-    
     if (is.null(heatmap())) {
       return(NULL)
     }
+    
     draw(heatmap())
     
   })
@@ -235,7 +246,6 @@ server <- function(input, output, session) {
     cowplot::plot_grid(plotlist = plots, ncol=1, labels = columns)
     
   })
-  
   
   observeEvent(input$start_analysis, {
     req(input$coldata_column)
@@ -274,23 +284,25 @@ server <- function(input, output, session) {
     num_selected(length(current_markers()$top_markers))
     
     update_analysis()
-    
   })
   
   observeEvent(input$heatmap_expression_norm, {
     ## What to do when heatmap selection is made
     req(sce())
     
-    heatmap(
-      create_heatmap(
-        sce(),
-        current_markers(),
-        column(),
-        input$heatmap_expression_norm,
-        pref_assay()
-      )
-    )
+    columns <- column()
     
+    for(col in columns) {
+      heatmap(
+        create_heatmap(
+          sce(),
+          current_markers(),
+          col,
+          input$heatmap_expression_norm,
+          pref_assay()
+        )
+      )
+    }
   })
   
   observeEvent(input$enter_marker, {
@@ -317,7 +329,6 @@ server <- function(input, output, session) {
     req(input$uploadMarkers)
     
     uploaded_markers <- readLines(input$uploadMarkers$datapath)
-    
     not_sce <- c()
     
     for(i in seq_len(length(uploaded_markers))) {
@@ -326,26 +337,26 @@ server <- function(input, output, session) {
         current_markers(
           list(recommended_markers = cm$recommended_markers,
                scratch_markers = input$bl_scratch,
-               top_markers = c(uploaded_markers[i], setdiff(cm$top_markers, input$bl_scratch)))
+               top_markers = unique(c(uploaded_markers[i], setdiff(cm$top_markers, input$bl_scratch))))
         )
-      } else if (!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && !(uploaded_markers[i] %in% rownames(sce()))) {
+      } else if(!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && !(uploaded_markers[i] %in% rownames(sce()))) {
         not_sce <- c(not_sce, uploaded_markers[i])
       } 
     }
     
-    print(not_sce) # TODO: display on UI
+    if(length(not_sce) > 0) {
+      warning_modal(not_sce)
+    }
     
     num_selected(length(current_markers()$top_markers))
         
     update_BL(current_markers(), num_selected())
-    
   })
   
   observeEvent(input$replace_selected, {
     req(input$uploadMarkers)
     
     uploaded_markers <- readLines(input$uploadMarkers$datapath)
-    
     marker <- c()
     not_sce <- c()
     
@@ -364,7 +375,9 @@ server <- function(input, output, session) {
       } 
     }
     
-    print(not_sce) # TODO: display on UI
+    if(length(not_sce) > 0) {
+      warning_modal(not_sce)
+    }
     
     num_selected(length(current_markers()$top_markers))
     
@@ -431,7 +444,6 @@ server <- function(input, output, session) {
         output$alternative_markers <- renderDT(alternatives, server = FALSE)
       })
     }
-    
   })
   
   update_analysis <- function() {
@@ -457,9 +469,10 @@ server <- function(input, output, session) {
       }
       
       incProgress(3, detail = "Drawing heatmap")
-      ## TODO: add multi column support to the following
-      heatmap(create_heatmap(sce(), markers, column(), input$heatmap_expression_norm))
-      
+      columns <- column()
+      for(col in columns) {
+        heatmap(create_heatmap(sce(), markers, col, input$heatmap_expression_norm, pref_assay()))
+      } 
       
       incProgress(4, detail = "Computing panel score")
       metrics(get_scores(sce(), column(), markers$top_markers, pref_assay()))
