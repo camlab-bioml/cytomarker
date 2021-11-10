@@ -1,22 +1,3 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
-library(shiny)
-library(sortable)
-library(ggplot2)
-library(scater)
-library(forcats)
-library(cowplot)
-library(readr)
-library(dqshiny)
-library(DT)
-library(shinyalert)
 
 theme_set(theme_cowplot())
 
@@ -477,7 +458,8 @@ cytosel <- function(...) {
         } 
         
         incProgress(4, detail = "Computing panel score")
-        metrics(get_scores(sce(), column(), markers$top_markers, pref_assay()))
+        scores <- get_scores(sce(), column(), markers$top_markers, pref_assay())
+        metrics(scores)
         
       })
     }

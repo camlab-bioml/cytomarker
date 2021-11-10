@@ -1,16 +1,4 @@
 
-library(scran)
-library(SingleCellExperiment)
-library(tibble)
-library(caret)
-library(yardstick)
-library(naivebayes)
-library(ComplexHeatmap)
-library(viridis)
-library(dplyr)
-
-# sce <- readRDS("data/sce.rds")
-
 
 get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
     
@@ -91,8 +79,7 @@ get_scores <- function(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logc
 
 get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
   
-  x <- t(assay(sce_tr, pref_assay))
-  x <- as.matrix(x)
+  x <- t(as.matrix(assay(sce_tr, pref_assay)))
   y <- factor(colData(sce_tr)[[column]])
   
   cell_types <- sort(unique(colData(sce_tr)[[column]]))
