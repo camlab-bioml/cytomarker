@@ -1,5 +1,8 @@
 
-
+#' Compute markers
+#' 
+#' @importFrom SingleCellExperiment colData
+#' @importFrom scran findMarkers
 get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
     
     marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
@@ -47,6 +50,11 @@ get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
 
 }
 
+#' Compute the UMAP 
+#' 
+#' @importFrom scater runUMAP
+#' @importFrom tibble tibble
+#' @importFrom SingleCellExperiment reducedDim
 get_umap <- function(sce, columns, pref_assay = "logcounts") {
   
   sce <- runUMAP(sce, exprs_values = pref_assay)
@@ -88,6 +96,13 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_
   
 }
 
+#' Train a Naive bayes classifier
+#' 
+#' @import caret
+#' @importFrom tibble tibble
+#' @import yardstick
+#' @importFrom naivebayes naive_bayes
+#' @importFrom dplyr bind_rows
 train_nb <- function(x,y, cell_types) {
   
   flds <- createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
@@ -112,11 +127,16 @@ train_nb <- function(x,y, cell_types) {
   metrics
 }
 
+#' Make the expression and correlation heatmaps
+#' @importFrom ComplexHeatmap Heatmap 
+#' @importFrom scuttle summarizeAssayByGroup
+#' @importFrom stats cor
+#' @importFrom viridis viridis
 create_heatmap <- function(sce, markers, column, normalization, pref_assay = "logcounts") {
   
   normalization <- match.arg(normalization, c("Expression", "z-score"))
 
-  mat <- scuttle::summarizeAssayByGroup(
+  mat <- summarizeAssayByGroup(
     sce,
     id = colData(sce)[[column]],
     subset.row = markers$top_markers,
@@ -151,6 +171,8 @@ round3 <- function(x) format(round(x, 1), nsmall = 3)
 #' (2) Seurat object (converted to SingleCellExperiment)
 #' 
 #' TODO: accept anndata
+#' 
+#' @importFrom Seurat as.SingleCellExperiment
 read_input_scrnaseq <- function(input_path) {
   
   obj <- readRDS(input_path)

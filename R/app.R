@@ -1,5 +1,5 @@
 
-theme_set(theme_cowplot())
+ggplot2::theme_set(cowplot::theme_cowplot())
 
 # source("functions.R")
 
@@ -7,6 +7,19 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 
 # Define UI for application that draws a histogram
 
+#' Define main entrypoint of app
+#' 
+#' @import shiny
+#' @importFrom shinyalert useShinyalert shinyalert
+#' @importFrom dqshiny autocomplete_input update_autocomplete_input
+#' @importFrom DT DTOutput renderDT
+#' @import SummarizedExperiment
+#' @import ggplot2
+#' @import forcats
+#' @import sortable
+#' @importFrom readr write_lines
+#' @importFrom ComplexHeatmap draw
+#' @importFrom dplyr desc
 cytosel <- function(...) {
   ui <- fluidPage(
     useShinyalert(),
