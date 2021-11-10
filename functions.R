@@ -17,8 +17,14 @@ get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
     marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
   
     for(col in columns) {
-      if(length(unique(colData(sce)[[col]])) == 1) { # need to fix this
-        break
+      n_unique_elements <- length(unique(colData(sce)[[col]]))
+      
+      if(n_unique_elements == 1) { # need to fix this
+        ## TODO: turn this into UI dialog
+        stop(paste("Only one level in column", col))
+      } else if(n_unique_elements > 100) {
+        ## TODO: turn this into UI dialog
+        stop(paste("Column", col, "has more than 100 unique elements"))        
       } else {
         test_type <- ifelse(pref_assay == "counts", "binom", "t")
         fm <- findMarkers(sce, colData(sce)[[col]], test.type = test_type, assay.type = pref_assay)
@@ -47,6 +53,7 @@ get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
                        top_markers = top)
       }
     }
+    
     
     marker
 
@@ -150,3 +157,25 @@ create_heatmap <- function(sce, markers, column, normalization, pref_assay = "lo
 
 round3 <- function(x) format(round(x, 1), nsmall = 3)
 
+
+#' Read the input single-cell RNA-seq dataset
+#' from compressed RDS file. Accepts either:
+#' (1) SingleCellExperiment
+#' (2) Seurat object (converted to SingleCellExperiment)
+#' 
+#' TODO: accept anndata
+read_input_scrnaseq <- function(input_path) {
+  
+  obj <- readRDS(input_path)
+  
+  if(is(obj, 'SingleCellExperiment')) {
+    return(obj)
+  } else if(is(obj, 'Seurat')) {
+    ## Convert to SingleCellExperiment
+    sce <- as.SingleCellExperiment(obj)
+    return(sce)
+  } else {
+    ## TODO: Throw error: must be SingleCellExperiment or Seurat
+    
+  }
+} 

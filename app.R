@@ -135,7 +135,7 @@ server <- function(input, output, session) {
   pref_assay <- reactiveVal("logcounts")
   
   observeEvent(input$input_scrnaseq, {
-    sce(readRDS(input$input_scrnaseq$datapath))
+    sce(read_input_scrnaseq(input$input_scrnaseq$datapath))
     
     input_assays <- c(names(assays(sce())))
     if("logcounts" %in% input_assays) {
