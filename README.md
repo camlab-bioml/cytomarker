@@ -2,6 +2,14 @@
 
 Antibody panel selection for mass cytometry using scRNA-seq
 
+### To run
+
+Navigate to the root directory and run
+
+```r
+devtools::load_all(); cytosel()
+```
+
 ### Dependencies
 
 To install dependencies:
