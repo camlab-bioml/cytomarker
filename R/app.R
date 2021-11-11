@@ -70,6 +70,9 @@ cytosel <- function(...) {
                           column(6, plotOutput("top_plot", height="600px")))
                  ),
         tabPanel("Heatmap",
+                 selectInput("display_options",
+                             label = "Display heterogeneity expression or gene correlation",
+                             choice = c()),
                  selectInput("heatmap_expression_norm",
                              label = "Heatmap expression normalization",
                              choices = c("Expression", "z-score")),
@@ -188,8 +191,6 @@ cytosel <- function(...) {
       req(umap_top)
       req(column)
       
-      req(column)
-      
       columns <- column()
       
       if (is.null(umap_top())) {
@@ -253,6 +254,12 @@ cytosel <- function(...) {
       
       columns <- column()
       
+      updateSelectInput(
+        session = session,
+        inputId = "display_options",
+        choices = c("Marker-marker correlation", columns)
+      )
+      
       scratch_markers_to_keep <- input$bl_scratch
       
       markers <- get_markers(sce(), columns, input$panel_size, pref_assay())
@@ -270,6 +277,14 @@ cytosel <- function(...) {
       req(input$panel_size)
       req(sce())
       
+      column(input$coldata_column)
+      
+      updateSelectInput(
+        session = session,
+        inputId = "display_options",
+        choices = c("Marker-marker correlation", column())
+      )
+      
       ## Need to update markers:
       current_markers(
         list(recommended_markers = input$bl_recommended,
@@ -282,23 +297,31 @@ cytosel <- function(...) {
       update_analysis()
     })
     
-    observeEvent(input$heatmap_expression_norm, {
-      ## What to do when heatmap selection is made
-      req(sce())
+    display <- reactiveVal()
+    
+    observeEvent(input$display_options, {
+      display(input$display_options)
       
-      columns <- column()
-      
-      for(col in columns) {
-        heatmap(
-          create_heatmap(
-            sce(),
-            current_markers(),
-            col,
-            input$heatmap_expression_norm,
-            pref_assay()
+      observeEvent(input$heatmap_expression_norm, {
+        ## What to do when heatmap selection is made
+        req(sce())
+        
+        columns <- column()
+        
+        for(col in columns) {
+          heatmap(
+            create_heatmap(
+              sce(),
+              current_markers(),
+              col,
+              display(),
+              input$heatmap_expression_norm,
+              pref_assay()
+            )
           )
-        )
-      }
+        }
+      })
+      
     })
     
     observeEvent(input$enter_marker, {
@@ -467,7 +490,7 @@ cytosel <- function(...) {
         incProgress(3, detail = "Drawing heatmap")
         columns <- column()
         for(col in columns) {
-          heatmap(create_heatmap(sce(), markers, col, input$heatmap_expression_norm, pref_assay()))
+          heatmap(create_heatmap(sce(), markers, col, display(), input$heatmap_expression_norm, pref_assay()))
         } 
         
         incProgress(4, detail = "Computing panel score")
