@@ -13,9 +13,11 @@ get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
       if(n_unique_elements == 1) { # need to fix this
         ## TODO: turn this into UI dialog
         stop(paste("Only one level in column", col))
+        
       } else if(n_unique_elements > 100) {
         ## TODO: turn this into UI dialog
-        stop(paste("Column", col, "has more than 100 unique elements"))        
+        stop(paste("Column", col, "has more than 100 unique elements"))
+        
       } else {
         test_type <- ifelse(pref_assay == "counts", "binom", "t")
         fm <- findMarkers(sce, colData(sce)[[col]], test.type = test_type, assay.type = pref_assay)
@@ -137,52 +139,33 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
 
   normalization <- match.arg(normalization, c("Expression", "z-score"))
   
+  mat <- summarizeAssayByGroup(
+    sce,
+    id = colData(sce)[[column]],
+    subset.row = markers$top_markers,
+    statistics = 'mean',
+    assay.type = pref_assay
+  )
+  
+  mat <- (assay(mat, 'mean'))
+  
+  legend <- "Mean\nexpression"
+  if(normalization == "z-score") {
+    mat <- t(scale(t(mat)))
+    legend <- "z-score\nexpression"
+  }
+    
+  # top_annot <- HeatmapAnnotation()
+  cor_mat <- Heatmap(cor(t(mat)),
+                     name="Correlation")
+  expression_mat <- Heatmap(mat,
+                            col = viridis(100),
+                            name="Expression")
+  
   if(display == "Marker-marker correlation") {
-    mat <- summarizeAssayByGroup(
-      sce,
-      id = colData(sce)[[column]],
-      subset.row = markers$top_markers,
-      statistics = 'mean',
-      assay.type = pref_assay
-    )
-    
-    mat <- (assay(mat, 'mean'))
-    
-    legend <- "Mean\nexpression"
-    if(normalization == "z-score") {
-      mat <- t(scale(t(mat)))
-      legend <- "z-score\nexpression"
-    }
-    
-    # top_annot <- HeatmapAnnotation()
-    cor_mat <- Heatmap(cor(t(mat)),
-                       name="Correlation")
-    
     return(cor_mat)
-    
-  } else if(display == column) {
-    mat <- summarizeAssayByGroup(
-      sce,
-      id = colData(sce)[[display]],
-      subset.row = markers$top_markers,
-      statistics = 'mean',
-      assay.type = pref_assay
-    )
-    
-    mat <- (assay(mat, 'mean'))
-    
-    legend <- "Mean\nexpression"
-    if(normalization == "z-score") {
-      mat <- t(scale(t(mat)))
-      legend <- "z-score\nexpression"
-    }
-    
-    expression_mat <- Heatmap(mat,
-                              col = viridis(100),
-                              name="Expression")
-    
+  } else {
     return(expression_mat)
-    
   }
   
 }

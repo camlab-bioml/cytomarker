@@ -262,6 +262,7 @@ cytosel <- function(...) {
       
       scratch_markers_to_keep <- input$bl_scratch
       
+      
       markers <- get_markers(sce(), columns, input$panel_size, pref_assay())
       markers$scratch_markers <- scratch_markers_to_keep
       
@@ -308,18 +309,23 @@ cytosel <- function(...) {
         
         columns <- column()
         
-        for(col in columns) {
-          heatmap(
-            create_heatmap(
-              sce(),
-              current_markers(),
-              col,
-              display(),
-              input$heatmap_expression_norm,
-              pref_assay()
+        if(display() == "Marker-marker correlation") {
+          for(col in columns) {
+            heatmap(
+              create_heatmap(sce(), current_markers(), col, display(), input$heatmap_expression_norm, pref_assay())
             )
-          )
+          }
+        } else {
+          for(col in columns) {
+            if(col == display()) {
+              heatmap(
+                create_heatmap(sce(), current_markers(), display(), display(), input$heatmap_expression_norm, pref_assay())
+              )
+              break
+            }
+          }
         }
+        
       })
       
     })
@@ -489,9 +495,22 @@ cytosel <- function(...) {
         
         incProgress(3, detail = "Drawing heatmap")
         columns <- column()
-        for(col in columns) {
-          heatmap(create_heatmap(sce(), markers, col, display(), input$heatmap_expression_norm, pref_assay()))
-        } 
+        if(display() == "Marker-marker correlation") {
+          for(col in columns) {
+            heatmap(
+              create_heatmap(sce(), current_markers(), col, display(), input$heatmap_expression_norm, pref_assay())
+            )
+          }
+        } else {
+          for(col in columns) {
+            if(col == display()) {
+              heatmap(
+                create_heatmap(sce(), current_markers(), display(), display(), input$heatmap_expression_norm, pref_assay())
+              )
+              break
+            }
+          }
+        }
         
         incProgress(4, detail = "Computing panel score")
         scores <- get_scores(sce(), column(), markers$top_markers, pref_assay())
