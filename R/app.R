@@ -22,7 +22,13 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom dplyr desc
 cytosel <- function(...) {
   ui <- fluidPage(
+    # Navigation prompt
+    tags$head(
+      tags$script(HTML("window.onbeforeunload = function() {return 'Your changes will be lost!';};"))
+    ),
+    
     useShinyalert(),
+    
     titlePanel("cytosel"),
     tags$head(
       tags$link(rel = "stylesheet", type = "text/css", href = "cytocell.css")
@@ -63,6 +69,11 @@ cytosel <- function(...) {
                      actionButton("add_to_selected", "Add"),
                      actionButton("replace_selected", "Replace all selected markers")),
                  hr(),
+                 strong("Suggestions"),
+                 br(),
+                 textOutput("gene_remove"),
+                 actionButton("remove_suggested", "Move markers to scratch"),
+                 hr(),
                  fluidRow(column(12, uiOutput("BL")))
                  ),
         tabPanel("UMAP",
@@ -76,7 +87,17 @@ cytosel <- function(...) {
                  selectInput("heatmap_expression_norm",
                              label = "Heatmap expression normalization",
                              choices = c("Expression", "z-score")),
-                 plotOutput("heatmap")
+                 plotOutput("heatmap"),
+                 hr(),
+                 div(style = "display:inline-block; horizontal-align:top; width:20%",
+                     numericInput("n_genes", "Number of genes to remove", 
+                                  value = 10, min = 1,
+                                  width = "190px")),
+                 div(style = "display:inline-block; horizontal-align:top; width:75%",
+                     actionButton("suggest_gene_removal", "View suggestions")),
+                 br(),
+                 textOutput("remove_gene"),
+                 br()
                  ),
         tabPanel("Metrics",
                  plotOutput("metric_plot")
@@ -124,7 +145,7 @@ cytosel <- function(...) {
     
     warning_modal <- function(not_sce) {
       shinyalert(title = "Warning", 
-                 text = paste(c(not_sce, " are not in SCE.")), 
+                 text = paste(paste(not_sce, collapse = ", "), " are not in SCE."), 
                  type = "warning", 
                  showConfirmButton = TRUE,
                  confirmButtonCol = "#337AB7")
@@ -262,6 +283,17 @@ cytosel <- function(...) {
       
       scratch_markers_to_keep <- input$bl_scratch
       
+      # for(col in columns) {
+      #   n_unique_elements <- length(unique(colData(sce)[[col]]))
+      #   
+      #   if(n_unique_elements == 1) {
+      #     ## TODO: turn this into UI dialog
+      #     stop(paste("Only one level in column", col))
+      #   } else if(n_unique_elements > 100) {
+      #     ## TODO: turn this into UI dialog
+      #     stop(paste("Column", col, "has more than 100 unique elements"))
+      #   }
+      # }
       
       markers <- get_markers(sce(), columns, input$panel_size, pref_assay())
       markers$scratch_markers <- scratch_markers_to_keep
@@ -277,14 +309,6 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(input$panel_size)
       req(sce())
-      
-      column(input$coldata_column)
-      
-      updateSelectInput(
-        session = session,
-        inputId = "display_options",
-        choices = c("Marker-marker correlation", column())
-      )
       
       ## Need to update markers:
       current_markers(
@@ -407,6 +431,34 @@ cytosel <- function(...) {
       num_selected(length(current_markers()$top_markers))
       
       update_BL(current_markers(), num_selected())
+    })
+    
+    genes_to_remove <- reactiveVal()
+    
+    observeEvent(input$suggest_gene_removal, {
+      req(input$n_genes)
+      
+      expression <- as.matrix(assay(sce(), pref_assay())[current_markers()$top_markers,])
+      cmat <- cor(t(expression))
+      
+      genes_to_remove(suggest_genes_to_remove(cmat, input$n_genes))
+      
+      output$remove_gene <- renderText(paste("Suggested markers to remove: ", paste(genes_to_remove(), collapse = ', ')))
+      output$gene_remove <- renderText(paste("Remove the following markers: ", paste(genes_to_remove(), collapse = ', ')))
+    })
+    
+    observeEvent(input$remove_suggested, {
+      cm <- current_markers()
+
+      current_markers(
+        list(recommended_markers = cm$recommended_markers,
+             scratch_markers = unique(c(input$bl_scratch, genes_to_remove())),
+             top_markers = setdiff(cm$top_markers, genes_to_remove()))
+      )
+
+      num_selected(length(cm$top_markers))
+
+      update_BL(cm, num_selected())
     })
     
     update_BL <- function(markers, selected) {

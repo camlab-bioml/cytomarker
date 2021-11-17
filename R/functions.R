@@ -170,6 +170,25 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
   
 }
 
+#' Suggest a set of redundant genes to remove
+#' 
+#' @param cmat An correlation matrix of *the full expression*  calculated as
+#' expression <- as.matrix(assay(sce, pref_assay)[markers$top_markers,])
+#' cmat <- cor(t(expression))
+#' @param n_genes Number of genes to suggest to remove
+#' @importFrom caret findCorrelation
+suggest_genes_to_remove <- function(cmat, n_genes=10) {
+  rg <- c()
+  for(i in seq_len(n_genes)) {
+    lgl <- !(rownames(cmat) %in% rg)
+    fcs <- findCorrelation(cmat[lgl, lgl], cutoff = 0.01)
+    gene_to_remove <- colnames(cmat[lgl, lgl])[ fcs[1] ]
+    rg <- c(rg, gene_to_remove)
+  }
+  rg
+}
+
+
 round3 <- function(x) format(round(x, 1), nsmall = 3)
 
 
