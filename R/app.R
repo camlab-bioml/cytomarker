@@ -21,7 +21,13 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom dplyr desc
 cytosel <- function(...) {
   ui <- fluidPage(
+    # Navigation prompt
+    tags$head(
+      tags$script(HTML("window.onbeforeunload = function() {return 'Your changes will be lost!';};"))
+    ),
+    
     useShinyalert(),
+    
     titlePanel("cytosel"),
     tags$head(
       tags$link(rel = "stylesheet", type = "text/css", href = "cytocell.css")
@@ -62,6 +68,11 @@ cytosel <- function(...) {
                      actionButton("add_to_selected", "Add"),
                      actionButton("replace_selected", "Replace all selected markers")),
                  hr(),
+                 strong("Suggestions"),
+                 br(),
+                 textOutput("gene_remove"),
+                 actionButton("remove_suggested", "Move markers to scratch"),
+                 hr(),
                  fluidRow(column(12, uiOutput("BL")))
                  ),
         tabPanel("UMAP",
@@ -69,10 +80,23 @@ cytosel <- function(...) {
                           column(6, plotOutput("top_plot", height="600px")))
                  ),
         tabPanel("Heatmap",
+                 selectInput("display_options",
+                             label = "Display heterogeneity expression or gene correlation",
+                             choice = c()),
                  selectInput("heatmap_expression_norm",
                              label = "Heatmap expression normalization",
                              choices = c("Expression", "z-score")),
-                 plotOutput("heatmap")
+                 plotOutput("heatmap"),
+                 hr(),
+                 div(style = "display:inline-block; horizontal-align:top; width:20%",
+                     numericInput("n_genes", "Number of genes to remove", 
+                                  value = 10, min = 1,
+                                  width = "190px")),
+                 div(style = "display:inline-block; horizontal-align:top; width:75%",
+                     actionButton("suggest_gene_removal", "View suggestions")),
+                 br(),
+                 textOutput("remove_gene"),
+                 br()
                  ),
         tabPanel("Metrics",
                  plotOutput("metric_plot")
@@ -120,7 +144,7 @@ cytosel <- function(...) {
     
     warning_modal <- function(not_sce) {
       shinyalert(title = "Warning", 
-                 text = paste(c(not_sce, " are not in SCE.")), 
+                 text = paste(paste(not_sce, collapse = ", "), " are not in SCE."), 
                  type = "warning", 
                  showConfirmButton = TRUE,
                  confirmButtonCol = "#337AB7")
@@ -187,8 +211,6 @@ cytosel <- function(...) {
       req(umap_top)
       req(column)
       
-      req(column)
-      
       columns <- column()
       
       if (is.null(umap_top())) {
@@ -243,24 +265,47 @@ cytosel <- function(...) {
     })
     
     observeEvent(input$start_analysis, {
-      req(input$coldata_column)
-      req(input$panel_size)
-      req(sce())
       
-      ## Set initial markers:
-      column(input$coldata_column)
+      withProgress(message = 'Initializing analysis', value = 0, {
+        incProgress(detail = "Acquiring data")
+        req(input$coldata_column)
+        req(input$panel_size)
+        req(sce())
+        
+        ## Set initial markers:
+        column(input$coldata_column)
+        
+        columns <- column()
+        
+        updateSelectInput(
+          session = session,
+          inputId = "display_options",
+          choices = c("Marker-marker correlation", columns)
+        )
+        
+        scratch_markers_to_keep <- input$bl_scratch
+        
+        # for(col in columns) {
+        #   n_unique_elements <- length(unique(colData(sce)[[col]]))
+        #   
+        #   if(n_unique_elements == 1) {
+        #     ## TODO: turn this into UI dialog
+        #     stop(paste("Only one level in column", col))
+        #   } else if(n_unique_elements > 100) {
+        #     ## TODO: turn this into UI dialog
+        #     stop(paste("Column", col, "has more than 100 unique elements"))
+        #   }
+        # }
+        
+        incProgress(detail = "Computing markers")
+        markers <- get_markers(sce(), columns, input$panel_size, pref_assay())
+        markers$scratch_markers <- scratch_markers_to_keep
+        
+        current_markers(markers)
+        
+        num_selected(length(current_markers()$top_markers))
       
-      columns <- column()
-      
-      scratch_markers_to_keep <- input$bl_scratch
-      
-      markers <- get_markers(sce(), columns, input$panel_size, pref_assay())
-      markers$scratch_markers <- scratch_markers_to_keep
-      
-      current_markers(markers)
-      
-      num_selected(length(current_markers()$top_markers))
-      
+      })
       update_analysis()
     })
     
@@ -281,23 +326,36 @@ cytosel <- function(...) {
       update_analysis()
     })
     
-    observeEvent(input$heatmap_expression_norm, {
-      ## What to do when heatmap selection is made
-      req(sce())
+    display <- reactiveVal()
+    
+    observeEvent(input$display_options, {
+      display(input$display_options)
       
-      columns <- column()
+      observeEvent(input$heatmap_expression_norm, {
+        ## What to do when heatmap selection is made
+        req(sce())
+        
+        columns <- column()
+        
+        if(display() == "Marker-marker correlation") {
+          for(col in columns) {
+            heatmap(
+              create_heatmap(sce(), current_markers(), col, display(), input$heatmap_expression_norm, pref_assay())
+            )
+          }
+        } else {
+          for(col in columns) {
+            if(col == display()) {
+              heatmap(
+                create_heatmap(sce(), current_markers(), display(), display(), input$heatmap_expression_norm, pref_assay())
+              )
+              break
+            }
+          }
+        }
+        
+      })
       
-      for(col in columns) {
-        heatmap(
-          create_heatmap(
-            sce(),
-            current_markers(),
-            col,
-            input$heatmap_expression_norm,
-            pref_assay()
-          )
-        )
-      }
     })
     
     observeEvent(input$enter_marker, {
@@ -379,6 +437,34 @@ cytosel <- function(...) {
       update_BL(current_markers(), num_selected())
     })
     
+    genes_to_remove <- reactiveVal()
+    
+    observeEvent(input$suggest_gene_removal, {
+      req(input$n_genes)
+      
+      expression <- as.matrix(assay(sce(), pref_assay())[current_markers()$top_markers,])
+      cmat <- cor(t(expression))
+      
+      genes_to_remove(suggest_genes_to_remove(cmat, input$n_genes))
+      
+      output$remove_gene <- renderText(paste("Suggested markers to remove: ", paste(genes_to_remove(), collapse = ', ')))
+      output$gene_remove <- renderText(paste("Remove the following markers: ", paste(genes_to_remove(), collapse = ', ')))
+    })
+    
+    observeEvent(input$remove_suggested, {
+      cm <- current_markers()
+
+      current_markers(
+        list(recommended_markers = cm$recommended_markers,
+             scratch_markers = unique(c(input$bl_scratch, genes_to_remove())),
+             top_markers = setdiff(cm$top_markers, genes_to_remove()))
+      )
+
+      num_selected(length(cm$top_markers))
+
+      update_BL(cm, num_selected())
+    })
+    
     update_BL <- function(markers, selected) {
       output$BL <- renderUI({
         bucket_list(
@@ -450,7 +536,7 @@ cytosel <- function(...) {
         
         update_BL(markers, selected)
         
-        incProgress(2, detail = "Computing UMAP")
+        incProgress(detail = "Computing UMAP")
         
         if (input$subsample_for_umap) {
           nc <- ncol(sce())
@@ -463,13 +549,26 @@ cytosel <- function(...) {
           umap_top(get_umap(sce()[markers$top_markers,], column()))
         }
         
-        incProgress(3, detail = "Drawing heatmap")
+        incProgress(detail = "Drawing heatmap")
         columns <- column()
-        for(col in columns) {
-          heatmap(create_heatmap(sce(), markers, col, input$heatmap_expression_norm, pref_assay()))
-        } 
+        if(display() == "Marker-marker correlation") {
+          for(col in columns) {
+            heatmap(
+              create_heatmap(sce(), current_markers(), col, display(), input$heatmap_expression_norm, pref_assay())
+            )
+          }
+        } else {
+          for(col in columns) {
+            if(col == display()) {
+              heatmap(
+                create_heatmap(sce(), current_markers(), display(), display(), input$heatmap_expression_norm, pref_assay())
+              )
+              break
+            }
+          }
+        }
         
-        incProgress(4, detail = "Computing panel score")
+        incProgress(detail = "Computing panel score")
         scores <- get_scores(sce(), column(), markers$top_markers, pref_assay())
         metrics(scores)
         

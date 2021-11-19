@@ -4,7 +4,14 @@
 \alias{create_heatmap}
 \title{Make the expression and correlation heatmaps}
 \usage{
-create_heatmap(sce, markers, column, normalization, pref_assay = "logcounts")
+create_heatmap(
+  sce,
+  markers,
+  column,
+  display,
+  normalization,
+  pref_assay = "logcounts"
+)
 }
 \description{
 Make the expression and correlation heatmaps

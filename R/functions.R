@@ -13,9 +13,11 @@ get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
       if(n_unique_elements == 1) { # need to fix this
         ## TODO: turn this into UI dialog
         stop(paste("Only one level in column", col))
+        
       } else if(n_unique_elements > 100) {
         ## TODO: turn this into UI dialog
-        stop(paste("Column", col, "has more than 100 unique elements"))        
+        stop(paste("Column", col, "has more than 100 unique elements"))
+        
       } else {
         test_type <- ifelse(pref_assay == "counts", "binom", "t")
         fm <- findMarkers(sce, colData(sce)[[col]], test.type = test_type, assay.type = pref_assay)
@@ -128,41 +130,66 @@ train_nb <- function(x,y, cell_types) {
 }
 
 #' Make the expression and correlation heatmaps
+#' 
+#' @importFrom ComplexHeatmap Heatmap 
+#' @importFrom scuttle summarizeAssayByGroup
 #' @importFrom stats cor
 #' @importFrom viridis viridis
-create_heatmap <- function(sce, markers, column, normalization, pref_assay = "logcounts") {
-  
-  normalization <- match.arg(normalization, c("Expression", "z-score"))
+create_heatmap <- function(sce, markers, column, display, normalization, pref_assay = "logcounts") {
 
-  mat <- scuttle::summarizeAssayByGroup(
+  normalization <- match.arg(normalization, c("Expression", "z-score"))
+  
+  mat <- summarizeAssayByGroup(
     sce,
     id = colData(sce)[[column]],
     subset.row = markers$top_markers,
     statistics = 'mean',
     assay.type = pref_assay
   )
+  
   mat <- (assay(mat, 'mean'))
-
+  
   legend <- "Mean\nexpression"
-    if(normalization == "z-score") {
+  if(normalization == "z-score") {
     mat <- t(scale(t(mat)))
     legend <- "z-score\nexpression"
   }
   
   # top_annot <- HeatmapAnnotation()
-
-  expression_heatmap <- ComplexHeatmap::Heatmap(mat,
+  cor_mat <- Heatmap(cor(t(mat)),
+                     name="Correlation")
+  expression_mat <- Heatmap(mat,
                             col = viridis(100),
                             name="Expression")
   
+  if(display == "Marker-marker correlation") {
+    return(cor_mat)
+  } else {
+    return(expression_mat)
+  }
   
-  expression <- as.matrix(assay(sce, pref_assay)[markers$top_markers,])
   
-  correlation_heatmap <- ComplexHeatmap::Heatmap(cor(t(expression)),
-                     name="Correlation")
-  expression_heatmap + correlation_heatmap
-    
 }
+
+#' Suggest a set of redundant genes to remove
+#' 
+#' @param cmat An correlation matrix of *the full expression*  calculated as
+#' expression <- as.matrix(assay(sce, pref_assay)[markers$top_markers,])
+#' cmat <- cor(t(expression))
+#' @param n_genes Number of genes to suggest to remove
+#' @importFrom caret findCorrelation
+suggest_genes_to_remove <- function(cmat, n_genes=10) {
+  rg <- c()
+  for(i in seq_len(n_genes)) {
+    lgl <- !(rownames(cmat) %in% rg)
+    fcs <- findCorrelation(cmat[lgl, lgl], cutoff = 0.01)
+    gene_to_remove <- colnames(cmat[lgl, lgl])[ fcs[1] ]
+    rg <- c(rg, gene_to_remove)
+  }
+  rg
+
+}
+
 
 round3 <- function(x) format(round(x, 1), nsmall = 3)
 

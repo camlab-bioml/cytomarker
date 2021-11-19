@@ -2,3 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
+R/app.R
+R/functions.R
