@@ -15,9 +15,7 @@ Imports:
   SingleCellExperiment,
   tibble,
   caret,
-  yardstick,
   naivebayes,
-  ComplexHeatmap,
   dplyr,
   shiny,
   sortable,
@@ -30,11 +28,14 @@ Imports:
   DT,
   shinyalert,
   SummarizedExperiment,
-  scuttle,
-  Seurat,
   viridis
 Suggests:
-  stringr
+  stringr,
+  Seurat,
+  caret,
+  yardstick,
+  scuttle,
+  ComplexHeatmap
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

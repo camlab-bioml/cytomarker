@@ -18,7 +18,6 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @import forcats
 #' @import sortable
 #' @importFrom readr write_lines
-#' @importFrom ComplexHeatmap draw
 #' @importFrom dplyr desc
 cytosel <- function(...) {
   ui <- fluidPage(
@@ -213,7 +212,7 @@ cytosel <- function(...) {
         return(NULL)
       }
       
-      draw(heatmap())
+      ComplexHeatmap::draw(heatmap())
       
     })
     

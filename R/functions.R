@@ -90,6 +90,8 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_
   x <- t(as.matrix(assay(sce_tr, pref_assay)))
   y <- factor(colData(sce_tr)[[column]])
   
+  saveRDS(y, "~/Downloads/y.rds")
+  
   cell_types <- sort(unique(colData(sce_tr)[[column]]))
   
   train_nb(x,y, cell_types)
@@ -98,14 +100,12 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_
 
 #' Train a Naive bayes classifier
 #' 
-#' @import caret
 #' @importFrom tibble tibble
-#' @import yardstick
 #' @importFrom naivebayes naive_bayes
 #' @importFrom dplyr bind_rows
 train_nb <- function(x,y, cell_types) {
   
-  flds <- createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
+  flds <- caret::createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
   
   metrics <- lapply(flds, function(test_idx) {
   
@@ -113,9 +113,9 @@ train_nb <- function(x,y, cell_types) {
     
     p <- predict(fit, newdata = x[test_idx,])
     
-    overall <- bal_accuracy_vec(y[test_idx], p)
+    overall <- yardstick::bal_accuracy_vec(y[test_idx], p)
     scores <- sapply(cell_types, function(ct) {
-      ppv_vec(factor(y[test_idx] == ct, levels=c("TRUE", "FALSE")), 
+      yardstick::ppv_vec(factor(y[test_idx] == ct, levels=c("TRUE", "FALSE")), 
               factor(p == ct, levels = c("TRUE", "FALSE")))
     })
     tibble(
@@ -128,15 +128,13 @@ train_nb <- function(x,y, cell_types) {
 }
 
 #' Make the expression and correlation heatmaps
-#' @importFrom ComplexHeatmap Heatmap 
-#' @importFrom scuttle summarizeAssayByGroup
 #' @importFrom stats cor
 #' @importFrom viridis viridis
 create_heatmap <- function(sce, markers, column, normalization, pref_assay = "logcounts") {
   
   normalization <- match.arg(normalization, c("Expression", "z-score"))
 
-  mat <- summarizeAssayByGroup(
+  mat <- scuttle::summarizeAssayByGroup(
     sce,
     id = colData(sce)[[column]],
     subset.row = markers$top_markers,
@@ -153,12 +151,16 @@ create_heatmap <- function(sce, markers, column, normalization, pref_assay = "lo
   
   # top_annot <- HeatmapAnnotation()
 
-  expression_mat <- Heatmap(mat,
+  expression_heatmap <- ComplexHeatmap::Heatmap(mat,
                             col = viridis(100),
                             name="Expression")
-  cor_mat <- Heatmap(cor(t(mat)),
+  
+  
+  expression <- as.matrix(assay(sce, pref_assay)[markers$top_markers,])
+  
+  correlation_heatmap <- ComplexHeatmap::Heatmap(cor(t(expression)),
                      name="Correlation")
-  expression_mat + cor_mat
+  expression_heatmap + correlation_heatmap
     
 }
 
@@ -172,7 +174,6 @@ round3 <- function(x) format(round(x, 1), nsmall = 3)
 #' 
 #' TODO: accept anndata
 #' 
-#' @importFrom Seurat as.SingleCellExperiment
 read_input_scrnaseq <- function(input_path) {
   
   obj <- readRDS(input_path)
@@ -181,7 +182,7 @@ read_input_scrnaseq <- function(input_path) {
     return(obj)
   } else if(is(obj, 'Seurat')) {
     ## Convert to SingleCellExperiment
-    sce <- as.SingleCellExperiment(obj)
+    sce <- Seurat::as.SingleCellExperiment(obj)
     return(sce)
   } else {
     ## TODO: Throw error: must be SingleCellExperiment or Seurat
