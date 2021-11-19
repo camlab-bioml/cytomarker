@@ -91,8 +91,8 @@ cytosel <- function(...) {
                                   width = "190px")),
                  div(style = "display:inline-block; horizontal-align:top; width:75%",
                      actionButton("suggest_gene_removal", "View suggestions")),
-                 br(),
-                 textOutput("remove_gene"),
+                 # br(),
+                 # textOutput("remove_gene"),
                  br()
                  ),
         tabPanel("Metrics",
@@ -152,7 +152,8 @@ cytosel <- function(...) {
       modalDialog(
         selectInput("markers_to_remove",
                     "Select markers to remove",
-                    choices = suggestions,
+                    choices = current_markers()$top_markers,
+                    selected = suggestions,
                     multiple = TRUE),
         if (failed) {
           div(tags$b("Error", style = "color: red;"))
@@ -604,7 +605,6 @@ cytosel <- function(...) {
         path_heatmap <- paste0("heatmap-", Sys.Date(), ".pdf")
         path_metric <- paste0("metric-", Sys.Date(), ".pdf")
         
-        
         selected_markers <- current_markers()$top_markers
         write_lines(selected_markers, path_marker_selection)
         
@@ -625,16 +625,6 @@ cytosel <- function(...) {
         zip(zipfile = fname, files = fs) # zip function not working
       },
       contentType = "application/zip"
-      
-
-      
-      # filename = function() {
-      #   paste('markers-', Sys.Date(), '.txt', sep='')
-      # },
-      # content = function(con) {
-      #   selected_markers <- current_markers()$top_markers
-      #   write_lines(selected_markers, con)
-      # }
     )
     
   }
