@@ -5,6 +5,7 @@
 #' @importFrom scran findMarkers
 get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
     
+    fm_first <- NULL
     marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
   
     for(col in columns) {
@@ -44,9 +45,26 @@ get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
         marker <- list(recommended_markers = recommended,
                        scratch_markers = scratch,
                        top_markers = top)
+        
+        ## On the first iteration, store the fm results so we can
+        ## work out what markers belong to which cell types
+        if(is.null(fm_first)) {
+          fm_first <<- fm
+        }
       }
     }
     
+    ## Now work out the most discriminative cell types for each marker
+    
+    marker$associated_cell_types <- sapply(marker$top_markers, function(tm) {
+      pvals <- sapply(fm, function(f) {
+        tmp <- f[tm,] # get summary statistics for this gene
+        
+        ## return p value if it's a marker, or 1 otherwise
+        ifelse(tmp$summary.logFC < 0, 1, tmp$FDR)  
+        })
+      names(pvals)[which.min(pvals)]
+    })
     
     marker
 
@@ -216,3 +234,21 @@ read_input_scrnaseq <- function(input_path) {
     
   }
 } 
+
+#' Return the legend of the cell type colours
+#' @importFrom ggplot theme_bw geom_histogram scale_fill_manual guides
+get_legend <- function(palette) {
+  ## Draw the ggplot
+  df <- tibble(r = runif(length(palette)),
+               `Cell type` = names(palette))
+  
+  #' TODO: Maybe "Cell type" isn't the best name for this
+  plt <- ggplot(df, aes(x = r, fill = `Cell type`)) + 
+    geom_histogram() +
+    scale_fill_manual(values = palette) +
+    guides(fill = guide_legend(ncol = 8)) 
+  
+  legend <- cowplot::get_legend(plt)
+  legend
+}
+

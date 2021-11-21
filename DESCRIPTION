@@ -28,7 +28,10 @@ Imports:
   DT,
   shinyalert,
   SummarizedExperiment,
-  viridis
+  scuttle,
+  Seurat,
+  viridis,
+  gridExtra
 Suggests:
   stringr,
   Seurat,

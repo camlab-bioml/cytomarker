@@ -1,6 +1,18 @@
 
 ggplot2::theme_set(cowplot::theme_cowplot())
 
+
+
+cell_type_colors <- c("#ED90A4", "#EC929A", "#E99590", "#E69787", "#E39A7D", "#DE9D74", "#D99F6B", "#D3A263", "#CDA55B",
+"#C6A856", "#BEAB52", "#B6AE50", "#ADB150", "#A3B353", "#99B657", "#8EB85D", "#82BA65", "#76BC6D",
+"#68BD76", "#59BF7F", "#48C089", "#33C192", "#14C19B", "#00C1A5", "#00C1AE", "#00C1B6", "#00C0BF",
+"#00BFC7", "#00BDCE", "#19BCD5", "#39B9DB", "#50B7E0", "#63B4E4", "#75B0E8", "#85ADEA", "#94A9EC",
+"#A2A5ED", "#AFA1EC", "#BA9EEB", "#C49AE8", "#CE97E5", "#D694E0", "#DC91DB", "#E290D5", "#E68ECE",
+"#EA8EC7", "#EC8DBE", "#ED8EB6", "#EE8FAD", "#ED90A4")
+
+## Global colour palette for cell types
+palette <- NULL
+
 # source("functions.R")
 
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
@@ -19,6 +31,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @import sortable
 #' @importFrom readr write_lines
 #' @importFrom dplyr desc
+#' @importFrom gridExtra grid.arrange
 cytosel <- function(...) {
   ui <- fluidPage(
     # Navigation prompt
@@ -30,7 +43,8 @@ cytosel <- function(...) {
     
     titlePanel("cytosel"),
     tags$head(
-      tags$link(rel = "stylesheet", type = "text/css", href = "cytocell.css")
+      includeCSS("www/cytosel.css")
+      # tags$link(rel = "stylesheet", type = "text/css", href = "cytosel.css")
     ),
     sidebarLayout(
       sidebarPanel(
@@ -56,6 +70,7 @@ cytosel <- function(...) {
       ),
       mainPanel(tabsetPanel(
         tabPanel("Marker selection",
+                 icon = icon("list"),
                  div(style = "display:inline-block; horizontal-align:top; width:30%",
                      autocomplete_input("add_markers", "Add markers", options=c(),
                                          width = "150px")),
@@ -68,21 +83,19 @@ cytosel <- function(...) {
                      actionButton("add_to_selected", "Add"),
                      actionButton("replace_selected", "Replace all selected markers")),
                  hr(),
-                 strong("Suggestions"),
-                 br(),
-                 textOutput("gene_remove"),
-                 actionButton("remove_suggested", "Move markers to scratch"),
-                 hr(),
+                 plotOutput("legend", height='80px'),
                  fluidRow(column(12, uiOutput("BL")))
                  ),
         tabPanel("UMAP",
+                 icon = icon("globe"),
                  fluidRow(column(6, plotOutput("all_plot", height="600px")),
                           column(6, plotOutput("top_plot", height="600px")))
                  ),
         tabPanel("Heatmap",
+                 icon = icon("table"),
                  selectInput("display_options",
                              label = "Display heterogeneity expression or gene correlation",
-                             choice = c()),
+                             choices = c()),
                  selectInput("heatmap_expression_norm",
                              label = "Heatmap expression normalization",
                              choices = c("Expression", "z-score")),
@@ -99,9 +112,11 @@ cytosel <- function(...) {
                  br()
                  ),
         tabPanel("Metrics",
+                 icon = icon("ruler"),
                  plotOutput("metric_plot")
                  ),
         tabPanel("Alternative markers",
+                 icon = icon("exchange-alt"),
                  div(style = "display:inline-block; horizontal-align:top; width:35%",
                      autocomplete_input("input_gene", "Input gene", options=c())),
                  div(style = "display:inline-block; horizontal-align:top; width:60%",
@@ -117,6 +132,8 @@ cytosel <- function(...) {
   
   # Define server logic required to draw a histogram
   server <- function(input, output, session) {
+    plots <- reactiveValues(all_plot = NULL, top_plot = NULL, metric_plot = NULL)
+    
     umap_top <- reactiveVal()
     umap_all <- reactiveVal()
     column <- reactiveVal()
@@ -129,7 +146,6 @@ cytosel <- function(...) {
     
     assay_modal <- function(failed = FALSE, assays) {
       modalDialog(
-        # tags$script(HTML(enter_assay_selection)),
         selectInput("assay",
                     "Choose which assay to load",
                     assays),
@@ -150,7 +166,24 @@ cytosel <- function(...) {
                  confirmButtonCol = "#337AB7")
     }
     
+    suggestion_modal <- function(failed = FALSE, suggestions) {
+      modalDialog(
+        selectInput("markers_to_remove",
+                    "Select markers to remove",
+                    choices = suggestions,
+                    multiple = TRUE),
+        if (failed) {
+          div(tags$b("Error", style = "color: red;"))
+        },
+        footer = tagList(
+          modalButton("Cancel"),
+          actionButton("remove_suggested", "Move selected markers to scratch")
+        )
+      )
+    }
+    
     sce <- reactiveVal()
+    input_assays <- reactiveVal()
     pref_assay <- reactiveVal("logcounts")
     
     observeEvent(input$input_scrnaseq, {
@@ -204,7 +237,9 @@ cytosel <- function(...) {
           geom_point() +
           labs(subtitle = "UMAP all genes")
       }
-      cowplot::plot_grid(plotlist = plts, ncol=1)
+      plots$all_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
+      
+      plots$all_plot
     })
     
     output$top_plot <- renderPlot({
@@ -223,7 +258,9 @@ cytosel <- function(...) {
           geom_point() +
           labs(subtitle = "UMAP selected markers")
       }
-      cowplot::plot_grid(plotlist = plts, ncol=1)
+      plots$top_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
+      
+      plots$top_plot
     })
     
     output$heatmap <- renderPlot({
@@ -233,9 +270,9 @@ cytosel <- function(...) {
       if (is.null(heatmap())) {
         return(NULL)
       }
-      
+
       ComplexHeatmap::draw(heatmap())
-      
+
     })
     
     output$metric_plot <- renderPlot({
@@ -246,22 +283,21 @@ cytosel <- function(...) {
       }
       
       columns <- names(mm)
-      plots <- list()
-      
+      plts <- list()
       for(column in columns) {
         m <- mm[[column]]
       
         m$what <- fct_reorder(m$what, desc(m$score))
         m$what <- fct_relevel(m$what, "Overall")
         
-        plots[[column]] <- ggplot(m, aes(y = fct_rev(what), x = score)) +
+        plts[[column]] <- ggplot(m, aes(y = fct_rev(what), x = score)) +
                       geom_boxplot(fill = 'grey90') +
                       labs(x = "Score",
                            y = "Source")
       }
+      plots$metric_plot <- cowplot::plot_grid(plotlist = plts, ncol=1, labels = columns)
       
-      cowplot::plot_grid(plotlist = plots, ncol=1, labels = columns)
-      
+      plots$metric_plot
     })
     
     observeEvent(input$start_analysis, {
@@ -298,8 +334,11 @@ cytosel <- function(...) {
         # }
         
         incProgress(detail = "Computing markers")
+        
         markers <- get_markers(sce(), columns, input$panel_size, pref_assay())
         markers$scratch_markers <- scratch_markers_to_keep
+        
+        print(markers)
         
         current_markers(markers)
         
@@ -369,7 +408,7 @@ cytosel <- function(...) {
         current_markers(
           list(recommended_markers = cm$recommended_markers,
                scratch_markers = input$bl_scratch,
-               top_markers = c(new_marker, setdiff(cm$top_markers, input$bl_scratch)))
+               top_markers = unique(c(new_marker, setdiff(cm$top_markers, input$bl_scratch))))
         )
       }
       
@@ -437,7 +476,7 @@ cytosel <- function(...) {
       update_BL(current_markers(), num_selected())
     })
     
-    genes_to_remove <- reactiveVal()
+    suggestions <- reactiveVal()
     
     observeEvent(input$suggest_gene_removal, {
       req(input$n_genes)
@@ -445,27 +484,48 @@ cytosel <- function(...) {
       expression <- as.matrix(assay(sce(), pref_assay())[current_markers()$top_markers,])
       cmat <- cor(t(expression))
       
-      genes_to_remove(suggest_genes_to_remove(cmat, input$n_genes))
+      suggestions <- suggest_genes_to_remove(cmat, input$n_genes)
       
-      output$remove_gene <- renderText(paste("Suggested markers to remove: ", paste(genes_to_remove(), collapse = ', ')))
-      output$gene_remove <- renderText(paste("Remove the following markers: ", paste(genes_to_remove(), collapse = ', ')))
+      showModal(suggestion_modal(suggestions = suggestions))
+      # output$remove_gene <- renderText(paste("Suggested markers to remove: ", paste(suggestions, collapse = ', ')))
     })
     
     observeEvent(input$remove_suggested, {
       cm <- current_markers()
+      
+      if (!is.null(input$markers_to_remove)) {
+        remove_marker <- c(input$markers_to_remove)
+        
+        cm <- list(recommended_markers = cm$recommended_markers,
+                   scratch_markers = unique(c(remove_marker, input$bl_scratch)),
+                   top_markers = setdiff(cm$top_markers, remove_marker))
+        
+        num_selected(length(cm$top_markers))
+  
+        update_BL(cm, num_selected())
+        
+        removeModal()
+      } else {
+        showModal(suggestion_modal(failed = TRUE, suggestions()))
+      }
 
-      current_markers(
-        list(recommended_markers = cm$recommended_markers,
-             scratch_markers = unique(c(input$bl_scratch, genes_to_remove())),
-             top_markers = setdiff(cm$top_markers, genes_to_remove()))
-      )
-
-      num_selected(length(cm$top_markers))
-
-      update_BL(cm, num_selected())
     })
     
     update_BL <- function(markers, selected) {
+      
+      unique_cell_types <- sort(unique(markers$associated_cell_types))
+      n_cell_types <- length(unique_cell_types)
+      palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
+      names(palette) <<- unique_cell_types
+      
+      labels_top <- lapply(markers$top_markers, 
+                           function(x) div(x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
+
+      labels_recommended <- lapply(markers$recommended_markers, 
+                           function(x) div(x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
+      
+      output$legend <- renderPlot(cowplot::ggdraw(get_legend(palette)))
+            
       output$BL <- renderUI({
         bucket_list(
           header = "Marker selection",
@@ -473,7 +533,7 @@ cytosel <- function(...) {
           group_name = "bucket_list_group",
           add_rank_list( 
             text = "Recommended markers",
-            labels = markers$recommended_markers,
+            labels = labels_recommended,
             input_id = "bl_recommended",
             class = "cytocellbl",
             options = sortable_options(disabled = TRUE)
@@ -486,7 +546,7 @@ cytosel <- function(...) {
           ),
           add_rank_list(
             text = paste0("Selected markers (", selected, ")"),
-            labels = markers$top_markers,
+            labels = labels_top,
             input_id = "bl_top",
             class = c("default-sortable", "cytocellbl")
           )
@@ -536,6 +596,8 @@ cytosel <- function(...) {
         
         update_BL(markers, selected)
         
+
+        
         incProgress(detail = "Computing UMAP")
         
         if (input$subsample_for_umap) {
@@ -577,12 +639,46 @@ cytosel <- function(...) {
     
     output$downloadData <- downloadHandler(
       filename = function() {
-        paste('markers-', Sys.Date(), '.txt', sep='')
+        paste("Cytosel-", Sys.Date(), ".zip", sep = "")
       },
-      content = function(con) {
+      content = function(fname) {
+        
+        path_marker_selection <- paste0("markers-", Sys.Date(), ".txt")
+        path_umap <- paste0("UMAP-", Sys.Date(), ".pdf")
+        path_heatmap <- paste0("heatmap-", Sys.Date(), ".pdf")
+        path_metric <- paste0("metric-", Sys.Date(), ".pdf")
+        
+        
         selected_markers <- current_markers()$top_markers
-        write_lines(selected_markers, con)
-      }
+        write_lines(selected_markers, path_marker_selection)
+        
+        pdf(path_umap, onefile = TRUE)
+        grid.arrange(plots$all_plot, plots$top_plot)
+        dev.off()
+        
+        pdf(path_heatmap, onefile = TRUE)
+        draw(heatmap())
+        dev.off()
+        
+        pdf(path_metric, onefile = TRUE)
+        grid.arrange(plots$metric_plot)
+        dev.off()
+        
+        fs <- c(path_marker_selection, path_umap, path_heatmap, path_metric)
+        
+        zip(zipfile = fname, files = fs) # zip function not working
+      },
+      contentType = "application/zip"
+      
+
+      
+      # filename = function() {
+      #   paste('markers-', Sys.Date(), '.txt', sep='')
+      # },
+      # content = function(con) {
+      #   selected_markers <- current_markers()$top_markers
+      #   write_lines(selected_markers, con)
+      # }
     )
     
   }
