@@ -34,9 +34,12 @@ dependencies <- c(
 "readr",
 "dqshiny",
 "DT",
-"shinyalert"
+"shinyalert",
+"SummarizedExperiment",
+"scuttle",
+"Seurat",
 "stringr",
-"gridExtra"
+"gridExtra",
 )
 BiocManager::install(dependencies)
 remotes::install_github("daqana/dqshiny")
