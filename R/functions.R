@@ -110,8 +110,6 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_
   x <- t(as.matrix(assay(sce_tr, pref_assay)))
   y <- factor(colData(sce_tr)[[column]])
   
-  saveRDS(y, "~/Downloads/y.rds")
-  
   cell_types <- sort(unique(colData(sce_tr)[[column]]))
   
   train_nb(x,y, cell_types)

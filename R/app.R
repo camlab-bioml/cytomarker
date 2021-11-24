@@ -158,6 +158,18 @@ cytosel <- function(...) {
       )
     }
     
+    unique_element_modal <- function(failed = FALSE, n_unique_elements, col) {
+      modalDialog(
+        textOutput("stop"),
+        if (failed) {
+          div(tags$b("Error", style = "color: red;"))
+        },
+        footer = tagList(
+          modalButton("Cancel")
+        )
+      )
+    }
+    
     warning_modal <- function(not_sce) {
       shinyalert(title = "Warning", 
                  text = paste(paste(not_sce, collapse = ", "), " are not in SCE."), 
@@ -324,13 +336,21 @@ cytosel <- function(...) {
         
         # for(col in columns) {
         #   n_unique_elements <- length(unique(colData(sce)[[col]]))
-        #   
+        # 
         #   if(n_unique_elements == 1) {
         #     ## TODO: turn this into UI dialog
+        #     
+        #     showModal(unique_element_modal(n_unique_elements, col))
+        #     output$stop <- renderText({paste("Only one level in column", col)})
         #     stop(paste("Only one level in column", col))
+        #     
         #   } else if(n_unique_elements > 100) {
         #     ## TODO: turn this into UI dialog
+        #     showModal(unique_element_modal(n_unique_elements, col))
+        #     output$stop <- renderText({paste("Column", col, "has more than 100 unique elements")})
         #     stop(paste("Column", col, "has more than 100 unique elements"))
+        #   } else {
+        #     markers <- get_markers(sce(), col, input$panel_size, pref_assay())
         #   }
         # }
         
