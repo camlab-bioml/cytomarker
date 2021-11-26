@@ -356,22 +356,25 @@ cytosel <- function(...) {
     })
     
     observeEvent(input$refresh_analysis, {
-      req(input$coldata_column)
-      req(input$panel_size)
-      req(sce())
-      
-      fms(
-        compute_fm(sce(), column(), pref_assay())
-      )
-      # 
-      markers <- list(recommended_markers = input$bl_recommended,
-           scratch_markers = input$bl_scratch,
-           top_markers = input$bl_top)
-      
-      # SMH
-      current_markers(set_current_markers_safely(markers, fms()))
-      
-      num_selected(length(current_markers()$top_markers))
+      withProgress(message = 'Initializing analysis', value = 0, {
+        req(input$coldata_column)
+        req(input$panel_size)
+        req(sce())
+        
+        incProgress(detail = "Recomputing markers")
+        fms(
+          compute_fm(sce(), column(), pref_assay())
+        )
+        # 
+        markers <- list(recommended_markers = input$bl_recommended,
+             scratch_markers = input$bl_scratch,
+             top_markers = input$bl_top)
+        
+        # SMH
+        current_markers(set_current_markers_safely(markers, fms()))
+        
+        num_selected(length(current_markers()$top_markers))
+      })
       
       update_analysis()
     })
