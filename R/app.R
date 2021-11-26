@@ -361,10 +361,12 @@ cytosel <- function(...) {
       req(sce())
       
       fms(
-        compute_fm(sce(), columns, pref_assay())
+        compute_fm(sce(), column(), pref_assay())
       )
-      
-      markers <- get_markers(fms(), input$panel_size)
+      # 
+      markers <- list(recommended_markers = input$bl_recommended,
+           scratch_markers = input$bl_scratch,
+           top_markers = input$bl_top)
       
       # SMH
       current_markers(set_current_markers_safely(markers, fms()))
