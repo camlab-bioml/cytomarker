@@ -4,7 +4,7 @@
 \alias{get_markers}
 \title{Compute markers}
 \usage{
-get_markers(sce, columns, panel_size, pref_assay = "logcounts")
+get_markers(fms, panel_size)
 }
 \description{
 Compute markers

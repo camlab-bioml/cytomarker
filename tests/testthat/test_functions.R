@@ -16,15 +16,15 @@ test_that("Seurat object reading", {
 
 context("Marker finding")
 
-test_that("get_markers returns valid input", {
-  sce <- read_input_scrnaseq("test_sce.rds")
-  markers <- get_markers(sce, 'col1', 10, 'logcounts')
-  
-  expect_is(markers, 'list')
-  expect_equal(names(markers), c("recommended_markers", "scratch_markers", "top_markers"))
-  expect_gt(length(markers$recommended_markers), 0)
-  expect_gt(length(markers$top_markers), 0)
-})
+# test_that("get_markers returns valid input", {
+#   sce <- read_input_scrnaseq("test_sce.rds")
+#   markers <- get_markers(sce, 'col1', 10, 'logcounts')
+#   
+#   expect_is(markers, 'list')
+#   expect_equal(names(markers), c("recommended_markers", "scratch_markers", "top_markers"))
+#   expect_gt(length(markers$recommended_markers), 0)
+#   expect_gt(length(markers$top_markers), 0)
+# })
 
 
 test_that("get_markers errors for non unique values", {

@@ -144,6 +144,8 @@ cytosel <- function(...) {
     num_selected <- reactiveVal()
     # heatmap_expression_norm <- reactiveVal()
     
+    fms <- reactiveVal() # Where to store the findMarker outputs
+    
     assay_modal <- function(failed = FALSE, assays) {
       modalDialog(
         selectInput("assay",
@@ -333,35 +335,19 @@ cytosel <- function(...) {
         )
         
         scratch_markers_to_keep <- input$bl_scratch
-        
-        # for(col in columns) {
-        #   n_unique_elements <- length(unique(colData(sce)[[col]]))
-        # 
-        #   if(n_unique_elements == 1) {
-        #     ## TODO: turn this into UI dialog
-        #     
-        #     showModal(unique_element_modal(n_unique_elements, col))
-        #     output$stop <- renderText({paste("Only one level in column", col)})
-        #     stop(paste("Only one level in column", col))
-        #     
-        #   } else if(n_unique_elements > 100) {
-        #     ## TODO: turn this into UI dialog
-        #     showModal(unique_element_modal(n_unique_elements, col))
-        #     output$stop <- renderText({paste("Column", col, "has more than 100 unique elements")})
-        #     stop(paste("Column", col, "has more than 100 unique elements"))
-        #   } else {
-        #     markers <- get_markers(sce(), col, input$panel_size, pref_assay())
-        #   }
-        # }
-        
+
         incProgress(detail = "Computing markers")
         
-        markers <- get_markers(sce(), columns, input$panel_size, pref_assay())
+        ## Get the markers first time
+        fms(
+          compute_fm(sce(), columns, pref_assay())
+        )
+        
+        markers <- get_markers(fms(), input$panel_size)
         markers$scratch_markers <- scratch_markers_to_keep
         
-        print(markers)
-        
-        current_markers(markers)
+        # SMH
+        current_markers(set_current_markers_safely(markers, fms()))
         
         num_selected(length(current_markers()$top_markers))
       
@@ -374,12 +360,14 @@ cytosel <- function(...) {
       req(input$panel_size)
       req(sce())
       
-      ## Need to update markers:
-      current_markers(
-        list(recommended_markers = input$bl_recommended,
-             scratch_markers = input$bl_scratch,
-             top_markers = input$bl_top)
+      fms(
+        compute_fm(sce(), columns, pref_assay())
       )
+      
+      markers <- get_markers(fms(), input$panel_size)
+      
+      # SMH
+      current_markers(set_current_markers_safely(markers, fms()))
       
       num_selected(length(current_markers()$top_markers))
       
@@ -425,11 +413,13 @@ cytosel <- function(...) {
         new_marker <- input$add_markers
         
         cm <- current_markers()
+        markers <- list(recommended_markers = cm$recommended_markers,
+                        scratch_markers = input$bl_scratch,
+                        top_markers = unique(c(new_marker, setdiff(cm$top_markers, input$bl_scratch))))
         
+        # SMH
         current_markers(
-          list(recommended_markers = cm$recommended_markers,
-               scratch_markers = input$bl_scratch,
-               top_markers = unique(c(new_marker, setdiff(cm$top_markers, input$bl_scratch))))
+          set_current_markers_safely(markers, fms())
         )
       }
       
@@ -447,10 +437,15 @@ cytosel <- function(...) {
       for(i in seq_len(length(uploaded_markers))) {
         if(!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && (uploaded_markers[i] %in% rownames(sce()))) {
           cm <- current_markers()
+          
+          ## Update markers
+          markers <- list(recommended_markers = cm$recommended_markers,
+                          scratch_markers = input$bl_scratch,
+                          top_markers = unique(c(uploaded_markers[i], setdiff(cm$top_markers, input$bl_scratch))))
+          
+          # SMH
           current_markers(
-            list(recommended_markers = cm$recommended_markers,
-                 scratch_markers = input$bl_scratch,
-                 top_markers = unique(c(uploaded_markers[i], setdiff(cm$top_markers, input$bl_scratch))))
+            set_current_markers_safely(markers, fms())
           )
         } else if(!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && !(uploaded_markers[i] %in% rownames(sce()))) {
           not_sce <- c(not_sce, uploaded_markers[i])
@@ -478,6 +473,8 @@ cytosel <- function(...) {
           marker <- c(marker, uploaded_markers[i])
           
           cm <- current_markers()
+          
+          # SMH
           current_markers(
             list(recommended_markers = cm$recommended_markers,
                  scratch_markers = input$bl_scratch,
@@ -516,14 +513,18 @@ cytosel <- function(...) {
       
       if (!is.null(input$markers_to_remove)) {
         remove_marker <- c(input$markers_to_remove)
-        
-        cm <- list(recommended_markers = cm$recommended_markers,
-                   scratch_markers = unique(c(remove_marker, input$bl_scratch)),
-                   top_markers = setdiff(cm$top_markers, remove_marker))
-        
         num_selected(length(cm$top_markers))
-  
-        update_BL(cm, num_selected())
+
+        
+        markers <- list(recommended_markers = cm$recommended_markers,
+                   scratch_markers = unique(c(remove_marker, input$bl_scratch)),
+                   top_markers = setdiff(cm$top_markers, remove_marker))       
+        
+        current_markers(
+          set_current_markers_safely(markers, fms())
+        )
+        
+        update_BL(current_markers(), num_selected())
         
         removeModal()
       } else {
@@ -536,6 +537,7 @@ cytosel <- function(...) {
       
       unique_cell_types <- sort(unique(markers$associated_cell_types))
       n_cell_types <- length(unique_cell_types)
+      set.seed(12345345L)
       palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
       names(palette) <<- unique_cell_types
       
@@ -544,7 +546,11 @@ cytosel <- function(...) {
 
       labels_recommended <- lapply(markers$recommended_markers, 
                            function(x) div(x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
+
+      labels_scratch <- lapply(markers$scratch_markers, 
+                                   function(x) div(x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
       
+            
       output$legend <- renderPlot(cowplot::ggdraw(get_legend(palette)))
             
       output$BL <- renderUI({
@@ -561,7 +567,7 @@ cytosel <- function(...) {
           ),
           add_rank_list(
             text = "Scratch space",
-            labels = markers$scratch_markers,
+            labels = labels_scratch,
             input_id = "bl_scratch",
             class = c("default-sortable", "cytocellbl")
           ),

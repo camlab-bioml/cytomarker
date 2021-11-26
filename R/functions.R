@@ -1,14 +1,11 @@
 
-#' Compute markers
+#' Compute the findMarkers outputs and store
 #' 
-#' @importFrom SingleCellExperiment colData
-#' @importFrom scran findMarkers
-get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
-    
-    fm_first <- NULL
-    marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
-  
-    for(col in columns) {
+#' Note: this used to be part of get_markers but needs
+#' split off after colouring
+compute_fm <- function(sce, columns, pref_assay = "logcounts") {
+
+  fms <- lapply(columns, function(col) {
       n_unique_elements <- length(unique(colData(sce)[[col]]))
       
       if(n_unique_elements == 1) { # need to fix this
@@ -22,53 +19,80 @@ get_markers <- function(sce, columns, panel_size, pref_assay = "logcounts") {
       } else {
         test_type <- ifelse(pref_assay == "counts", "binom", "t")
         fm <- findMarkers(sce, colData(sce)[[col]], test.type = test_type, assay.type = pref_assay)
+      }
+  })
+  
+  names(fms) <- columns
+  
+  fms
+}
+
+
+#' Compute markers
+#' 
+#' @importFrom SingleCellExperiment colData
+#' @importFrom scran findMarkers
+get_markers <- function(fms, panel_size) {
+    
+  columns <- names(fms)
+
+    marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
+  
+    for(col in columns) {
+      fm <- fms[[col]]
+      n <- length(fm)
         
-        n <- length(fm)
-        
-        top_select <- round(2 * panel_size / n)
+      top_select <- round(2 * panel_size / n)
         # all_select <- round(1000 / n)
         
-        recommended <- marker$recommended_markers
-        top <- marker$top_markers
-        scratch <- marker$scratch_markers
+      recommended <- marker$recommended_markers
+      top <- marker$top_markers
+      scratch <- marker$scratch_markers
         
-        for(i in seq_len(n)) {
-          f <- fm[[i]]
-          recommended <- c(top, rownames(f)[seq_len(top_select)])
-          top <- c(top, rownames(f)[seq_len(top_select)])
-        }
-        
-        recommended <- unique(recommended)
-        scratch <- unique(scratch)
-        top <- unique(top)
-        
-        marker <- list(recommended_markers = recommended,
-                       scratch_markers = scratch,
-                       top_markers = top)
-        
-        ## On the first iteration, store the fm results so we can
-        ## work out what markers belong to which cell types
-        if(is.null(fm_first)) {
-          fm_first <<- fm
-        }
+      for(i in seq_len(n)) {
+        f <- fm[[i]]
+        recommended <- c(top, rownames(f)[seq_len(top_select)])
+        top <- c(top, rownames(f)[seq_len(top_select)])
       }
-    }
-    
-    ## Now work out the most discriminative cell types for each marker
-    
-    marker$associated_cell_types <- sapply(marker$top_markers, function(tm) {
-      pvals <- sapply(fm, function(f) {
-        tmp <- f[tm,] # get summary statistics for this gene
         
-        ## return p value if it's a marker, or 1 otherwise
-        ifelse(tmp$summary.logFC < 0, 1, tmp$FDR)  
-        })
-      names(pvals)[which.min(pvals)]
-    })
-    
+      recommended <- unique(recommended)
+      scratch <- unique(scratch)
+      top <- unique(top)
+    }
+    marker <- list(recommended_markers = recommended,
+                     scratch_markers = scratch,
+                     top_markers = top)
     marker
-
 }
+       
+#' Given a list of top markers and the fms, get the associated
+#' cell types
+get_associated_cell_types <- function(markers, fms) {
+  fm <- fms[[1]] # For now, we're only doing this for the first
+  
+  all_markers <- unique(unlist(markers[c('recommended_markers', 'scratch_markers', 'top_markers')]))
+  
+  associated_cell_types <- sapply(all_markers, function(tm) {
+    pvals <- sapply(fm, function(f) {
+      tmp <- f[tm,] # get summary statistics for this gene
+      
+      ## return p value if it's a marker, or 1 otherwise
+      ifelse(tmp$summary.logFC < 0, 1, tmp$FDR)  
+      })
+    names(pvals)[which.min(pvals)]
+  })
+  associated_cell_types
+}
+
+#' Controlled way of setting current markers
+#' Return them in a safe way!
+set_current_markers_safely <- function(markers, fms) {
+  markers$associated_cell_types <- get_associated_cell_types(markers, fms)
+  
+  # print(markers)
+  markers
+}
+
 
 #' Compute the UMAP 
 #' 
@@ -249,4 +273,5 @@ get_legend <- function(palette) {
   legend <- cowplot::get_legend(plt)
   legend
 }
+
 
