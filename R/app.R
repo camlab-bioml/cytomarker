@@ -74,20 +74,35 @@ cytosel <- function(...) {
         tabPanel("Marker selection",
                  icon = icon("list"),
                  div(style = "display:inline-block; horizontal-align:top; width:30%",
-                     autocomplete_input("add_markers", "Add markers", options=c(),
-                                         width = "150px")),
-                 div(style = "display:inline-block; horizontal-align:top; width:65%",
-                     fileInput("uploadMarkers", "Upload markers")),
-                 br(),
-                 div(style = "display:inline-block; horizontal-align:top; width:30%",
+                     autocomplete_input("add_markers", "Add markers", options=c())),
+                 div(style = "display:inline-block; horizontal-align:top; width:60%",
                      actionButton("enter_marker", "Add")),
-                 div(style = "display:inline-block; horizontal-align:top; width:c(30%,30%)",
-                     actionButton("add_to_selected", "Add"),
-                     actionButton("replace_selected", "Replace all selected markers")),
+                 br(),
+                 
+                 # div(style = "display:inline-block; horizontal-align:bottom; width:30%",
+                 #     fileInput("uploadMarkers", "Upload markers")),
+                 # div(style = "display:inline-block; horizontal-align:top; width:c(25%,25%)",
+                 #     actionButton("add_to_selected", "Add uploaded markers"),
+                 #     actionButton("replace_selected", "Replace all selected markers")),
+                 
+                 # fluidRow(column(4, fileInput("uploadMarkers", "Upload markers", width = "100%")),
+                 #          column(3, actionButton("add_to_selected", "Add uploaded markers")),
+                 #          column(3, actionButton("replace_selected", "Replace all selected markers"))),
+                 
+                 
+                 
+                 
+                 splitLayout(cellWidths = c("30%", "25%", "30%"),
+                             fileInput("uploadMarkers", "Upload markers"),
+                             actionButton("add_to_selected", "Add uploaded markers"),
+                             actionButton("replace_selected", "Replace all selected markers")
+                 ),
+                 
+                 
                  hr(),
                  plotOutput("legend", height='80px'),
                  fluidRow(column(12, uiOutput("BL")))
-                 ),
+        ),
         tabPanel("UMAP",
                  icon = icon("globe"),
                  fluidRow(column(6, plotOutput("all_plot", height="600px")),
@@ -109,8 +124,6 @@ cytosel <- function(...) {
                                   width = "190px")),
                  div(style = "display:inline-block; horizontal-align:top; width:75%",
                      actionButton("suggest_gene_removal", "View suggestions")),
-                 # br(),
-                 # textOutput("remove_gene"),
                  br()
                  ),
         tabPanel("Metrics",
@@ -162,7 +175,7 @@ cytosel <- function(...) {
       )
     }
     
-    unique_element_modal <- function(failed = FALSE, n_unique_elements, col) {
+    unique_element_modal <- function(failed = FALSE) {
       modalDialog(
         textOutput("stop"),
         if (failed) {
@@ -328,12 +341,10 @@ cytosel <- function(...) {
         ## Set initial markers:
         column(input$coldata_column)
         
-        columns <- column()
-        
         updateSelectInput(
           session = session,
           inputId = "display_options",
-          choices = c("Marker-marker correlation", columns)
+          choices = c("Marker-marker correlation", column())
         )
         
         scratch_markers_to_keep <- input$bl_scratch
@@ -341,8 +352,26 @@ cytosel <- function(...) {
         incProgress(detail = "Computing markers")
         
         ## Get the markers first time
+        columns <- good_col(sce(), column())
+        
+        for(col in columns$bad$col) {
+          
+          if(columns$bad$n == 1) {
+  
+            showModal(unique_element_modal())
+            output$stop <- renderText({paste("Only one level in column", col)})
+  
+          } else if(columns$bad$n > 100) {
+  
+            showModal(unique_element_modal())
+            output$stop <- renderText({paste("Column", col, "has more than 100 unique elements")})
+            
+          }
+        
+        }
+        
         fms(
-          compute_fm(sce(), columns, pref_assay())
+          compute_fm(sce(), columns$good, pref_assay())
         )
         
         markers <- get_markers(fms(), input$panel_size)
@@ -363,9 +392,14 @@ cytosel <- function(...) {
         req(input$panel_size)
         req(sce())
         
+        column(input$coldata_column)
+        
         incProgress(detail = "Recomputing markers")
+        
+        columns <- good_col(sce(), column())
+        
         fms(
-          compute_fm(sce(), column(), pref_assay())
+          compute_fm(sce(), columns$good, pref_assay())
         )
         # 
         markers <- list(recommended_markers = input$bl_recommended,

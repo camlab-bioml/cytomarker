@@ -1,3 +1,28 @@
+#' Compute the number of unique elements in each column for compute_fm
+good_col <- function(sce, column) {
+  good_or_bad <- list(good = c(), bad = list(colname = c(), n = c()))
+  
+  for(col in column) {
+    n_unique_elements <- length(unique(colData(sce)[[col]]))
+    
+    if(n_unique_elements == 1 || n_unique_elements > 100) {
+      good_or_bad$bad$colname <- c(good_or_bad$bad$colname, col)
+      good_or_bad$bad$n <- c(good_or_bad$bad$n, n_unique_elements)
+      
+      good_or_bad$bad <- list(colname = good_or_bad$bad$colname,
+                              n = good_or_bad$bad$n)
+    } else {
+      good_or_bad$good <- c(good_or_bad$good, col)
+    }
+  }
+  
+  good_or_bad <- list(good = good_or_bad$good,
+                      bad = good_or_bad$bad)
+  
+  print(good_or_bad)
+  
+  good_or_bad
+}
 
 #' Compute the findMarkers outputs and store
 #' 
@@ -6,20 +31,9 @@
 compute_fm <- function(sce, columns, pref_assay = "logcounts") {
 
   fms <- lapply(columns, function(col) {
-      n_unique_elements <- length(unique(colData(sce)[[col]]))
-      
-      if(n_unique_elements == 1) { # need to fix this
-        ## TODO: turn this into UI dialog
-        stop(paste("Only one level in column", col))
-        
-      } else if(n_unique_elements > 100) {
-        ## TODO: turn this into UI dialog
-        stop(paste("Column", col, "has more than 100 unique elements"))
-        
-      } else {
-        test_type <- ifelse(pref_assay == "counts", "binom", "t")
-        fm <- findMarkers(sce, colData(sce)[[col]], test.type = test_type, assay.type = pref_assay)
-      }
+    
+    test_type <- ifelse(pref_assay == "counts", "binom", "t")
+    fm <- findMarkers(sce, colData(sce)[[col]], test.type = test_type, assay.type = pref_assay)
   })
   
   names(fms) <- columns
@@ -33,36 +47,36 @@ compute_fm <- function(sce, columns, pref_assay = "logcounts") {
 #' @importFrom SingleCellExperiment colData
 #' @importFrom scran findMarkers
 get_markers <- function(fms, panel_size) {
-    
+  
   columns <- names(fms)
 
-    marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
-  
-    for(col in columns) {
-      fm <- fms[[col]]
-      n <- length(fm)
-        
-      top_select <- round(2 * panel_size / n)
-        # all_select <- round(1000 / n)
-        
-      recommended <- marker$recommended_markers
-      top <- marker$top_markers
-      scratch <- marker$scratch_markers
-        
-      for(i in seq_len(n)) {
-        f <- fm[[i]]
-        recommended <- c(top, rownames(f)[seq_len(top_select)])
-        top <- c(top, rownames(f)[seq_len(top_select)])
-      }
-        
-      recommended <- unique(recommended)
-      scratch <- unique(scratch)
-      top <- unique(top)
+  marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
+
+  for(col in columns) {
+    fm <- fms[[col]]
+    n <- length(fm)
+      
+    top_select <- round(2 * panel_size / n)
+    # all_select <- round(1000 / n)
+      
+    recommended <- marker$recommended_markers
+    top <- marker$top_markers
+    scratch <- marker$scratch_markers
+      
+    for(i in seq_len(n)) {
+      f <- fm[[i]]
+      recommended <- c(top, rownames(f)[seq_len(top_select)])
+      top <- c(top, rownames(f)[seq_len(top_select)])
     }
-    marker <- list(recommended_markers = recommended,
-                     scratch_markers = scratch,
-                     top_markers = top)
-    marker
+      
+    recommended <- unique(recommended)
+    scratch <- unique(scratch)
+    top <- unique(top)
+  }
+  marker <- list(recommended_markers = recommended,
+                   scratch_markers = scratch,
+                   top_markers = top)
+  marker
 }
        
 #' Given a list of top markers and the fms, get the associated
@@ -78,7 +92,7 @@ get_associated_cell_types <- function(markers, fms) {
       
       ## return p value if it's a marker, or 1 otherwise
       ifelse(tmp$summary.logFC < 0, 1, tmp$FDR)  
-      })
+    })
     names(pvals)[which.min(pvals)]
   })
   associated_cell_types

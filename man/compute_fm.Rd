@@ -4,7 +4,7 @@
 \alias{compute_fm}
 \title{Compute the findMarkers outputs and store}
 \usage{
-compute_fm(sce, columns, pref_assay = "logcounts")
+compute_fm(sce, columns, pref_assay = "logcounts", unique_element_modal)
 }
 \description{
 Note: this used to be part of get_markers but needs
