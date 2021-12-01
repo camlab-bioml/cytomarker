@@ -258,7 +258,7 @@ read_input_scrnaseq <- function(input_path) {
 } 
 
 #' Return the legend of the cell type colours
-#' @importFrom ggplot theme_bw geom_histogram scale_fill_manual guides
+#' @importFrom ggplot2 theme_bw geom_histogram scale_fill_manual guides
 get_legend <- function(palette) {
   ## Draw the ggplot
   df <- tibble(r = runif(length(palette)),

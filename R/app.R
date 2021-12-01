@@ -43,7 +43,7 @@ cytosel <- function(...) {
     
     titlePanel("cytosel"),
     tags$head(
-      includeCSS("www/cytosel.css")
+      includeCSS(system.file("www", "cytosel.css", package="cytosel"))
       # tags$link(rel = "stylesheet", type = "text/css", href = "cytosel.css")
     ),
     sidebarLayout(
