@@ -73,17 +73,27 @@ cytosel <- function(...) {
       mainPanel(tabsetPanel(
         tabPanel("Marker selection",
                  icon = icon("list"),
-                 div(style = "display:inline-block; horizontal-align:top; width:30%",
-                     autocomplete_input("add_markers", "Add markers", options=c(),
-                                         width = "150px")),
-                 div(style = "display:inline-block; horizontal-align:top; width:65%",
-                     fileInput("uploadMarkers", "Upload markers")),
+                 # fluidRow(column(4, autocomplete_input("add_markers", "Manual add markers", options=c(),
+                 #                                       width = "150px")),
+                 #          column(6, div( style = "margin-top: 25px;", actionButton("enter_marker", "Add")))),
                  br(),
-                 div(style = "display:inline-block; horizontal-align:top; width:30%",
-                     actionButton("enter_marker", "Add")),
-                 div(style = "display:inline-block; horizontal-align:top; width:c(30%,30%)",
-                     actionButton("add_to_selected", "Add"),
-                     actionButton("replace_selected", "Replace all selected markers")),
+                 fluidRow(
+                 column(6,
+                 splitLayout(autocomplete_input("add_markers", "Manual add markers", options=c(),
+                                                       width = "150px"),
+                          div( style = "margin-top: 25px;", actionButton("enter_marker", "Add"))))
+                 ),
+                 hr(),
+                 fluidRow(
+                   column(12,
+                     splitLayout(
+                       div( style = "", fileInput("uploadMarkers", "Upload markers")),
+                      div( style = "margin-top: 25px", actionButton("add_to_selected", "Add uploaded")),
+                      div( style = "margin-top: 25px;", actionButton("replace_selected", "Replace selected")),
+                      cellWidths = c(300, 120, 150)
+                     )
+                   )
+                 ),
                  hr(),
                  plotOutput("legend", height='80px'),
                  fluidRow(column(12, uiOutput("BL")))
