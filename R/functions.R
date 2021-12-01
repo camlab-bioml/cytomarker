@@ -264,7 +264,7 @@ get_legend <- function(palette) {
   df <- tibble(r = runif(length(palette)),
                `Cell type` = names(palette))
   
-  #' TODO: Maybe "Cell type" isn't the best name for this
+  # TODO: Maybe "Cell type" isn't the best name for this
   plt <- ggplot(df, aes(x = r, fill = `Cell type`)) + 
     geom_histogram() +
     scale_fill_manual(values = palette) +
