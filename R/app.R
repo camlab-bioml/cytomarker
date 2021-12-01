@@ -73,27 +73,19 @@ cytosel <- function(...) {
       mainPanel(tabsetPanel(
         tabPanel("Marker selection",
                  icon = icon("list"),
-                 # fluidRow(column(4, autocomplete_input("add_markers", "Manual add markers", options=c(),
-                 #                                       width = "150px")),
-                 #          column(6, div( style = "margin-top: 25px;", actionButton("enter_marker", "Add")))),
                  br(),
                  fluidRow(
-                 column(6,
-                 splitLayout(autocomplete_input("add_markers", "Manual add markers", options=c(),
-                                                       width = "150px"),
-                          div( style = "margin-top: 25px;", actionButton("enter_marker", "Add"))))
-                 ),
+                   column(6,
+                          splitLayout(cellWidths = c(150, 150),
+                                      div(style = "", autocomplete_input("add_markers", "Manual add markers", options=c(), width = "100%")),
+                                      div(style = "margin-top: 25px;", actionButton("enter_marker", "Add"))))),
                  hr(),
                  fluidRow(
-                   column(12,
-                     splitLayout(
-                       div( style = "", fileInput("uploadMarkers", "Upload markers")),
-                      div( style = "margin-top: 25px", actionButton("add_to_selected", "Add uploaded")),
-                      div( style = "margin-top: 25px;", actionButton("replace_selected", "Replace selected")),
-                      cellWidths = c(300, 120, 150)
-                     )
-                   )
-                 ),
+                   column(6,
+                          splitLayout(cellWidths = c(300, 120, 140),
+                                      div(style = "", fileInput("uploadMarkers", "Upload markers", width = "100%")),
+                                      div(style = "margin-top: 25px", actionButton("add_to_selected", "Add uploaded", width = "100%")),
+                                      div(style = "margin-top: 25px;", actionButton("replace_selected", "Replace selected", width = "100%"))))),
                  hr(),
                  plotOutput("legend", height='80px'),
                  fluidRow(column(12, uiOutput("BL")))
@@ -119,8 +111,6 @@ cytosel <- function(...) {
                                   width = "190px")),
                  div(style = "display:inline-block; horizontal-align:top; width:75%",
                      actionButton("suggest_gene_removal", "View suggestions")),
-                 # br(),
-                 # textOutput("remove_gene"),
                  br()
                  ),
         tabPanel("Metrics",
