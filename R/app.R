@@ -21,6 +21,8 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 
 #' Define main entrypoint of app
 #' 
+#' @export
+#' 
 #' @import shiny
 #' @importFrom shinyalert useShinyalert shinyalert
 #' @importFrom dqshiny autocomplete_input update_autocomplete_input
