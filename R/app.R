@@ -73,34 +73,6 @@ cytosel <- function(...) {
       mainPanel(tabsetPanel(
         tabPanel("Marker selection",
                  icon = icon("list"),
-<<<<<<< HEAD
-                 div(style = "display:inline-block; horizontal-align:top; width:30%",
-                     autocomplete_input("add_markers", "Add markers", options=c())),
-                 div(style = "display:inline-block; horizontal-align:top; width:60%",
-                     actionButton("enter_marker", "Add")),
-                 br(),
-                 
-                 # div(style = "display:inline-block; horizontal-align:bottom; width:30%",
-                 #     fileInput("uploadMarkers", "Upload markers")),
-                 # div(style = "display:inline-block; horizontal-align:top; width:c(25%,25%)",
-                 #     actionButton("add_to_selected", "Add uploaded markers"),
-                 #     actionButton("replace_selected", "Replace all selected markers")),
-                 
-                 # fluidRow(column(4, fileInput("uploadMarkers", "Upload markers", width = "100%")),
-                 #          column(3, actionButton("add_to_selected", "Add uploaded markers")),
-                 #          column(3, actionButton("replace_selected", "Replace all selected markers"))),
-                 
-                 
-                 
-                 
-                 splitLayout(cellWidths = c("30%", "25%", "30%"),
-                             fileInput("uploadMarkers", "Upload markers"),
-                             actionButton("add_to_selected", "Add uploaded markers"),
-                             actionButton("replace_selected", "Replace all selected markers")
-                 ),
-                 
-                 
-=======
                  br(),
                  fluidRow(
                    column(6,
@@ -114,7 +86,6 @@ cytosel <- function(...) {
                                       div(style = "", fileInput("uploadMarkers", "Upload markers", width = "100%")),
                                       div(style = "margin-top: 25px", actionButton("add_to_selected", "Add uploaded", width = "100%")),
                                       div(style = "margin-top: 25px;", actionButton("replace_selected", "Replace selected", width = "100%"))))),
->>>>>>> kieranui
                  hr(),
                  plotOutput("legend", height='80px'),
                  fluidRow(column(12, uiOutput("BL")))
@@ -191,16 +162,28 @@ cytosel <- function(...) {
       )
     }
     
-    unique_element_modal <- function(failed = FALSE) {
-      modalDialog(
-        textOutput("stop"),
-        if (failed) {
-          div(tags$b("Error", style = "color: red;"))
-        },
-        footer = tagList(
-          modalButton("Cancel")
-        )
-      )
+    unique_element_modal <- function(col) {
+      
+      for(c in seq_len(length(col$colname))) {
+        if(col$n[[c]] == 1) {
+          shinyalert(
+            title = "Error",
+            text = paste("Only one level in column", col$colname[[c]]),
+            type = "error",
+            showConfirmButton = TRUE,
+            confirmButtonCol = "#337AB7"
+          )
+        } else if(col$n[[c]] > 100) {
+          shinyalert(
+            title = "Error",
+            text = paste("Column", col$colname[[c]], "has more than 100 unique elements"),
+            type = "error",
+            showConfirmButton = TRUE,
+            confirmButtonCol = "#337AB7"
+          )
+        }
+      }
+
     }
     
     warning_modal <- function(not_sce) {
@@ -355,7 +338,12 @@ cytosel <- function(...) {
         req(sce())
         
         ## Set initial markers:
-        column(input$coldata_column)
+        scratch_markers_to_keep <- input$bl_scratch
+
+        incProgress(detail = "Computing markers")
+
+        columns <- good_col(sce(), input$coldata_column)
+        column(columns$good)
         
         updateSelectInput(
           session = session,
@@ -363,31 +351,15 @@ cytosel <- function(...) {
           choices = c("Marker-marker correlation", column())
         )
         
-        scratch_markers_to_keep <- input$bl_scratch
-
-        incProgress(detail = "Computing markers")
+        col <- columns$bad
+         
+        if(!is.null(col)) {
+          unique_element_modal(col)
+        } 
         
-        ## Get the markers first time
-        columns <- good_col(sce(), column())
-        
-        for(col in columns$bad$col) {
-          
-          if(columns$bad$n == 1) {
-  
-            showModal(unique_element_modal())
-            output$stop <- renderText({paste("Only one level in column", col)})
-  
-          } else if(columns$bad$n > 100) {
-  
-            showModal(unique_element_modal())
-            output$stop <- renderText({paste("Column", col, "has more than 100 unique elements")})
-            
-          }
-        
-        }
-        
+        ## Get the markers first time          
         fms(
-          compute_fm(sce(), columns$good, pref_assay())
+          compute_fm(sce(), column(), pref_assay())
         )
         
         markers <- get_markers(fms(), input$panel_size)
@@ -397,25 +369,21 @@ cytosel <- function(...) {
         current_markers(set_current_markers_safely(markers, fms()))
         
         num_selected(length(current_markers()$top_markers))
-      
+        
       })
       update_analysis()
     })
     
     observeEvent(input$refresh_analysis, {
       withProgress(message = 'Initializing analysis', value = 0, {
-        req(input$coldata_column)
+        req(column())
         req(input$panel_size)
         req(sce())
         
-        column(input$coldata_column)
-        
         incProgress(detail = "Recomputing markers")
         
-        columns <- good_col(sce(), column())
-        
         fms(
-          compute_fm(sce(), columns$good, pref_assay())
+          compute_fm(sce(), column(), pref_assay())
         )
         # 
         markers <- list(recommended_markers = input$bl_recommended,
@@ -562,7 +530,6 @@ cytosel <- function(...) {
       suggestions <- suggest_genes_to_remove(cmat, input$n_genes)
       
       showModal(suggestion_modal(suggestions = suggestions))
-      # output$remove_gene <- renderText(paste("Suggested markers to remove: ", paste(suggestions, collapse = ', ')))
     })
     
     observeEvent(input$remove_suggested, {
@@ -672,15 +639,12 @@ cytosel <- function(...) {
     })
     
     update_analysis <- function() {
-      column(input$coldata_column)
       
       withProgress(message = 'Processing data', value = 0, {
         markers <- current_markers()
         selected <- num_selected()
         
         update_BL(markers, selected)
-        
-
         
         incProgress(detail = "Computing UMAP")
         
@@ -696,6 +660,7 @@ cytosel <- function(...) {
         }
         
         incProgress(detail = "Drawing heatmap")
+        
         columns <- column()
         if(display() == "Marker-marker correlation") {
           for(col in columns) {

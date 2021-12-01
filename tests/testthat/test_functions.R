@@ -16,6 +16,16 @@ test_that("Seurat object reading", {
 
 context("Marker finding")
 
+test_that("good_col returns valid columns", {
+  sce <- read_input_scrnaseq("test_sce.rds")
+  columns <- good_col(sce, 'col1')
+  
+  expect_is(columns, 'list')
+  expect_equal(names(columns), c("good", "bad"))
+  expect_equal(names(columns$bad), c("colname", "n"))
+  
+})
+
 # test_that("get_markers returns valid input", {
 #   sce <- read_input_scrnaseq("test_sce.rds")
 #   markers <- get_markers(sce, 'col1', 10, 'logcounts')
