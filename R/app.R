@@ -73,6 +73,7 @@ cytosel <- function(...) {
       mainPanel(tabsetPanel(
         tabPanel("Marker selection",
                  icon = icon("list"),
+<<<<<<< HEAD
                  div(style = "display:inline-block; horizontal-align:top; width:30%",
                      autocomplete_input("add_markers", "Add markers", options=c())),
                  div(style = "display:inline-block; horizontal-align:top; width:60%",
@@ -99,6 +100,21 @@ cytosel <- function(...) {
                  ),
                  
                  
+=======
+                 br(),
+                 fluidRow(
+                   column(6,
+                          splitLayout(cellWidths = c(150, 150),
+                                      div(style = "", autocomplete_input("add_markers", "Manual add markers", options=c(), width = "100%")),
+                                      div(style = "margin-top: 25px;", actionButton("enter_marker", "Add"))))),
+                 hr(),
+                 fluidRow(
+                   column(6,
+                          splitLayout(cellWidths = c(300, 120, 140),
+                                      div(style = "", fileInput("uploadMarkers", "Upload markers", width = "100%")),
+                                      div(style = "margin-top: 25px", actionButton("add_to_selected", "Add uploaded", width = "100%")),
+                                      div(style = "margin-top: 25px;", actionButton("replace_selected", "Replace selected", width = "100%"))))),
+>>>>>>> kieranui
                  hr(),
                  plotOutput("legend", height='80px'),
                  fluidRow(column(12, uiOutput("BL")))
