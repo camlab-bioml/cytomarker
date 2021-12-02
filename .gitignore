@@ -2,6 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-R/app.R
-R/functions.R
-R/app.R
+.DS_Store
+data/*
+data-raw/*
+Rplots.pdf
+

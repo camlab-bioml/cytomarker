@@ -31,9 +31,11 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @import ggplot2
 #' @import forcats
 #' @import sortable
+#' @import reactable
 #' @importFrom readr write_lines
 #' @importFrom dplyr desc
 #' @importFrom gridExtra grid.arrange
+#' @importFrom readr read_tsv
 cytosel <- function(...) {
   ui <- fluidPage(
     # Navigation prompt
@@ -127,6 +129,10 @@ cytosel <- function(...) {
                                   width = "150px")),
                  actionButton("enter_gene", "Enter"),
                  DTOutput("alternative_markers")
+                 ),
+        tabPanel("Antibody explorer",
+                 icon = icon("wpexplorer"),
+                   reactableOutput("antibody_table")
                  )
       ))
     )
@@ -247,6 +253,17 @@ cytosel <- function(...) {
       } else {
         showModal(assay_modal(failed = TRUE, input_assays()))
       }
+    })
+    
+    output$antibody_table <- renderReactable({
+      req(current_markers())
+      
+      markers <- current_markers()
+      df_antibody <- dplyr::filter(antibody_info, Symbol %in% markers$top_markers)
+      reactable(df_antibody,
+                searchable = TRUE,
+                filter = TRUE,
+                sortable = TRUE)
     })
     
   
@@ -565,14 +582,16 @@ cytosel <- function(...) {
       palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
       names(palette) <<- unique_cell_types
       
+      # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
+      
       labels_top <- lapply(markers$top_markers, 
-                           function(x) div(x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
+                           function(x) div(map_gene_name_to_antibody_icon(x, antibody_info), x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
 
       labels_recommended <- lapply(markers$recommended_markers, 
-                           function(x) div(x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
+                           function(x) div(map_gene_name_to_antibody_icon(x, antibody_info), x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
 
       labels_scratch <- lapply(markers$scratch_markers, 
-                                   function(x) div(x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
+                                   function(x) div(map_gene_name_to_antibody_icon(x, antibody_info), x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
       
             
       output$legend <- renderPlot(cowplot::ggdraw(get_legend(palette)))
@@ -720,6 +739,9 @@ cytosel <- function(...) {
     )
     
   }
+  
+  antibody_info <- read_tsv(system.file("inst", "abcam_antibodies_gene_symbol_associated.tsv", package="cytosel"))
+  
   shinyApp(ui, server, ...)
 }
 

@@ -31,7 +31,8 @@ Imports:
   scuttle,
   Seurat,
   viridis,
-  gridExtra
+  gridExtra,
+  reactable
 Suggests:
   stringr,
   Seurat,
