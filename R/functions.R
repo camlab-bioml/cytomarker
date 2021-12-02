@@ -256,7 +256,7 @@ round3 <- function(x) format(round(x, 1), nsmall = 3)
 #' 
 #' TODO: accept anndata
 #' 
-read_input_scrnaseq <- function(input_path) {
+read_input_scrnaseq <- function(input_path, invalid_modal) {
   
   obj <- readRDS(input_path)
   
@@ -268,7 +268,7 @@ read_input_scrnaseq <- function(input_path) {
     return(sce)
   } else {
     ## TODO: Throw error: must be SingleCellExperiment or Seurat
-    
+    invalid_modal
   }
 } 
 

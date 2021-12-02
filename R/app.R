@@ -78,62 +78,64 @@ cytosel <- function(...) {
                  br(),
                  fluidRow(
                    column(6,
-                          splitLayout(cellWidths = c(150, 150),
+                          splitLayout(cellWidths = c(180, 150),
                                       div(style = "", autocomplete_input("add_markers", "Manual add markers", options=c(), width = "100%")),
-                                      div(style = "margin-top: 25px;", actionButton("enter_marker", "Add"))))),
+                                      div(style = "margin-top:25px;", actionButton("enter_marker", "Add"))))),
                  hr(),
                  fluidRow(
                    column(6,
                           splitLayout(cellWidths = c(300, 120, 140),
                                       div(style = "", fileInput("uploadMarkers", "Upload markers", width = "100%")),
-                                      div(style = "margin-top: 25px", actionButton("add_to_selected", "Add uploaded", width = "100%")),
-                                      div(style = "margin-top: 25px;", actionButton("replace_selected", "Replace selected", width = "100%"))))),
+                                      div(style = "margin-top:25px", actionButton("add_to_selected", "Add uploaded", width = "100%")),
+                                      div(style = "margin-top:25px;", actionButton("replace_selected", "Replace selected", width = "100%"))))),
                  hr(),
                  plotOutput("legend", height='80px'),
                  fluidRow(column(12, uiOutput("BL")))
-        ),
+                 ),
         tabPanel("UMAP",
                  icon = icon("globe"),
+                 br(),
                  fluidRow(column(6, plotOutput("all_plot", height="600px")),
                           column(6, plotOutput("top_plot", height="600px")))
                  ),
         tabPanel("Heatmap",
                  icon = icon("table"),
-                 selectInput("display_options",
-                             label = "Display heterogeneity expression or gene correlation",
-                             choices = c()),
-                 selectInput("heatmap_expression_norm",
-                             label = "Heatmap expression normalization",
-                             choices = c("Expression", "z-score")),
+                 br(),
+                 splitLayout(cellWidths = c(280, 250),
+                             div(selectInput("display_options", "Display expression or gene correlation",
+                                             choices = c("Marker-marker correlation"), width = "80%")),
+                             div(selectInput("heatmap_expression_norm", "Heatmap expression normalization",
+                                             choices = c("Expression", "z-score"), width = "80%")),
+                             tags$head(tags$style(HTML(".shiny-split-layout > div {overflow: visible;}")))),
                  plotOutput("heatmap"),
                  hr(),
-                 div(style = "display:inline-block; horizontal-align:top; width:20%",
-                     numericInput("n_genes", "Number of genes to remove", 
-                                  value = 10, min = 1,
-                                  width = "190px")),
-                 div(style = "display:inline-block; horizontal-align:top; width:75%",
-                     actionButton("suggest_gene_removal", "View suggestions")),
-                 br()
+                 splitLayout(cellWidths = c(190, 200),
+                             div(numericInput("n_genes", "Number of genes to remove", 
+                                              value = 10, min = 1, width = "50%")),
+                             div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions")))
                  ),
         tabPanel("Metrics",
                  icon = icon("ruler"),
+                 br(),
                  plotOutput("metric_plot")
                  ),
         tabPanel("Alternative markers",
                  icon = icon("exchange-alt"),
-                 div(style = "display:inline-block; horizontal-align:top; width:35%",
-                     autocomplete_input("input_gene", "Input gene", options=c())),
-                 div(style = "display:inline-block; horizontal-align:top; width:60%",
-                     numericInput("number_correlations", "Number of alternative markers", 
-                                  value = 10, min = 1, 
-                                  width = "150px")),
+                 br(),
+                 splitLayout(cellWidths = c(180, 240),
+                             div(autocomplete_input("input_gene", "Input gene", 
+                                                    options=c(), width = "100%")),
+                             div(numericInput("number_correlations", "Number of alternative markers", 
+                                              value = 10, min = 1, width = "35%"))),
                  actionButton("enter_gene", "Enter"),
+                 br(),
                  DTOutput("alternative_markers")
                  ),
         tabPanel("Antibody explorer",
                  icon = icon("wpexplorer"),
                    reactableOutput("antibody_table")
                  )
+        )
       ))
     )
   )
@@ -153,6 +155,16 @@ cytosel <- function(...) {
     # heatmap_expression_norm <- reactiveVal()
     
     fms <- reactiveVal() # Where to store the findMarker outputs
+    
+    invalid_modal <- function() {
+      shinyalert(
+        title = "Error",
+        text = paste("Input must be SingleCellExperiment or Seurat"),
+        type = "error",
+        showConfirmButton = TRUE,
+        confirmButtonCol = "#337AB7"
+      )
+    }
     
     assay_modal <- function(failed = FALSE, assays) {
       modalDialog(
@@ -174,7 +186,7 @@ cytosel <- function(...) {
         if(col$n[[c]] == 1) {
           shinyalert(
             title = "Error",
-            text = paste("Only one level in column", col$colname[[c]]),
+            text = paste("Only one level in column", col$colname[[c]], ". Please select another column."),
             type = "error",
             showConfirmButton = TRUE,
             confirmButtonCol = "#337AB7"
@@ -182,7 +194,7 @@ cytosel <- function(...) {
         } else if(col$n[[c]] > 100) {
           shinyalert(
             title = "Error",
-            text = paste("Column", col$colname[[c]], "has more than 100 unique elements"),
+            text = paste("Column", col$colname[[c]], "has more than 100 unique elements. Please select another column."),
             type = "error",
             showConfirmButton = TRUE,
             confirmButtonCol = "#337AB7"
@@ -222,7 +234,9 @@ cytosel <- function(...) {
     pref_assay <- reactiveVal("logcounts")
     
     observeEvent(input$input_scrnaseq, {
-      sce(read_input_scrnaseq(input$input_scrnaseq$datapath))
+      sce(read_input_scrnaseq(input$input_scrnaseq$datapath, invalid_modal()))
+      
+      
       
       input_assays <- c(names(assays(sce())))
       if("logcounts" %in% input_assays) {
@@ -347,6 +361,8 @@ cytosel <- function(...) {
     })
     
     observeEvent(input$start_analysis, {
+      
+      
       
       withProgress(message = 'Initializing analysis', value = 0, {
         incProgress(detail = "Acquiring data")
