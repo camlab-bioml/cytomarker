@@ -40,6 +40,7 @@ dependencies <- c(
 "Seurat",
 "stringr",
 "gridExtra",
+"reactable"
 )
 BiocManager::install(dependencies)
 remotes::install_github("daqana/dqshiny")
