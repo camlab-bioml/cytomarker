@@ -4,3 +4,7 @@
 .Ruserdata
 R/app.R
 R/functions.R
+.DS_Store
+data/*
+data-raw/*
+Rplots.pdf

@@ -274,4 +274,51 @@ get_legend <- function(palette) {
   legend
 }
 
+#' Map gene symbols to antibody icons depending on
+#' whether the gene is found in the database
+map_gene_name_to_antibody_icon <- function(gene_id, df_antibody) {
+  antibody_info <- get_antibody_info(gene_id, df_antibody)
+  # TODO: fix this
+  # antibody_info <- list()
+  # antibody_info$status <- sample(c("NO_GENE_FOUND", "NO_ANTIBODY_FOUND", "ANTIBODY_FOUND"), 1)
+  
+  if(antibody_info$status == "ANTIBODY_FOUND") {
+    return(icon("check"))
+  } else if(antibody_info$status == "NO_ANTIBODY_FOUND") {
+    return(icon("times"))
+  } else {
+    return(icon("question"))
+  }
+  
+}
+
+#' Get antibody info/status for a particular gene
+get_antibody_info <- function(gene_id, df) {
+
+  
+  df <- df[df$Symbol == gene_id,]
+  
+  if(nrow(df) == 0) {
+    return(
+      list(
+        status = "NO_GENE_FOUND",
+        antibodies = c()
+      )
+    )  
+  } 
+  
+  ## This doesn't actually make sense with current version,
+  ## will almost always return ANTIBODY_FOUND
+  # status <- ifelse(is.na(df$ab_name), "NO_ANTIBODY_FOUND", "ANTIBODY_FOUND")
+  status <- "ANTIBODY_FOUND"
+
+  antibodies <- df$id
+
+  
+  list(
+    status = status,
+    antibodies = antibodies
+  )
+  
+}
 
