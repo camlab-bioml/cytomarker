@@ -18,12 +18,15 @@ context("Marker finding")
 
 test_that("good_col returns valid columns", {
   sce <- read_input_scrnaseq("test_sce.rds")
-  columns <- good_col(sce, 'col1')
+  columns <- good_col(sce, colnames(colData(sce)))
   
   expect_is(columns, 'list')
   expect_equal(names(columns), c("good", "bad"))
   expect_equal(names(columns$bad), c("colname", "n"))
-  
+  expect_equal(length(columns$good), 1)
+  expect_equal(columns$good, "col1")
+  expect_equal(length(columns$bad$colname), length(columns$bad$n))
+  expect_equal(columns$bad$colname, c("orig.ident", "nCount_RNA", "nFeature_RNA", "col2", "ident"))
 })
 
 # test_that("get_markers returns valid input", {

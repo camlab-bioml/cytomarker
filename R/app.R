@@ -70,6 +70,7 @@ cytosel <- function(...) {
         actionButton("refresh_analysis", "Refresh"),
         hr(),
         downloadButton("downloadData", "Save\npanel"),
+        # verbatimTextOutput("text", placeholder = FALSE),
         width = 3
       ),
       mainPanel(tabsetPanel(
@@ -133,7 +134,7 @@ cytosel <- function(...) {
                  ),
         tabPanel("Antibody explorer",
                  icon = icon("wpexplorer"),
-                   reactableOutput("antibody_table")
+                 reactableOutput("antibody_table")
                  )
         )
       ))
@@ -158,7 +159,7 @@ cytosel <- function(...) {
     invalid_modal <- function() {
       shinyalert(
         title = "Error",
-        text = paste("Input must be SingleCellExperiment or Seurat"),
+        text = paste("Input must be a Single Cell Experiment or Seurat object. Please upload a different file."),
         type = "error",
         showConfirmButton = TRUE,
         confirmButtonCol = "#337AB7"
@@ -233,28 +234,37 @@ cytosel <- function(...) {
     pref_assay <- reactiveVal("logcounts")
     
     observeEvent(input$input_scrnaseq, {
-      sce(read_input_scrnaseq(input$input_scrnaseq$datapath, invalid_modal()))
       
+      obj <- readRDS(input$input_scrnaseq$datapath)
       
-      
-      input_assays <- c(names(assays(sce())))
-      if("logcounts" %in% input_assays) {
-        input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
+      if(isTruthy(is(obj, 'SingleCellExperiment')) || isTruthy(is(obj, 'Seurat'))) {
+        
+        sce(read_input_scrnaseq(obj))
+        
+        input_assays <- c(names(assays(sce())))
+        if("logcounts" %in% input_assays) {
+          input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
+        }
+        
+        showModal(assay_modal(assays = input_assays))
+        
+        update_autocomplete_input(session, "add_markers",
+                                  options = rownames(sce()))
+        
+        update_autocomplete_input(session, "input_gene",
+                                  options = rownames(sce()))
+        
+        updateSelectInput(
+          session = session,
+          inputId = "coldata_column",
+          choices = colnames(colData(sce()))
+        )
+        
+      } else {
+        invalid_modal()
+        
+        # output$text <- renderText({"Error: Please upload a Single Cell Experiment or Seurat Object."})
       }
-      
-      showModal(assay_modal(assays = input_assays))
-      
-      update_autocomplete_input(session, "add_markers",
-                                options = rownames(sce()))
-      
-      update_autocomplete_input(session, "input_gene",
-                                options = rownames(sce()))
-      
-      updateSelectInput(
-        session = session,
-        inputId = "coldata_column",
-        choices = colnames(colData(sce()))
-      )
       
     })
     
@@ -373,37 +383,45 @@ cytosel <- function(...) {
         scratch_markers_to_keep <- input$bl_scratch
 
         incProgress(detail = "Computing markers")
-
+          
         columns <- good_col(sce(), input$coldata_column)
         column(columns$good)
-        
-        updateSelectInput(
-          session = session,
-          inputId = "display_options",
-          choices = c("Marker-marker correlation", column())
-        )
-        
         col <- columns$bad
-         
-        if(!is.null(col)) {
+        
+        if(isTruthy(!is.null(column()))) {
+          updateSelectInput(
+            session = session,
+            inputId = "display_options",
+            choices = c("Marker-marker correlation", column())
+          )
+          
+          if(!is.null(col)) {
+            unique_element_modal(col)
+          } 
+          
+          ## Get the markers first time          
+          fms(
+            compute_fm(sce(), column(), pref_assay())
+          )
+          
+          markers <- get_markers(fms(), input$panel_size)
+          markers$scratch_markers <- scratch_markers_to_keep
+          
+          # SMH
+          current_markers(set_current_markers_safely(markers, fms()))
+          
+          num_selected(length(current_markers()$top_markers))
+          
+          update_analysis()
+          
+        } else {
           unique_element_modal(col)
-        } 
-        
-        ## Get the markers first time          
-        fms(
-          compute_fm(sce(), column(), pref_assay())
-        )
-        
-        markers <- get_markers(fms(), input$panel_size)
-        markers$scratch_markers <- scratch_markers_to_keep
-        
-        # SMH
-        current_markers(set_current_markers_safely(markers, fms()))
-        
-        num_selected(length(current_markers()$top_markers))
+          
+          # output$text <- renderText({"Error: Please select another column."})
+        }
         
       })
-      update_analysis()
+      
     })
     
     observeEvent(input$refresh_analysis, {

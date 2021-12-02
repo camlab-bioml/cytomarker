@@ -256,9 +256,7 @@ round3 <- function(x) format(round(x, 1), nsmall = 3)
 #' 
 #' TODO: accept anndata
 #' 
-read_input_scrnaseq <- function(input_path, invalid_modal) {
-  
-  obj <- readRDS(input_path)
+read_input_scrnaseq <- function(obj) {
   
   if(is(obj, 'SingleCellExperiment')) {
     return(obj)
@@ -266,10 +264,7 @@ read_input_scrnaseq <- function(input_path, invalid_modal) {
     ## Convert to SingleCellExperiment
     sce <- Seurat::as.SingleCellExperiment(obj)
     return(sce)
-  } else {
-    ## TODO: Throw error: must be SingleCellExperiment or Seurat
-    invalid_modal
-  }
+  } 
 } 
 
 #' Return the legend of the cell type colours
