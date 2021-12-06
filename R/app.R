@@ -36,6 +36,8 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom dplyr desc
 #' @importFrom gridExtra grid.arrange
 #' @importFrom readr read_tsv
+#' @import htmltools
+#' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_popover
 cytosel <- function(...) {
   ui <- fluidPage(
     # Navigation prompt
@@ -44,6 +46,7 @@ cytosel <- function(...) {
     ),
     
     useShinyalert(),
+    use_bs_popover(),
     
     titlePanel("cytosel"),
     tags$head(
@@ -52,20 +55,43 @@ cytosel <- function(...) {
     ),
     sidebarLayout(
       sidebarPanel(
-        fileInput("input_scrnaseq",
-                  "Input scRNA-seq",
-                  accept = c(".rds")),
+        fileInput("input_scrnaseq", "Input scRNA-seq", accept = c(".rds")) %>%
+          shinyInput_label_embed(
+            shiny_iconlink() %>%
+              bs_embed_popover(content = "Upload scRNAseq data as an .rds file. Gene names should be in Gene Symbol format. 
+                               If a dataset is too large (>1Gb), subsampling of cells is recommended. For some applications, 
+                               filtering for protein coding-only genes may also increase the relevance of the markers suggested by Cytosel.",
+                               placement = "right")
+          ),
         textOutput("selected_assay"),
         br(),
-        selectInput("coldata_column",
-                    "Capture heterogeneity of:",
-                    NULL,
-                    multiple=TRUE),
+        selectInput("coldata_column", "Capture heterogeneity of:", NULL, multiple=TRUE) %>%
+          shinyInput_label_embed(
+            shiny_iconlink() %>%
+              bs_embed_popover(content = paste("Categories of interest must be created before using Cytosel. 
+                      Heterogeneity of multiple categories can be optimized at once if multiple categories are important. 
+                      Options include:", 
+                      "<li>Cell type if there are known cell types that can be annotated.</li>",
+                      "<li>Cluster identity, if using clustering to use as a proxy for cell state / cell type.</li>",
+                      "<li>Condition, if aiming to separate experimental conditions.</li>",
+                      "<li>Timepoint, if aiming to separate distinct timepoints.</li>"),
+                      placement = "right", html = "true")
+          ),
         numericInput("panel_size",
                      "Targeted panel size:",
                      32, min = 1, max = 200,
-                     step = NA, width = NULL),
-        checkboxInput("subsample_for_umap", "Subsample for UMAP", value = TRUE),
+                     step = NA, width = NULL) %>%
+          shinyInput_label_embed(
+            shiny_iconlink() %>%
+              bs_embed_popover(content = "Number of markers permitted while optimizing category separation.",
+                               placement = "right")
+          ),
+        checkboxInput("subsample_for_umap", "Subsample for UMAP", value = TRUE) %>%
+          shinyInput_label_embed(
+            shiny_iconlink() %>%
+              bs_embed_popover(content = "Significantly speeds up the program, especially recommended for larger datasets.",
+                               placement = "right")
+          ),
         actionButton("start_analysis", "Go"),
         actionButton("refresh_analysis", "Refresh"),
         hr(),
@@ -99,6 +125,7 @@ cytosel <- function(...) {
                  fluidRow(column(6, plotOutput("all_plot", height="600px")),
                           column(6, plotOutput("top_plot", height="600px")))
                  ),
+        
         tabPanel("Heatmap",
                  icon = icon("table"),
                  br(),
@@ -137,8 +164,9 @@ cytosel <- function(...) {
                  reactableOutput("antibody_table")
                  )
         )
-      ))
+      )
     )
+  )
   
   # Define server logic required to draw a histogram
   server <- function(input, output, session) {
@@ -262,8 +290,6 @@ cytosel <- function(...) {
         
       } else {
         invalid_modal()
-        
-        # output$text <- renderText({"Error: Please upload a Single Cell Experiment or Seurat Object."})
       }
       
     })
@@ -370,9 +396,7 @@ cytosel <- function(...) {
     })
     
     observeEvent(input$start_analysis, {
-      
-      
-      
+
       withProgress(message = 'Initializing analysis', value = 0, {
         incProgress(detail = "Acquiring data")
         req(input$coldata_column)
@@ -389,6 +413,7 @@ cytosel <- function(...) {
         col <- columns$bad
         
         if(isTruthy(!is.null(column()))) {
+
           updateSelectInput(
             session = session,
             inputId = "display_options",
@@ -416,8 +441,6 @@ cytosel <- function(...) {
           
         } else {
           unique_element_modal(col)
-          
-          # output$text <- renderText({"Error: Please select another column."})
         }
         
       })
@@ -757,7 +780,7 @@ cytosel <- function(...) {
         dev.off()
         
         pdf(path_heatmap, onefile = TRUE)
-        draw(heatmap())
+        ComplexHeatmap::draw(heatmap())
         dev.off()
         
         pdf(path_metric, onefile = TRUE)
@@ -766,7 +789,7 @@ cytosel <- function(...) {
         
         fs <- c(path_marker_selection, path_umap, path_heatmap, path_metric)
         
-        zip(zipfile = fname, files = fs) # zip function not working
+        zip(zipfile = fname, files = fs, Sys.setenv(R_CMDZIP = 'C:/Rtools/bin/zip')) # zip function not working
       },
       contentType = "application/zip"
     )

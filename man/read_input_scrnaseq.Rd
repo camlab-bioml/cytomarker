@@ -7,7 +7,7 @@ from compressed RDS file. Accepts either:
 (1) SingleCellExperiment
 (2) Seurat object (converted to SingleCellExperiment)}
 \usage{
-read_input_scrnaseq(input_path)
+read_input_scrnaseq(obj)
 }
 \description{
 TODO: accept anndata

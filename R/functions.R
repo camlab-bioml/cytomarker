@@ -1,5 +1,6 @@
 #' Compute the number of unique elements in each column for compute_fm
 good_col <- function(sce, column) {
+  
   good_or_bad <- list(good = c(), 
                       bad = list(colname = c(), n = c()))
   
@@ -19,8 +20,6 @@ good_col <- function(sce, column) {
   
   good_or_bad <- list(good = good_or_bad$good,
                       bad = good_or_bad$bad)
-  
-  # print(good_or_bad)
   
   good_or_bad
 }
