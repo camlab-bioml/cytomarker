@@ -77,10 +77,7 @@ cytosel <- function(...) {
                       "<li>Timepoint, if aiming to separate distinct timepoints.</li>"),
                       placement = "right", html = "true")
           ),
-        numericInput("panel_size",
-                     "Targeted panel size:",
-                     32, min = 1, max = 200,
-                     step = NA, width = NULL) %>%
+        numericInput("panel_size", "Targeted panel size:", 32, min = 1, max = 200, step = NA, width = NULL) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
               bs_embed_popover(content = "Number of markers permitted while optimizing category separation.",
@@ -113,7 +110,7 @@ cytosel <- function(...) {
                    column(6,
                           splitLayout(cellWidths = c(300, 120, 140),
                                       div(style = "", fileInput("uploadMarkers", "Upload markers", width = "100%")),
-                                      div(style = "margin-top:25px", actionButton("add_to_selected", "Add uploaded", width = "100%")),
+                                      div(style = "margin-top:25px;", actionButton("add_to_selected", "Add uploaded", width = "100%")),
                                       div(style = "margin-top:25px;", actionButton("replace_selected", "Replace selected", width = "100%"))))),
                  hr(),
                  plotOutput("legend", height='80px'),
@@ -125,7 +122,6 @@ cytosel <- function(...) {
                  fluidRow(column(6, plotOutput("all_plot", height="600px")),
                           column(6, plotOutput("top_plot", height="600px")))
                  ),
-        
         tabPanel("Heatmap",
                  icon = icon("table"),
                  br(),
@@ -199,6 +195,8 @@ cytosel <- function(...) {
         selectInput("assay",
                     "Choose which assay to load",
                     assays),
+        helpText("Recommended assay type is logcounts, as otherwise panel selection 
+                 will be skewed towards high abundance transcripts rather than heterogeneously expressed transcripts."),
         if (failed) {
           div(tags$b("Error", style = "color: red;"))
         },
