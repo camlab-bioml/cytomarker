@@ -7,9 +7,13 @@
   padding-bottom: 0px !important;
 }
 
-.popover{
+.popover {
    min-width:120px;
    width:100%;
    max-width:500px;
    overflow-wrap:break-word;
+}
+
+.shiny-split-layout > div {
+   overflow: visible;
 }
