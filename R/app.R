@@ -187,6 +187,7 @@ cytosel <- function(...) {
                              div(numericInput("number_correlations", "Number of alternative markers", value = 10, min = 1, width = "35%"))),
                  actionButton("enter_gene", "Enter"),
                  br(),
+                 br(),
                  DTOutput("alternative_markers")
                  ),
         tabPanel("Antibody explorer",
