@@ -331,3 +331,23 @@ get_antibody_info <- function(gene_id, df) {
   
 }
 
+#' Compute alternative markers
+compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlations) {
+  x <- as.matrix(assay(sce, pref_assay))[,sample(ncol(sce), min(5000, ncol(sce)))]
+  
+  y <- x[gene_to_replace, ]
+  
+  yo <- x[rownames(x) != gene_to_replace,]
+  
+  correlations <- cor(t(yo), y)
+  
+  alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
+  alternatives <- alternatives[!is.na(alternatives$Correlation),]
+  alternatives <- alternatives[order(-(alternatives$Correlation)),]
+  alternatives <- alternatives[1:n_correlations,]
+  rownames(alternatives) <- NULL
+  
+  alternatives
+  
+}
+

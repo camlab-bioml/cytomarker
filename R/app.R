@@ -38,7 +38,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom readr read_tsv
 #' @import htmltools
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_popover
-#' @importFrom shinyjs useShinyjs hidden toggle
+#' @importFrom shinyjs useShinyjs hidden toggle show
 cytosel <- function(...) {
   ui <- fluidPage(
     # Navigation prompt
@@ -114,7 +114,29 @@ cytosel <- function(...) {
                                       div(style = "margin-top:25px;", actionButton("add_to_selected", "Add uploaded", width = "100%")),
                                       div(style = "margin-top:25px;", actionButton("replace_selected", "Replace selected", width = "100%"))))),
                  hr(),
+                 hidden(div(id = "marker_display",
+                   tags$span(shiny_iconlink() %>%
+                     bs_embed_popover(content = paste("Markers are currently selected based on differential expression from one cluster against all other clusters.",
+                                                      "<br></br>",
+                                                      "Colour denotes which category has significantly upregulated expression of the given marker, 
+                                                      as a heuristic aid for deciding which markers will need a direct replacement if removed.",
+                                                      "<br></br>",
+                                                      "A checkmark means that there is an Abcam antibody available for this target. The Antibody Explorer tab allows you to explore the options available from Abcam for each target."),
+                                      placement = "top", html = TRUE)
+                 ))),
                  plotOutput("legend", height='80px'),
+                 hidden(div(id = "marker_visualization",
+                   tags$span(shiny_iconlink() %>%
+                     bs_embed_popover(content = paste("<em>Recommended markers:</em> This marker list is optimized to capture heterogeneity of the scRNAseq data as best as possible based on the panel size. 
+                                                      It cannot be edited and serves as a reminder of the recommended markers while the user is organizing their panel.",
+                                                      "<br></br>",
+                                                      "<em>Selected markers:</em> This marker list is initially the same as in the <em>Recommended markers</em>, but it is editable. 
+                                                      When the program is refreshed, it will rerun using these markers.",
+                                                      "<br></br>",
+                                                      "<em>Scratch space:</em> A place to keep markers that are under consideration, but that won't be used in a particular rerun of the program. 
+                                                      Intended as a workspace."),
+                                      placement = "top", html = TRUE)
+                 ))),
                  fluidRow(column(12, uiOutput("BL")))
                  ),
         tabPanel("UMAP",
@@ -130,7 +152,7 @@ cytosel <- function(...) {
                  icon = icon("table"),
                  br(),
                  splitLayout(cellWidths = c(320, 280),
-                             div(selectInput("display_options", "Display expression or gene correlation", choices = c("Marker-marker correlation"), width = "88%") %>%
+                             div(selectInput("display_options", "Display expression or gene correlation", choices = c("Marker-marker correlation"), width = "86%") %>%
                                  shinyInput_label_embed(
                                    shiny_iconlink() %>%
                                      bs_embed_popover(content = paste("<em>Expression</em> displays the heatmap of each selected marker's expression across the categories. 
@@ -144,7 +166,7 @@ cytosel <- function(...) {
                                    )),
                              hidden(
                                div(id = "norm",
-                                   selectInput("heatmap_expression_norm", "Heatmap expression normalization", choices = c("Expression", "z-score"), width = "90%") %>%
+                                   selectInput("heatmap_expression_norm", "Heatmap expression normalization", choices = c("Expression", "z-score"), width = "89%") %>%
                                      shinyInput_label_embed(
                                        shiny_iconlink() %>%
                                          bs_embed_popover(content = "To properly visualize the expression of markers with lower transcript abundance, scaling by Z score is recommended.",
@@ -158,7 +180,12 @@ cytosel <- function(...) {
                  splitLayout(cellWidths = c(190, 200),
                              div(numericInput("n_genes", "Number of genes to remove", 
                                               value = 10, min = 1, width = "50%")),
-                             div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions")))
+                             div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions"),
+                                 tags$span(shiny_iconlink() %>%
+                                             bs_embed_popover(content = "Select genes to remove based on correlation heatmap. 
+                                                              Suggestions will be ordered by correlation score.",
+                                                              placement = "right"))
+                                 ))
                  ),
         tabPanel("Metrics",
                  icon = icon("ruler"),
@@ -677,6 +704,7 @@ cytosel <- function(...) {
     
     observeEvent(input$enter_gene, { # Computes alternative markers
       req(input$input_gene)
+      req(input$number_correlations)
       req(sce())
       
       if(input$input_gene %in% rownames(sce())) {
@@ -687,24 +715,11 @@ cytosel <- function(...) {
           incProgress(6, detail = "Computing alternatives")
           
           # Make this sampling dependent on the input sample argument
-          x <- as.matrix(assay(sce(), pref_assay())[,sample(ncol(sce()), min(5000, ncol(sce())))])
+          replacements(
+            compute_alternatives(gene_to_replace(), sce(), pref_assay(), input$number_correlations)
+          )
           
-          y <- x[gene_to_replace(), ]
-          
-          yo <- x[rownames(x) != gene_to_replace(),]
-          
-          correlations <- cor(t(yo), y)
-          
-          alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
-          alternatives <- alternatives[!is.na(alternatives$Correlation),]
-          alternatives <- alternatives[order(-(alternatives$Correlation)),]
-          alternatives <- alternatives[1:input$number_correlations,]
-          rownames(alternatives) <- NULL
-          
-          output$alternative_markers <- renderDT(alternatives, server = TRUE)
-          replacements(alternatives)
-          print(replacements)
-          
+          output$alternative_markers <- renderDT(replacements(), server = TRUE)
         })
         
       }
@@ -758,6 +773,7 @@ cytosel <- function(...) {
       
             
       output$legend <- renderPlot(cowplot::ggdraw(get_legend(palette)))
+      shinyjs::show(id = "marker_visualization")
             
       output$BL <- renderUI({
         bucket_list(
@@ -785,6 +801,7 @@ cytosel <- function(...) {
           )
         )
       })
+      shinyjs::show(id = "marker_display")
     }
     
     update_analysis <- function() {
