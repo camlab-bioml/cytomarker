@@ -177,29 +177,27 @@ cytosel <- function(...) {
                             ),
                  plotOutput("heatmap"),
                  hr(),
+                 tags$span(shiny_iconlink() %>%
+                             bs_embed_popover(content = "Select genes to remove based on correlation heatmap. 
+                                              Suggestions will be ordered by correlation score.",
+                                              placement = "top")),
                  splitLayout(cellWidths = c(190, 200),
                              div(numericInput("n_genes", "Number of genes to remove", 
                                               value = 10, min = 1, width = "50%")),
-                             div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions"),
-                                 tags$span(shiny_iconlink() %>%
-                                             bs_embed_popover(content = "Select genes to remove based on correlation heatmap. 
-                                                              Suggestions will be ordered by correlation score.",
-                                                              placement = "right"))
-                                 ))
+                             div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions")))
                  ),
         tabPanel("Metrics",
                  icon = icon("ruler"),
                  br(),
-                 helpText(span("These metrics are based on training a classifier on the reduced set to predict category. 
+                 helpText("These metrics are based on training a classifier on the reduced set to predict category. 
                           Overall score is balanced accuracy of this classifier, 
                           while the individual scores are the positive predictive value (PPV) for each cell type."),
-                          br(),
-                          br(),
-                          span("Balanced accuracy = Sum of recall for each category / number of categories."),
-                          br("Recall = TP / (TP + FN)"),
-                          br(),
-                          span("PPV = TP / TP + FP. It is important to be aware that not all categories were created equal, 
-                          and this metric is generally going to be poorer for smaller categories (i.e.: categories with fewer cells).")),
+                 tags$span(shiny_iconlink() %>%
+                             bs_embed_popover(content = paste("Balanced accuracy = Sum of recall for each category / number of categories.",
+                                                              "<br>Recall = TP / (TP + FN)</br>",
+                                                              "<br>PPV = TP / TP + FP. It is important to be aware that not all categories were created equal, 
+                                                              and this metric is generally going to be poorer for smaller categories (i.e.: categories with fewer cells).</br>"),
+                                              placement = "right", html = TRUE)),
                  textOutput("cells_per_category"),
                  plotOutput("metric_plot")
                  ),
@@ -231,8 +229,7 @@ cytosel <- function(...) {
   
   # Define server logic required to draw a histogram
   server <- function(input, output, session) {
-    use_bs_popover()
-    
+
     plots <- reactiveValues(all_plot = NULL, top_plot = NULL, metric_plot = NULL)
     
     umap_top <- reactiveVal()
@@ -319,6 +316,14 @@ cytosel <- function(...) {
           actionButton("remove_suggested", "Move selected markers to scratch")
         )
       )
+    }
+    
+    dne_modal <- function(dne) {
+      shinyalert(title = "Error", 
+                 text = paste("Marker ", dne, " does not exist in the dataset."), 
+                 type = "error", 
+                 showConfirmButton = TRUE,
+                 confirmButtonCol = "#337AB7")
     }
     
     sce <- reactiveVal()
@@ -588,11 +593,14 @@ cytosel <- function(...) {
         current_markers(
           set_current_markers_safely(markers, fms())
         )
-      }
-      
-      num_selected(length(current_markers()$top_markers))
         
-      update_BL(current_markers(), num_selected())
+        num_selected(length(current_markers()$top_markers))
+        
+        update_BL(current_markers(), num_selected())
+        
+      } else {
+        dne_modal(dne = input$add_markers)
+      }
     })
   
     observeEvent(input$add_to_selected, {
@@ -733,7 +741,6 @@ cytosel <- function(...) {
         n <- c(input$alternative_markers_rows_selected)
         
         replacements <- replacements()[n,]$Gene
-        print(replacements)
         
         cm <- current_markers()
         markers <- list(recommended_markers = cm$recommended_markers,
