@@ -215,7 +215,9 @@ cytosel <- function(...) {
                  DTOutput("alternative_markers"),
                  hidden(
                    div(id = "send", actionButton("send_markers", "Send markers to selection panel"))
-                 )
+                 ),
+                 br(),
+                 verbatimTextOutput("add_success")
                  ),
         tabPanel("Antibody explorer",
                  icon = icon("wpexplorer"),
@@ -320,7 +322,7 @@ cytosel <- function(...) {
     
     dne_modal <- function(dne) {
       shinyalert(title = "Error", 
-                 text = paste("Marker ", dne, " does not exist in the dataset."), 
+                 text = paste("Marker ", paste(dne), " does not exist in the dataset."), 
                  type = "error", 
                  showConfirmButton = TRUE,
                  confirmButtonCol = "#337AB7")
@@ -598,7 +600,7 @@ cytosel <- function(...) {
         
         update_BL(current_markers(), num_selected())
         
-      } else {
+      } else if(!(input$add_markers %in% rownames(sce()))) {
         dne_modal(dne = input$add_markers)
       }
     })
@@ -711,11 +713,10 @@ cytosel <- function(...) {
     replacements <- reactiveVal()
     
     observeEvent(input$enter_gene, { # Computes alternative markers
-      req(input$input_gene)
       req(input$number_correlations)
       req(sce())
       
-      if(input$input_gene %in% rownames(sce())) {
+      if(!is.null(input$input_gene) && stringr::str_length(input$input_gene) > 1 && (input$input_gene %in% rownames(sce()))) {
         
         withProgress(message = 'Processing data', value = 0, {
           gene_to_replace(input$input_gene)
@@ -730,33 +731,36 @@ cytosel <- function(...) {
           output$alternative_markers <- renderDT(replacements(), server = TRUE)
         })
         
+      } else if(!(input$input_gene %in% rownames(sce()))) {
+        dne_modal(dne = input$input_gene)
       }
     })
     
-    observeEvent(input$alternative_markers_rows_selected, {
-      n <- c()
-      toggle(id = "send", condition = !is.null(input$alternative_markers_rows_selected))
+    observe({
+      toggle(id = "send", condition = !is.null(input$alternative_markers_rows_selected) && !is.null(input$input_gene))
+    })
       
-      observeEvent(input$send_markers, {
-        n <- c(input$alternative_markers_rows_selected)
-        
-        replacements <- replacements()[n,]$Gene
-        
-        cm <- current_markers()
-        markers <- list(recommended_markers = cm$recommended_markers,
-                        scratch_markers = input$bl_scratch,
-                        top_markers = unique(c(replacements, setdiff(cm$top_markers, input$bl_scratch))))
-        
-        # SMH
-        current_markers(
-          set_current_markers_safely(markers, fms())
-        )
-        
-        num_selected(length(current_markers()$top_markers))
+    observeEvent(input$send_markers, {
+      n <- c(input$alternative_markers_rows_selected)
+      
+      replacements <- replacements()[n,]$Gene
+      
+      cm <- current_markers()
+      markers <- list(recommended_markers = cm$recommended_markers,
+                      scratch_markers = input$bl_scratch,
+                      top_markers = unique(c(replacements, setdiff(cm$top_markers, input$bl_scratch))))
+      
+      # SMH
+      current_markers(
+        set_current_markers_safely(markers, fms())
+      )
+      
+      num_selected(length(current_markers()$top_markers))
 
-        update_BL(current_markers(), num_selected())
-        
-      })
+      update_BL(current_markers(), num_selected())
+      
+      output$add_success <- renderText({"Marker(s) added successfully."})
+      
     })
     
     update_BL <- function(markers, selected) {
