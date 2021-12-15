@@ -773,7 +773,6 @@ cytosel <- function(...) {
       
             
       output$legend <- renderPlot(cowplot::ggdraw(get_legend(palette)))
-      shinyjs::show(id = "marker_visualization")
             
       output$BL <- renderUI({
         bucket_list(
@@ -801,7 +800,7 @@ cytosel <- function(...) {
           )
         )
       })
-      shinyjs::show(id = "marker_display")
+      
     }
     
     update_analysis <- function() {
@@ -850,6 +849,9 @@ cytosel <- function(...) {
         incProgress(detail = "Computing panel score")
         scores <- get_scores(sce(), column(), markers$top_markers, pref_assay())
         metrics(scores)
+        
+        shinyjs::show(id = "marker_visualization")
+        shinyjs::show(id = "marker_display")
         
       })
     }
