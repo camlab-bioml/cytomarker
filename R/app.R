@@ -95,7 +95,6 @@ cytosel <- function(...) {
         actionButton("refresh_analysis", "Refresh"),
         hr(),
         downloadButton("downloadData", "Save\npanel"),
-        # verbatimTextOutput("text", placeholder = FALSE),
         width = 3
       ),
       mainPanel(tabsetPanel(
@@ -188,10 +187,14 @@ cytosel <- function(...) {
                  actionButton("enter_gene", "Enter"),
                  br(),
                  br(),
-                 DTOutput("alternative_markers")
+                 DTOutput("alternative_markers"),
+                 hidden(
+                   div(id = "send", actionButton("send_markers", "Send markers to selection panel"))
+                 )
                  ),
         tabPanel("Antibody explorer",
                  icon = icon("wpexplorer"),
+                 br(),
                  reactableOutput("antibody_table")
                  )
         )
@@ -213,7 +216,6 @@ cytosel <- function(...) {
     heatmap <- reactiveVal()
     current_markers <- reactiveVal()
     num_selected <- reactiveVal()
-    # heatmap_expression_norm <- reactiveVal()
     
     fms <- reactiveVal() # Where to store the findMarker outputs
     
@@ -670,6 +672,71 @@ cytosel <- function(...) {
 
     })
     
+    gene_to_replace <- reactiveVal()
+    replacements <- reactiveVal()
+    
+    observeEvent(input$enter_gene, { # Computes alternative markers
+      req(input$input_gene)
+      req(sce())
+      
+      if(input$input_gene %in% rownames(sce())) {
+        
+        withProgress(message = 'Processing data', value = 0, {
+          gene_to_replace(input$input_gene)
+          
+          incProgress(6, detail = "Computing alternatives")
+          
+          # Make this sampling dependent on the input sample argument
+          x <- as.matrix(assay(sce(), pref_assay())[,sample(ncol(sce()), min(5000, ncol(sce())))])
+          
+          y <- x[gene_to_replace(), ]
+          
+          yo <- x[rownames(x) != gene_to_replace(),]
+          
+          correlations <- cor(t(yo), y)
+          
+          alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
+          alternatives <- alternatives[!is.na(alternatives$Correlation),]
+          alternatives <- alternatives[order(-(alternatives$Correlation)),]
+          alternatives <- alternatives[1:input$number_correlations,]
+          rownames(alternatives) <- NULL
+          
+          output$alternative_markers <- renderDT(alternatives, server = TRUE)
+          replacements(alternatives)
+          print(replacements)
+          
+        })
+        
+      }
+    })
+    
+    observeEvent(input$alternative_markers_rows_selected, {
+      n <- c()
+      toggle(id = "send", condition = !is.null(input$alternative_markers_rows_selected))
+      
+      observeEvent(input$send_markers, {
+        n <- c(input$alternative_markers_rows_selected)
+        
+        replacements <- replacements()[n,]$Gene
+        print(replacements)
+        
+        cm <- current_markers()
+        markers <- list(recommended_markers = cm$recommended_markers,
+                        scratch_markers = input$bl_scratch,
+                        top_markers = unique(c(replacements, setdiff(cm$top_markers, input$bl_scratch))))
+        
+        # SMH
+        current_markers(
+          set_current_markers_safely(markers, fms())
+        )
+        
+        num_selected(length(current_markers()$top_markers))
+
+        update_BL(current_markers(), num_selected())
+        
+      })
+    })
+    
     update_BL <- function(markers, selected) {
       
       unique_cell_types <- sort(unique(markers$associated_cell_types))
@@ -719,39 +786,6 @@ cytosel <- function(...) {
         )
       })
     }
-    
-    gene_to_replace <- reactiveVal()
-    
-    observeEvent(input$enter_gene, {
-      req(input$input_gene)
-      req(sce())
-      
-      if(input$input_gene %in% rownames(sce())) {
-        
-        withProgress(message = 'Processing data', value = 0, {
-          gene_to_replace(input$input_gene)
-          
-          incProgress(6, detail = "Computing alternatives")
-        
-          # Make this sampling dependent on the input sample argument
-          x <- as.matrix(assay(sce(), pref_assay())[,sample(ncol(sce()), min(5000, ncol(sce())))])
-          
-          y <- x[gene_to_replace(), ]
-          
-          yo <- x[rownames(x) != gene_to_replace(),]
-          
-          correlations <- cor(t(yo), y)
-          
-          alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
-          alternatives <- alternatives[!is.na(alternatives$Correlation),]
-          alternatives <- alternatives[order(-(alternatives$Correlation)),]
-          alternatives <- alternatives[1:input$number_correlations,]
-          rownames(alternatives) <- NULL
-          
-          output$alternative_markers <- renderDT(alternatives, server = FALSE)
-        })
-      }
-    })
     
     update_analysis <- function() {
       
