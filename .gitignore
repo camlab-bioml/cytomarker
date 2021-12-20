@@ -7,3 +7,5 @@ data/*
 data-raw/*
 Rplots.pdf
 
+*.pdf
+*.txt

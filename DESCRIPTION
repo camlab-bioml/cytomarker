@@ -32,14 +32,19 @@ Imports:
   Seurat,
   viridis,
   gridExtra,
-  reactable
+  reactable,
+  ComplexHeatmap,
+  bsplus,
+  htmltools,
+  shinyjs
 Suggests:
   stringr,
   Seurat,
   caret,
   yardstick,
   scuttle,
-  ComplexHeatmap
+  ComplexHeatmap,
+  testthat
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

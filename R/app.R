@@ -39,6 +39,8 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @import htmltools
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_popover
 #' @importFrom shinyjs useShinyjs hidden toggle show
+#' @importFrom grDevices dev.off pdf
+#' @import zip
 cytosel <- function(...) {
   ui <- fluidPage(
     # Navigation prompt
@@ -438,7 +440,6 @@ cytosel <- function(...) {
       }
 
       ComplexHeatmap::draw(heatmap())
-
     })
     
     output$metric_plot <- renderPlot({
@@ -872,7 +873,7 @@ cytosel <- function(...) {
         paste("Cytosel-", Sys.Date(), ".zip", sep = "")
       },
       content = function(fname) {
-        
+ 
         path_marker_selection <- paste0("markers-", Sys.Date(), ".txt")
         path_umap <- paste0("UMAP-", Sys.Date(), ".pdf")
         path_heatmap <- paste0("heatmap-", Sys.Date(), ".pdf")
@@ -895,12 +896,18 @@ cytosel <- function(...) {
         
         fs <- c(path_marker_selection, path_umap, path_heatmap, path_metric)
         
-        zip(zipfile = fname, files = fs, Sys.setenv(R_CMDZIP = 'C:/Rtools/bin/zip')) # zip function not working
+        zip::zip(zipfile = fname, files = fs) 
+        if(file.exists(paste0(fname, ".zip"))) {file.rename(paste0(fname, ".zip"), fname)}
+        
       },
       contentType = "application/zip"
     )
     
   }
+  
+  
+    
+  
   
   antibody_info <- read_tsv(system.file("inst", "abcam_antibodies_gene_symbol_associated.tsv", package="cytosel"))
   
