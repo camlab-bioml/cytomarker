@@ -905,10 +905,6 @@ cytosel <- function(...) {
     
   }
   
-  
-    
-  
-  
   antibody_info <- read_tsv(system.file("inst", "abcam_antibodies_gene_symbol_associated.tsv", package="cytosel"))
   
   shinyApp(ui, server, ...)
