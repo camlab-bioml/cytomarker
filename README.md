@@ -20,10 +20,7 @@ dependencies <- c(
 "SingleCellExperiment",
 "tibble",
 "caret",
-"yardstick",
 "naivebayes",
-"ComplexHeatmap",
-"viridis",
 "dplyr",
 "shiny",
 "sortable",
@@ -38,11 +35,12 @@ dependencies <- c(
 "SummarizedExperiment",
 "scuttle",
 "Seurat",
-"stringr",
-"gridExtra",
+"viridis",
 "reactable",
+"ComplexHeatmap",
 "bsplus",
-"shinyjs"
+"shinyjs",
+"zip"
 )
 BiocManager::install(dependencies)
 remotes::install_github("daqana/dqshiny")
