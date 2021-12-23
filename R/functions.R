@@ -1,4 +1,5 @@
-#' Compute the number of unique elements in each column for compute_fm
+#' Split columns into usable (good) and unusable (bad) categories
+#' to be passed on to compute_fm
 good_col <- function(sce, column) {
   
   good_or_bad <- list(good = c(), 

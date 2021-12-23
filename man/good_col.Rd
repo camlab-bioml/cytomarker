@@ -2,10 +2,12 @@
 % Please edit documentation in R/functions.R
 \name{good_col}
 \alias{good_col}
-\title{Compute the number of unique elements in each column for compute_fm}
+\title{Split columns into usable (good) and unusable (bad) categories
+to be passed on to compute_fm}
 \usage{
 good_col(sce, column)
 }
 \description{
-Compute the number of unique elements in each column for compute_fm
+Split columns into usable (good) and unusable (bad) categories
+to be passed on to compute_fm
 }

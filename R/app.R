@@ -13,11 +13,7 @@ cell_type_colors <- c("#ED90A4", "#EC929A", "#E99590", "#E69787", "#E39A7D", "#D
 ## Global colour palette for cell types
 palette <- NULL
 
-# source("functions.R")
-
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
-
-# Define UI for application that draws a histogram
 
 #' Define main entrypoint of app
 #' 
@@ -48,15 +44,18 @@ cytosel <- function(...) {
       tags$script(HTML("window.onbeforeunload = function() {return 'Your changes will be lost!';};"))
     ),
     
+    # Use packages
     useShinyalert(),
     use_bs_popover(),
     useShinyjs(),
     
+    # Title
     titlePanel("cytosel"),
     tags$head(
       includeCSS(system.file("www", "cytosel.css", package="cytosel"))
-      # tags$link(rel = "stylesheet", type = "text/css", href = "cytosel.css")
     ),
+    
+    # Side panel
     sidebarLayout(
       sidebarPanel(
         fileInput("input_scrnaseq", "Input scRNA-seq", accept = c(".rds")) %>%
@@ -99,18 +98,19 @@ cytosel <- function(...) {
         downloadButton("downloadData", "Save\npanel"),
         width = 3
       ),
+      
+      # Tabs
       mainPanel(tabsetPanel(
+        
         tabPanel("Marker selection",
                  icon = icon("list"),
                  br(),
-                 fluidRow(
-                   column(6,
+                 fluidRow(column(6,
                           splitLayout(cellWidths = c(180, 150),
                                       div(style = "", autocomplete_input("add_markers", "Manual add markers", options=c(), width = "100%")),
                                       div(style = "margin-top:25px;", actionButton("enter_marker", "Add"))))),
                  hr(),
-                 fluidRow(
-                   column(6,
+                 fluidRow(column(6,
                           splitLayout(cellWidths = c(300, 120, 140),
                                       div(style = "", fileInput("uploadMarkers", "Upload markers", width = "100%")),
                                       div(style = "margin-top:25px;", actionButton("add_to_selected", "Add uploaded", width = "100%")),
@@ -124,8 +124,7 @@ cytosel <- function(...) {
                                                       as a heuristic aid for deciding which markers will need a direct replacement if removed.",
                                                       "<br></br>",
                                                       "A checkmark means that there is an Abcam antibody available for this target. The Antibody Explorer tab allows you to explore the options available from Abcam for each target."),
-                                      placement = "top", html = TRUE)
-                 ))),
+                                      placement = "top", html = TRUE)))),
                  plotOutput("legend", height='80px'),
                  hidden(div(id = "marker_visualization",
                    tags$span(shiny_iconlink() %>%
@@ -137,46 +136,39 @@ cytosel <- function(...) {
                                                       "<br></br>",
                                                       "<em>Scratch space:</em> A place to keep markers that are under consideration, but that won't be used in a particular rerun of the program. 
                                                       Intended as a workspace."),
-                                      placement = "top", html = TRUE)
-                 ))),
+                                      placement = "top", html = TRUE)))),
                  fluidRow(column(12, uiOutput("BL")))
-                 ),
+          ),
+        
         tabPanel("UMAP",
                  icon = icon("globe"),
                  br(),
                  helpText("UMAP is a dimension reduction technique used for visualization of complex data. 
                           Comparison between the UMAP for all genes versus the UMAP for selected panel allows 
-                          an intuitive sense of how well cluster separation is recapitulated with the smaller number of genes selected.",),
+                          an intuitive sense of how well cluster separation is recapitulated with the smaller number of genes selected."),
                  fluidRow(column(6, plotOutput("all_plot", height="600px")),
                           column(6, plotOutput("top_plot", height="600px")))
-                 ),
+          ),
+        
         tabPanel("Heatmap",
                  icon = icon("table"),
                  br(),
                  splitLayout(cellWidths = c(320, 280),
                              div(selectInput("display_options", "Display expression or gene correlation", choices = c("Marker-marker correlation"), width = "86%") %>%
-                                 shinyInput_label_embed(
-                                   shiny_iconlink() %>%
-                                     bs_embed_popover(content = paste("<em>Expression</em> displays the heatmap of each selected marker's expression across the categories. 
-                                                      If you are building a panel for a protein-based assay from an RNAseq dataset, 
-                                                      it is advisable to choose markers that are clearly positive/negative between categories, 
-                                                      as distinguishing clusters based on scale of expression may not translate as well between RNA to protein.",
-                                                      "<br> </br>",
-                                                      "<em>Marker-marker correlation</em> displays a heatmap of all correlation between all selected markers. 
-                                                      It is intended for the user to decide which markers are redundant, if trimming the panel is desirable or certain markers are not viable."),
-                                                      placement = "right", html = "true")
-                                   )),
-                             hidden(
-                               div(id = "norm",
-                                   selectInput("heatmap_expression_norm", "Heatmap expression normalization", choices = c("Expression", "z-score"), width = "89%") %>%
-                                     shinyInput_label_embed(
-                                       shiny_iconlink() %>%
-                                         bs_embed_popover(content = "To properly visualize the expression of markers with lower transcript abundance, scaling by Z score is recommended.",
-                                                          placement = "right")
-                                     ))
-                             )
-                             
-                            ),
+                                 shinyInput_label_embed(shiny_iconlink() %>%
+                                                          bs_embed_popover(content = paste("<em>Expression</em> displays the heatmap of each selected marker's expression across the categories. 
+                                                                           If you are building a panel for a protein-based assay from an RNAseq dataset, 
+                                                                           it is advisable to choose markers that are clearly positive/negative between categories, 
+                                                                           as distinguishing clusters based on scale of expression may not translate as well between RNA to protein.",
+                                                                           "<br> </br>",
+                                                                           "<em>Marker-marker correlation</em> displays a heatmap of all correlation between all selected markers. 
+                                                                           It is intended for the user to decide which markers are redundant, if trimming the panel is desirable or certain markers are not viable."),
+                                                                           placement = "right", html = "true"))),
+                             hidden(div(id = "norm",
+                                        selectInput("heatmap_expression_norm", "Heatmap expression normalization", choices = c("Expression", "z-score"), width = "89%") %>%
+                                          shinyInput_label_embed(shiny_iconlink() %>%
+                                                                   bs_embed_popover(content = "To properly visualize the expression of markers with lower transcript abundance, scaling by Z score is recommended.",
+                                                                                    placement = "right"))))),
                  plotOutput("heatmap"),
                  hr(),
                  tags$span(shiny_iconlink() %>%
@@ -187,7 +179,8 @@ cytosel <- function(...) {
                              div(numericInput("n_genes", "Number of genes to remove", 
                                               value = 10, min = 1, width = "50%")),
                              div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions")))
-                 ),
+          ),
+
         tabPanel("Metrics",
                  icon = icon("ruler"),
                  br(),
@@ -202,7 +195,8 @@ cytosel <- function(...) {
                                               placement = "right", html = TRUE)),
                  textOutput("cells_per_category"),
                  plotOutput("metric_plot")
-                 ),
+          ),
+
         tabPanel("Alternative markers",
                  icon = icon("exchange-alt"),
                  br(),
@@ -215,39 +209,51 @@ cytosel <- function(...) {
                  br(),
                  br(),
                  DTOutput("alternative_markers"),
-                 hidden(
-                   div(id = "send", actionButton("send_markers", "Send markers to selection panel"))
-                 ),
+                 hidden(div(id = "send", actionButton("send_markers", "Send markers to selection panel"))),
                  br(),
                  verbatimTextOutput("add_success")
-                 ),
+          ),
+
         tabPanel("Antibody explorer",
                  icon = icon("wpexplorer"),
                  br(),
                  reactableOutput("antibody_table")
-                 )
+          )
         )
       )
     )
   )
   
-  # Define server logic required to draw a histogram
   server <- function(input, output, session) {
-
-    plots <- reactiveValues(all_plot = NULL, top_plot = NULL, metric_plot = NULL)
+    
+    ### REACTIVE VARIABLES ###
+    plots <- reactiveValues(all_plot = NULL, top_plot = NULL, metric_plot = NULL) # Save plots for download
     
     umap_top <- reactiveVal()
     umap_all <- reactiveVal()
-    column <- reactiveVal()
+    heatmap <- reactiveVal()
     metrics <- reactiveVal()
     
-    heatmap <- reactiveVal()
-    current_markers <- reactiveVal()
-    num_selected <- reactiveVal()
+    sce <- reactiveVal()
+    
+    input_assays <- reactiveVal()
+    pref_assay <- reactiveVal("logcounts")
+    
+    column <- reactiveVal()
     
     fms <- reactiveVal() # Where to store the findMarker outputs
+    current_markers <- reactiveVal() # Currently selected markers
+    num_selected <- reactiveVal()
     
-    invalid_modal <- function() {
+    display <- reactiveVal() # Display options for heatmap
+    
+    replacements <- reactiveVal() # Where to store table of alternative markers
+    
+    suggestions <- reactiveVal() # Where to store suggested markers to remove
+    
+    
+    ### MODALS ###
+    invalid_modal <- function() { # Input file is invalid
       shinyalert(
         title = "Error",
         text = paste("Input must be a Single Cell Experiment or Seurat object. Please upload a different file."),
@@ -257,7 +263,7 @@ cytosel <- function(...) {
       )
     }
     
-    assay_modal <- function(failed = FALSE, assays) {
+    assay_modal <- function(failed = FALSE, assays) { # Assay selection
       modalDialog(
         selectInput("assay",
                     "Choose which assay to load",
@@ -273,7 +279,7 @@ cytosel <- function(...) {
       )
     }
     
-    unique_element_modal <- function(col) {
+    unique_element_modal <- function(col) { # Column is invalid
       
       for(c in seq_len(length(col$colname))) {
         if(col$n[[c]] == 1) {
@@ -297,7 +303,7 @@ cytosel <- function(...) {
 
     }
     
-    warning_modal <- function(not_sce) {
+    warning_modal <- function(not_sce) { # Uploaded marker is not in SCE
       shinyalert(title = "Warning", 
                  text = paste(paste(not_sce, collapse = ", "), " are not in SCE."), 
                  type = "warning", 
@@ -305,7 +311,7 @@ cytosel <- function(...) {
                  confirmButtonCol = "#337AB7")
     }
     
-    suggestion_modal <- function(failed = FALSE, suggestions) {
+    suggestion_modal <- function(failed = FALSE, suggestions) { # Marker removal suggestion
       modalDialog(
         selectInput("markers_to_remove",
                     "Select markers to remove",
@@ -322,7 +328,7 @@ cytosel <- function(...) {
       )
     }
     
-    dne_modal <- function(dne) {
+    dne_modal <- function(dne) { # Input marker is not in the dataset
       shinyalert(title = "Error", 
                  text = paste("Marker ", paste(dne), " does not exist in the dataset."), 
                  type = "error", 
@@ -330,10 +336,8 @@ cytosel <- function(...) {
                  confirmButtonCol = "#337AB7")
     }
     
-    sce <- reactiveVal()
-    input_assays <- reactiveVal()
-    pref_assay <- reactiveVal("logcounts")
-    
+
+    ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       
       obj <- readRDS(input$input_scrnaseq$datapath)
@@ -367,6 +371,8 @@ cytosel <- function(...) {
       
     })
     
+    
+    ### SELECT ASSAY TYPE ###
     observeEvent(input$assay_select, {
       if (!is.null(input$assay)) {
         pref_assay(input$assay)
@@ -377,6 +383,8 @@ cytosel <- function(...) {
       }
     })
     
+    
+    ### ANTIBODY EXPLORER ###
     output$antibody_table <- renderReactable({
       req(current_markers())
       
@@ -388,17 +396,18 @@ cytosel <- function(...) {
                 sortable = TRUE)
     })
     
-  
+    
+    ### PLOTS ###
     output$all_plot <- renderPlot({
       req(umap_all)
       req(column)
-  
+      
       columns <- column()
-  
+      
       if (is.null(umap_all())) {
         return(NULL)
       }
-  
+      
       plts <- list()
       for(col in columns) {
         plts[[col]] <- ggplot(umap_all(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
@@ -438,7 +447,7 @@ cytosel <- function(...) {
       if (is.null(heatmap())) {
         return(NULL)
       }
-
+      
       ComplexHeatmap::draw(heatmap())
     })
     
@@ -453,20 +462,22 @@ cytosel <- function(...) {
       plts <- list()
       for(column in columns) {
         m <- mm[[column]]
-      
+        
         m$what <- fct_reorder(m$what, desc(m$score))
         m$what <- fct_relevel(m$what, "Overall")
         
         plts[[column]] <- ggplot(m, aes(y = fct_rev(what), x = score)) +
-                      geom_boxplot(fill = 'grey90') +
-                      labs(x = "Score",
-                           y = "Source")
+          geom_boxplot(fill = 'grey90') +
+          labs(x = "Score",
+               y = "Source")
       }
       plots$metric_plot <- cowplot::plot_grid(plotlist = plts, ncol=1, labels = columns)
       
       plots$metric_plot
     })
     
+    
+    ### ANALYSIS ###
     observeEvent(input$start_analysis, {
 
       withProgress(message = 'Initializing analysis', value = 0, {
@@ -544,43 +555,8 @@ cytosel <- function(...) {
       update_analysis()
     })
     
-    display <- reactiveVal()
     
-    observeEvent(input$display_options, {
-      display(input$display_options)
-      
-      toggle(id = "norm", condition = display() != "Marker-marker correlation")
-      
-      ## What to do when heatmap selection is made
-      req(sce())
-      
-      columns <- column()
-        
-      observeEvent(input$heatmap_expression_norm, {
-        
-        if(display() == "Marker-marker correlation") {
-          
-          for(col in columns) {
-            heatmap(
-              create_heatmap(sce(), current_markers(), col, display(), "Expression", pref_assay())
-            )
-          }
-        } else {
-          
-          for(col in columns) {
-            if(col == display()) {
-              heatmap(
-                create_heatmap(sce(), current_markers(), display(), display(), input$heatmap_expression_norm, pref_assay())
-              )
-              break
-            }
-          }
-        }
-      
-      })
-      
-    })
-    
+    ### ADD MARKERS ###
     observeEvent(input$enter_marker, {
       
       if(!is.null(input$add_markers) && stringr::str_length(input$add_markers) > 1 && (input$add_markers %in% rownames(sce()))) {
@@ -672,8 +648,45 @@ cytosel <- function(...) {
       update_BL(current_markers(), num_selected())
     })
     
-    suggestions <- reactiveVal()
     
+    ### HEATMAP DISPLAY ###
+    observeEvent(input$display_options, {
+      display(input$display_options)
+      
+      toggle(id = "norm", condition = display() != "Marker-marker correlation")
+      
+      ## What to do when heatmap selection is made
+      req(sce())
+      
+      columns <- column()
+      
+      observeEvent(input$heatmap_expression_norm, {
+        
+        if(display() == "Marker-marker correlation") {
+          
+          for(col in columns) {
+            heatmap(
+              create_heatmap(sce(), current_markers(), col, display(), "Expression", pref_assay())
+            )
+          }
+        } else {
+          
+          for(col in columns) {
+            if(col == display()) {
+              heatmap(
+                create_heatmap(sce(), current_markers(), display(), display(), input$heatmap_expression_norm, pref_assay())
+              )
+              break
+            }
+          }
+        }
+        
+      })
+      
+    })
+    
+    
+    ### REMOVE MARKERS ###
     observeEvent(input$suggest_gene_removal, {
       req(input$n_genes)
       
@@ -710,9 +723,8 @@ cytosel <- function(...) {
 
     })
     
-    gene_to_replace <- reactiveVal()
-    replacements <- reactiveVal()
     
+    ### ALTERNATIVE MARKERS ###
     observeEvent(input$enter_gene, { # Computes alternative markers
       req(input$number_correlations)
       req(sce())
@@ -720,13 +732,11 @@ cytosel <- function(...) {
       if(!is.null(input$input_gene) && stringr::str_length(input$input_gene) > 1 && (input$input_gene %in% rownames(sce()))) {
         
         withProgress(message = 'Processing data', value = 0, {
-          gene_to_replace(input$input_gene)
-          
           incProgress(6, detail = "Computing alternatives")
           
           # Make this sampling dependent on the input sample argument
           replacements(
-            compute_alternatives(gene_to_replace(), sce(), pref_assay(), input$number_correlations)
+            compute_alternatives(input$input_gene, sce(), pref_assay(), input$number_correlations)
           )
           
           output$alternative_markers <- renderDT(replacements(), server = TRUE)
@@ -737,9 +747,7 @@ cytosel <- function(...) {
       }
     })
     
-    observe({
-      toggle(id = "send", condition = !is.null(input$alternative_markers_rows_selected) && !is.null(input$input_gene))
-    })
+    observe({toggle(id = "send", condition = !is.null(input$alternative_markers_rows_selected) && !is.null(input$input_gene))})
       
     observeEvent(input$send_markers, {
       n <- c(input$alternative_markers_rows_selected)
@@ -764,6 +772,8 @@ cytosel <- function(...) {
       
     })
     
+    
+    ### UPDATE SELECTED MARKERS ###
     update_BL <- function(markers, selected) {
       
       unique_cell_types <- sort(unique(markers$associated_cell_types))
@@ -815,6 +825,8 @@ cytosel <- function(...) {
       
     }
     
+    
+    ### UPDATE ANALYSIS ###
     update_analysis <- function() {
       
       withProgress(message = 'Processing data', value = 0, {
@@ -868,6 +880,8 @@ cytosel <- function(...) {
       })
     }
     
+    
+    ### SAVE PANEL ###
     output$downloadData <- downloadHandler(
       filename = function() {
         paste("Cytosel-", Sys.Date(), ".zip", sep = "")
