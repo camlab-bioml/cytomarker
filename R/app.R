@@ -1,4 +1,4 @@
-utils::globalVariables(c("Cell type", "Symbol", "r", "score", "what"))
+utils::globalVariables(c("Cell type", "Symbol", "r", "score", "what"), "cytosel")
 
 
 ggplot2::theme_set(cowplot::theme_cowplot())
@@ -33,7 +33,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom readr write_lines read_tsv
 #' @importFrom dplyr desc
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_popover
-#' @importFrom shinyjs useShinyjs hidden toggle show
+#' @importFrom shinyjs useShinyjs hidden toggle
 #' @importFrom grDevices dev.off pdf
 #' @importFrom zip zip
 #' @importFrom ComplexHeatmap Heatmap draw
@@ -880,8 +880,8 @@ cytosel <- function(...) {
         metrics(scores)
         
         # Show help text popover
-        show(id = "marker_visualization")
-        show(id = "marker_display")
+        shinyjs::show(id = "marker_visualization")
+        shinyjs::show(id = "marker_display")
         
       })
     }
