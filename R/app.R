@@ -556,8 +556,8 @@ cytosel <- function(...) {
     })
     
     
-    ### ADD MARKERS ###
-    observeEvent(input$enter_marker, {
+    ### MARKER SELECTION ###
+    observeEvent(input$enter_marker, { # Manually add markers
       
       if(!is.null(input$add_markers) && stringr::str_length(input$add_markers) > 1 && (input$add_markers %in% rownames(sce()))) {
         ## Need to update markers:
@@ -582,7 +582,7 @@ cytosel <- function(...) {
       }
     })
   
-    observeEvent(input$add_to_selected, {
+    observeEvent(input$add_to_selected, { # Add uploaded markers
       req(input$uploadMarkers)
       
       uploaded_markers <- readLines(input$uploadMarkers$datapath)
@@ -615,7 +615,7 @@ cytosel <- function(...) {
       update_BL(current_markers(), num_selected())
     })
     
-    observeEvent(input$replace_selected, {
+    observeEvent(input$replace_selected, { # Replace selected markers by uploaded markers
       req(input$uploadMarkers)
       
       uploaded_markers <- readLines(input$uploadMarkers$datapath)
@@ -662,14 +662,14 @@ cytosel <- function(...) {
       
       observeEvent(input$heatmap_expression_norm, {
         
-        if(display() == "Marker-marker correlation") {
+        if(display() == "Marker-marker correlation") { # Display heatmap for gene correlation
           
           for(col in columns) {
             heatmap(
               create_heatmap(sce(), current_markers(), col, display(), "Expression", pref_assay())
             )
           }
-        } else {
+        } else { # Display heatmap for gene expression in a specific column
           
           for(col in columns) {
             if(col == display()) {
@@ -687,7 +687,7 @@ cytosel <- function(...) {
     
     
     ### REMOVE MARKERS ###
-    observeEvent(input$suggest_gene_removal, {
+    observeEvent(input$suggest_gene_removal, { # Generate suggested markers to remove
       req(input$n_genes)
       
       expression <- as.matrix(assay(sce(), pref_assay())[current_markers()$top_markers,])
@@ -698,7 +698,7 @@ cytosel <- function(...) {
       showModal(suggestion_modal(suggestions = suggestions))
     })
     
-    observeEvent(input$remove_suggested, {
+    observeEvent(input$remove_suggested, { # Remove suggested markers
       cm <- current_markers()
       
       if (!is.null(input$markers_to_remove)) {
@@ -725,7 +725,7 @@ cytosel <- function(...) {
     
     
     ### ALTERNATIVE MARKERS ###
-    observeEvent(input$enter_gene, { # Computes alternative markers
+    observeEvent(input$enter_gene, { # Compute alternative markers
       req(input$number_correlations)
       req(sce())
       
@@ -749,7 +749,7 @@ cytosel <- function(...) {
     
     observe({toggle(id = "send", condition = !is.null(input$alternative_markers_rows_selected) && !is.null(input$input_gene))})
       
-    observeEvent(input$send_markers, {
+    observeEvent(input$send_markers, { # Send alternative markers to selected markers panel
       n <- c(input$alternative_markers_rows_selected)
       
       replacements <- replacements()[n,]$Gene
