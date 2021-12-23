@@ -36,7 +36,8 @@ Imports:
   ComplexHeatmap,
   bsplus,
   htmltools,
-  shinyjs
+  shinyjs,
+  zip
 Suggests:
   stringr,
   Seurat,
@@ -44,6 +45,9 @@ Suggests:
   yardstick,
   scuttle,
   ComplexHeatmap,
+  htmltools,
+  shinyjs,
+  bsplus,
   testthat
 Encoding: UTF-8
 LazyData: true

@@ -873,6 +873,9 @@ cytosel <- function(...) {
         paste("Cytosel-", Sys.Date(), ".zip", sep = "")
       },
       content = function(fname) {
+        dir <- getwd()
+        tmpdir <- tempdir()
+        setwd(tempdir())
  
         path_marker_selection <- paste0("markers-", Sys.Date(), ".txt")
         path_umap <- paste0("UMAP-", Sys.Date(), ".pdf")
@@ -899,6 +902,7 @@ cytosel <- function(...) {
         zip::zip(zipfile = fname, files = fs) 
         if(file.exists(paste0(fname, ".zip"))) {file.rename(paste0(fname, ".zip"), fname)}
         
+        setwd(dir)
       },
       contentType = "application/zip"
     )

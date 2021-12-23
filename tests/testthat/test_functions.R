@@ -2,14 +2,16 @@
 context("Data reading")
 
 test_that("SingleCellExperiment object reading", {
-  sce <- read_input_scrnaseq("test_sce.rds")
-  
+  obj <- readRDS("~/Github/cytosel/tests/testthat/test_sce.rds")
+  sce <- read_input_scrnaseq(obj)
+
   expect_is(sce, 'SingleCellExperiment')
 })
 
 test_that("Seurat object reading", {
-  seu <- read_input_scrnaseq("test_seu.rds")
-  
+  obj <- readRDS("~/Github/cytosel/tests/testthat/test_seu.rds")
+  seu <- read_input_scrnaseq(obj)
+
   ## Seurat objects are converted to SingleCellExperiments by read_input_scrnaseq
   expect_is(seu, 'SingleCellExperiment')
 })
@@ -17,9 +19,10 @@ test_that("Seurat object reading", {
 context("Marker finding")
 
 test_that("good_col returns valid columns", {
-  sce <- read_input_scrnaseq("test_sce.rds")
+  obj <- readRDS("~/Github/cytosel/tests/testthat/test_sce.rds")
+  sce <- read_input_scrnaseq(obj)
   columns <- good_col(sce, colnames(colData(sce)))
-  
+
   expect_is(columns, 'list')
   expect_equal(names(columns), c("good", "bad"))
   expect_equal(names(columns$bad), c("colname", "n"))
@@ -30,21 +33,23 @@ test_that("good_col returns valid columns", {
 })
 
 # test_that("get_markers returns valid input", {
-#   sce <- read_input_scrnaseq("test_sce.rds")
+#   obj <- readRDS("~/Github/cytosel/tests/testthat/test_sce.rds")
+#   sce <- read_input_scrnaseq(obj)
 #   markers <- get_markers(sce, 'col1', 10, 'logcounts')
-#   
+# 
 #   expect_is(markers, 'list')
 #   expect_equal(names(markers), c("recommended_markers", "scratch_markers", "top_markers"))
 #   expect_gt(length(markers$recommended_markers), 0)
 #   expect_gt(length(markers$top_markers), 0)
 # })
-
-
-test_that("get_markers errors for non unique values", {
-  sce <- read_input_scrnaseq("test_sce.rds")
-  
-  expect_error(get_markers(sce, 'col2', 10, 'logcounts'))
-})
+# 
+# 
+# test_that("get_markers errors for non unique values", {
+#   obj <- readRDS("~/Github/cytosel/tests/testthat/test_sce.rds")
+#   sce <- read_input_scrnaseq(obj)
+#   
+#   expect_error(get_markers(sce, 'col2', 10, 'logcounts'))
+# })
 
 # 
 # context("Plotting")
