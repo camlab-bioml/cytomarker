@@ -7,6 +7,12 @@ cell types}
 \usage{
 get_associated_cell_types(markers, fms)
 }
+\arguments{
+\item{markers}{A list storing three lists of markers:
+recommended_markers, scratch_markers, and top_markers}
+
+\item{fms}{Stored findMarkers outputs}
+}
 \description{
 Given a list of top markers and the fms, get the associated
 cell types

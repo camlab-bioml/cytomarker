@@ -6,6 +6,13 @@
 \usage{
 compute_fm(sce, columns, pref_assay = "logcounts")
 }
+\arguments{
+\item{sce}{A SingleCellExperiment object}
+
+\item{columns}{A vector storing columns}
+
+\item{pref_assay}{Assay loaded, default is 'logcounts'}
+}
 \description{
 Note: this used to be part of get_markers but needs
 split off after colouring

@@ -7,6 +7,12 @@ Return them in a safe way!}
 \usage{
 set_current_markers_safely(markers, fms)
 }
+\arguments{
+\item{markers}{A list storing three lists of markers:
+recommended_markers, scratch_markers, and top_markers}
+
+\item{fms}{Stored findMarkers outputs}
+}
 \description{
 Controlled way of setting current markers
 Return them in a safe way!

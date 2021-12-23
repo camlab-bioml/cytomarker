@@ -6,6 +6,9 @@
 \usage{
 cytosel(...)
 }
+\arguments{
+\item{...}{Additional arguments}
+}
 \description{
 Define main entrypoint of app
 }

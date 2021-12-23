@@ -7,9 +7,9 @@
 suggest_genes_to_remove(cmat, n_genes = 10)
 }
 \arguments{
-\item{cmat}{An correlation matrix of \emph{the full expression}  calculated as
-expression <- as.matrix(assay(sce, pref_assay)\link{markers$top_markers,})
-cmat <- cor(t(expression))}
+\item{cmat}{A correlation matrix of \emph{the full expression} calculated as
+\code{expression <- as.matrix(assay(sce, pref_assay)[markers$top_markers,])}
+\code{cmat <- cor(t(expression))}}
 
 \item{n_genes}{Number of genes to suggest to remove}
 }

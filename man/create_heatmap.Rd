@@ -13,6 +13,20 @@ create_heatmap(
   pref_assay = "logcounts"
 )
 }
+\arguments{
+\item{sce}{A SingleCellExperiment object}
+
+\item{markers}{A list storing three lists of markers:
+recommended_markers, scratch_markers, and top_markers}
+
+\item{column}{A vector storing a column}
+
+\item{display}{A vector storing selected heatmap display option}
+
+\item{normalization}{A vector holding either 'Expression' or 'z-score'}
+
+\item{pref_assay}{Assay loaded, default is 'logcounts'}
+}
 \description{
 Make the expression and correlation heatmaps
 }

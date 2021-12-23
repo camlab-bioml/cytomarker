@@ -6,6 +6,11 @@
 \usage{
 get_markers(fms, panel_size)
 }
+\arguments{
+\item{fms}{Stored findMarkers outputs}
+
+\item{panel_size}{Targeted number of markers in selected panel}
+}
 \description{
 Compute markers
 }

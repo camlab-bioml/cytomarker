@@ -9,6 +9,14 @@ from compressed RDS file. Accepts either:
 \usage{
 read_input_scrnaseq(obj)
 }
+\arguments{
+\item{obj}{An R object storing metadata in a .rds file
+
+TODO: accept anndata}
+}
 \description{
-TODO: accept anndata
+Read the input single-cell RNA-seq dataset
+from compressed RDS file. Accepts either:
+(1) SingleCellExperiment
+(2) Seurat object (converted to SingleCellExperiment)
 }

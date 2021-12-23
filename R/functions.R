@@ -1,11 +1,14 @@
 #' Split columns into usable (good) and unusable (bad) categories
 #' to be passed on to compute_fm
-good_col <- function(sce, column) {
+#' 
+#' @param sce A SingleCellExperiment object
+#' @param columns A vector storing columns
+good_col <- function(sce, columns) {
   
   good_or_bad <- list(good = c(), 
                       bad = list(colname = c(), n = c()))
   
-  for(col in column) {
+  for(col in columns) {
     n_unique_elements <- length(unique(colData(sce)[[col]]))
     
     if(n_unique_elements == 1 || n_unique_elements > 100) {
@@ -29,6 +32,13 @@ good_col <- function(sce, column) {
 #' 
 #' Note: this used to be part of get_markers but needs
 #' split off after colouring
+#' 
+#' @param sce A SingleCellExperiment object
+#' @param columns A vector storing columns
+#' @param pref_assay Assay loaded, default is 'logcounts'
+#' 
+#' @importFrom SingleCellExperiment colData
+#' @importFrom scran findMarkers
 compute_fm <- function(sce, columns, pref_assay = "logcounts") {
 
   fms <- lapply(columns, function(col) {
@@ -45,8 +55,8 @@ compute_fm <- function(sce, columns, pref_assay = "logcounts") {
 
 #' Compute markers
 #' 
-#' @importFrom SingleCellExperiment colData
-#' @importFrom scran findMarkers
+#' @param fms Stored findMarkers outputs
+#' @param panel_size Targeted number of markers in selected panel
 get_markers <- function(fms, panel_size) {
   
   columns <- names(fms)
@@ -82,6 +92,10 @@ get_markers <- function(fms, panel_size) {
        
 #' Given a list of top markers and the fms, get the associated
 #' cell types
+#' 
+#' @param markers A list storing three lists of markers: 
+#' recommended_markers, scratch_markers, and top_markers
+#' @param fms Stored findMarkers outputs
 get_associated_cell_types <- function(markers, fms) {
   fm <- fms[[1]] # For now, we're only doing this for the first
   
@@ -101,15 +115,22 @@ get_associated_cell_types <- function(markers, fms) {
 
 #' Controlled way of setting current markers
 #' Return them in a safe way!
+#' 
+#' @param markers A list storing three lists of markers: 
+#' recommended_markers, scratch_markers, and top_markers
+#' @param fms Stored findMarkers outputs
 set_current_markers_safely <- function(markers, fms) {
   markers$associated_cell_types <- get_associated_cell_types(markers, fms)
-  
-  # print(markers)
+
   markers
 }
 
 
 #' Compute the UMAP 
+#'
+#' @param sce A SingleCellExperiment object
+#' @param columns A vector storing columns
+#' @param pref_assay Assay loaded, default is 'logcounts'
 #' 
 #' @importFrom scater runUMAP
 #' @importFrom tibble tibble
@@ -130,6 +151,14 @@ get_umap <- function(sce, columns, pref_assay = "logcounts") {
   df
 }
 
+#' Compute the metric scores
+#' 
+#' @param sce A SingleCellExperiment object
+#' @param columns A vector storing columns
+#' @param mrkrs A list storing three lists of markers: 
+#' recommended_markers, scratch_markers, and top_markers
+#' @param max_cells Maximum number of cells
+#' @param pref_assay Assay loaded, default is 'logcounts'
 get_scores <- function(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
   
   max_cells <- min(ncol(sce), max_cells)
@@ -144,6 +173,14 @@ get_scores <- function(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logc
   scores
 }
 
+#' Compute the metric scores for a specific column
+#' 
+#' @param sce_tr A SingleCellExperiment object
+#' @param column A vector storing a column
+#' @param mrkrs A list storing three lists of markers: 
+#' recommended_markers, scratch_markers, and top_markers
+#' @param max_cells Maximum number of cells
+#' @param pref_assay Assay loaded, default is 'logcounts'
 get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
   
   x <- t(as.matrix(assay(sce_tr, pref_assay)))
@@ -152,10 +189,14 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_
   cell_types <- sort(unique(colData(sce_tr)[[column]]))
   
   train_nb(x,y, cell_types)
-  
 }
 
 #' Train a Naive bayes classifier
+#' 
+#' @param x A matrix calculated as `x <- t(as.matrix(assay(sce_tr)[[column]]))`
+#' @param y A factor calculated as `y <- factor(colData(sce_tr)[[column]])`
+#' @param cell_types A sorted vector with unique elements:
+#' cell_types <- sort(unique(colData(sce_tr)[[column]]))
 #' 
 #' @importFrom tibble tibble
 #' @importFrom naivebayes naive_bayes
@@ -168,7 +209,7 @@ train_nb <- function(x,y, cell_types) {
   
     fit <- naive_bayes(x[-test_idx,], y[-test_idx])
     
-    p <- predict(fit, newdata = x[test_idx,])
+    p <- stats::predict(fit, newdata = x[test_idx,])
     
     overall <- yardstick::bal_accuracy_vec(y[test_idx], p)
     scores <- sapply(cell_types, function(ct) {
@@ -185,6 +226,14 @@ train_nb <- function(x,y, cell_types) {
 }
 
 #' Make the expression and correlation heatmaps
+#' 
+#' @param sce A SingleCellExperiment object
+#' @param markers A list storing three lists of markers: 
+#' recommended_markers, scratch_markers, and top_markers
+#' @param column A vector storing a column
+#' @param display A vector storing selected heatmap display option
+#' @param normalization A vector holding either 'Expression' or 'z-score'
+#' @param pref_assay Assay loaded, default is 'logcounts'
 #' 
 #' @importFrom ComplexHeatmap Heatmap 
 #' @importFrom scuttle summarizeAssayByGroup
@@ -222,27 +271,28 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
   } else {
     return(expression_mat)
   }
-  
-  
+ 
 }
 
 #' Suggest a set of redundant genes to remove
 #' 
-#' @param cmat An correlation matrix of *the full expression*  calculated as
-#' expression <- as.matrix(assay(sce, pref_assay)[markers$top_markers,])
-#' cmat <- cor(t(expression))
+#' @param cmat A correlation matrix of *the full expression* calculated as
+#' `expression <- as.matrix(assay(sce, pref_assay)[markers$top_markers,])`
+#' `cmat <- cor(t(expression))`
 #' @param n_genes Number of genes to suggest to remove
+#' 
 #' @importFrom caret findCorrelation
 suggest_genes_to_remove <- function(cmat, n_genes=10) {
   rg <- c()
+  
   for(i in seq_len(n_genes)) {
     lgl <- !(rownames(cmat) %in% rg)
     fcs <- findCorrelation(cmat[lgl, lgl], cutoff = 0.01)
     gene_to_remove <- colnames(cmat[lgl, lgl])[ fcs[1] ]
     rg <- c(rg, gene_to_remove)
   }
+  
   rg
-
 }
 
 
@@ -254,13 +304,15 @@ round3 <- function(x) format(round(x, 1), nsmall = 3)
 #' (1) SingleCellExperiment
 #' (2) Seurat object (converted to SingleCellExperiment)
 #' 
+#' @param obj An R object storing metadata in a .rds file
+#' 
 #' TODO: accept anndata
 #' 
 read_input_scrnaseq <- function(obj) {
   
-  if(is(obj, 'SingleCellExperiment')) {
+  if(methods::is(obj, 'SingleCellExperiment')) {
     return(obj)
-  } else if(is(obj, 'Seurat')) {
+  } else if(methods::is(obj, 'Seurat')) {
     ## Convert to SingleCellExperiment
     sce <- Seurat::as.SingleCellExperiment(obj)
     return(sce)
@@ -268,10 +320,13 @@ read_input_scrnaseq <- function(obj) {
 } 
 
 #' Return the legend of the cell type colours
+#' 
+#' @param palette A vector storing hex colours
+#' 
 #' @importFrom ggplot2 theme_bw geom_histogram scale_fill_manual guides
 get_legend <- function(palette) {
   ## Draw the ggplot
-  df <- tibble(r = runif(length(palette)),
+  df <- tibble(r = stats::runif(length(palette)),
                `Cell type` = names(palette))
   
   # TODO: Maybe "Cell type" isn't the best name for this
@@ -286,6 +341,9 @@ get_legend <- function(palette) {
 
 #' Map gene symbols to antibody icons depending on
 #' whether the gene is found in the database
+#' 
+#' @param gene_id An element in the marker list
+#' @param df_antibody A dataframe storing antibody information
 map_gene_name_to_antibody_icon <- function(gene_id, df_antibody) {
   antibody_info <- get_antibody_info(gene_id, df_antibody)
   # TODO: fix this
@@ -303,9 +361,11 @@ map_gene_name_to_antibody_icon <- function(gene_id, df_antibody) {
 }
 
 #' Get antibody info/status for a particular gene
+#' 
+#' @param gene_id An element in the marker list
+#' @param df A dataframe storing antibody information
 get_antibody_info <- function(gene_id, df) {
 
-  
   df <- df[df$Symbol == gene_id,]
   
   if(nrow(df) == 0) {
@@ -324,7 +384,6 @@ get_antibody_info <- function(gene_id, df) {
 
   antibodies <- df$id
 
-  
   list(
     status = status,
     antibodies = antibodies
@@ -333,7 +392,12 @@ get_antibody_info <- function(gene_id, df) {
 }
 
 #' Compute alternative markers
-compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlations) {
+#' 
+#' @param gene_to_replace Gene to be replaced
+#' @param sce A SingleCellExperiment object
+#' @param pref_assay Assay loaded, default is 'logcounts'
+#' @param n_correlations Number of markers to replace gene_to_replace
+compute_alternatives <- function(gene_to_replace, sce, pref_assay = "logcounts", n_correlations) {
   x <- as.matrix(assay(sce, pref_assay))[,sample(ncol(sce), min(5000, ncol(sce)))]
   
   y <- x[gene_to_replace, ]

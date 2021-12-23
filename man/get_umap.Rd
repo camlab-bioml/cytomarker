@@ -6,6 +6,13 @@
 \usage{
 get_umap(sce, columns, pref_assay = "logcounts")
 }
+\arguments{
+\item{sce}{A SingleCellExperiment object}
+
+\item{columns}{A vector storing columns}
+
+\item{pref_assay}{Assay loaded, default is 'logcounts'}
+}
 \description{
 Compute the UMAP
 }

@@ -6,6 +6,9 @@
 \usage{
 get_legend(palette)
 }
+\arguments{
+\item{palette}{A vector storing hex colours}
+}
 \description{
 Return the legend of the cell type colours
 }

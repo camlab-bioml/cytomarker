@@ -31,23 +31,18 @@ Imports:
   scuttle,
   Seurat,
   viridis,
-  gridExtra,
   reactable,
   ComplexHeatmap,
   bsplus,
-  htmltools,
   shinyjs,
   zip
 Suggests:
   stringr,
-  Seurat,
-  caret,
   yardstick,
-  scuttle,
-  ComplexHeatmap,
   htmltools,
-  shinyjs,
-  bsplus,
+  methods,
+  stats,
+  gridExtra,
   testthat
 Encoding: UTF-8
 LazyData: true

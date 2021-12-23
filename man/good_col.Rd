@@ -5,7 +5,12 @@
 \title{Split columns into usable (good) and unusable (bad) categories
 to be passed on to compute_fm}
 \usage{
-good_col(sce, column)
+good_col(sce, columns)
+}
+\arguments{
+\item{sce}{A SingleCellExperiment object}
+
+\item{columns}{A vector storing columns}
 }
 \description{
 Split columns into usable (good) and unusable (bad) categories

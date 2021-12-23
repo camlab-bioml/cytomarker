@@ -6,6 +6,11 @@
 \usage{
 get_antibody_info(gene_id, df)
 }
+\arguments{
+\item{gene_id}{An element in the marker list}
+
+\item{df}{A dataframe storing antibody information}
+}
 \description{
 Get antibody info/status for a particular gene
 }

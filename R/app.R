@@ -1,3 +1,5 @@
+utils::globalVariables(c("Cell type", "Symbol", "r", "score", "what"))
+
 
 ggplot2::theme_set(cowplot::theme_cowplot())
 
@@ -28,15 +30,15 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @import forcats
 #' @import sortable
 #' @import reactable
-#' @importFrom readr write_lines
+#' @importFrom readr write_lines read_tsv
 #' @importFrom dplyr desc
-#' @importFrom gridExtra grid.arrange
-#' @importFrom readr read_tsv
-#' @import htmltools
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_popover
 #' @importFrom shinyjs useShinyjs hidden toggle show
 #' @importFrom grDevices dev.off pdf
-#' @import zip
+#' @importFrom zip zip
+#' @importFrom ComplexHeatmap Heatmap draw
+#' 
+#' @param ... Additional arguments
 cytosel <- function(...) {
   ui <- fluidPage(
     # Navigation prompt
@@ -342,7 +344,7 @@ cytosel <- function(...) {
       
       obj <- readRDS(input$input_scrnaseq$datapath)
       
-      if(isTruthy(is(obj, 'SingleCellExperiment')) || isTruthy(is(obj, 'Seurat'))) {
+      if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
         
         sce(read_input_scrnaseq(obj))
         
@@ -392,7 +394,7 @@ cytosel <- function(...) {
       df_antibody <- dplyr::filter(antibody_info, Symbol %in% markers$top_markers)
       reactable(df_antibody,
                 searchable = TRUE,
-                filter = TRUE,
+                filterable = TRUE,
                 sortable = TRUE)
     })
     
@@ -448,7 +450,7 @@ cytosel <- function(...) {
         return(NULL)
       }
       
-      ComplexHeatmap::draw(heatmap())
+      draw(heatmap())
     })
     
     output$metric_plot <- renderPlot({
@@ -904,20 +906,20 @@ cytosel <- function(...) {
         write_lines(selected_markers, path_marker_selection)
         
         pdf(path_umap, onefile = TRUE)
-        grid.arrange(plots$all_plot, plots$top_plot)
+        gridExtra::grid.arrange(plots$all_plot, plots$top_plot)
         dev.off()
         
         pdf(path_heatmap, onefile = TRUE)
-        ComplexHeatmap::draw(heatmap())
+        draw(heatmap())
         dev.off()
         
         pdf(path_metric, onefile = TRUE)
-        grid.arrange(plots$metric_plot)
+        gridExtra::grid.arrange(plots$metric_plot)
         dev.off()
         
         fs <- c(path_marker_selection, path_umap, path_heatmap, path_metric)
         
-        zip::zip(zipfile = fname, files = fs) 
+        zip(zipfile = fname, files = fs) 
         if(file.exists(paste0(fname, ".zip"))) {file.rename(paste0(fname, ".zip"), fname)}
         
         setwd(dir)
@@ -929,6 +931,7 @@ cytosel <- function(...) {
   
   antibody_info <- read_tsv(system.file("inst", "abcam_antibodies_gene_symbol_associated.tsv", package="cytosel"))
   
+  #' @param ... Additional arguments 
   shinyApp(ui, server, ...)
 }
 

@@ -7,6 +7,11 @@ whether the gene is found in the database}
 \usage{
 map_gene_name_to_antibody_icon(gene_id, df_antibody)
 }
+\arguments{
+\item{gene_id}{An element in the marker list}
+
+\item{df_antibody}{A dataframe storing antibody information}
+}
 \description{
 Map gene symbols to antibody icons depending on
 whether the gene is found in the database
