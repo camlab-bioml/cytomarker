@@ -835,6 +835,7 @@ cytosel <- function(...) {
         
         update_BL(markers, selected)
         
+        # Update UMAP
         incProgress(detail = "Computing UMAP")
         
         if (input$subsample_for_umap) {
@@ -848,6 +849,7 @@ cytosel <- function(...) {
           umap_top(get_umap(sce()[markers$top_markers,], column()))
         }
         
+        # Update heatmap
         incProgress(detail = "Drawing heatmap")
         
         columns <- column()
@@ -870,6 +872,7 @@ cytosel <- function(...) {
           }
         }
         
+        # Update metrics
         incProgress(detail = "Computing panel score")
         scores <- get_scores(sce(), column(), markers$top_markers, pref_assay())
         metrics(scores)
