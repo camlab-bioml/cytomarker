@@ -253,6 +253,8 @@ cytosel <- function(...) {
     
     suggestions <- reactiveVal() # Where to store suggested markers to remove
     
+    cells_per_type <- reactiveVal() ## Number of cells per condition/type
+    
     
     ### MODALS ###
     invalid_modal <- function() { # Input file is invalid
@@ -461,6 +463,7 @@ cytosel <- function(...) {
     
     output$metric_plot <- renderPlot({
       req(metrics)
+      req(cells_per_type)
       mm <- metrics()
       if (is.null(mm)) {
         return(NULL)
@@ -471,8 +474,16 @@ cytosel <- function(...) {
       for(column in columns) {
         m <- mm[[column]]
         
+        ## Add in number of cells per condition
+        cpt <- cells_per_type()
+        cpt['Overall'] <- sum(cpt)
+        m$what <- plyr::mapvalues(as.character(m$what),
+                                  from = names(cpt), 
+                                  to = paste0(names(cpt), " (n = ", cpt, ")"))
+        m$what <- as.factor(m$what)
+        
         m$what <- fct_reorder(m$what, desc(m$score))
-        m$what <- fct_relevel(m$what, "Overall")
+        m$what <- fct_relevel(m$what, paste0("Overall (n = ", cpt['Overall'], ")"))
         
         plts[[column]] <- ggplot(m, aes(y = fct_rev(what), x = score)) +
           geom_boxplot(fill = 'grey90') +
@@ -527,8 +538,10 @@ cytosel <- function(...) {
           current_markers(set_current_markers_safely(markers, fms()))
           
           num_selected(length(current_markers()$top_markers))
+          cells_per_type(table(colData(sce())[[column()]]))
           
           update_analysis()
+          
           
         } else {
           unique_element_modal(col)
@@ -879,11 +892,13 @@ cytosel <- function(...) {
             }
           }
         }
+        cells_per_type(table(colData(sce())[[column()]]))
         
         # Update metrics
         incProgress(detail = "Computing panel score")
         scores <- get_scores(sce(), column(), markers$top_markers, pref_assay())
         metrics(scores)
+        
         
         # Show help text popover
         shinyjs::show(id = "marker_visualization")
