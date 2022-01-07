@@ -414,12 +414,15 @@ cytosel <- function(...) {
       for(col in columns) {
         plts[[col]] <- ggplot(umap_all(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
           geom_point() +
-          labs(subtitle = "UMAP all genes")
+          labs(subtitle = "UMAP all genes") +
+          scale_colour_manual(values=palette)
       }
       plots$all_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
       
       plots$all_plot
-    })
+    },
+    width=350,
+    height=300)
     
     output$top_plot <- renderPlot({
       req(umap_top)
@@ -440,7 +443,10 @@ cytosel <- function(...) {
       plots$top_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
       
       plots$top_plot
-    })
+    },
+      width=350,
+      height=300
+    )
     
     output$heatmap <- renderPlot({
       req(heatmap)
