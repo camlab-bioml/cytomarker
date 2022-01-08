@@ -2,6 +2,7 @@
 #' Download all marker data to a zip file
 #' 
 #' @importFrom yaml write_yaml
+#' @importFrom zip zip
 #' 
 download_data <- function(zip_filename,
                           current_markers,
