@@ -63,7 +63,7 @@ cytosel <- function(...) {
         fileInput("input_scrnaseq", "Input scRNA-seq", accept = c(".rds")) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
-              bs_embed_popover(content = "Upload scRNAseq data as an .rds file. Gene names should be in Gene Symbol format. 
+              bs_embed_popover(content = "Upload SingleCellExperiment/Seurat data as an .rds file. Gene names should be in Gene Symbol format. 
                                If a dataset is too large (>1Gb), subsampling of cells is recommended. For some applications, 
                                filtering for protein coding-only genes may also increase the relevance of the markers suggested by Cytosel.",
                                placement = "right")
@@ -912,7 +912,11 @@ cytosel <- function(...) {
     output$downloadData <- downloadHandler(
       filename = paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
       content = function(fname) {
-        download_data(fname, current_markers(), plots, heatmap())
+        download_data(fname, current_markers(), plots, heatmap(),
+                      input_file = input$input_scrnaseq$datapath,
+                      assay_used = pref_assay(),
+                      het_source = column(),
+                      panel_size = input$panel_size)
       },
       contentType = "application/zip"
     )
