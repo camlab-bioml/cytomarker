@@ -910,40 +910,33 @@ cytosel <- function(...) {
     
     ### SAVE PANEL ###
     output$downloadData <- downloadHandler(
-      filename = function() {
-        paste("Cytosel-", Sys.Date(), ".zip", sep = "")
-      },
+      filename = paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
       content = function(fname) {
         dir <- getwd()
         tmpdir <- tempdir()
-        setwd(tempdir())
  
-        path_marker_selection <- paste0("markers-", Sys.Date(), ".txt")
-        path_umap <- paste0("UMAP-", Sys.Date(), ".pdf")
-        path_heatmap <- paste0("heatmap-", Sys.Date(), ".pdf")
-        path_metric <- paste0("metric-", Sys.Date(), ".pdf")
+        paths_zip <- list()
+        
+        paths_zip$marker_selection <-file.path(tmpdir, paste0("markers-", Sys.Date(), ".txt"))
+        paths_zip$umap <- file.path(tmpdir, paste0("UMAP-", Sys.Date(), ".pdf"))
+        paths_zip$heatmap <- file.path(tmpdir, paste0("heatmap-", Sys.Date(), ".pdf"))
+        paths_zip$metric <- file.path(tmpdir, paste0("metric-", Sys.Date(), ".pdf"))
         
         selected_markers <- current_markers()$top_markers
-        write_lines(selected_markers, path_marker_selection)
+        write_lines(selected_markers, paths_zip$marker_selection)
         
-        pdf(path_umap, onefile = TRUE)
-        gridExtra::grid.arrange(plots$all_plot, plots$top_plot)
-        dev.off()
+        umap_plt <- cowplot::plot_grid(plots$all_plot, plots$top_plot, nrow=1)
+        ggsave(paths_zip$umap, umap_plt, width=10, height=4)
         
-        pdf(path_heatmap, onefile = TRUE)
+        pdf(paths_zip$heatmap, onefile = TRUE)
         draw(heatmap())
         dev.off()
         
-        pdf(path_metric, onefile = TRUE)
-        gridExtra::grid.arrange(plots$metric_plot)
-        dev.off()
+        ggsave(paths_zip$metric, plots$metric_plot, width=10, height=4)
         
-        fs <- c(path_marker_selection, path_umap, path_heatmap, path_metric)
-        
-        zip(zipfile = fname, files = fs) 
+        zip(zipfile = fname, files = unlist(paths_zip), mode = "cherry-pick") 
         if(file.exists(paste0(fname, ".zip"))) {file.rename(paste0(fname, ".zip"), fname)}
         
-        setwd(dir)
       },
       contentType = "application/zip"
     )

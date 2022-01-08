@@ -1,25 +1,25 @@
 
 context("Data reading")
 
-test_that("SingleCellExperiment object reading", {
-  obj <- readRDS("~/Github/cytosel/tests/testthat/test_sce.rds")
-  sce <- read_input_scrnaseq(obj)
-
-  expect_is(sce, 'SingleCellExperiment')
-})
-
-test_that("Seurat object reading", {
-  obj <- readRDS("~/Github/cytosel/tests/testthat/test_seu.rds")
-  seu <- read_input_scrnaseq(obj)
-
-  ## Seurat objects are converted to SingleCellExperiments by read_input_scrnaseq
-  expect_is(seu, 'SingleCellExperiment')
-})
+# test_that("SingleCellExperiment object reading", {
+#   obj <- readRDS("~/Github/cytosel/tests/testthat/test_sce.rds")
+#   sce <- read_input_scrnaseq(obj)
+# 
+#   expect_is(sce, 'SingleCellExperiment')
+# })
+# 
+# test_that("Seurat object reading", {
+#   obj <- readRDS("~/Github/cytosel/tests/testthat/test_seu.rds")
+#   seu <- read_input_scrnaseq(obj)
+# 
+#   ## Seurat objects are converted to SingleCellExperiments by read_input_scrnaseq
+#   expect_is(seu, 'SingleCellExperiment')
+# })
 
 context("Marker finding")
 
 test_that("good_col returns valid columns", {
-  obj <- readRDS("~/Github/cytosel/tests/testthat/test_sce.rds")
+  obj <- readRDS(system.file("tests/testthat/test_sce.rds", package="cytosel"))
   sce <- read_input_scrnaseq(obj)
   columns <- good_col(sce, colnames(colData(sce)))
 

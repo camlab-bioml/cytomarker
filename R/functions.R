@@ -205,6 +205,7 @@ train_nb <- function(x,y, cell_types) {
   
   flds <- caret::createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
   
+  
   metrics <- lapply(flds, function(test_idx) {
   
     fit <- naive_bayes(x[-test_idx,], y[-test_idx])
@@ -217,10 +218,13 @@ train_nb <- function(x,y, cell_types) {
               factor(p == ct, levels = c("TRUE", "FALSE")))
     })
     tibble(
-      what = c("Overall", cell_types),
+      what = c("Overall", as.character(cell_types)),
       score=c(overall, scores)
     )
   }) %>% bind_rows()
+  
+  print(cell_types)
+  print(metrics)
 
   metrics
 }
