@@ -222,9 +222,6 @@ train_nb <- function(x,y, cell_types) {
       score=c(overall, scores)
     )
   }) %>% bind_rows()
-  
-  print(cell_types)
-  print(metrics)
 
   metrics
 }

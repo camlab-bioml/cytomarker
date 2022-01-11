@@ -1,16 +1,18 @@
 utils::globalVariables(c("Cell type", "Symbol", "r", "score", "what"), "cytosel")
 
+palette <- NULL
+
 
 ggplot2::theme_set(cowplot::theme_cowplot())
 
 
 
-cell_type_colors <- c("#ED90A4", "#EC929A", "#E99590", "#E69787", "#E39A7D", "#DE9D74", "#D99F6B", "#D3A263", "#CDA55B",
-"#C6A856", "#BEAB52", "#B6AE50", "#ADB150", "#A3B353", "#99B657", "#8EB85D", "#82BA65", "#76BC6D",
-"#68BD76", "#59BF7F", "#48C089", "#33C192", "#14C19B", "#00C1A5", "#00C1AE", "#00C1B6", "#00C0BF",
-"#00BFC7", "#00BDCE", "#19BCD5", "#39B9DB", "#50B7E0", "#63B4E4", "#75B0E8", "#85ADEA", "#94A9EC",
-"#A2A5ED", "#AFA1EC", "#BA9EEB", "#C49AE8", "#CE97E5", "#D694E0", "#DC91DB", "#E290D5", "#E68ECE",
-"#EA8EC7", "#EC8DBE", "#ED8EB6", "#EE8FAD", "#ED90A4")
+# cell_type_colors <- c("#ED90A4", "#EC929A", "#E99590", "#E69787", "#E39A7D", "#DE9D74", "#D99F6B", "#D3A263", "#CDA55B",
+# "#C6A856", "#BEAB52", "#B6AE50", "#ADB150", "#A3B353", "#99B657", "#8EB85D", "#82BA65", "#76BC6D",
+# "#68BD76", "#59BF7F", "#48C089", "#33C192", "#14C19B", "#00C1A5", "#00C1AE", "#00C1B6", "#00C0BF",
+# "#00BFC7", "#00BDCE", "#19BCD5", "#39B9DB", "#50B7E0", "#63B4E4", "#75B0E8", "#85ADEA", "#94A9EC",
+# "#A2A5ED", "#AFA1EC", "#BA9EEB", "#C49AE8", "#CE97E5", "#D694E0", "#DC91DB", "#E290D5", "#E68ECE",
+# "#EA8EC7", "#EC8DBE", "#ED8EB6", "#EE8FAD", "#ED90A4")
 
 ## Global colour palette for cell types
 palette <- NULL
@@ -37,6 +39,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom grDevices dev.off pdf
 #' @importFrom zip zip
 #' @importFrom ComplexHeatmap Heatmap draw
+#' @importFrom randomcoloR distinctColorPalette
 #' 
 #' @param ... Additional arguments
 cytosel <- function(...) {
@@ -440,7 +443,8 @@ cytosel <- function(...) {
       for(col in columns) {
         plts[[col]] <- ggplot(umap_top(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
           geom_point() +
-          labs(subtitle = "UMAP selected markers")
+          labs(subtitle = "UMAP selected markers") +
+          scale_colour_manual(values=palette)
       }
       plots$top_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
       
@@ -799,8 +803,9 @@ cytosel <- function(...) {
       
       unique_cell_types <- sort(unique(markers$associated_cell_types))
       n_cell_types <- length(unique_cell_types)
-      set.seed(12345345L)
-      palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
+      # set.seed(12345345L)
+      # palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
+      palette <<- distinctColorPalette(n_cell_types)
       names(palette) <<- unique_cell_types
       
       # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))

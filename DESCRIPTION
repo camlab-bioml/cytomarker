@@ -37,7 +37,8 @@ Imports:
   shinyjs,
   zip,
   plyr,
-  yaml
+  yaml,
+  randomcoloR
 Suggests:
   stringr,
   yardstick,
