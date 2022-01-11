@@ -91,6 +91,9 @@ cytosel <- function(...) {
               bs_embed_popover(content = "Number of markers permitted while optimizing category separation.",
                                placement = "right")
           ),
+        radioButtons("marker_strategy", label = "Marker selection strategy",
+                     choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
+                     selected="fm"),
         checkboxInput("subsample_for_umap", "Subsample for UMAP", value = TRUE) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
@@ -535,7 +538,7 @@ cytosel <- function(...) {
             compute_fm(sce(), column(), pref_assay())
           )
           
-          markers <- get_markers(fms(), input$panel_size)
+          markers <- get_markers(fms(), input$panel_size, input$marker_strategy, sce())
           markers$scratch_markers <- scratch_markers_to_keep
           
           # SMH

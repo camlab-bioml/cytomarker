@@ -7,7 +7,7 @@ from compressed RDS file. Accepts either:
 (1) SingleCellExperiment
 (2) Seurat object (converted to SingleCellExperiment)}
 \usage{
-read_input_scrnaseq(obj)
+read_input_scrnaseq(sce)
 }
 \arguments{
 \item{obj}{An R object storing metadata in a .rds file

@@ -57,36 +57,51 @@ compute_fm <- function(sce, columns, pref_assay = "logcounts") {
 #' 
 #' @param fms Stored findMarkers outputs
 #' @param panel_size Targeted number of markers in selected panel
-get_markers <- function(fms, panel_size) {
+#' @param marker_strategy Strategy for picking markers, either heuristic 
+#' cell type based or geneBasis
+#' @param sce SingleCellExperiment object
+#' @import geneBasisR
+get_markers <- function(fms, panel_size, marker_strategy, sce) {
   
   columns <- names(fms)
 
   marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
-
-  for(col in columns) {
-    fm <- fms[[col]]
-    n <- length(fm)
-      
-    top_select <- round(2 * panel_size / n)
-    # all_select <- round(1000 / n)
-      
-    recommended <- marker$recommended_markers
-    top <- marker$top_markers
-    scratch <- marker$scratch_markers
-      
-    for(i in seq_len(n)) {
-      f <- fm[[i]]
-      recommended <- c(top, rownames(f)[seq_len(top_select)])
-      top <- c(top, rownames(f)[seq_len(top_select)])
+  
+  if(marker_strategy == "geneBasis") {
+    sce2 <- retain_informative_genes(sce)
+    genes <- gene_search(sce2, n_genes=panel_size)
+    marker <- list(
+      recommended_markers = genes$gene,
+      scratch_markers = c(),
+      top_markers = genes$gene
+    )
+  } else {
+    for(col in columns) {
+      fm <- fms[[col]]
+      n <- length(fm)
+        
+      top_select <- round(2 * panel_size / n)
+      # all_select <- round(1000 / n)
+        
+      recommended <- marker$recommended_markers
+      top <- marker$top_markers
+      scratch <- marker$scratch_markers
+        
+      for(i in seq_len(n)) {
+        f <- fm[[i]]
+        recommended <- c(top, rownames(f)[seq_len(top_select)])
+        top <- c(top, rownames(f)[seq_len(top_select)])
+      }
+        
+      recommended <- unique(recommended)
+      scratch <- unique(scratch)
+      top <- unique(top)
     }
-      
-    recommended <- unique(recommended)
-    scratch <- unique(scratch)
-    top <- unique(top)
+    marker <- list(recommended_markers = recommended,
+                     scratch_markers = scratch,
+                     top_markers = top)
   }
-  marker <- list(recommended_markers = recommended,
-                   scratch_markers = scratch,
-                   top_markers = top)
+  
   marker
 }
        
@@ -309,15 +324,17 @@ round3 <- function(x) format(round(x, 1), nsmall = 3)
 #' 
 #' TODO: accept anndata
 #' 
-read_input_scrnaseq <- function(obj) {
-  
-  if(methods::is(obj, 'SingleCellExperiment')) {
-    return(obj)
-  } else if(methods::is(obj, 'Seurat')) {
+read_input_scrnaseq <- function(sce) {
+
+  if(methods::is(sce, 'Seurat')) {
     ## Convert to SingleCellExperiment
-    sce <- Seurat::as.SingleCellExperiment(obj)
-    return(sce)
+    sce <- Seurat::as.SingleCellExperiment(sce)
   } 
+  stopifnot(methods::is(sce, 'SingleCellExperiment'))
+  
+  genes_to_remove <- grepl("^RP[L|S]|^MT-|^HSP|^FOS$|^JUN|MALAT1", rownames(sce))
+  sce <- sce[!genes_to_remove,]
+  sce
 } 
 
 #' Return the legend of the cell type colours

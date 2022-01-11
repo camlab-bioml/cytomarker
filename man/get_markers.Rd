@@ -4,12 +4,17 @@
 \alias{get_markers}
 \title{Compute markers}
 \usage{
-get_markers(fms, panel_size)
+get_markers(fms, panel_size, marker_strategy, sce)
 }
 \arguments{
 \item{fms}{Stored findMarkers outputs}
 
 \item{panel_size}{Targeted number of markers in selected panel}
+
+\item{marker_strategy}{Strategy for picking markers, either heuristic
+cell type based or geneBasis}
+
+\item{sce}{SingleCellExperiment object}
 }
 \description{
 Compute markers

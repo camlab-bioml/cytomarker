@@ -38,7 +38,8 @@ Imports:
   zip,
   plyr,
   yaml,
-  randomcoloR
+  randomcoloR,
+  geneBasisR
 Suggests:
   stringr,
   yardstick,
