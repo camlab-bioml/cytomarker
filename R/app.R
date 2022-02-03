@@ -805,8 +805,8 @@ cytosel <- function(...) {
       
       unique_cell_types <- sort(unique(markers$associated_cell_types))
       n_cell_types <- length(unique_cell_types)
-      # set.seed(12345345L)
       # palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
+      set.seed(12345L)
       palette <<- distinctColorPalette(n_cell_types)
       names(palette) <<- unique_cell_types
       
