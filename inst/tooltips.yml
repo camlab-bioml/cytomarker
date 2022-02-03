@@ -1,0 +1,70 @@
+
+input_scrnaseq: "Upload SingleCellExperiment/Seurat data as an .rds file. Gene names should be in Gene Symbol format. 
+                               If a dataset is too large (>1Gb), subsampling of cells is recommended. For some applications, 
+                               filtering for protein coding-only genes may also increase the relevance of the markers suggested by Cytosel."
+
+
+coldata_column: "Categories of interest must be created before using Cytosel. 
+                      Heterogeneity of multiple categories can be optimized at once if multiple categories are important. 
+                      Options include:
+                      <li>Cell type if there are known cell types that can be annotated.</li>
+                      <li>Cluster identity, if using clustering to use as a proxy for cell state / cell type.</li>
+                      <li>Condition, if aiming to separate experimental conditions.</li>
+                      <li>Timepoint, if aiming to separate distinct timepoints.</li>"
+
+panel_size: "Number of markers permitted while optimizing category separation."
+
+subsample_for_umap: "Significantly speeds up the program, especially recommended for larger datasets."
+
+marker_display: "Markers are currently selected based on differential expression from one cluster against all other clusters.
+                <br></br>
+                Colour denotes which category has significantly upregulated expression of the given marker, 
+                as a heuristic aid for deciding which markers will need a direct replacement if removed.
+                <br></br>
+                A checkmark means that there is an Abcam antibody available for this target. The Antibody Explorer tab allows you to explore the options available from Abcam for each target."
+
+marker_visualization: "<em>Recommended markers:</em> This marker list is optimized to capture heterogeneity of the scRNAseq data as best as possible based on the panel size. 
+                      It cannot be edited and serves as a reminder of the recommended markers while the user is organizing their panel.
+                      <br></br>
+                      <em>Selected markers:</em> This marker list is initially the same as in the <em>Recommended markers</em>, but it is editable. 
+                      When the program is refreshed, it will rerun using these markers.
+                      <br></br>
+                      <em>Scratch space:</em> A place to keep markers that are under consideration, but that won't be used in a particular rerun of the program. 
+                      Intended as a workspace."
+
+umap: "UMAP is a dimension reduction technique used for visualization of complex data. 
+                          Comparison between the UMAP for all genes versus the UMAP for selected panel allows 
+                          an intuitive sense of how well cluster separation is recapitulated with the smaller number of genes selected."
+
+heatmap_display_options: "<em>Expression</em> displays the heatmap of each selected marker's expression across the categories. 
+                         If you are building a panel for a protein-based assay from an RNAseq dataset, 
+                         it is advisable to choose markers that are clearly positive/negative between categories, 
+                         as distinguishing clusters based on scale of expression may not translate as well between RNA to protein.
+                         <br> </br>
+                         <em>Marker-marker correlation</em> displays a heatmap of all correlation between all selected markers. 
+                         It is intended for the user to decide which markers are redundant, if trimming the panel is desirable or certain markers are not viable."
+
+heatmap_expression_norm: "To properly visualize the expression of markers with lower transcript abundance, scaling by Z score is recommended."
+
+gene_removal: "Select genes to remove based on correlation heatmap. Suggestions will be ordered by correlation score."
+
+metrics: "These metrics are based on training a classifier on the reduced set to predict category. 
+                          Overall score is balanced accuracy of this classifier, 
+                          while the individual scores are the positive predictive value (PPV) for each cell type."
+
+metrics_explanation: "Balanced accuracy = Sum of recall for each category / number of categories.
+                                                              <br>Recall = TP / (TP + FN)</br>
+                                                              <br>PPV = TP / TP + FP. It is important to be aware that not all categories were created equal, 
+                                                              and this metric is generally going to be poorer for smaller categories (i.e.: categories with fewer cells).</br>"
+
+
+
+alternative_markers: "Input a marker that you want to replace. The top markers most correlated to your input will be recommended as a replacement. 
+                          You can search for any marker that is present in your uploaded scRNAseq data, including ones not currently present in your selected panel."
+
+
+
+
+
+
+                      

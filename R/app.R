@@ -7,13 +7,6 @@ ggplot2::theme_set(cowplot::theme_cowplot())
 
 
 
-# cell_type_colors <- c("#ED90A4", "#EC929A", "#E99590", "#E69787", "#E39A7D", "#DE9D74", "#D99F6B", "#D3A263", "#CDA55B",
-# "#C6A856", "#BEAB52", "#B6AE50", "#ADB150", "#A3B353", "#99B657", "#8EB85D", "#82BA65", "#76BC6D",
-# "#68BD76", "#59BF7F", "#48C089", "#33C192", "#14C19B", "#00C1A5", "#00C1AE", "#00C1B6", "#00C0BF",
-# "#00BFC7", "#00BDCE", "#19BCD5", "#39B9DB", "#50B7E0", "#63B4E4", "#75B0E8", "#85ADEA", "#94A9EC",
-# "#A2A5ED", "#AFA1EC", "#BA9EEB", "#C49AE8", "#CE97E5", "#D694E0", "#DC91DB", "#E290D5", "#E68ECE",
-# "#EA8EC7", "#EC8DBE", "#ED8EB6", "#EE8FAD", "#ED90A4")
-
 ## Global colour palette for cell types
 palette <- NULL
 
@@ -66,9 +59,7 @@ cytosel <- function(...) {
         fileInput("input_scrnaseq", "Input scRNA-seq", accept = c(".rds")) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
-              bs_embed_popover(content = "Upload SingleCellExperiment/Seurat data as an .rds file. Gene names should be in Gene Symbol format. 
-                               If a dataset is too large (>1Gb), subsampling of cells is recommended. For some applications, 
-                               filtering for protein coding-only genes may also increase the relevance of the markers suggested by Cytosel.",
+              bs_embed_popover(content = get_tooltip('input_scrnaseq'),
                                placement = "right")
           ),
         textOutput("selected_assay"),
@@ -76,19 +67,13 @@ cytosel <- function(...) {
         selectInput("coldata_column", "Capture heterogeneity of:", NULL, multiple=TRUE) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
-              bs_embed_popover(content = paste("Categories of interest must be created before using Cytosel. 
-                      Heterogeneity of multiple categories can be optimized at once if multiple categories are important. 
-                      Options include:", 
-                      "<li>Cell type if there are known cell types that can be annotated.</li>",
-                      "<li>Cluster identity, if using clustering to use as a proxy for cell state / cell type.</li>",
-                      "<li>Condition, if aiming to separate experimental conditions.</li>",
-                      "<li>Timepoint, if aiming to separate distinct timepoints.</li>"),
+              bs_embed_popover(content = get_tooltip('coldata_column'),
                       placement = "right", html = "true")
           ),
         numericInput("panel_size", "Targeted panel size:", 32, min = 1, max = 200, step = NA, width = NULL) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
-              bs_embed_popover(content = "Number of markers permitted while optimizing category separation.",
+              bs_embed_popover(content = get_tooltip('panel_size'),
                                placement = "right")
           ),
         radioButtons("marker_strategy", label = "Marker selection strategy",
@@ -97,7 +82,7 @@ cytosel <- function(...) {
         checkboxInput("subsample_for_umap", "Subsample for UMAP", value = TRUE) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
-              bs_embed_popover(content = "Significantly speeds up the program, especially recommended for larger datasets.",
+              bs_embed_popover(content = get_tooltip('subsample_for_umap'),
                                placement = "right")
           ),
         actionButton("start_analysis", "Go"),
@@ -125,24 +110,12 @@ cytosel <- function(...) {
                  hr(),
                  hidden(div(id = "marker_display",
                    tags$span(shiny_iconlink() %>%
-                     bs_embed_popover(content = paste("Markers are currently selected based on differential expression from one cluster against all other clusters.",
-                                                      "<br></br>",
-                                                      "Colour denotes which category has significantly upregulated expression of the given marker, 
-                                                      as a heuristic aid for deciding which markers will need a direct replacement if removed.",
-                                                      "<br></br>",
-                                                      "A checkmark means that there is an Abcam antibody available for this target. The Antibody Explorer tab allows you to explore the options available from Abcam for each target."),
+                     bs_embed_popover(content = get_tooltip('marker_display'),
                                       placement = "top", html = TRUE)))),
                  plotOutput("legend", height='80px'),
                  hidden(div(id = "marker_visualization",
                    tags$span(shiny_iconlink() %>%
-                     bs_embed_popover(content = paste("<em>Recommended markers:</em> This marker list is optimized to capture heterogeneity of the scRNAseq data as best as possible based on the panel size. 
-                                                      It cannot be edited and serves as a reminder of the recommended markers while the user is organizing their panel.",
-                                                      "<br></br>",
-                                                      "<em>Selected markers:</em> This marker list is initially the same as in the <em>Recommended markers</em>, but it is editable. 
-                                                      When the program is refreshed, it will rerun using these markers.",
-                                                      "<br></br>",
-                                                      "<em>Scratch space:</em> A place to keep markers that are under consideration, but that won't be used in a particular rerun of the program. 
-                                                      Intended as a workspace."),
+                     bs_embed_popover(content = get_tooltip('marker_visualization'),
                                       placement = "top", html = TRUE)))),
                  fluidRow(column(12, uiOutput("BL")))
           ),
@@ -150,9 +123,7 @@ cytosel <- function(...) {
         tabPanel("UMAP",
                  icon = icon("globe"),
                  br(),
-                 helpText("UMAP is a dimension reduction technique used for visualization of complex data. 
-                          Comparison between the UMAP for all genes versus the UMAP for selected panel allows 
-                          an intuitive sense of how well cluster separation is recapitulated with the smaller number of genes selected."),
+                 helpText(get_tooltip('umap')),
                  fluidRow(column(6, plotOutput("all_plot", height="600px")),
                           column(6, plotOutput("top_plot", height="600px")))
           ),
@@ -163,24 +134,17 @@ cytosel <- function(...) {
                  splitLayout(cellWidths = c(320, 280),
                              div(selectInput("display_options", "Display expression or gene correlation", choices = c("Marker-marker correlation"), width = "86%") %>%
                                  shinyInput_label_embed(shiny_iconlink() %>%
-                                                          bs_embed_popover(content = paste("<em>Expression</em> displays the heatmap of each selected marker's expression across the categories. 
-                                                                           If you are building a panel for a protein-based assay from an RNAseq dataset, 
-                                                                           it is advisable to choose markers that are clearly positive/negative between categories, 
-                                                                           as distinguishing clusters based on scale of expression may not translate as well between RNA to protein.",
-                                                                           "<br> </br>",
-                                                                           "<em>Marker-marker correlation</em> displays a heatmap of all correlation between all selected markers. 
-                                                                           It is intended for the user to decide which markers are redundant, if trimming the panel is desirable or certain markers are not viable."),
+                                                          bs_embed_popover(content = get_tooltip('heatmap_display_options'),
                                                                            placement = "right", html = "true"))),
                              hidden(div(id = "norm",
                                         selectInput("heatmap_expression_norm", "Heatmap expression normalization", choices = c("Expression", "z-score"), width = "89%") %>%
                                           shinyInput_label_embed(shiny_iconlink() %>%
-                                                                   bs_embed_popover(content = "To properly visualize the expression of markers with lower transcript abundance, scaling by Z score is recommended.",
+                                                                   bs_embed_popover(content = get_tooltip('heatmap_expression_norm'),
                                                                                     placement = "right"))))),
                  plotOutput("heatmap"),
                  hr(),
                  tags$span(shiny_iconlink() %>%
-                             bs_embed_popover(content = "Select genes to remove based on correlation heatmap. 
-                                              Suggestions will be ordered by correlation score.",
+                             bs_embed_popover(content = get_tooltip('gene_removal'),
                                               placement = "top")),
                  splitLayout(cellWidths = c(190, 200),
                              div(numericInput("n_genes", "Number of genes to remove", 
@@ -191,14 +155,9 @@ cytosel <- function(...) {
         tabPanel("Metrics",
                  icon = icon("ruler"),
                  br(),
-                 helpText("These metrics are based on training a classifier on the reduced set to predict category. 
-                          Overall score is balanced accuracy of this classifier, 
-                          while the individual scores are the positive predictive value (PPV) for each cell type."),
+                 helpText(get_tooltip('metrics')),
                  tags$span(shiny_iconlink() %>%
-                             bs_embed_popover(content = paste("Balanced accuracy = Sum of recall for each category / number of categories.",
-                                                              "<br>Recall = TP / (TP + FN)</br>",
-                                                              "<br>PPV = TP / TP + FP. It is important to be aware that not all categories were created equal, 
-                                                              and this metric is generally going to be poorer for smaller categories (i.e.: categories with fewer cells).</br>"),
+                             bs_embed_popover(content = get_tooltip('metrics_explanation'),
                                               placement = "right", html = TRUE)),
                  textOutput("cells_per_category"),
                  plotOutput("metric_plot")
@@ -207,8 +166,7 @@ cytosel <- function(...) {
         tabPanel("Alternative markers",
                  icon = icon("exchange-alt"),
                  br(),
-                 helpText("Input a marker that you want to replace. The top markers most correlated to your input will be recommended as a replacement. 
-                          You can search for any marker that is present in your uploaded scRNAseq data, including ones not currently present in your selected panel."),
+                 helpText(get_tooltip("alternative_markers")),
                  splitLayout(cellWidths = c(180, 240),
                              div(autocomplete_input("input_gene", "Input gene", options=c(), width = "100%")),
                              div(numericInput("number_correlations", "Number of alternative markers", value = 10, min = 1, width = "35%"))),
