@@ -39,12 +39,21 @@ good_col <- function(sce, columns) {
 #' 
 #' @importFrom SingleCellExperiment colData
 #' @importFrom scran findMarkers
-compute_fm <- function(sce, columns, pref_assay = "logcounts") {
+compute_fm <- function(sce, columns, pref_assay = "logcounts", selected_applications, applications_parsed) {
+  
+  ## Get the genes corresponding to the antibody
+  ## application categories
+  allowed_genes <- get_allowed_genes(selected_applications, applications_parsed, sce)
 
   fms <- lapply(columns, function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
     fm <- findMarkers(sce, colData(sce)[[col]], test.type = test_type, assay.type = pref_assay)
+    
+    for(n in names(fm)) {
+      fm[[n]] <- fm[[n]][rownames(fm[[n]]) %in% allowed_genes,]
+    }
+    fm
   })
   
   names(fms) <- columns
@@ -68,7 +77,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce) {
   marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
   
   if(marker_strategy == "geneBasis") {
-    sce2 <- retain_informative_genes(sce)
+    sce2 <- retain_informative_genes(sce[allowed_genes,])
     genes <- gene_search(sce2, n_genes=panel_size)
     marker <- list(
       recommended_markers = genes$gene,
@@ -80,15 +89,19 @@ get_markers <- function(fms, panel_size, marker_strategy, sce) {
       fm <- fms[[col]]
       n <- length(fm)
         
-      top_select <- round(2 * panel_size / n)
-      # all_select <- round(1000 / n)
-        
+      top_select <- round(panel_size / n)
+      
       recommended <- marker$recommended_markers
       top <- marker$top_markers
       scratch <- marker$scratch_markers
         
       for(i in seq_len(n)) {
         f <- fm[[i]]
+        f <- f[!(rownames(f) %in% recommended),]
+        
+        ## Only keep markers that are over-expressed
+        f <- f[f$summary.logFC > 0,]
+        
         recommended <- c(top, rownames(f)[seq_len(top_select)])
         top <- c(top, rownames(f)[seq_len(top_select)])
       }
@@ -101,7 +114,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce) {
                      scratch_markers = scratch,
                      top_markers = top)
   }
-  
+
   marker
 }
        
@@ -121,7 +134,9 @@ get_associated_cell_types <- function(markers, fms) {
       tmp <- f[tm,] # get summary statistics for this gene
       
       ## return p value if it's a marker, or 1 otherwise
-      ifelse(tmp$summary.logFC < 0, 1, tmp$FDR)  
+      # ifelse(tmp$summary.logFC < 0, 1, tmp$FDR)
+      ## New: return summary logFC
+      -tmp$summary.logFC
     })
     names(pvals)[which.min(pvals)]
   })
@@ -219,24 +234,24 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_
 train_nb <- function(x,y, cell_types) {
   
   flds <- caret::createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
+  x <- scale(x)
   
-  
-  metrics <- lapply(flds, function(test_idx) {
-  
-    fit <- naive_bayes(x[-test_idx,], y[-test_idx])
-    
-    p <- stats::predict(fit, newdata = x[test_idx,])
-    
-    overall <- yardstick::bal_accuracy_vec(y[test_idx], p)
-    scores <- sapply(cell_types, function(ct) {
-      yardstick::ppv_vec(factor(y[test_idx] == ct, levels=c("TRUE", "FALSE")), 
-              factor(p == ct, levels = c("TRUE", "FALSE")))
-    })
-    tibble(
-      what = c("Overall", as.character(cell_types)),
-      score=c(overall, scores)
-    )
+  metrics <- suppressWarnings({ 
+    lapply(flds, function(test_idx) {
+      fit <- naive_bayes(x[-test_idx,], y[-test_idx])
+      p <- stats::predict(fit, newdata = x[test_idx,])
+      
+      overall <- yardstick::bal_accuracy_vec(y[test_idx], p)
+      scores <- sapply(cell_types, function(ct) {
+        yardstick::f_meas_vec(factor(y[test_idx] == ct, levels=c("TRUE", "FALSE")), 
+                factor(p == ct, levels = c("TRUE", "FALSE")))
+      })
+      tibble(
+        what = c("Overall", as.character(cell_types)),
+        score=c(overall, scores)
+      )
   }) %>% bind_rows()
+  })
 
   metrics
 }
@@ -434,3 +449,80 @@ compute_alternatives <- function(gene_to_replace, sce, pref_assay = "logcounts",
   
 }
 
+#' Parse out antibody applications
+#' 
+#' TODO: when the antibody application list is fixed, this can
+#' be parsed ahead of time
+get_antibody_applications <- function(antibody_info, 
+                                      column_gene = 'Symbol',
+                                      column_application = 'Listed Applications') {
+  app_split <- strsplit(antibody_info[[ column_application ]], ',')
+  app_split <- lapply(app_split, stringr::str_trim)
+  names(app_split) <- antibody_info[[ column_gene ]]
+  
+  unique_applications <- sapply(app_split, `[`) %>% 
+    unlist() %>% 
+    table() %>% 
+    sort(decreasing = TRUE)
+  
+  # Let's keep only those with > 500 genes/targets
+  unique_applications <- unique_applications[unique_applications > 500]
+  
+  application_gene_map <- lapply(names(unique_applications), function(application) {
+    v <- sapply(app_split, function(x) application %in% x)
+    names(v[v])
+  })
+  names(application_gene_map) <- names(unique_applications)
+  
+  ## Convert to label format
+  unique_applications2 <- names(unique_applications)
+  names(unique_applications2) <- paste0(names(unique_applications), " (", unique_applications, ")")
+  
+  list(
+    unique_applications = unique_applications2,
+    application_gene_map = application_gene_map
+  )
+  
+}
+
+#' Picks out allowed genes corresponding
+#' to antibody applications
+get_allowed_genes <- function(selected_applications, applications_parsed, sce) {
+  single_cell_genes <- rownames(sce)
+  
+  ## Get rid of RP[L|S] + MT + MALAT
+  single_cell_genes <- single_cell_genes[!grepl("^RP[L|S]|^MT-|^MALAT", single_cell_genes)]
+  
+  antibody_genes <- unique(unlist(applications_parsed$application_gene_map))
+  
+  if(is.null(selected_applications)) {
+    ## If no antibody application is selected,
+    ## return all genes
+    return(intersect(single_cell_genes, antibody_genes))
+  }
+
+  
+  # ## Need to convert from the displayed application
+  # ## name (which includes the number) back to the key
+  # selected_applications <- plyr::mapvalues(selected_applications, 
+  #                                          from = applications_parsed$unique_applications,
+  #                                          to = names(applications_parsed$unique_applications))
+  # 
+  intersect(single_cell_genes, unique(unlist(applications_parsed$application_gene_map[selected_applications])))
+}
+
+#' Get the reactable for the modal dialogue when add
+#' markers for a given cell type
+#' @importFrom tibble rownames_to_column
+get_cell_type_add_markers_reactable <- function(fm, current_markers) {
+  fm <- fm[!rownames(fm) %in% current_markers,]
+  fm <- fm[fm$summary.logFC > 0,]
+  fm <- as.data.frame(head(fm, 50))
+  fm <- rownames_to_column(fm, 'Gene')
+  fm <- fm[,c("Gene", "FDR", "summary.logFC")]
+  reactable(
+    fm,
+    selection = "multiple",
+    onClick = "select"
+  )
+}

@@ -4,7 +4,13 @@
 \alias{compute_fm}
 \title{Compute the findMarkers outputs and store}
 \usage{
-compute_fm(sce, columns, pref_assay = "logcounts")
+compute_fm(
+  sce,
+  columns,
+  pref_assay = "logcounts",
+  selected_applications,
+  applications_parsed
+)
 }
 \arguments{
 \item{sce}{A SingleCellExperiment object}
