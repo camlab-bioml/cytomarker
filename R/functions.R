@@ -520,9 +520,12 @@ get_cell_type_add_markers_reactable <- function(fm, current_markers) {
   fm <- as.data.frame(head(fm, 50))
   fm <- rownames_to_column(fm, 'Gene')
   fm <- fm[,c("Gene", "FDR", "summary.logFC")]
-  reactable(
-    fm,
-    selection = "multiple",
-    onClick = "select"
-  )
+  list(fm = fm,
+       reactable = 
+    reactable(
+      fm,
+      selection = "multiple",
+      onClick = "select"
+    )
+)
 }

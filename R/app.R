@@ -238,6 +238,10 @@ cytosel <- function(...) {
     
     cells_per_type <- reactiveVal() ## Number of cells per condition/type
     
+    ## Current data frame of selected cell type markers and the reactable
+    current_cell_type_marker_fm <- NULL
+    selected_cell_type_markers <- reactive(getReactableState("cell_type_marker_reactable", "selected"))
+    
     
     ### MODALS ###
     invalid_modal <- function() { # Input file is invalid
@@ -559,7 +563,7 @@ cytosel <- function(...) {
         incProgress(detail = "Recomputing markers")
         
         fms(
-          compute_fm(sce(), column(), pref_assay())
+          compute_fm(sce(), column(), pref_assay(), input$select_aa, applications_parsed)
         )
         # 
         
@@ -587,19 +591,43 @@ cytosel <- function(...) {
     
     observeEvent(input$add_cell_type_markers, {
       if(!is.null(input$cell_type_markers) && !is.null(fms())) {
+        tmp <- get_cell_type_add_markers_reactable(fms()[[1]][[input$cell_type_markers]],
+                                            unique(unlist(current_markers())))
+        
+        current_cell_type_marker_fm <<- tmp$fm
+        output$cell_type_marker_reactable <- renderReactable({ tmp$reactable })
+        
         modal_add_marker <- modalDialog(
-          get_cell_type_add_markers_reactable(fms()[[1]][[input$cell_type_markers]],
-                                              unique(unlist(current_markers()))),
+          reactableOutput('cell_type_marker_reactable'),
           title = paste("Select markers for", input$cell_type_markers),
           size = "m",
           easyClose = TRUE,        
           footer = tagList(
             modalButton("Cancel"),
-            actionButton("ok", "Add")
+            actionButton("add_select_markers", "Add selected")
           )
         )
         showModal(modal_add_marker)
       }
+    })
+    
+    observeEvent(input$add_select_markers, {
+      genes_to_add <- current_cell_type_marker_fm[selected_cell_type_markers(),]$Gene
+      
+      ## The following should really be turned into a function given
+      ## frequently it is called
+      cm <- current_markers()
+      markers <- list(recommended_markers = cm$recommended_markers,
+                      scratch_markers = input$bl_scratch,
+                      top_markers = unique(c(genes_to_add, cm$top_markers)))
+      current_markers(
+        set_current_markers_safely(markers, fms())
+      )
+      
+      num_selected(length(current_markers()$top_markers))
+      update_BL(current_markers(), num_selected(), names(fms()[[1]]))
+      
+      removeModal()
     })
     
     ### MARKER SELECTION ###
