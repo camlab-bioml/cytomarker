@@ -33,6 +33,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom zip zip
 #' @importFrom ComplexHeatmap Heatmap draw
 #' @importFrom randomcoloR distinctColorPalette
+#' @importFrom plotly plot_ly
 #' 
 #' @param ... Additional arguments
 cytosel <- function(...) {
@@ -144,8 +145,8 @@ cytosel <- function(...) {
                  icon = icon("globe"),
                  br(),
                  helpText(get_tooltip('umap')),
-                 fluidRow(column(6, plotOutput("all_plot", height="600px")),
-                          column(6, plotOutput("top_plot", height="600px")))
+                 fluidRow(column(6, plotlyOutput("all_plot", width="500px", height="350px")),
+                          column(6, plotlyOutput("top_plot", width="500px", height="350px")))
           ),
         
         tabPanel("Heatmap",
@@ -389,7 +390,7 @@ cytosel <- function(...) {
     
     
     ### PLOTS ###
-    output$all_plot <- renderPlot({
+    output$all_plot <- renderPlotly({
       req(umap_all)
       req(column)
       
@@ -399,21 +400,26 @@ cytosel <- function(...) {
         return(NULL)
       }
       
-      plts <- list()
-      for(col in columns) {
-        plts[[col]] <- ggplot(umap_all(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
-          geom_point() +
-          labs(subtitle = "UMAP all genes") +
-          scale_colour_manual(values=palette)
-      }
-      plots$all_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
+      # plts <- list()
+      # for(col in columns) {
+        # plts[[col]] <- ggplot(umap_all(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
+        #   geom_point() +
+        #   labs(subtitle = "UMAP all genes") +
+        #   scale_colour_manual(values=palette)
+      # }
+      # plots$all_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
+      # plots$all_plot <- 
       
-      plots$all_plot
-    },
-    width=350,
-    height=300)
+      # plots$all_plot
+      plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
+              type='scatter', hoverinfo="text", colors=palette) %>% 
+        layout(title = "UMAP all genes")
+    })
+    # },
+    # width=350,
+    # height=300)
     
-    output$top_plot <- renderPlot({
+    output$top_plot <- renderPlotly({
       req(umap_top)
       req(column)
       
@@ -423,20 +429,20 @@ cytosel <- function(...) {
         return(NULL)
       }
       
-      plts <- list()
-      for(col in columns) {
-        plts[[col]] <- ggplot(umap_top(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
-          geom_point() +
-          labs(subtitle = "UMAP selected markers") +
-          scale_colour_manual(values=palette)
-      }
-      plots$top_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
-      
-      plots$top_plot
-    },
-      width=350,
-      height=300
-    )
+      # plts <- list()
+      # for(col in columns) {
+      #   plts[[col]] <- ggplot(umap_top(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
+      #     geom_point() +
+      #     labs(subtitle = "UMAP selected markers") +
+      #     scale_colour_manual(values=palette)
+      # }
+      # plots$top_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
+      # 
+      # plots$top_plot
+      plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
+              type='scatter', hoverinfo="text", colors=palette) %>% 
+        layout(title = "UMAP selected markers")
+    })
     
     output$heatmap <- renderPlot({
       req(heatmap)

@@ -39,7 +39,8 @@ Imports:
   plyr,
   yaml,
   randomcoloR,
-  geneBasisR
+  geneBasisR,
+  plotly
 Suggests:
   stringr,
   yardstick,
