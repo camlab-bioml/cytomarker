@@ -270,6 +270,7 @@ train_nb <- function(x,y, cell_types) {
 #' @importFrom scuttle summarizeAssayByGroup
 #' @importFrom stats cor
 #' @importFrom viridis viridis
+#' @importFrom plotly plot_ly layout
 create_heatmap <- function(sce, markers, column, display, normalization, pref_assay = "logcounts") {
 
   normalization <- match.arg(normalization, c("Expression", "z-score"))
@@ -290,17 +291,27 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     legend <- "z-score\nexpression"
   }
   
-  # top_annot <- HeatmapAnnotation()
-  cor_mat <- Heatmap(cor(t(mat)),
-                     name="Correlation")
-  expression_mat <- Heatmap(mat,
-                            col = viridis(100),
-                            name="Expression")
-  
   if(display == "Marker-marker correlation") {
-    return(cor_mat)
+    
+    cc <- cor(t(mat))
+    cor_map <- plot_ly(z=cc, 
+            type='heatmap',
+            x = rownames(cc),
+            y = colnames(cc)) %>% 
+      layout(title='Correlation')
+    
+    return(cor_map)
   } else {
-    return(expression_mat)
+    
+    
+    
+    expression_map <- plot_ly(z=t(mat), 
+            type='heatmap',
+            x = rownames(mat),
+            y = colnames(mat)) %>% 
+      layout(title='Expression')
+
+    return(expression_map)
   }
  
 }

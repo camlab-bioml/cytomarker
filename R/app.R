@@ -33,7 +33,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom zip zip
 #' @importFrom ComplexHeatmap Heatmap draw
 #' @importFrom randomcoloR distinctColorPalette
-#' @importFrom plotly plot_ly
+#' @importFrom plotly plot_ly plotlyOutput renderPlotly layout
 #' 
 #' @param ... Additional arguments
 cytosel <- function(...) {
@@ -162,7 +162,7 @@ cytosel <- function(...) {
                                           shinyInput_label_embed(shiny_iconlink() %>%
                                                                    bs_embed_popover(content = get_tooltip('heatmap_expression_norm'),
                                                                                     placement = "right"))))),
-                 plotOutput("heatmap", height="600px"),
+                 plotlyOutput("heatmap", height="600px"),
                  hr(),
                  tags$span(shiny_iconlink() %>%
                              bs_embed_popover(content = get_tooltip('gene_removal'),
@@ -181,7 +181,7 @@ cytosel <- function(...) {
                              bs_embed_popover(content = get_tooltip('metrics_explanation'),
                                               placement = "right", html = TRUE)),
                  textOutput("cells_per_category"),
-                 plotOutput("metric_plot")
+                 plotlyOutput("metric_plot")
           ),
 
         tabPanel("Alternative markers",
@@ -444,7 +444,7 @@ cytosel <- function(...) {
         layout(title = "UMAP selected markers")
     })
     
-    output$heatmap <- renderPlot({
+    output$heatmap <- renderPlotly({
       req(heatmap)
       req(column)
       
@@ -452,10 +452,10 @@ cytosel <- function(...) {
         return(NULL)
       }
       
-      draw(heatmap())
+      return(heatmap())
     })
     
-    output$metric_plot <- renderPlot({
+    output$metric_plot <- renderPlotly({
       req(metrics)
       req(cells_per_type)
       mm <- metrics()
@@ -465,28 +465,25 @@ cytosel <- function(...) {
       
       columns <- names(mm)
       plts <- list()
-      for(column in columns) {
-        m <- mm[[column]]
-        
-        ## Add in number of cells per condition
-        cpt <- cells_per_type()
-        cpt['Overall'] <- sum(cpt)
-        m$what <- plyr::mapvalues(as.character(m$what),
-                                  from = names(cpt), 
-                                  to = paste0(names(cpt), " (n = ", cpt, ")"))
-        m$what <- as.factor(m$what)
-        
-        m$what <- fct_reorder(m$what, desc(m$score))
-        m$what <- fct_relevel(m$what, paste0("Overall (n = ", cpt['Overall'], ")"))
-        
-        plts[[column]] <- ggplot(m, aes(y = fct_rev(what), x = score)) +
-          geom_boxplot(fill = 'grey90') +
-          labs(x = "Score",
-               y = "Source")
-      }
-      plots$metric_plot <- cowplot::plot_grid(plotlist = plts, ncol=1, labels = columns)
+      column <- columns[1]
+      m <- mm[[column]]
       
-      plots$metric_plot
+      ## Add in number of cells per condition
+      cpt <- cells_per_type()
+      cpt['Overall'] <- sum(cpt)
+      m$what <- plyr::mapvalues(as.character(m$what),
+                                from = names(cpt), 
+                                to = paste0(names(cpt), " (n = ", cpt, ")"))
+      m$what <- as.factor(m$what)
+      
+      m$what <- fct_reorder(m$what, desc(m$score))
+      m$what <- fct_relevel(m$what, paste0("Overall (n = ", cpt['Overall'], ")"))
+      m$what <- fct_rev(m$what)
+      
+      plot_ly(m, x = ~score, y = ~what, type='box') %>% 
+        layout(xaxis = list(title="Score"),
+               yaxis = list(title="Source"))
+      
     })
     
     
