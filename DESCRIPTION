@@ -32,7 +32,6 @@ Imports:
   Seurat,
   viridis,
   reactable,
-  ComplexHeatmap,
   bsplus,
   shinyjs,
   zip,

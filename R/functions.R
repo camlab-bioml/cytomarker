@@ -266,7 +266,6 @@ train_nb <- function(x,y, cell_types) {
 #' @param normalization A vector holding either 'Expression' or 'z-score'
 #' @param pref_assay Assay loaded, default is 'logcounts'
 #' 
-#' @importFrom ComplexHeatmap Heatmap 
 #' @importFrom scuttle summarizeAssayByGroup
 #' @importFrom stats cor
 #' @importFrom viridis viridis

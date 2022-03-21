@@ -31,7 +31,6 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom shinyjs useShinyjs hidden toggle
 #' @importFrom grDevices dev.off pdf
 #' @importFrom zip zip
-#' @importFrom ComplexHeatmap Heatmap draw
 #' @importFrom randomcoloR distinctColorPalette
 #' @importFrom plotly plot_ly plotlyOutput renderPlotly layout
 #' 
