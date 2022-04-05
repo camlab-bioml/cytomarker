@@ -229,8 +229,9 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_
 #' cell_types <- sort(unique(colData(sce_tr)[[column]]))
 #' 
 #' @importFrom tibble tibble
-#' @importFrom naivebayes naive_bayes
 #' @importFrom dplyr bind_rows
+#' @importFrom nnet multinom
+#' @importFrom dplyr sample_n
 train_nb <- function(x,y, cell_types) {
   
   flds <- caret::createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
@@ -238,8 +239,17 @@ train_nb <- function(x,y, cell_types) {
   
   metrics <- suppressWarnings({ 
     lapply(flds, function(test_idx) {
-      fit <- naive_bayes(x[-test_idx,], y[-test_idx])
-      p <- stats::predict(fit, newdata = x[test_idx,])
+      # fit <- naive_bayes(x[-test_idx,], y[-test_idx])
+      # p <- stats::predict(fit, newdata = x[test_idx,])
+      df_train <- as.data.frame(x[-test_idx,])
+      df_train$y <- y[-test_idx]
+      df_train <- sample_n(df_train, min(5000, nrow(df_train)))
+      
+      df_test <- as.data.frame(x[test_idx,])
+      df_test$y <- y[test_idx]
+      
+      fit <- multinom(y~., data = df_train)
+      p <- stats::predict(fit, df_test)
       
       overall <- yardstick::bal_accuracy_vec(y[test_idx], p)
       scores <- sapply(cell_types, function(ct) {

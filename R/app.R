@@ -858,7 +858,7 @@ cytosel <- function(...) {
       # palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
       set.seed(12345L)
       palette <<- distinctColorPalette(n_cell_types)
-      names(palette) <<- unique_cell_types
+      names(palette) <<- sort(unique_cell_types)
       
       # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
       
