@@ -39,11 +39,8 @@ good_col <- function(sce, columns) {
 #' 
 #' @importFrom SingleCellExperiment colData
 #' @importFrom scran findMarkers
-compute_fm <- function(sce, columns, pref_assay = "logcounts", selected_applications, applications_parsed) {
-  
-  ## Get the genes corresponding to the antibody
-  ## application categories
-  allowed_genes <- get_allowed_genes(selected_applications, applications_parsed, sce)
+compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
+
 
   fms <- lapply(columns, function(col) {
     

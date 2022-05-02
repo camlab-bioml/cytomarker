@@ -124,8 +124,9 @@ cytosel <- function(...) {
                                       div(style = "", fileInput("uploadMarkers", "Upload markers", width = "100%")),
                                       div(style = "margin-top:25px;", actionButton("add_to_selected", "Add uploaded", width = "100%")),
                                       div(style = "margin-top:25px;", actionButton("replace_selected", "Replace selected", width = "100%"))))),
-                 fluidRow(column(6, selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL)),
-                                      column(6, div(style = "margin-top:25px;", actionButton('add_cell_type_markers', "Suggest")))
+                 fluidRow(column(12, splitLayout(cellWidths = c(150, 150),
+                                                selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL),
+                                            div(style = "margin-top:25px;", actionButton('add_cell_type_markers', "Suggest"))))
                           ),
                  hr(),
                  hidden(div(id = "marker_display",
@@ -227,6 +228,7 @@ cytosel <- function(...) {
     column <- reactiveVal()
     
     fms <- reactiveVal() # Where to store the findMarker outputs
+    allowed_genes <- reactiveVal() # Set of "allowed" genes (those with anotibodies, not ribo or mito)
     current_markers <- reactiveVal() # Currently selected markers
     num_selected <- reactiveVal()
     
@@ -321,7 +323,7 @@ cytosel <- function(...) {
     
     dne_modal <- function(dne) { # Input marker is not in the dataset
       shinyalert(title = "Error", 
-                 text = paste("Marker ", paste(dne), " does not exist in the dataset."), 
+                 text = paste("Marker ", paste(dne), " does not exist or has no corresponding antibody."), 
                  type = "error", 
                  showConfirmButton = TRUE,
                  confirmButtonCol = "#337AB7")
@@ -343,12 +345,7 @@ cytosel <- function(...) {
         }
         
         showModal(assay_modal(assays = input_assays))
-        
-        update_autocomplete_input(session, "add_markers",
-                                  options = rownames(sce()))
-        
-        update_autocomplete_input(session, "input_gene",
-                                  options = rownames(sce()))
+
         
         updateSelectInput(
           session = session,
@@ -516,13 +513,17 @@ cytosel <- function(...) {
             unique_element_modal(col)
           } 
           
+          ## Compute set of allowed genes
+          allowed_genes(
+            get_allowed_genes(input$select_aa, applications_parsed, sce())
+          )
+          
           ## Get the markers first time          
           fms(
             compute_fm(sce(), 
                        column(), 
                        pref_assay(),
-                       input$select_aa,
-                       applications_parsed
+                       allowed_genes()
             )
           )
           
@@ -564,19 +565,25 @@ cytosel <- function(...) {
         
         incProgress(detail = "Recomputing markers")
         
+        ## Recompute the set of allowed genes (antibody applications might have changed) and get the markers
+        allowed_genes(
+          get_allowed_genes(input$select_aa, applications_parsed, sce())
+        )
+        
+        ## Get the markers first time          
         fms(
-          compute_fm(sce(), column(), pref_assay(), input$select_aa, applications_parsed)
+          compute_fm(sce(), 
+                     column(), 
+                     pref_assay(),
+                     allowed_genes()
+          )
         )
         # 
         
-        # ## Why did this disappear??
-        # markers <- get_markers(fms(), 
-        #                        input$panel_size, 
-        #                        input$marker_strategy, 
-        #                        sce(),
-        #                        input$select_aa,
-        #                        applications_parsed
-        # )
+        markers <- get_markers(fms(), 
+                               input$panel_size, 
+                               input$marker_strategy, 
+                               sce())
         
         markers <- list(recommended_markers = input$bl_recommended,
              scratch_markers = input$bl_scratch,
@@ -633,9 +640,9 @@ cytosel <- function(...) {
     })
     
     ### MARKER SELECTION ###
-    observeEvent(input$enter_marker, { # Manually add markers
+    observeEvent(input$enter_marker, { # Manually add markers one by one
       
-      if(!is.null(input$add_markers) && stringr::str_length(input$add_markers) > 1 && (input$add_markers %in% rownames(sce()))) {
+      if(!is.null(input$add_markers) && stringr::str_length(input$add_markers) > 1 && (input$add_markers %in% allowed_genes())) {
         ## Need to update markers:
         new_marker <- input$add_markers
         
@@ -908,6 +915,21 @@ cytosel <- function(...) {
     update_analysis <- function() {
       
       withProgress(message = 'Processing data', value = 0, {
+        
+        ## Re-set the set of allowed genes (these may have changed if a different
+        ## antibody application is selected)
+        allowed_genes(
+          get_allowed_genes(input$select_aa, applications_parsed, sce())
+        )
+        
+        ## Set that these genes can be selected
+        update_autocomplete_input(session, "add_markers",
+                                  options = allowed_genes())
+        
+        update_autocomplete_input(session, "input_gene",
+                                  options = allowed_genes())
+        
+        
         markers <- current_markers()
         selected <- num_selected()
         
