@@ -66,8 +66,9 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
 #' @param marker_strategy Strategy for picking markers, either heuristic 
 #' cell type based or geneBasis
 #' @param sce SingleCellExperiment object
+#' @param allowed_genes Set of allowed genes
 #' @import geneBasisR
-get_markers <- function(fms, panel_size, marker_strategy, sce) {
+get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
   
   columns <- names(fms)
 

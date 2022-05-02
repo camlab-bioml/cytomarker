@@ -103,7 +103,7 @@ cytosel <- function(...) {
           ),
         
         actionButton("start_analysis", "Go"),
-        actionButton("refresh_analysis", "Refresh"),
+        # actionButton("refresh_analysis", "Refresh"),
         hr(),
         downloadButton("downloadData", "Save\npanel"),
         width = 3
@@ -537,7 +537,8 @@ cytosel <- function(...) {
           markers <- get_markers(fms(), 
                                  input$panel_size, 
                                  input$marker_strategy, 
-                                 sce())
+                                 sce(),
+                                 allowed_genes())
           markers$scratch_markers <- scratch_markers_to_keep
           
           # SMH
@@ -557,46 +558,46 @@ cytosel <- function(...) {
       
     })
     
-    observeEvent(input$refresh_analysis, {
-      withProgress(message = 'Initializing analysis', value = 0, {
-        req(column())
-        req(input$panel_size)
-        req(sce())
-        
-        incProgress(detail = "Recomputing markers")
-        
-        ## Recompute the set of allowed genes (antibody applications might have changed) and get the markers
-        allowed_genes(
-          get_allowed_genes(input$select_aa, applications_parsed, sce())
-        )
-        
-        ## Get the markers first time          
-        fms(
-          compute_fm(sce(), 
-                     column(), 
-                     pref_assay(),
-                     allowed_genes()
-          )
-        )
-        # 
-        
-        markers <- get_markers(fms(), 
-                               input$panel_size, 
-                               input$marker_strategy, 
-                               sce())
-        
-        markers <- list(recommended_markers = input$bl_recommended,
-             scratch_markers = input$bl_scratch,
-             top_markers = input$bl_top)
-        
-        # SMH
-        current_markers(set_current_markers_safely(markers, fms()))
-        
-        num_selected(length(current_markers()$top_markers))
-      })
-      
-      update_analysis()
-    })
+    # observeEvent(input$refresh_analysis, {
+    #   withProgress(message = 'Initializing analysis', value = 0, {
+    #     req(column())
+    #     req(input$panel_size)
+    #     req(sce())
+    #     
+    #     incProgress(detail = "Recomputing markers")
+    #     
+    #     ## Recompute the set of allowed genes (antibody applications might have changed) and get the markers
+    #     allowed_genes(
+    #       get_allowed_genes(input$select_aa, applications_parsed, sce())
+    #     )
+    #     
+    #     ## Get the markers first time          
+    #     fms(
+    #       compute_fm(sce(), 
+    #                  column(), 
+    #                  pref_assay(),
+    #                  allowed_genes()
+    #       )
+    #     )
+    #     # 
+    #     
+    #     markers <- get_markers(fms(), 
+    #                            input$panel_size, 
+    #                            input$marker_strategy, 
+    #                            sce())
+    #     
+    #     markers <- list(recommended_markers = input$bl_recommended,
+    #          scratch_markers = input$bl_scratch,
+    #          top_markers = input$bl_top)
+    #     
+    #     # SMH
+    #     current_markers(set_current_markers_safely(markers, fms()))
+    #     
+    #     num_selected(length(current_markers()$top_markers))
+    #   })
+    #   
+    #   update_analysis()
+    # })
     
     observeEvent(input$add_cell_type_markers, {
       if(!is.null(input$cell_type_markers) && !is.null(fms())) {
