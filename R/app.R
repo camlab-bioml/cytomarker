@@ -1,4 +1,4 @@
-utils::globalVariables(c("Cell type", "Symbol", "r", "score", "what"), "cytosel")
+# utils::globalVariables(c("Cell type", "Symbol", "r", "score", "what"), "cytosel")
 
 palette <- NULL
 
@@ -38,7 +38,8 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 cytosel <- function(...) {
   ## First up -- parse the antibodies
   # antibody_info <- read_tsv(system.file("inst", "abcam_antibodies_gene_symbol_associated.tsv", package="cytosel"))
-  antibody_info <- read_csv(system.file("inst", "Abcam_published_monos_with_gene.csv", package="cytosel"))
+  # antibody_info <- read_csv(system.file("inst", "Abcam_published_monos_with_gene.csv", package="cytosel"))
+  antibody_info <- read_csv("Abcam_published_monos_with_gene.csv")
   antibody_info <- dplyr::rename(antibody_info, Symbol = `Gene Name (Upper)`)
   antibody_info <- tidyr::drop_na(antibody_info)
   
@@ -59,7 +60,8 @@ cytosel <- function(...) {
     # Title
     titlePanel("cytosel"),
     tags$head(
-      includeCSS(system.file("www", "cytosel.css", package="cytosel"))
+      # includeCSS(system.file("www", "cytosel.css", package="cytosel"))
+      includeCSS(file.path("www", "cytosel.css"))
     ),
     
     # Side panel
@@ -102,7 +104,7 @@ cytosel <- function(...) {
                                placement = "right", html = "true")
           ),
         
-        actionButton("start_analysis", "Go"),
+        actionButton("start_analysis", "Go", icon=icon("play")),
         # actionButton("refresh_analysis", "Refresh"),
         hr(),
         downloadButton("downloadData", "Save\npanel"),
@@ -533,14 +535,25 @@ cytosel <- function(...) {
             choices = names(fms()[[1]])
           )
           
-          
-          markers <- get_markers(fms(), 
-                                 input$panel_size, 
-                                 input$marker_strategy, 
-                                 sce(),
-                                 allowed_genes())
-          markers$scratch_markers <- scratch_markers_to_keep
-          
+          if(!is.null(input$bl_top)) {
+            ## We get here if input$bl_top exists, ie if tis
+            ## is an analysis refresh
+            ## in this case we set the markers to their existing values
+            markers <- list(recommended_markers = input$bl_recommended,
+                            scratch_markers = input$bl_scratch,
+                            top_markers = input$bl_top)
+          } else {
+            ## We compute the set of markers for the first time
+            markers <- get_markers(fms(), 
+                                   input$panel_size, 
+                                   input$marker_strategy, 
+                                   sce(),
+                                   allowed_genes())
+            
+            ## Forgotten what this is for
+            markers$scratch_markers <- scratch_markers_to_keep
+          }
+
           # SMH
           current_markers(set_current_markers_safely(markers, fms()))
           
@@ -1005,7 +1018,7 @@ cytosel <- function(...) {
   
 
   
-  shinyApp(ui, server, ...)
+  shinyApp(ui, server, options = c("display.mode"="showcase"), ...)
 }
 
 

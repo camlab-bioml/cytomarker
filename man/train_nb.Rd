@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{train_nb}
 \alias{train_nb}
-\title{Train a Naive bayes classifier}
+\title{Train a ML model}
 \usage{
 train_nb(x, y, cell_types)
 }
@@ -15,5 +15,5 @@ train_nb(x, y, cell_types)
 cell_types <- sort(unique(colData(sce_tr)[\link{column}]))}
 }
 \description{
-Train a Naive bayes classifier
+Note this currently trains logistic regression
 }

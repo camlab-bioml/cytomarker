@@ -4,7 +4,7 @@
 \alias{get_markers}
 \title{Compute markers}
 \usage{
-get_markers(fms, panel_size, marker_strategy, sce)
+get_markers(fms, panel_size, marker_strategy, sce, allowed_genes)
 }
 \arguments{
 \item{fms}{Stored findMarkers outputs}
@@ -15,6 +15,8 @@ get_markers(fms, panel_size, marker_strategy, sce)
 cell type based or geneBasis}
 
 \item{sce}{SingleCellExperiment object}
+
+\item{allowed_genes}{Set of allowed genes}
 }
 \description{
 Compute markers

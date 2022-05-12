@@ -219,7 +219,9 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_
   train_nb(x,y, cell_types)
 }
 
-#' Train a Naive bayes classifier
+#' Train a ML model
+#' 
+#' Note this currently trains logistic regression
 #' 
 #' @param x A matrix calculated as `x <- t(as.matrix(assay(sce_tr)[[column]]))`
 #' @param y A factor calculated as `y <- factor(colData(sce_tr)[[column]])`
@@ -263,6 +265,13 @@ train_nb <- function(x,y, cell_types) {
 
   metrics
 }
+
+# train_2 <- function(x, y, cell_types) {
+#   y <- df_train$y
+#   x <- dplyr::select(df_train, -y)
+#   cvfit <- cv.glmnet(as.matrix(x), y, family = "multinomial")
+#   
+# }
 
 #' Make the expression and correlation heatmaps
 #' 
