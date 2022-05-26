@@ -568,7 +568,6 @@ cytosel <- function(...) {
         }
         
       })
-      
     })
     
     # observeEvent(input$refresh_analysis, {
@@ -884,13 +883,9 @@ cytosel <- function(...) {
       # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
       
       labels_top <- lapply(markers$top_markers, 
-                           function(x) div(map_gene_name_to_antibody_icon(x, antibody_info), x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
-
-      labels_recommended <- lapply(markers$recommended_markers,
-                                   function(x) div(map_gene_name_to_antibody_icon(x, antibody_info), x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
-
+                           function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
       labels_scratch <- lapply(markers$scratch_markers, 
-                               function(x) div(map_gene_name_to_antibody_icon(x, antibody_info), x, style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
+                               function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
       
             
       output$legend <- renderPlot(cowplot::ggdraw(get_legend(palette)))
@@ -900,13 +895,6 @@ cytosel <- function(...) {
           header = "Marker selection",
           orientation = "horizontal",
           group_name = "bucket_list_group",
-          add_rank_list( 
-            text = "Recommended markers",
-            labels = labels_recommended,
-            input_id = "bl_recommended",
-            class = "cytocellbl",
-            options = sortable_options(disabled = TRUE)
-          ),
           add_rank_list(
             text = "Scratch space",
             labels = labels_scratch,

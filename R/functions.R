@@ -400,22 +400,15 @@ get_legend <- function(palette) {
 }
 
 #' Map gene symbols to antibody icons depending on
-#' whether the gene is found in the database
+#' whether the gene is initially suggested or selected by the user
 #' 
 #' @param gene_id An element in the marker list
-#' @param df_antibody A dataframe storing antibody information
-map_gene_name_to_antibody_icon <- function(gene_id, df_antibody) {
-  antibody_info <- get_antibody_info(gene_id, df_antibody)
-  # TODO: fix this
-  # antibody_info <- list()
-  # antibody_info$status <- sample(c("NO_GENE_FOUND", "NO_ANTIBODY_FOUND", "ANTIBODY_FOUND"), 1)
-  
-  if(antibody_info$status == "ANTIBODY_FOUND") {
-    return(icon("check"))
-  } else if(antibody_info$status == "NO_ANTIBODY_FOUND") {
-    return(icon("times"))
-  } else {
-    return(icon("question"))
+#' @param markers the list of markers
+map_gene_name_to_antibody_icon <- function(gene_id, markers) {
+  if(gene_id %in% markers$recommended_markers){
+    return(icon("star"))
+  }else{
+    return(NULL)
   }
   
 }
