@@ -460,7 +460,6 @@ cytosel <- function(...) {
       if (is.null(mm)) {
         return(NULL)
       }
-      
       columns <- names(mm)
       plts <- list()
       column <- columns[1]
@@ -478,7 +477,7 @@ cytosel <- function(...) {
       m$what <- fct_relevel(m$what, paste0("Overall (n = ", cpt['Overall'], ")"))
       m$what <- fct_rev(m$what)
       
-      plot_ly(m, x = ~score, y = ~what, type='box') %>% 
+      plot_ly(m, x = ~score, y = ~what, type='box', hoverinfo = 'none') %>% 
         layout(xaxis = list(title="Score"),
                yaxis = list(title="Source"))
       
