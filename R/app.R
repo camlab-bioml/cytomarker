@@ -1005,7 +1005,7 @@ cytosel <- function(...) {
   
 
   
-  shinyApp(ui, server, options = c("display.mode"="showcase"), ...)
+  shinyApp(ui, server, ...)
 }
 
 
