@@ -87,9 +87,10 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
       fm <- fms[[col]]
       n <- length(fm)
         
-      top_select <- round(panel_size / n)
+      top_select <- ceiling(panel_size / n)
       
       recommended <- marker$recommended_markers
+      recommended_df <- tibble(markers = c(), cell_type = c())
       top <- marker$top_markers
       scratch <- marker$scratch_markers
         
@@ -100,13 +101,37 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
         ## Only keep markers that are over-expressed
         f <- f[f$summary.logFC > 0,]
         
-        recommended <- c(top, rownames(f)[seq_len(top_select)])
-        top <- c(top, rownames(f)[seq_len(top_select)])
+        selected_markers <- rownames(f)[seq_len(top_select)]
+        recommended_df <- bind_rows(recommended_df, 
+                                    tibble(marker = selected_markers,
+                                           cell_type = names(fm)[i],
+                                           summary.logFC = f[selected_markers,]$summary.logFC))
+        #recommended <- c(top, rownames(f)[seq_len(top_select)])
+        #top <- c(top, rownames(f)[seq_len(top_select)])
       }
+      
+      # Iteratively remove markers until number of markers equals panel size
+      while(nrow(recommended_df) > panel_size){
+        # Find cell types that have the most number of markers. 
+        # These are the ones markers can be removed from
+        markers_per_cell_type <- group_by(recommended_df, cell_type) %>% 
+          tally() %>% 
+          mutate(max_markers = max(n)) %>% 
+          filter(n == max_markers)
         
-      recommended <- unique(recommended)
+        # Select single marker to remove based on lowest lfc
+        remove <- recommended_df %>% 
+          filter(cell_type %in% markers_per_cell_type$cell_type) %>% 
+          arrange(summary.logFC) %>% 
+          slice_head(n = 1) %>% 
+          pull(marker)
+        
+        recommended_df <- filter(recommended_df, marker != remove)
+      }
+
+      recommended <- unique(recommended_df$marker)
       scratch <- unique(scratch)
-      top <- unique(top)
+      top <- recommended #unique(top)
     }
     marker <- list(recommended_markers = recommended,
                      scratch_markers = scratch,
