@@ -87,7 +87,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
       fm <- fms[[col]]
       n <- length(fm)
         
-      top_select <- ceiling(panel_size / n)
+      top_select <- ceiling((panel_size + 10) / n)
       
       recommended <- marker$recommended_markers
       recommended_df <- tibble(markers = c(), cell_type = c())
@@ -110,8 +110,10 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
         #top <- c(top, rownames(f)[seq_len(top_select)])
       }
       
+      #recommended_df <- group_by(recommended_df, marker, cell_type)
+      
       # Iteratively remove markers until number of markers equals panel size
-      while(nrow(recommended_df) > panel_size){
+      while(length(unique(recommended_df$marker)) > panel_size){
         # Find cell types that have the most number of markers. 
         # These are the ones markers can be removed from
         markers_per_cell_type <- group_by(recommended_df, cell_type) %>% 
@@ -120,9 +122,13 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
           filter(n == max_markers)
         
         # Select single marker to remove based on lowest lfc
+        # sometimes the same marker is selected for several cell types
+        # in this case the average lfc is taken
         remove <- recommended_df %>% 
           filter(cell_type %in% markers_per_cell_type$cell_type) %>% 
-          arrange(summary.logFC) %>% 
+          group_by(marker) %>% 
+          summarize(mean_lfc = mean(summary.logFC)) %>% 
+          arrange(mean_lfc) %>% 
           slice_head(n = 1) %>% 
           pull(marker)
         
