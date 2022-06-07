@@ -544,11 +544,20 @@ cytosel <- function(...) {
           } else {
             ## We compute the set of markers for the first time
             markers <- get_markers(fms(), 
+                                   # Adding 10 to make sure panel size is approximate 
+                                   # since a) the same marker is selected multiple times and
+                                   # b) excess markers are removed
                                    input$panel_size, 
                                    input$marker_strategy, 
                                    sce(),
                                    allowed_genes())
             
+            if(length(markers$recommended_markers) < input$panel_size){
+              showNotification("The cell types of the uploaded dataset show expression redundancy.\n
+                               This results in fewer genes being shown than requested.",
+                               type = 'message',
+                               duration = NULL)
+            }
             ## Forgotten what this is for
             markers$scratch_markers <- scratch_markers_to_keep
           }
