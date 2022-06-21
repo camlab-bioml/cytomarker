@@ -35,7 +35,7 @@ good_col <- function(sce, columns) {
 #' 
 #' @param sce A SingleCellExperiment object
 #' @param columns A vector storing columns
-#' @param pref_assay Assay loaded, default is 'logcounts'
+#' @param pref_assay Assay loaded
 #' 
 #' @importFrom SingleCellExperiment colData
 #' @importFrom scran findMarkers
@@ -68,6 +68,7 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
 #' @param sce SingleCellExperiment object
 #' @param allowed_genes Set of allowed genes
 #' @import geneBasisR
+#' @import dplyr
 get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
   
   columns <- names(fms)
@@ -189,12 +190,12 @@ set_current_markers_safely <- function(markers, fms) {
 #'
 #' @param sce A SingleCellExperiment object
 #' @param columns A vector storing columns
-#' @param pref_assay Assay loaded, default is 'logcounts'
+#' @param pref_assay Assay loaded
 #' 
 #' @importFrom scater runUMAP
 #' @importFrom tibble tibble
 #' @importFrom SingleCellExperiment reducedDim
-get_umap <- function(sce, columns, pref_assay = "logcounts") {
+get_umap <- function(sce, columns, pref_assay) {
   
   sce <- runUMAP(sce, exprs_values = pref_assay)
   
@@ -217,8 +218,8 @@ get_umap <- function(sce, columns, pref_assay = "logcounts") {
 #' @param mrkrs A list storing three lists of markers: 
 #' recommended_markers, scratch_markers, and top_markers
 #' @param max_cells Maximum number of cells
-#' @param pref_assay Assay loaded, default is 'logcounts'
-get_scores <- function(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
+#' @param pref_assay Assay loaded
+get_scores <- function(sce, columns, mrkrs, pref_assay, max_cells = 5000) {
   
   max_cells <- min(ncol(sce), max_cells)
   sce_tr <- sce[mrkrs, sample(ncol(sce), max_cells, replace=FALSE)]
@@ -226,7 +227,7 @@ get_scores <- function(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logc
   scores <- list()
   
   for(column in columns) {
-    scores[[column]] <- get_scores_one_column(sce_tr, column, mrkrs, max_cells, pref_assay)
+    scores[[column]] <- get_scores_one_column(sce_tr, column, mrkrs, pref_assay, max_cells)
   }
   
   scores
@@ -239,8 +240,8 @@ get_scores <- function(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logc
 #' @param mrkrs A list storing three lists of markers: 
 #' recommended_markers, scratch_markers, and top_markers
 #' @param max_cells Maximum number of cells
-#' @param pref_assay Assay loaded, default is 'logcounts'
-get_scores_one_column <- function(sce_tr, column, mrkrs, max_cells = 5000, pref_assay = "logcounts") {
+#' @param pref_assay Assay loaded
+get_scores_one_column <- function(sce_tr, column, mrkrs, pref_assay, max_cells = 5000) {
   
   x <- t(as.matrix(assay(sce_tr, pref_assay)))
   y <- factor(colData(sce_tr)[[column]])
@@ -312,13 +313,13 @@ train_nb <- function(x,y, cell_types) {
 #' @param column A vector storing a column
 #' @param display A vector storing selected heatmap display option
 #' @param normalization A vector holding either 'Expression' or 'z-score'
-#' @param pref_assay Assay loaded, default is 'logcounts'
+#' @param pref_assay Assay loaded
 #' 
 #' @importFrom scuttle summarizeAssayByGroup
 #' @importFrom stats cor
 #' @importFrom viridis viridis
 #' @importFrom plotly plot_ly layout
-create_heatmap <- function(sce, markers, column, display, normalization, pref_assay = "logcounts") {
+create_heatmap <- function(sce, markers, column, display, normalization, pref_assay) {
 
   normalization <- match.arg(normalization, c("Expression", "z-score"))
   
@@ -393,20 +394,33 @@ round3 <- function(x) format(round(x, 1), nsmall = 3)
 #' (1) SingleCellExperiment
 #' (2) Seurat object (converted to SingleCellExperiment)
 #' 
-#' @param obj An R object storing metadata in a .rds file
+#' @param sce_path Input uploaded path
+#' @importFrom tools file_ext
+#' @importFrom zellkonverter readH5AD
 #' 
 #' TODO: accept anndata
 #' 
-read_input_scrnaseq <- function(sce) {
-
-  if(methods::is(sce, 'Seurat')) {
-    ## Convert to SingleCellExperiment
-    sce <- Seurat::as.SingleCellExperiment(sce)
-  } 
-  stopifnot(methods::is(sce, 'SingleCellExperiment'))
+read_input_scrnaseq <- function(sce_path) {
+  sce <- NULL ## object we're going to return
   
-  genes_to_remove <- grepl("^RP[L|S]|^MT-|^HSP|^FOS$|^JUN|MALAT1", rownames(sce))
-  sce <- sce[!genes_to_remove,]
+  if(file_ext(sce_path) == "h5ad") {
+    ## We'll assume this is an h5ad file
+    sce <- readH5AD(sce_path)
+  } else {
+    ## We'll assume this is an rds
+    sce <- readRDS(sce_path)
+    if(!(isTruthy(methods::is(sce, 'SingleCellExperiment')) || isTruthy(methods::is(sce, 'Seurat')))) {
+      invalid_modal()
+    }
+      
+    if(methods::is(sce, 'Seurat')) {
+      ## Convert to SingleCellExperiment
+      sce <- Seurat::as.SingleCellExperiment(sce)
+    } 
+    
+    genes_to_remove <- grepl("^RP[L|S]|^MT-|^HSP|^FOS$|^JUN|MALAT1", rownames(sce))
+    sce <- sce[!genes_to_remove,]
+  }
   sce
 } 
 
@@ -479,9 +493,9 @@ get_antibody_info <- function(gene_id, df) {
 #' 
 #' @param gene_to_replace Gene to be replaced
 #' @param sce A SingleCellExperiment object
-#' @param pref_assay Assay loaded, default is 'logcounts'
+#' @param pref_assay Assay loaded
 #' @param n_correlations Number of markers to replace gene_to_replace
-compute_alternatives <- function(gene_to_replace, sce, pref_assay = "logcounts", n_correlations) {
+compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlations) {
   x <- as.matrix(assay(sce, pref_assay))[,sample(ncol(sce), min(5000, ncol(sce)))]
   
   y <- x[gene_to_replace, ]

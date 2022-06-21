@@ -258,7 +258,7 @@ cytosel <- function(...) {
       )
     }
     
-    assay_modal <- function(failed = FALSE, assays) { # Assay selection
+    assay_modal <- function(assays, failed = FALSE) { # Assay selection
       modalDialog(
         selectInput("assay",
                     "Choose which assay to load",
@@ -335,30 +335,24 @@ cytosel <- function(...) {
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       
-      obj <- readRDS(input$input_scrnaseq$datapath)
-      
-      if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
+      # if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
         
-        sce(read_input_scrnaseq(obj))
+        sce(read_input_scrnaseq(input$input_scrnaseq$datapath))
         
         input_assays <- c(names(assays(sce())))
         if("logcounts" %in% input_assays) {
           input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
         }
         
+        ## TODO: only show this modal if more than one assay
         showModal(assay_modal(assays = input_assays))
-
         
         updateSelectInput(
           session = session,
           inputId = "coldata_column",
           choices = colnames(colData(sce()))
         )
-        
-      } else {
-        invalid_modal()
-      }
-      
+  
     })
     
     
@@ -367,7 +361,7 @@ cytosel <- function(...) {
       if (!is.null(input$assay)) {
         pref_assay(input$assay)
         removeModal()
-        output$selected_assay <- renderText({paste("Assay type: ", pref_assay())})
+        output$selected_assay <- renderText({paste("Selected assay: ", pref_assay())})
       } else {
         showModal(assay_modal(failed = TRUE, input_assays()))
       }
@@ -952,11 +946,11 @@ cytosel <- function(...) {
           nc <- ncol(sce())
           to_subsample <-
             sample(seq_len(nc), min(nc, 2000), replace = FALSE)
-          umap_all(get_umap(sce()[, to_subsample], column()))
-          umap_top(get_umap(sce()[markers$top_markers, to_subsample], column()))
+          umap_all(get_umap(sce()[, to_subsample], column(), pref_assay()))
+          umap_top(get_umap(sce()[markers$top_markers, to_subsample], column(), pref_assay()))
         } else {
-          umap_all(get_umap(sce(), column()))
-          umap_top(get_umap(sce()[markers$top_markers,], column()))
+          umap_all(get_umap(sce(), column(), pref_assay()))
+          umap_top(get_umap(sce()[markers$top_markers,], column(), pref_assay()))
         }
         
         # Update heatmap

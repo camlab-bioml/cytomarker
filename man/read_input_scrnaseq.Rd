@@ -7,12 +7,10 @@ from compressed RDS file. Accepts either:
 (1) SingleCellExperiment
 (2) Seurat object (converted to SingleCellExperiment)}
 \usage{
-read_input_scrnaseq(sce)
+read_input_scrnaseq(sce_path)
 }
 \arguments{
-\item{obj}{An R object storing metadata in a .rds file
-
-TODO: accept anndata}
+\item{sce_path}{Input uploaded path}
 }
 \description{
 Read the input single-cell RNA-seq dataset

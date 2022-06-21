@@ -48,7 +48,9 @@ Suggests:
   methods,
   stats,
   gridExtra,
-  testthat
+  testthatm
+  tools,
+  zellkonverter
 Remotes:
   github::daqana/dqshiny,
   github::MarioniLab/geneBasisR

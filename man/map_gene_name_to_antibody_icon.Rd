@@ -3,16 +3,16 @@
 \name{map_gene_name_to_antibody_icon}
 \alias{map_gene_name_to_antibody_icon}
 \title{Map gene symbols to antibody icons depending on
-whether the gene is found in the database}
+whether the gene is initially suggested or selected by the user}
 \usage{
-map_gene_name_to_antibody_icon(gene_id, df_antibody)
+map_gene_name_to_antibody_icon(gene_id, markers)
 }
 \arguments{
 \item{gene_id}{An element in the marker list}
 
-\item{df_antibody}{A dataframe storing antibody information}
+\item{markers}{the list of markers}
 }
 \description{
 Map gene symbols to antibody icons depending on
-whether the gene is found in the database
+whether the gene is initially suggested or selected by the user
 }
