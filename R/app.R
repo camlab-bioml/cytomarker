@@ -90,10 +90,10 @@ cytosel <- function(...) {
         radioButtons("marker_strategy", label = "Marker selection strategy",
                      choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
                      selected="fm"),
-        checkboxInput("subsample_for_umap", "Subsample for UMAP", value = TRUE) %>%
+        checkboxInput("subsample_sce", "Subsample cells", value = TRUE) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
-              bs_embed_popover(content = get_tooltip('subsample_for_umap'),
+              bs_embed_popover(content = get_tooltip('subsample_sce'),
                                placement = "right")
           ),
         br(),
@@ -495,6 +495,14 @@ cytosel <- function(...) {
         columns <- good_col(sce(), input$coldata_column)
         column(columns$good)
         col <- columns$bad
+        
+        
+        if (input$subsample_sce) {
+          incProgress(detail = "Subsampling data")
+          nc <- ncol(sce())
+          to_subsample <- sample(seq_len(nc), min(nc, 2000), replace = FALSE)
+          sce(sce()[,to_subsample])
+        } 
         
         if(isTruthy(!is.null(column()))) {
 
@@ -919,6 +927,7 @@ cytosel <- function(...) {
     update_analysis <- function() {
       
       withProgress(message = 'Processing data', value = 0, {
+
         
         ## Re-set the set of allowed genes (these may have changed if a different
         ## antibody application is selected)
@@ -941,18 +950,9 @@ cytosel <- function(...) {
         
         # Update UMAP
         incProgress(detail = "Computing UMAP")
-        
-        if (input$subsample_for_umap) {
-          nc <- ncol(sce())
-          to_subsample <-
-            sample(seq_len(nc), min(nc, 2000), replace = FALSE)
-          umap_all(get_umap(sce()[, to_subsample], column(), pref_assay()))
-          umap_top(get_umap(sce()[markers$top_markers, to_subsample], column(), pref_assay()))
-        } else {
-          umap_all(get_umap(sce(), column(), pref_assay()))
-          umap_top(get_umap(sce()[markers$top_markers,], column(), pref_assay()))
-        }
-        
+        umap_all(get_umap(sce(), column(), pref_assay()))
+        umap_top(get_umap(sce()[markers$top_markers,], column(), pref_assay()))
+
         # Update heatmap
         incProgress(detail = "Drawing heatmap")
         
