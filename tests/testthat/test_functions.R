@@ -19,8 +19,8 @@ context("Data reading")
 context("Marker finding")
 
 test_that("good_col returns valid columns", {
-  obj <- readRDS(system.file("tests/testthat/test_sce.rds", package="cytosel"))
-  sce <- read_input_scrnaseq(obj)
+  sce_path <- system.file("tests/testthat/test_sce.rds", package="cytosel")
+  sce <- read_input_scrnaseq(sce_path)
   columns <- good_col(sce, colnames(colData(sce)))
 
   expect_is(columns, 'list')
@@ -32,16 +32,32 @@ test_that("good_col returns valid columns", {
   expect_equal(columns$bad$colname, c("orig.ident", "nCount_RNA", "nFeature_RNA", "col2", "ident"))
 })
 
-# test_that("get_markers returns valid input", {
-#   obj <- readRDS("~/Github/cytosel/tests/testthat/test_sce.rds")
-#   sce <- read_input_scrnaseq(obj)
-#   markers <- get_markers(sce, 'col1', 10, 'logcounts')
-# 
-#   expect_is(markers, 'list')
-#   expect_equal(names(markers), c("recommended_markers", "scratch_markers", "top_markers"))
-#   expect_gt(length(markers$recommended_markers), 0)
-#   expect_gt(length(markers$top_markers), 0)
-# })
+test_that("get_markers and compute_fm returns valid output", {
+  sce_path <- system.file("tests/testthat/test_sce.rds", package="cytosel")
+  sce <- read_input_scrnaseq(sce_path)
+  
+  sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
+  
+  fms <- compute_fm(sce, 
+             "cell_type", 
+              "logcounts",
+            rownames(sce)
+  )
+  
+  expect_is(fms, 'list')
+  expect_equal(length(fms), 1)
+  expect_equal(nrow(fms[[1]][[1]]), nrow(sce))
+  
+  markers <- get_markers(fms, panel_size = 32, marker_strategy = 'standard', 
+                         sce = sce, 
+                         allowed_genes = rownames(sce))
+
+
+  expect_is(markers, 'list')
+  expect_equal(names(markers), c("recommended_markers", "scratch_markers", "top_markers"))
+  expect_gt(length(markers$recommended_markers), 0)
+  expect_gt(length(markers$top_markers), 0)
+})
 # 
 # 
 # test_that("get_markers errors for non unique values", {

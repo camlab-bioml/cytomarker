@@ -11,7 +11,7 @@ compute_fm(sce, columns, pref_assay, allowed_genes)
 
 \item{columns}{A vector storing columns}
 
-\item{pref_assay}{Assay loaded, default is 'logcounts'}
+\item{pref_assay}{Assay loaded}
 }
 \description{
 Note: this used to be part of get_markers but needs

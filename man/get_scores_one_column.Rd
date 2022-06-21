@@ -4,13 +4,7 @@
 \alias{get_scores_one_column}
 \title{Compute the metric scores for a specific column}
 \usage{
-get_scores_one_column(
-  sce_tr,
-  column,
-  mrkrs,
-  max_cells = 5000,
-  pref_assay = "logcounts"
-)
+get_scores_one_column(sce_tr, column, mrkrs, pref_assay, max_cells = 5000)
 }
 \arguments{
 \item{sce_tr}{A SingleCellExperiment object}
@@ -20,9 +14,9 @@ get_scores_one_column(
 \item{mrkrs}{A list storing three lists of markers:
 recommended_markers, scratch_markers, and top_markers}
 
-\item{max_cells}{Maximum number of cells}
+\item{pref_assay}{Assay loaded}
 
-\item{pref_assay}{Assay loaded, default is 'logcounts'}
+\item{max_cells}{Maximum number of cells}
 }
 \description{
 Compute the metric scores for a specific column

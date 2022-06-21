@@ -4,14 +4,7 @@
 \alias{create_heatmap}
 \title{Make the expression and correlation heatmaps}
 \usage{
-create_heatmap(
-  sce,
-  markers,
-  column,
-  display,
-  normalization,
-  pref_assay = "logcounts"
-)
+create_heatmap(sce, markers, column, display, normalization, pref_assay)
 }
 \arguments{
 \item{sce}{A SingleCellExperiment object}
@@ -25,7 +18,7 @@ recommended_markers, scratch_markers, and top_markers}
 
 \item{normalization}{A vector holding either 'Expression' or 'z-score'}
 
-\item{pref_assay}{Assay loaded, default is 'logcounts'}
+\item{pref_assay}{Assay loaded}
 }
 \description{
 Make the expression and correlation heatmaps

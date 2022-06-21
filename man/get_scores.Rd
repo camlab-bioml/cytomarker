@@ -4,7 +4,7 @@
 \alias{get_scores}
 \title{Compute the metric scores}
 \usage{
-get_scores(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logcounts")
+get_scores(sce, columns, mrkrs, pref_assay, max_cells = 5000)
 }
 \arguments{
 \item{sce}{A SingleCellExperiment object}
@@ -14,9 +14,9 @@ get_scores(sce, columns, mrkrs, max_cells = 5000, pref_assay = "logcounts")
 \item{mrkrs}{A list storing three lists of markers:
 recommended_markers, scratch_markers, and top_markers}
 
-\item{max_cells}{Maximum number of cells}
+\item{pref_assay}{Assay loaded}
 
-\item{pref_assay}{Assay loaded, default is 'logcounts'}
+\item{max_cells}{Maximum number of cells}
 }
 \description{
 Compute the metric scores

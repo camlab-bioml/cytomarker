@@ -397,8 +397,7 @@ round3 <- function(x) format(round(x, 1), nsmall = 3)
 #' @param sce_path Input uploaded path
 #' @importFrom tools file_ext
 #' @importFrom zellkonverter readH5AD
-#' 
-#' TODO: accept anndata
+#'
 #' 
 read_input_scrnaseq <- function(sce_path) {
   sce <- NULL ## object we're going to return

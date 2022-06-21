@@ -40,7 +40,8 @@ Imports:
     randomcoloR,
     geneBasisR,
     plotly,
-    pkgload
+    pkgload,
+    zellkonverter
 Suggests:
   stringr,
   yardstick,
@@ -48,9 +49,8 @@ Suggests:
   methods,
   stats,
   gridExtra,
-  testthatm
-  tools,
-  zellkonverter
+  testthat,
+  tools
 Remotes:
   github::daqana/dqshiny,
   github::MarioniLab/geneBasisR

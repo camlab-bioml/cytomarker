@@ -4,14 +4,14 @@
 \alias{get_umap}
 \title{Compute the UMAP}
 \usage{
-get_umap(sce, columns, pref_assay = "logcounts")
+get_umap(sce, columns, pref_assay)
 }
 \arguments{
 \item{sce}{A SingleCellExperiment object}
 
 \item{columns}{A vector storing columns}
 
-\item{pref_assay}{Assay loaded, default is 'logcounts'}
+\item{pref_assay}{Assay loaded}
 }
 \description{
 Compute the UMAP
