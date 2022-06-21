@@ -20,6 +20,7 @@ context("Marker finding")
 
 test_that("good_col returns valid columns", {
   sce_path <- system.file("tests/testthat/test_sce.rds", package="cytosel")
+  sce_path <- "test_sce.rds"
   sce <- read_input_scrnaseq(sce_path)
   columns <- good_col(sce, colnames(colData(sce)))
 
@@ -34,6 +35,7 @@ test_that("good_col returns valid columns", {
 
 test_that("get_markers and compute_fm returns valid output", {
   sce_path <- system.file("tests/testthat/test_sce.rds", package="cytosel")
+  sce_path <- "test_sce.rds"
   sce <- read_input_scrnaseq(sce_path)
   
   sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
