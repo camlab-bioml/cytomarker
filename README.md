@@ -1,4 +1,6 @@
-# cytocel
+# cytosel
+
+![R check](https://github.com/camlab-bioml/cytosel/actions/workflows/check-package.yml/badge.svg)
 
 Antibody panel selection for mass cytometry using scRNA-seq
 
