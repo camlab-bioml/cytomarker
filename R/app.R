@@ -43,6 +43,9 @@ cytosel <- function(...) {
   antibody_info <- dplyr::rename(antibody_info, Symbol = `Gene Name (Upper)`)
   antibody_info <- tidyr::drop_na(antibody_info)
   
+  # Read in grch38 file
+  grch38 <- read_tsv("annotables_grch38.tsv")
+  
   applications_parsed <- get_antibody_applications(antibody_info, 'Symbol', 'Listed Applications')
   
   
@@ -334,10 +337,13 @@ cytosel <- function(...) {
 
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
+
+      obj <- readRDS(input$input_scrnaseq$datapath)
       
-      # if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
-        
-        sce(read_input_scrnaseq(input$input_scrnaseq$datapath))
+      #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
+        input_sce <- parse_gene_names(obj, grch38)
+        input_sce <- read_input_scrnaseq(input_sce)
+        sce(input_sce)
         
         input_assays <- c(names(assays(sce())))
         if("logcounts" %in% input_assays) {
@@ -367,7 +373,6 @@ cytosel <- function(...) {
       }
     })
     
-    
     ### ANTIBODY EXPLORER ###
     output$antibody_table <- renderReactable({
       req(current_markers())
@@ -379,7 +384,6 @@ cytosel <- function(...) {
                 filterable = TRUE,
                 sortable = TRUE)
     })
-    
     
     ### PLOTS ###
     output$all_plot <- renderPlotly({

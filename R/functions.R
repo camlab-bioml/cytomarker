@@ -68,7 +68,7 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
 #' @param sce SingleCellExperiment object
 #' @param allowed_genes Set of allowed genes
 #' @import geneBasisR
-#' @import dplyr
+#' @importFrom dplyr mutate tally group_by filter pull slice_head arrange summarize
 get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
   
   columns <- names(fms)
@@ -422,6 +422,264 @@ read_input_scrnaseq <- function(sce_path) {
   }
   sce
 } 
+
+##### [ PARSE GENE NAME FUNCTIONS ] #####
+
+
+#' Helper function for `parse_gene_names`
+#' Calculates the overlap of gene vector with annotables
+#' 
+#' @importFrom magrittr %>% 
+#' @importFrom dplyr mutate filter pull
+calculate_proportion_in_annotables <- function(g, annotation){
+  # Count how many of the input genes were found in annotables
+  genes_found <- factor(g %in% annotation$symbol, levels = c(TRUE, FALSE))
+  genes_found <- table(genes_found) %>% 
+    as.data.frame() %>% 
+    mutate(total = sum(Freq),
+           prop_found = Freq / total)
+  
+  prop_found <- filter(genes_found, genes_found == TRUE) %>% 
+    pull(prop_found)
+  genes_found <- filter(genes_found, genes_found == TRUE) %>% 
+    pull(Freq)
+  
+  list(proportion = prop_found, gene_num = genes_found)
+}
+
+#' Checks if sce rownames can be used
+check_rownames_for_hugo <- function(sce, grch38){
+  if(is.null(rownames(sce))){
+    error_status <- "rownames_are_null"
+  }else{
+    rowname_genes <- rownames(sce)
+    
+    # Calculate overlap with annotables
+    genes_found <- calculate_proportion_in_annotables(rowname_genes, grch38)
+    prop_found <- genes_found$proportion
+    genes_found <- genes_found$gene_num
+    
+    # Infer organism
+    inferred_type <- inferorg(rowname_genes)
+    
+    # Save as gene_names if conditions match
+    if(prop_found > 0.5 && inferred_type$organism == 'human'){
+      error_status <- "use_rownames"
+    }else if(prop_found <= 0.5 && genes_found > 100 && inferred_type$organism == 'human'){
+      error_status <- "low_number_of_gene_matches"
+    }else{
+      if(inferred_type$organism == 'human'){
+        error_status <- "rownames_do_not_match_criteria"
+      }else{
+        error_status <- "did_not_find_hugo_in_rownames"
+      }
+    }
+  }
+  
+  error_status
+}
+
+#' Checks if there are any columns in rowData that contain gene names
+check_rowData_for_hugo <- function(sce, grch38){
+  # List of possible rowData column names
+  possible_symbol_rowData_names <- c("Gene", "gene", "Genes", "genes", "geneID", "GeneID", 
+                                     "symbol", "Symbol", "Gene_ID", "gene_id", "gene_ID",
+                                     "gene_symbol", "gene_Symbol", "geneSymbol", "GeneSymbol",
+                                     "genesymbol", "genessymbol", "genessymbols", "genesymbols")
+  
+  # This finds all the ID's of rowData(sce) that match possible_symbol_rowData_names
+  gene_match_idx <- na.omit(match(possible_symbol_rowData_names, colnames(rowData(sce))))
+  #gene_match_idx <- na.omit(match(colnames(rowData(sce)), possible_symbol_rowData_names))
+  
+  if(length(gene_match_idx) > 0){
+    # Go through every match and find the one with the highest score
+    colData_matches <- lapply(gene_match_idx, function(x){
+      g <- rowData(sce)[[x]]
+      inferred_type <- inferorg(g)
+      
+      tibble(organism = inferred_type$organism,
+             format = inferred_type$format,
+             confidence_format = inferred_type$confidence_format,
+             colData_column_idx = x)
+    }) %>% bind_rows() %>% 
+      filter(organism == "human" & format == "symbol") %>% 
+      arrange(-confidence_format)
+    
+    # Check if there are any rows left after filtering down to human and symbol
+    if(nrow(colData_matches) > 0){
+      # Take top hit by format confidence score
+      best_symbol_idx <- colData_matches$colData_column_idx[1]
+      colData_genes <- rowData(sce)[[best_symbol_idx]]
+      
+      genes_found <- calculate_proportion_in_annotables(colData_genes, grch38)
+      if(genes_found$proportion > 0.5){
+        output <- list(status = "use_rowData_names",
+                       genes = colData_genes)
+      }else if(genes_found$proportion <= 0.5 && genes_found$gene_num > 100){
+        output <- list(status = "low_number_of_gene_matches",
+                       genes = colData_genes)
+      }else{
+        output <- list(status = "rowdata_does_not_match_criteria", genes = NULL)
+      }
+    }else{
+      output <- list(status = "no_symbols_found_in_rowdata", genes = NULL)
+    }
+  }else{
+    output <- list(status = "no_symbols_found_in_rowdata", genes = NULL)
+  }
+  
+  output
+}
+
+#' Checks if the rownames of the sce contain human ensembl ID's
+#' @importFrom dplyr select
+#' @importFrom scuttle sumCountsAcrossFeatures
+#' @importFrom SingleCellExperiment SingleCellExperiment
+check_rownames_for_ensembl<- function(sce, grch38){
+  if(all(grepl("ENSG[0-9]*", rownames(sce)))){
+    gene_map <- select(grch38, ensgene, symbol) %>% deframe()
+    
+    rownames(sce) <- gsub("\\.[0-9]", "", rownames(sce))
+    filtered_sce <- sce[rownames(sce) %in% names(gene_map)]
+    
+    rownames(filtered_sce) <- gene_map[rownames(filtered_sce)]
+    
+    filtered_mat <- sumCountsAcrossFeatures(filtered_sce,
+                                            rownames(filtered_sce),
+                                            average = TRUE,
+                                            assay.type = 'logcounts')
+    
+    filtered_sce <- SingleCellExperiment(list(logcounts = filtered_mat))
+    colData(filtered_sce) <- colData(sce)
+    sce <- filtered_sce
+    
+    sce
+  }else if(all(grepl("ENS", rownames(sce)))){
+    "no_human_ensID"
+  }else{
+    "did_not_find_ensembl"
+  }
+}
+
+#' Parses the gene names in a sce object
+#' This function tries to find gene symbols by going through several steps:
+#' 1. Count the number and proportion of rownames that are listed in the
+#'    symbol column of the annotables grch38 object. 
+#'    If the proportion is more than 50% and the symbols are human they are used
+#'    If the proportion is less than 50%, more than 100 genes are found and 
+#'    the symbols are human they are still used
+#' 2. Check if there are any human gene names in `rowData(sce)` and if more
+#'    than 50%/100 genes are in the symbol column of the annotables grch38 object
+#' 3. If rownames are not NULL, check if they are ensembl ID's and convert to symbol
+#' @export
+#' 
+#' @param sce SingleCellExperiment object
+#' 
+#' @return genes A vector of gene names, or should it return an sce?
+#' 
+#' @importFrom inferorg inferorg
+#' @importFrom dplyr mutate filter pull bind_rows
+#' @importFrom tibble tibble deframe
+#' @importFrom magrittr %>% 
+parse_gene_names <- function(sce, grch38){
+  ## STEP 1: Check if rownames can be used
+  step1 <- check_rownames_for_hugo(sce, grch38)
+  
+  if(step1 == "use_rownames"){
+    clean_sce <- sce
+  }else if(step1 == "low_number_of_gene_matches"){
+    clean_sce <- sce
+    throw_error_or_warning(type = 'notification',
+                           message = "Less than 50% of the genes in your dataset
+                           match the database.",
+                           notificationType = 'warning')
+  }else{
+    ## STEP 2: Check if gene names are in rowData
+    step2 <- check_rowData_for_hugo(sce, grch38)
+    if(step2$status == "use_rowData_names"){
+      clean_sce <- sce
+      rownames(clean_sce) <- step2$genes
+    }else if(step2$status == "low_number_of_gene_matches"){
+      clean_sce <- sce
+      rownames(clean_sce) <- step2$genes
+      throw_error_or_warning(type = 'notification',
+                             message = "Less than 50% of the genes in your dataset
+                             match the database.",
+                             notificationType = 'warning')
+    }else if(step1 != "rownames_are_null"){
+      ## STEP 3: check if rownames are ensembl
+      step3 <- check_rownames_for_ensembl(sce, grch38)
+      
+      if(class(step3) == "SingleCellExperiment"){
+        clean_sce <- step3
+      }else if(step3 == "no_human_ensID"){
+        throw_error_or_warning(type = 'error',
+                               message = "Detected ensembl ID's. However, these do not appear to be human.
+                               Only human gene names are supported at the moment. 
+                               Please check the documentation for details.")
+      }else{
+        print("not this")
+        throw_error_or_warning(type = 'error',
+                               message = "No human gene names were found in your dataset.
+                               This could be because your genes are from a different species or
+                               there are other mismatches. Please check the documentation for details.")
+      }
+      
+    }
+  if(exists("clean_sce")){
+    clean_sce
+  }else{
+    throw_error_or_warning(type = 'error',
+                           message = "No human gene names were found in your dataset.
+                           This could be because your genes are from a different species or
+                           there are other mismatches. Please check the documentation for details.")
+    }
+  }
+}
+
+#' Global function to throw errors/warnings
+#' 
+#' @param type needs to be `error` or `notification`. `error` will create a popup error
+#'  while `notification` will display a notification in the bottom right. Defaults to `notification`.
+#' @param message the message to be displayed to the user
+#' @param duration number of seconds to display message before it disappears. 
+#' Defaults to NULL (does not close until closed by user).
+#' @param notificationType Controls the colour of the message. Allowed values are 'default' (grey), 
+#' 'message' (blue), 'warning' (yellow) and 'error' (red). Only applicable to notifications
+#' @param errorTitle Title to display on the error message. Defaults to 'Error'
+throw_error_or_warning <- function(type = 'notification', 
+                                   message, 
+                                   duration = NULL,
+                                   notificationType = 'default',
+                                   errorTitle = "Error"){
+  
+  # Change duration format so it can also be accepted by shinyalert
+  # shinyalert requires timer = 0 if notification should be closed by user
+  # and duration is in miliseconds as opposed to seconds for showNotification
+  if(type == 'error'){
+    if(is.null(duration)){
+      duration <- 0
+    }else{
+      duration <- duration * 1000
+    }
+  }
+  
+  if(type == 'error'){
+    shinyalert(
+      title = errorTitle,
+      text = message,
+      type = "error",
+      timer = duration,
+      showConfirmButton = TRUE,
+      confirmButtonCol = "#337AB7"
+    )
+  }else if(type == 'notification'){
+    showNotification(
+      message,
+      type = notificationType,
+      duration = duration)
+  }
+}
 
 #' Return the legend of the cell type colours
 #' 
