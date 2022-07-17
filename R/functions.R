@@ -416,15 +416,11 @@ read_input_scrnaseq <- function(sce_path) {
       ## Convert to SingleCellExperiment
       sce <- Seurat::as.SingleCellExperiment(sce)
     } 
-    
-    genes_to_remove <- grepl("^RP[L|S]|^MT-|^HSP|^FOS$|^JUN|MALAT1", rownames(sce))
-    sce <- sce[!genes_to_remove,]
   }
   sce
 } 
 
 ##### [ PARSE GENE NAME FUNCTIONS ] #####
-
 
 #' Helper function for `parse_gene_names`
 #' Calculates the overlap of gene vector with annotables
@@ -571,7 +567,6 @@ check_rownames_for_ensembl<- function(sce, grch38){
 #' 2. Check if there are any human gene names in `rowData(sce)` and if more
 #'    than 50%/100 genes are in the symbol column of the annotables grch38 object
 #' 3. If rownames are not NULL, check if they are ensembl ID's and convert to symbol
-#' @export
 #' 
 #' @param sce SingleCellExperiment object
 #' 
@@ -627,7 +622,9 @@ parse_gene_names <- function(sce, grch38){
       
     }
   if(exists("clean_sce")){
-    clean_sce
+    # Remove RPL/S Mitochondrial, HSP, FOS, JUN and MALAT1 genes
+    genes_to_remove <- grepl("^RP[L|S]|^MT-|^HSP|^FOS$|^JUN|MALAT1", rownames(clean_sce))
+    clean_sce[!genes_to_remove,]
   }else{
     throw_error_or_warning(type = 'error',
                            message = "No human gene names were found in your dataset.

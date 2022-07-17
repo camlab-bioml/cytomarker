@@ -337,12 +337,9 @@ cytosel <- function(...) {
 
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
-
-      obj <- readRDS(input$input_scrnaseq$datapath)
-      
       #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
-        input_sce <- parse_gene_names(obj, grch38)
-        input_sce <- read_input_scrnaseq(input_sce)
+        input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
+        input_sce <- parse_gene_names(input_sce, grch38)
         sce(input_sce)
         
         input_assays <- c(names(assays(sce())))
