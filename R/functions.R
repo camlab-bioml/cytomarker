@@ -532,10 +532,15 @@ check_rowData_for_hugo <- function(sce, grch38){
 #' @importFrom scuttle sumCountsAcrossFeatures
 #' @importFrom SingleCellExperiment SingleCellExperiment
 check_rownames_for_ensembl<- function(sce, grch38){
-  if(all(grepl("ENSG[0-9]*", rownames(sce)))){
-    gene_map <- select(grch38, ensgene, symbol) %>% deframe()
-    
+  ensemble_genes <- grepl("ENSG[0-9]*", rownames(sce))
+  if(any(ensemble_genes)){
+    sce <- sce[ensemble_genes]
     rownames(sce) <- gsub("\\.[0-9]", "", rownames(sce))
+    
+    gene_map <- select(grch38, ensgene, symbol) %>% 
+      filter(symbol != "") %>% 
+      deframe()
+    
     filtered_sce <- sce[rownames(sce) %in% names(gene_map)]
     
     rownames(filtered_sce) <- gene_map[rownames(filtered_sce)]
@@ -547,13 +552,24 @@ check_rownames_for_ensembl<- function(sce, grch38){
     
     filtered_sce <- SingleCellExperiment(list(logcounts = filtered_mat))
     colData(filtered_sce) <- colData(sce)
-    sce <- filtered_sce
     
-    sce
-  }else if(all(grepl("ENS", rownames(sce)))){
-    "no_human_ensID"
+    genes_found <- calculate_proportion_in_annotables(rownames(filtered_sce), grch38)
+    
+    if(genes_found$proportion > 0.5){
+      output <- list(status = "use_ensembl_names",
+                     sce = filtered_sce)
+    }else if(genes_found$proportion <= 0.5 && genes_found$gene_num > 100){
+      output <- list(status = "low_number_of_gene_matches",
+                     sce = filtered_sce)
+    }else{
+      output <- list(status = "ensembl_does_not_match_criteria", sce = NULL)
+    }
+    
+    output
+  }else if(any(grepl("ENS", rownames(sce)))){
+    list(status = "no_human_ensID", sce = NULL)
   }else{
-    "did_not_find_ensembl"
+    list(status = "did_not_find_ensembl", sce = NULL)
   }
 }
 
@@ -605,15 +621,25 @@ parse_gene_names <- function(sce, grch38){
       ## STEP 3: check if rownames are ensembl
       step3 <- check_rownames_for_ensembl(sce, grch38)
       
-      if(class(step3) == "SingleCellExperiment"){
-        clean_sce <- step3
-      }else if(step3 == "no_human_ensID"){
+      if(step3$status == "use_ensembl_names"){
+        clean_sce <- step3$sce
+      }else if(step3$status == "low_number_of_gene_matches"){
+        clean_sce <- step3$sce
+        throw_error_or_warning(type = 'notification',
+                               message = "Less than 50% of the genes in your dataset
+                               match the database.",
+                               notificationType = 'warning')
+      }else if(step3$status == "no_human_ensID"){
         throw_error_or_warning(type = 'error',
                                message = "Detected ensembl ID's. However, these do not appear to be human.
                                Only human gene names are supported at the moment. 
                                Please check the documentation for details.")
+      }else if(step3$status == "ensembl_does_not_match_criteria"){
+        throw_error_or_warning(type = 'error',
+                               message = "No human gene names were found in your dataset.
+                               This could be because your genes are from a different species or
+                               there are other mismatches. Please check the documentation for details.")
       }else{
-        print("not this")
         throw_error_or_warning(type = 'error',
                                message = "No human gene names were found in your dataset.
                                This could be because your genes are from a different species or

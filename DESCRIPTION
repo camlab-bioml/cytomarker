@@ -41,7 +41,9 @@ Imports:
     geneBasisR,
     plotly,
     pkgload,
-    zellkonverter
+    zellkonverter,
+    inferorg,
+    magrittr
 Suggests:
   stringr,
   yardstick,
