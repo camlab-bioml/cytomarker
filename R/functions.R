@@ -74,7 +74,6 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
   columns <- names(fms)
 
   marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
-  
   if(marker_strategy == "geneBasis") {
     sce2 <- retain_informative_genes(sce[allowed_genes,])
     genes <- gene_search(sce2, n_genes=panel_size)
@@ -114,6 +113,9 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
       #recommended_df <- group_by(recommended_df, marker, cell_type)
       
       # Iteratively remove markers until number of markers equals panel size
+      # this needs to happen iteratively to ensure cell types have roughly
+      # the same number of markers (otherwise if one cell type has all markers
+      # with low lfc, all markers for that cell type could be removed)
       while(length(unique(recommended_df$marker)) > panel_size){
         # Find cell types that have the most number of markers. 
         # These are the ones markers can be removed from
@@ -397,8 +399,8 @@ round3 <- function(x) format(round(x, 1), nsmall = 3)
 #' @param sce_path Input uploaded path
 #' @importFrom tools file_ext
 #' @importFrom zellkonverter readH5AD
-#'
-#' 
+#' @importFrom SingleCellExperiment logcounts
+#' @importFrom Matrix rowSums
 read_input_scrnaseq <- function(sce_path) {
   sce <- NULL ## object we're going to return
   
@@ -417,8 +419,35 @@ read_input_scrnaseq <- function(sce_path) {
       sce <- Seurat::as.SingleCellExperiment(sce)
     } 
   }
+  ## Remove cells with no reads - would cause issue with logNormCounts from scater
+  sce <- sce[, Matrix::colSums(logcounts(sce)) > 0]
   sce
 } 
+
+#' This function detects whether the logcounts assay are indeed logcounts by finding
+#' the residual of the logcount expression assays' rowsums divided by one. If this
+#' is zero they must be counts and are converted to logcounts
+#' @param sce Uploaded SingleCellExperiment
+#' @importFrom SummarizedExperiment assays
+#' @importFrom scater logNormCounts
+detect_assay_and_create_logcounts <- function(sce){
+  count_sums <- assays(sce)$logcounts |> 
+    rowSums()
+  
+  ## calculate residuals after dividing by 1
+  modulo_residuals <- lapply(count_sums, function(x) x %% 1) |> 
+    unlist() |> 
+    sum()
+  
+  ## If divisible by one must be counts, this converts to logcounts
+  if(modulo_residuals == 0){
+    assays(sce)[['counts']] <- assays(sce)$logcounts
+    assays(sce)[['logcounts']] <- NULL
+    sce <- logNormCounts(sce)
+  }
+  
+  sce
+}
 
 ##### [ PARSE GENE NAME FUNCTIONS ] #####
 
@@ -476,6 +505,7 @@ check_rownames_for_hugo <- function(sce, grch38){
 }
 
 #' Checks if there are any columns in rowData that contain gene names
+#' @importFrom stats na.omit
 check_rowData_for_hugo <- function(sce, grch38){
   # List of possible rowData column names
   possible_symbol_rowData_names <- c("Gene", "gene", "Genes", "genes", "geneID", "GeneID", 

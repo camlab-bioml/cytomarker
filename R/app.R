@@ -338,23 +338,24 @@ cytosel <- function(...) {
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
-        input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
-        input_sce <- parse_gene_names(input_sce, grch38)
-        sce(input_sce)
-        
-        input_assays <- c(names(assays(sce())))
-        if("logcounts" %in% input_assays) {
-          input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
-        }
-        
-        ## TODO: only show this modal if more than one assay
-        showModal(assay_modal(assays = input_assays))
-        
-        updateSelectInput(
-          session = session,
-          inputId = "coldata_column",
-          choices = colnames(colData(sce()))
-        )
+      input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
+      input_sce <- detect_assay_and_create_logcounts(input_sce)
+      input_sce <- parse_gene_names(input_sce, grch38)
+      sce(input_sce)
+      
+      input_assays <- c(names(assays(sce())))
+      if("logcounts" %in% input_assays) {
+        input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
+      }
+      
+      ## TODO: only show this modal if more than one assay
+      showModal(assay_modal(assays = input_assays))
+      
+      updateSelectInput(
+        session = session,
+        inputId = "coldata_column",
+        choices = colnames(colData(sce()))
+      )
   
     })
     
@@ -861,7 +862,6 @@ cytosel <- function(...) {
       n <- c(input$alternative_markers_rows_selected)
       
       replacements <- replacements()[n,]$Gene
-      
       cm <- current_markers()
       markers <- list(recommended_markers = cm$recommended_markers,
                       scratch_markers = input$bl_scratch,
