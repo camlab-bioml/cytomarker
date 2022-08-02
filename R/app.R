@@ -344,12 +344,20 @@ cytosel <- function(...) {
       sce(input_sce)
       
       input_assays <- c(names(assays(sce())))
-      if("logcounts" %in% input_assays) {
-        input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
-      }
       
-      ## TODO: only show this modal if more than one assay
-      showModal(assay_modal(assays = input_assays))
+      # If there is more than 1 assay user to select appropriate assay
+      if(length(input_assays) > 1){
+        if("logcounts" %in% input_assays) {
+          input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
+        }
+        
+        showModal(assay_modal(assays = input_assays))
+      }else{
+        throw_error_or_warning(message = paste("Only one assay provided, thus using",
+                                               input_assays),
+                               duration = 5,
+                               notificationType = 'message')
+      }
       
       updateSelectInput(
         session = session,
