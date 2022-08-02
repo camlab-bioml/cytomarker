@@ -6,6 +6,8 @@ test_that("SingleCellExperiment object reading", {
   sce <- read_input_scrnaseq(obj)
 
   expect_is(sce, 'SingleCellExperiment')
+  expect_equivalent(dim(sce), c(100, 500))
+  expect_equivalent(rownames(sce), paste("feature-", seq(1, 100, 1), sep=""))
 })
 
 test_that("Seurat object reading", {
@@ -14,13 +16,14 @@ test_that("Seurat object reading", {
 
   ## Seurat objects are converted to SingleCellExperiments by read_input_scrnaseq
   expect_is(seu, 'SingleCellExperiment')
+  expect_equivalent(dim(seu), c(100, 500))
+  expect_equivalent(rownames(seu), paste("feature-", seq(1, 100, 1), sep=""))
 })
 
 context("Marker finding")
 
 test_that("good_col returns valid columns", {
   sce_path <- system.file("tests/testthat/test_sce.rds", package="cytosel")
-  sce_path <- "test_sce.rds"
   sce <- read_input_scrnaseq(sce_path)
   columns <- good_col(sce, colnames(colData(sce)))
 
@@ -35,7 +38,6 @@ test_that("good_col returns valid columns", {
 
 test_that("get_markers and compute_fm returns valid output", {
   sce_path <- system.file("tests/testthat/test_sce.rds", package="cytosel")
-  sce_path <- "test_sce.rds"
   sce <- read_input_scrnaseq(sce_path)
   
   sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
@@ -70,11 +72,24 @@ test_that("get_markers errors for non unique values", {
 })
 
 
-# context("Plotting")
-# 
-# test_that("get_umap returns valid dataframe", {
-# 
-# })
+context("Plotting")
+
+test_that("get_umap returns valid dataframe", {
+  obj <- file.path("~/Github/cytosel/tests/testthat/test_sce.rds")
+  sce <- read_input_scrnaseq(obj)
+  
+  umap_frame_log <- get_umap(sce, "cell_type", "logcounts")
+  umap_frame_norm <- get_umap(sce, "cell_type", "counts")
+  expect_is(umap_frame_log, 'data.frame')
+  expect_equal(ncol(umap_frame_log), 2)
+  expect_equal(nrow(umap_frame_log), ncol(sce))
+  expect_is(umap_frame_norm, 'data.frame')
+  expect_equal(ncol(umap_frame_norm), 2)
+  expect_equal(nrow(umap_frame_log), ncol(sce))
+  expect_false(unique(umap_frame_norm[,1] == umap_frame_log[,1]))
+  expect_false(unique(umap_frame_norm[,2] == umap_frame_log[,2]))
+
+})
 # 
 # context("Scoring")
 # 
