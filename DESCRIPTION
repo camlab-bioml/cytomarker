@@ -44,7 +44,8 @@ Imports:
     zellkonverter,
     inferorg (>= 0.1.0),
     magrittr,
-    Matrix
+    Matrix,
+    annotables (>= 0.1.91)
 Suggests:
   stringr,
   yardstick,
@@ -54,10 +55,11 @@ Suggests:
   gridExtra,
   testthat,
   tools
-Remotes: 
+Remotes:  
     github::daqana/dqshiny,
     github::MarioniLab/geneBasisR,
-    camlab-bioml/inferorg
+    camlab-bioml/inferorg,
+    stephenturner/annotables
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
