@@ -338,23 +338,32 @@ cytosel <- function(...) {
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
-        input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
-        input_sce <- parse_gene_names(input_sce, grch38)
-        sce(input_sce)
-        
-        input_assays <- c(names(assays(sce())))
+      input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
+      input_sce <- detect_assay_and_create_logcounts(input_sce)
+      input_sce <- parse_gene_names(input_sce, grch38)
+      sce(input_sce)
+      
+      input_assays <- c(names(assays(sce())))
+      
+      # If there is more than 1 assay user to select appropriate assay
+      if(length(input_assays) > 1){
         if("logcounts" %in% input_assays) {
           input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
         }
         
-        ## TODO: only show this modal if more than one assay
         showModal(assay_modal(assays = input_assays))
-        
-        updateSelectInput(
-          session = session,
-          inputId = "coldata_column",
-          choices = colnames(colData(sce()))
-        )
+      }else{
+        throw_error_or_warning(message = paste("Only one assay provided, thus using",
+                                               input_assays),
+                               duration = 5,
+                               notificationType = 'message')
+      }
+      
+      updateSelectInput(
+        session = session,
+        inputId = "coldata_column",
+        choices = colnames(colData(sce()))
+      )
   
     })
     
@@ -487,7 +496,6 @@ cytosel <- function(...) {
         req(input$coldata_column)
         req(input$panel_size)
         req(sce())
-        
         ## Set initial markers:
         scratch_markers_to_keep <- input$bl_scratch
 
@@ -522,6 +530,10 @@ cytosel <- function(...) {
             get_allowed_genes(input$select_aa, applications_parsed, sce())
           )
           
+          ## Change selected column to character to avoid factor levels without data
+          sce <- sce()
+          sce[[column()]] <- as.character(sce[[column()]])
+          sce(sce)
           ## Get the markers first time          
           fms(
             compute_fm(sce(), 
@@ -861,7 +873,6 @@ cytosel <- function(...) {
       n <- c(input$alternative_markers_rows_selected)
       
       replacements <- replacements()[n,]$Gene
-      
       cm <- current_markers()
       markers <- list(recommended_markers = cm$recommended_markers,
                       scratch_markers = input$bl_scratch,
