@@ -496,7 +496,6 @@ cytosel <- function(...) {
         req(input$coldata_column)
         req(input$panel_size)
         req(sce())
-        
         ## Set initial markers:
         scratch_markers_to_keep <- input$bl_scratch
 
@@ -531,6 +530,10 @@ cytosel <- function(...) {
             get_allowed_genes(input$select_aa, applications_parsed, sce())
           )
           
+          ## Change selected column to character to avoid factor levels without data
+          sce <- sce()
+          sce[[column()]] <- as.character(sce[[column()]])
+          sce(sce)
           ## Get the markers first time          
           fms(
             compute_fm(sce(), 
