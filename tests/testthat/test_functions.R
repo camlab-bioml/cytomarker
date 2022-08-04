@@ -1,8 +1,10 @@
 
+# library(cytosel)
+
 context("Data reading")
 
 test_that("SingleCellExperiment object reading", {
-  obj <- file.path("~/Github/cytosel/tests/testthat/test_sce.rds")
+  obj <- test_path("test_sce.rds")
   sce <- read_input_scrnaseq(obj)
 
   expect_is(sce, 'SingleCellExperiment')
@@ -11,7 +13,7 @@ test_that("SingleCellExperiment object reading", {
 })
 
 test_that("Seurat object reading", {
-  obj <- file.path("~/Github/cytosel/tests/testthat/test_seu.rds")
+  obj <- test_path("test_seu.rds")
   seu <- read_input_scrnaseq(obj)
 
   ## Seurat objects are converted to SingleCellExperiments by read_input_scrnaseq
@@ -23,7 +25,7 @@ test_that("Seurat object reading", {
 context("Marker finding")
 
 test_that("good_col returns valid columns", {
-  sce_path <- system.file("tests/testthat/test_sce.rds", package="cytosel")
+  sce_path <- test_path("test_sce.rds")
   sce <- read_input_scrnaseq(sce_path)
   columns <- good_col(sce, colnames(colData(sce)))
 
@@ -37,23 +39,23 @@ test_that("good_col returns valid columns", {
 })
 
 test_that("get_markers and compute_fm returns valid output", {
-  sce_path <- system.file("tests/testthat/test_sce.rds", package="cytosel")
+  sce_path <- test_path("test_sce.rds")
   sce <- read_input_scrnaseq(sce_path)
-  
+
   sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
-  
-  fms <- compute_fm(sce, 
-             "cell_type", 
+
+  fms <- compute_fm(sce,
+             "cell_type",
               "logcounts",
             rownames(sce)
   )
-  
+
   expect_is(fms, 'list')
   expect_equal(length(fms), 1)
   expect_equal(nrow(fms[[1]][[1]]), nrow(sce))
-  
-  markers <- get_markers(fms, panel_size = 32, marker_strategy = 'standard', 
-                         sce = sce, 
+
+  markers <- get_markers(fms, panel_size = 32, marker_strategy = 'standard',
+                         sce = sce,
                          allowed_genes = rownames(sce))
 
 
@@ -63,9 +65,8 @@ test_that("get_markers and compute_fm returns valid output", {
   expect_gt(length(markers$top_markers), 0)
 })
 
-
 test_that("get_markers errors for non unique values", {
-  obj <- file.path("~/Github/cytosel/tests/testthat/test_sce.rds")
+  obj <- test_path("test_sce.rds")
   sce <- read_input_scrnaseq(obj)
 
   expect_error(get_markers(sce, 'col2', 10, 'logcounts'))
@@ -75,9 +76,9 @@ test_that("get_markers errors for non unique values", {
 context("Plotting")
 
 test_that("get_umap returns valid dataframe", {
-  obj <- file.path("~/Github/cytosel/tests/testthat/test_sce.rds")
+  obj <- test_path("test_sce.rds")
   sce <- read_input_scrnaseq(obj)
-  
+
   umap_frame_log <- get_umap(sce, "cell_type", "logcounts")
   umap_frame_norm <- get_umap(sce, "cell_type", "counts")
   expect_is(umap_frame_log, 'data.frame')
@@ -90,9 +91,42 @@ test_that("get_umap returns valid dataframe", {
   expect_false(unique(umap_frame_norm[,2] == umap_frame_log[,2]))
 
 })
-# 
+
 # context("Scoring")
-# 
+#
 # test_that("get_scores returns valid scores", {
-# 
+#
 # })
+
+if (interactive()) {
+  context("Test Shiny app server functionality")
+  
+  test_that("Server has functionality", {
+    # app_file <- system.file("app.R", package = "cytosel",
+    #                         lib.loc = "../../",
+    #                         mustWork = T)
+    
+    # app_file <- test_path("../../app.R")
+    
+    
+    testServer(as.shiny.appobj(system.file("app.R",
+            package = "cytosel")), expr = {
+                                             
+              expect_equal(pref_assay(), "logcounts")
+            session$setInputs(input_scrnaseq = list(datapath =
+      system.file("/tests/testthat/test_sce_with_real_fake_gene_symbol.rds",
+                    package="cytosel",
+                    lib.loc = "cytosel",
+                    mustWork = T)))
+            expect_is(sce(), 'SingleCellExperiment')
+            expect_equivalent(dim(sce()), c(100, 500))
+            session$setInputs(assay_select = "counts", assay = "counts")
+            expect_equal(pref_assay(), "counts")
+            expect_equal(output$selected_assay, paste("Selected assay: ", "counts"))
+                                           })
+  })
+  
+}
+
+
+

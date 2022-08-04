@@ -1,10 +1,9 @@
 # utils::globalVariables(c("Cell type", "Symbol", "r", "score", "what"), "cytosel")
 
-palette <- NULL
+# palette <- NULL
 
 
 ggplot2::theme_set(cowplot::theme_cowplot())
-
 
 
 ## Global colour palette for cell types
@@ -33,6 +32,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom zip zip
 #' @importFrom randomcoloR distinctColorPalette
 #' @importFrom plotly plot_ly plotlyOutput renderPlotly layout
+#' @export
 #' 
 #' @param ... Additional arguments
 cytosel <- function(...) {
@@ -342,7 +342,6 @@ cytosel <- function(...) {
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
-      
       input_assays <- c(names(assays(sce())))
       
       # If there is more than 1 assay user to select appropriate assay

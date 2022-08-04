@@ -433,7 +433,6 @@ read_input_scrnaseq <- function(sce_path) {
 detect_assay_and_create_logcounts <- function(sce){
   count_sums <- assays(sce)$logcounts |> 
     rowSums()
-  
   ## calculate residuals after dividing by 1
   modulo_residuals <- lapply(count_sums, function(x) x %% 1) |> 
     unlist() |> 
