@@ -903,3 +903,28 @@ get_cell_type_add_markers_reactable <- function(fm, current_markers) {
     )
 )
 }
+
+#' Create a data frame table of counts for a hetergeneity category
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter
+create_table_of_hetero_cat <- function(sce, metadata_column) {
+  
+  return(as.data.frame(table(as.vector(
+    as.data.frame(colData(sce))[metadata_column]))))
+}
+
+
+#' Filter a singlecellexperiment for metadata types with low counts
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter
+remove_cell_types_by_min_counts <- function(sce, metadata_column, min_counts) {
+  
+  keep_frame <- as.data.frame(table(as.vector(
+    as.data.frame(colData(sce))[metadata_column]))) %>% filter(Freq > min_counts)
+  
+  # keep_frame[,] <- lapply(df, function(x) {as.numeric(as.character(x))})
+  
+  return(sce[,sce[[metadata_column]] %in% 
+                          as.vector(keep_frame[metadata_column][,1])])
+}
+

@@ -2,12 +2,14 @@
 
 # palette <- NULL
 
+utils::globalVariables(c("cytosel_palette"), "cytosel")
+
 
 ggplot2::theme_set(cowplot::theme_cowplot())
 
 
 ## Global colour palette for cell types
-palette <- NULL
+# cytosel_palette <- NULL
 
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 
@@ -58,7 +60,7 @@ cytosel <- function(...) {
     ),
     
     # Use packages
-    useShinyalert(),
+    useShinyalert(force = TRUE),
     use_bs_popover(),
     useShinyjs(),
     
@@ -91,6 +93,12 @@ cytosel <- function(...) {
           shinyInput_label_embed(
             shiny_iconlink() %>%
               bs_embed_popover(content = get_tooltip('panel_size'),
+                               placement = "right")
+          ),
+        numericInput("min_category_count", "Minimum cell category cutoff:", 1, min = 1, max = 100, step = NA, width = NULL) %>%
+          shinyInput_label_embed(
+            shiny_iconlink() %>%
+              bs_embed_popover(content = get_tooltip('cat_cutoff'),
                                placement = "right")
           ),
         radioButtons("marker_strategy", label = "Marker selection strategy",
@@ -248,6 +256,10 @@ cytosel <- function(...) {
     
     cells_per_type <- reactiveVal() ## Number of cells per condition/type
     
+    cytosel_palette <- reactiveVal()
+    
+    summary_cat_tally <- reactiveVal()
+    
     ## Current data frame of selected cell type markers and the reactable
     current_cell_type_marker_fm <- NULL
     selected_cell_type_markers <- reactive(getReactableState("cell_type_marker_reactable", "selected"))
@@ -337,6 +349,19 @@ cytosel <- function(...) {
                  confirmButtonCol = "#337AB7")
     }
     
+    cell_cat_modal <- function() {
+      modal_see_cat_table <- modalDialog(
+        dataTableOutput("cell_cat_table"),
+        title = "Tally summary for selected heterogeneity category",
+        helpText("A table of the tallies for the selected cell category.<br>
+                 The user should ensure that a reasonable minimum count is set for
+                 the category prior to analysis in Minimum cell category cutoff."),
+        size = "m",
+        easyClose = TRUE,        
+        footer = tagList(
+          modalButton("Ok.")))
+    }
+    
 
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
@@ -346,13 +371,13 @@ cytosel <- function(...) {
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
       input_assays <- c(names(assays(sce())))
-      
+
       # If there is more than 1 assay user to select appropriate assay
       if(length(input_assays) > 1){
         if("logcounts" %in% input_assays) {
           input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
         }
-        
+
         showModal(assay_modal(assays = input_assays))
       }else{
         throw_error_or_warning(message = paste("Only one assay provided, thus using",
@@ -360,14 +385,26 @@ cytosel <- function(...) {
                                duration = 5,
                                notificationType = 'message')
       }
-      
+
       updateSelectInput(
         session = session,
         inputId = "coldata_column",
         choices = colnames(colData(sce()))
       )
-  
+
     })
+
+
+    observeEvent(input$coldata_column, {
+    req(input$input_scrnaseq)
+    req(input$assay_select)
+
+      output$cell_cat_table <- renderDataTable(create_table_of_hetero_cat(sce(),
+                      input$coldata_column))
+
+     showModal(cell_cat_modal())
+    })
+    
     
     
     ### SELECT ASSAY TYPE ###
@@ -416,7 +453,7 @@ cytosel <- function(...) {
       
       # plots$all_plot
       plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
-              type='scatter', hoverinfo="text", colors=palette) %>% 
+              type='scatter', hoverinfo="text", colors=cytosel_palette) %>% 
         layout(title = "UMAP all genes")
     })
     # },
@@ -444,7 +481,7 @@ cytosel <- function(...) {
       # 
       # plots$top_plot
       plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
-              type='scatter', hoverinfo="text", colors=palette) %>% 
+              type='scatter', hoverinfo="text", colors=cytosel_palette) %>% 
         layout(title = "UMAP selected markers")
     })
     
@@ -489,7 +526,6 @@ cytosel <- function(...) {
       
     })
     
-    
     ### ANALYSIS ###
     observeEvent(input$start_analysis, {
 
@@ -497,8 +533,16 @@ cytosel <- function(...) {
         incProgress(detail = "Acquiring data")
         req(input$coldata_column)
         req(input$panel_size)
+        req(input$min_category_count)
         req(sce())
         ## Set initial markers:
+        # showModal(remove_type_by_low_counts)
+        
+        new_sce <- remove_cell_types_by_min_counts(sce(), input$coldata_column,
+                                                   input$min_category_count)
+        
+        sce(new_sce)
+        
         scratch_markers_to_keep <- input$bl_scratch
 
         incProgress(detail = "Computing markers")
@@ -901,18 +945,22 @@ cytosel <- function(...) {
       n_cell_types <- length(unique_cell_types)
       # palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
       set.seed(12345L)
-      palette <<- distinctColorPalette(n_cell_types)
-      names(palette) <<- sort(unique_cell_types)
+      palette_to_use <<- distinctColorPalette(n_cell_types)
+      names(palette_to_use) <<- sort(unique_cell_types)
+      
+      cytosel_palette(palette_to_use)
       
       # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
       
       labels_top <- lapply(markers$top_markers, 
-                           function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
+                           function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', 
+                                                                                                      cytosel_palette()[ markers$associated_cell_types[x] ])))
       labels_scratch <- lapply(markers$scratch_markers, 
-                               function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
+                               function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', 
+                                                                                                          cytosel_palette()[ markers$associated_cell_types[x] ])))
       
             
-      output$legend <- renderPlot(cowplot::ggdraw(get_legend(palette)))
+      output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
             
       output$BL <- renderUI({
         bucket_list(
