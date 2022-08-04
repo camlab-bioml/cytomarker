@@ -39,12 +39,14 @@ cytosel <- function(...) {
   ## First up -- parse the antibodies
   # antibody_info <- read_tsv(system.file("inst", "abcam_antibodies_gene_symbol_associated.tsv", package="cytosel"))
   # antibody_info <- read_csv(system.file("inst", "Abcam_published_monos_with_gene.csv", package="cytosel"))
-  antibody_info <- read_csv("Abcam_published_monos_with_gene.csv")
+  antibody_info <- read_csv(system.file("Abcam_published_monos_with_gene.csv",
+                                        package = "cytosel"))
   antibody_info <- dplyr::rename(antibody_info, Symbol = `Gene Name (Upper)`)
   antibody_info <- tidyr::drop_na(antibody_info)
   
   # Read in grch38 file
-  grch38 <- read_tsv("annotables_grch38.tsv")
+  grch38 <- read_tsv(system.file("annotables_grch38.tsv",
+                                 package = "cytosel"))
   
   applications_parsed <- get_antibody_applications(antibody_info, 'Symbol', 'Listed Applications')
   
@@ -64,7 +66,8 @@ cytosel <- function(...) {
     titlePanel("cytosel"),
     tags$head(
       # includeCSS(system.file("www", "cytosel.css", package="cytosel"))
-      includeCSS(file.path("www", "cytosel.css"))
+      includeCSS(system.file(file.path("www", "cytosel.css"),
+                             package = "cytosel"))
     ),
     
     # Side panel
