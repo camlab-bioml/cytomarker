@@ -907,8 +907,10 @@ cytosel <- function(...) {
       # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
       
       labels_top <- lapply(markers$top_markers, 
-                           function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', 
+                           function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
+                                                                                                      set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
                                                                                                       cytosel_palette()[ markers$associated_cell_types[x] ])))
+      
       labels_scratch <- lapply(markers$scratch_markers, 
                                function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', 
                                                                                                           cytosel_palette()[ markers$associated_cell_types[x] ])))
