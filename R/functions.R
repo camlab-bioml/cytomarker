@@ -201,13 +201,14 @@ get_umap <- function(sce, columns, pref_assay) {
   
   sce <- runUMAP(sce, exprs_values = pref_assay)
   
-  df <- tibble(
-    UMAP1 = reducedDim(sce, 'UMAP')[,1],
-    UMAP2 = reducedDim(sce, 'UMAP')[,2]
-  )
+  df <- as.data.frame(tibble(
+    UMAP1 = as.numeric(reducedDim(sce, 'UMAP')[,1]),
+    UMAP2 = as.numeric(reducedDim(sce, 'UMAP')[,2])
+  ))
   
   for(column in columns) {
     df[[column]] <- as.data.frame(colData(sce))[[column]]
+    df[[column]] <- as.character(df[[column]])
   }
 
   df
@@ -906,25 +907,39 @@ get_cell_type_add_markers_reactable <- function(fm, current_markers) {
 
 #' Create a data frame table of counts for a hetergeneity category
 #' @importFrom magrittr %>%
-#' @importFrom dplyr filter
+#' @importFrom dplyr filter mutate
 create_table_of_hetero_cat <- function(sce, metadata_column) {
   
   return(as.data.frame(table(as.vector(
-    as.data.frame(colData(sce))[metadata_column]))))
+    as.data.frame(colData(sce))[metadata_column]))) %>%
+      mutate(`Proportion Percentage` = 100*(Freq/sum(Freq))))
 }
 
 
 #' Filter a singlecellexperiment for metadata types with low counts
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter
-remove_cell_types_by_min_counts <- function(sce, metadata_column, min_counts) {
+remove_cell_types_by_min_counts <- function(grouped_frame, sce, metadata_column, min_counts) {
   
-  keep_frame <- as.data.frame(table(as.vector(
-    as.data.frame(colData(sce))[metadata_column]))) %>% filter(Freq > min_counts)
+  keep_frame <- grouped_frame %>% filter(Freq >= min_counts)
   
   # keep_frame[,] <- lapply(df, function(x) {as.numeric(as.character(x))})
   
   return(sce[,sce[[metadata_column]] %in% 
                           as.vector(keep_frame[metadata_column][,1])])
+}
+
+#' Filter a singlecellexperiment for metadata types with low counts. NOTE: repeats unique colours as the palette
+#' generates only 74 unique colours. 
+#' @importFrom RColorBrewer brewer.pal
+#' @param pal_seed random seed used to shuffle the palette
+create_global_colour_palette <- function(pal_seed = NULL) {
+  qual_col_pals <- brewer.pal.info[brewer.pal.info$category == 'qual',]
+  unique_palette <- unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+  if (! is.null(pal_seed)) {
+    set.seed(pal_seed)
+    unique_palette <- sample(unique_palette, length(unique_palette))
+  }
+  return(rep(unique_palette, 2))
 }
 

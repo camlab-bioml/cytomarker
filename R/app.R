@@ -2,14 +2,9 @@
 
 # palette <- NULL
 
-utils::globalVariables(c("cytosel_palette"), "cytosel")
-
+utils::globalVariables(c("palette_to_use", "full_palette"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
-
-
-## Global colour palette for cell types
-# cytosel_palette <- NULL
 
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 
@@ -52,6 +47,7 @@ cytosel <- function(...) {
   
   applications_parsed <- get_antibody_applications(antibody_info, 'Symbol', 'Listed Applications')
   
+  full_palette <- create_global_colour_palette()
   
   ui <- fluidPage(
     # Navigation prompt
@@ -89,6 +85,8 @@ cytosel <- function(...) {
               bs_embed_popover(content = get_tooltip('coldata_column'),
                       placement = "right", html = "true")
           ),
+        actionButton("show_cat_table", "Input distribution",
+                     width = '100%'),
         numericInput("panel_size", "Targeted panel size:", 32, min = 1, max = 200, step = NA, width = NULL) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
@@ -256,9 +254,9 @@ cytosel <- function(...) {
     
     cells_per_type <- reactiveVal() ## Number of cells per condition/type
     
-    cytosel_palette <- reactiveVal()
-    
     summary_cat_tally <- reactiveVal()
+    
+    cytosel_palette <- reactiveVal()
     
     ## Current data frame of selected cell type markers and the reactable
     current_cell_type_marker_fm <- NULL
@@ -350,12 +348,25 @@ cytosel <- function(...) {
     }
     
     cell_cat_modal <- function() {
-      modal_see_cat_table <- modalDialog(
+      modalDialog(
         dataTableOutput("cell_cat_table"),
         title = "Tally summary for selected heterogeneity category",
         helpText("A table of the tallies for the selected cell category.<br>
                  The user should ensure that a reasonable minimum count is set for
                  the category prior to analysis in Minimum cell category cutoff."),
+        size = "m",
+        easyClose = TRUE,        
+        footer = tagList(
+          modalButton("Ok.")))
+    }
+    
+    low_cell_category_modal <- function() {
+      modalDialog(
+        dataTableOutput("cell_cat_table"),
+        title = "Warning: lowly cell type numbers present.",
+        helpText("Cytosel has detected that the following cell type categories have either
+                 very low raw counts or are a small percentage of the sample. These may
+                 interfere with downstream analysis."),
         size = "m",
         easyClose = TRUE,        
         footer = tagList(
@@ -395,11 +406,12 @@ cytosel <- function(...) {
     })
 
 
-    observeEvent(input$coldata_column, {
+    observeEvent(input$show_cat_table, {
     req(input$input_scrnaseq)
     req(input$assay_select)
+    req(input$coldata_column)
 
-      output$cell_cat_table <- renderDataTable(create_table_of_hetero_cat(sce(),
+    output$cell_cat_table <- renderDataTable(create_table_of_hetero_cat(sce(),
                       input$coldata_column))
 
      showModal(cell_cat_modal())
@@ -437,6 +449,8 @@ cytosel <- function(...) {
       
       columns <- column()
       
+      print(columns)
+      
       if (is.null(umap_all())) {
         return(NULL)
       }
@@ -452,8 +466,9 @@ cytosel <- function(...) {
       # plots$all_plot <- 
       
       # plots$all_plot
-      plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
-              type='scatter', hoverinfo="text", colors=cytosel_palette) %>% 
+      plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]),
+              text=~get(columns[1]), 
+              type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
         layout(title = "UMAP all genes")
     })
     # },
@@ -480,8 +495,12 @@ cytosel <- function(...) {
       # plots$top_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
       # 
       # plots$top_plot
-      plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
-              type='scatter', hoverinfo="text", colors=cytosel_palette) %>% 
+      
+      # print(cytosel_palette)
+      
+      plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]),
+              text=~get(columns[1]), 
+              type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
         layout(title = "UMAP selected markers")
     })
     
@@ -528,6 +547,24 @@ cytosel <- function(...) {
     
     ### ANALYSIS ###
     observeEvent(input$start_analysis, {
+      req(input$coldata_column)
+      req(input$panel_size)
+      req(input$min_category_count)
+      req(sce())
+      
+      cell_cat_summary <- create_table_of_hetero_cat(sce(),
+                                                     input$coldata_column)
+      # 
+      # if (min(cell_cat_summary$Freq, na.rm = T) < 2 |
+      #     min(cell_cat_summary$`Proportion Percentage`,
+      #         na.rm = T) <= 5) {
+      #   
+      #   output$reduced_cat_table <- renderDT(subset(cell_cat_summary, Freq < 2 |
+      #                                                 `Proportion Percentage` <= 5))
+      #   
+      #   showModal(low_cell_category_modal())
+      #   
+      # }
 
       withProgress(message = 'Initializing analysis', value = 0, {
         incProgress(detail = "Acquiring data")
@@ -535,14 +572,14 @@ cytosel <- function(...) {
         req(input$panel_size)
         req(input$min_category_count)
         req(sce())
-        ## Set initial markers:
-        # showModal(remove_type_by_low_counts)
         
-        new_sce <- remove_cell_types_by_min_counts(sce(), input$coldata_column,
-                                                   input$min_category_count)
+                
+        new_sce <- remove_cell_types_by_min_counts(cell_cat_summary,
+          sce(), input$coldata_column, input$min_category_count)
         
         sce(new_sce)
         
+        ## Set initial markers:
         scratch_markers_to_keep <- input$bl_scratch
 
         incProgress(detail = "Computing markers")
@@ -942,11 +979,14 @@ cytosel <- function(...) {
     update_BL <- function(markers, selected, unique_cell_types) {
       
       # unique_cell_types <- sort(unique(markers$associated_cell_types))
-      n_cell_types <- length(unique_cell_types)
+      # n_cell_types <- length(unique_cell_types)
       # palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
       set.seed(12345L)
-      palette_to_use <<- distinctColorPalette(n_cell_types)
-      names(palette_to_use) <<- sort(unique_cell_types)
+      
+      unique_cell_types <- sort(unique_cell_types)
+      
+      palette_to_use <- full_palette[1:length(unique_cell_types)]
+      names(palette_to_use) <- unique_cell_types
       
       cytosel_palette(palette_to_use)
       
