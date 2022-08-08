@@ -99,6 +99,8 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
         f <- f[!(rownames(f) %in% recommended),]
         
         ## Only keep markers that are over-expressed
+        
+        f[is.na(f)] <- 0
         f <- f[f$summary.logFC > 0,]
         
         selected_markers <- rownames(f)[seq_len(top_select)]

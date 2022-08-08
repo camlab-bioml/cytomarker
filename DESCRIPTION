@@ -45,7 +45,8 @@ Imports:
     inferorg (>= 0.1.0),
     magrittr,
     Matrix,
-    annotables (>= 0.1.91)
+    annotables (>= 0.1.91),
+    RColorBrewer
 Suggests:
   stringr,
   yardstick,
@@ -55,7 +56,7 @@ Suggests:
   gridExtra,
   testthat,
   tools
-Remotes:  
+Remotes: 
     github::daqana/dqshiny,
     github::MarioniLab/geneBasisR,
     camlab-bioml/inferorg,

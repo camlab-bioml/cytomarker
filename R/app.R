@@ -258,6 +258,10 @@ cytosel <- function(...) {
     
     cytosel_palette <- reactiveVal()
     
+    proceed_with_analysis <- reactiveVal(TRUE)
+    
+    first_time_checking_low_cell <- reactiveVal(FALSE)
+    
     ## Current data frame of selected cell type markers and the reactable
     current_cell_type_marker_fm <- NULL
     selected_cell_type_markers <- reactive(getReactableState("cell_type_marker_reactable", "selected"))
@@ -362,17 +366,19 @@ cytosel <- function(...) {
     
     low_cell_category_modal <- function() {
       modalDialog(
-        dataTableOutput("cell_cat_table"),
+        dataTableOutput("reduced_cat_table"),
         title = "Warning: lowly cell type numbers present.",
         helpText("Cytosel has detected that the following cell type categories have either
                  very low raw counts or are a small percentage of the sample. These may
                  interfere with downstream analysis."),
         size = "m",
-        easyClose = TRUE,        
+        easyClose = TRUE,
         footer = tagList(
-          modalButton("Ok.")))
+          modalButton("Close and review."),
+          actionButton("analysis_go_ahead", "Permit run to proceed."),
+          ))
     }
-    
+
 
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
@@ -381,6 +387,7 @@ cytosel <- function(...) {
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
+      first_time_checking_low_cell(FALSE)
       input_assays <- c(names(assays(sce())))
 
       # If there is more than 1 assay user to select appropriate assay
@@ -552,128 +559,149 @@ cytosel <- function(...) {
       req(input$min_category_count)
       req(sce())
       
-      cell_cat_summary <- create_table_of_hetero_cat(sce(),
-                                                     input$coldata_column)
-      # 
-      # if (min(cell_cat_summary$Freq, na.rm = T) < 2 |
-      #     min(cell_cat_summary$`Proportion Percentage`,
-      #         na.rm = T) <= 5) {
-      #   
-      #   output$reduced_cat_table <- renderDT(subset(cell_cat_summary, Freq < 2 |
-      #                                                 `Proportion Percentage` <= 5))
-      #   
-      #   showModal(low_cell_category_modal())
-      #   
-      # }
-
       withProgress(message = 'Initializing analysis', value = 0, {
+        incProgress(detail = "Checking data")
+        cell_cat_summary <- create_table_of_hetero_cat(sce(),
+                                                       input$coldata_column)
+        
+        new_sce <- remove_cell_types_by_min_counts(cell_cat_summary,
+                                                   sce(), input$coldata_column, input$min_category_count)
+        
+        sce(new_sce)
+        
+        
+        cell_cat_summary <- create_table_of_hetero_cat(sce(),
+                                                       input$coldata_column)
+        
+        if ((min(cell_cat_summary$Freq, na.rm = T) < 2 |
+             min(cell_cat_summary$`Proportion Percentage`,
+                 na.rm = T) <= 5) & !isTruthy(first_time_checking_low_cell())) {
+          
+          proceed_with_analysis(FALSE)
+          
+          output$reduced_cat_table <- renderDataTable(subset(cell_cat_summary, Freq < 2 |
+                                      `Proportion Percentage` <= 5))
+          
+          showModal(low_cell_category_modal())
+          
+          observeEvent(input$analysis_go_ahead, {
+            
+            proceed_with_analysis(TRUE)
+            first_time_checking_low_cell(TRUE)
+            removeModal()
+            
+          })
+          
+        }
+      
+      })
+      
+      withProgress(message = 'Conducting analysis', value = 0, {
         incProgress(detail = "Acquiring data")
         req(input$coldata_column)
         req(input$panel_size)
         req(input$min_category_count)
         req(sce())
-        
-                
-        new_sce <- remove_cell_types_by_min_counts(cell_cat_summary,
-          sce(), input$coldata_column, input$min_category_count)
-        
-        sce(new_sce)
-        
-        ## Set initial markers:
-        scratch_markers_to_keep <- input$bl_scratch
-
-        incProgress(detail = "Computing markers")
+        req(proceed_with_analysis())
           
-        columns <- good_col(sce(), input$coldata_column)
-        column(columns$good)
-        col <- columns$bad
-        
-        
-        if (input$subsample_sce) {
-          incProgress(detail = "Subsampling data")
-          nc <- ncol(sce())
-          to_subsample <- sample(seq_len(nc), min(nc, 2000), replace = FALSE)
-          sce(sce()[,to_subsample])
-        } 
-        
-        if(isTruthy(!is.null(column()))) {
-
-          updateSelectInput(
-            session = session,
-            inputId = "display_options",
-            choices = c("Marker-marker correlation", column())
-          )
+          ## Set initial markers:
+          scratch_markers_to_keep <- input$bl_scratch
           
-          if(!is.null(col)) {
-            unique_element_modal(col)
+          incProgress(detail = "Computing markers")
+          
+          columns <- good_col(sce(), input$coldata_column)
+          column(columns$good)
+          col <- columns$bad
+          
+          
+          if (input$subsample_sce) {
+            incProgress(detail = "Subsampling data")
+            nc <- ncol(sce())
+            to_subsample <- sample(seq_len(nc), min(nc, 2000), replace = FALSE)
+            sce(sce()[,to_subsample])
           } 
           
-          ## Compute set of allowed genes
-          allowed_genes(
-            get_allowed_genes(input$select_aa, applications_parsed, sce())
-          )
-          
-          ## Change selected column to character to avoid factor levels without data
-          sce <- sce()
-          sce[[column()]] <- as.character(sce[[column()]])
-          sce(sce)
-          ## Get the markers first time          
-          fms(
-            compute_fm(sce(), 
-                       column(), 
-                       pref_assay(),
-                       allowed_genes()
-            )
-          )
-          
-          updateSelectInput(
-            session = session,
-            inputId = "cell_type_markers",
-            choices = names(fms()[[1]])
-          )
-          
-          if(!is.null(input$bl_top)) {
-            ## We get here if input$bl_top exists, ie if tis
-            ## is an analysis refresh
-            ## in this case we set the markers to their existing values
-            markers <- list(recommended_markers = input$bl_recommended,
-                            scratch_markers = input$bl_scratch,
-                            top_markers = input$bl_top)
-          } else {
-            ## We compute the set of markers for the first time
-            markers <- get_markers(fms(), 
-                                   # Adding 10 to make sure panel size is approximate 
-                                   # since a) the same marker is selected multiple times and
-                                   # b) excess markers are removed
-                                   input$panel_size, 
-                                   input$marker_strategy, 
-                                   sce(),
-                                   allowed_genes())
+          if(isTruthy(!is.null(column()))) {
             
-            if(length(markers$recommended_markers) < input$panel_size){
-              showNotification("The cell types of the uploaded dataset show expression redundancy.\n
+            updateSelectInput(
+              session = session,
+              inputId = "display_options",
+              choices = c("Marker-marker correlation", column())
+            )
+            
+            if(!is.null(col)) {
+              unique_element_modal(col)
+            } 
+            
+            ## Compute set of allowed genes
+            allowed_genes(
+              get_allowed_genes(input$select_aa, applications_parsed, sce())
+            )
+            
+            ## Change selected column to character to avoid factor levels without data
+            sce <- sce()
+            sce[[column()]] <- as.character(sce[[column()]])
+            sce(sce)
+            ## Get the markers first time          
+            fms(
+              compute_fm(sce(), 
+                         column(), 
+                         pref_assay(),
+                         allowed_genes()
+              )
+            )
+            
+            updateSelectInput(
+              session = session,
+              inputId = "cell_type_markers",
+              choices = names(fms()[[1]])
+            )
+            
+            if(!is.null(input$bl_top)) {
+              ## We get here if input$bl_top exists, ie if tis
+              ## is an analysis refresh
+              ## in this case we set the markers to their existing values
+              markers <- list(recommended_markers = input$bl_recommended,
+                              scratch_markers = input$bl_scratch,
+                              top_markers = input$bl_top)
+            } else {
+              ## We compute the set of markers for the first time
+              markers <- get_markers(fms(), 
+                                     # Adding 10 to make sure panel size is approximate 
+                                     # since a) the same marker is selected multiple times and
+                                     # b) excess markers are removed
+                                     input$panel_size, 
+                                     input$marker_strategy, 
+                                     sce(),
+                                     allowed_genes())
+              
+              if(length(markers$recommended_markers) < input$panel_size){
+                showNotification("The cell types of the uploaded dataset show expression redundancy.\n
                                This results in fewer genes being shown than requested.",
-                               type = 'message',
-                               duration = NULL)
+                                 type = 'message',
+                                 duration = NULL)
+              }
+              ## Forgotten what this is for
+              markers$scratch_markers <- scratch_markers_to_keep
             }
-            ## Forgotten what this is for
-            markers$scratch_markers <- scratch_markers_to_keep
+            
+            # SMH
+            current_markers(set_current_markers_safely(markers, fms()))
+            
+            num_selected(length(current_markers()$top_markers))
+            cells_per_type(table(colData(sce())[[column()]]))
+            
+            update_analysis()
+            
+            
+          } else {
+            unique_element_modal(col)
           }
-
-          # SMH
-          current_markers(set_current_markers_safely(markers, fms()))
           
-          num_selected(length(current_markers()$top_markers))
-          cells_per_type(table(colData(sce())[[column()]]))
-          
-          update_analysis()
-          
-          
-        } else {
-          unique_element_modal(col)
-        }
         
       })
+      first_time_checking_low_cell(FALSE)
+      
     })
     
     # observeEvent(input$refresh_analysis, {
