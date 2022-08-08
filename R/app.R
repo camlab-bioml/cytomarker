@@ -1,6 +1,6 @@
 # utils::globalVariables(c("Cell type", "Symbol", "r", "score", "what"), "cytosel")
 
-palette <- NULL
+# palette <- NULL
 
 
 ggplot2::theme_set(cowplot::theme_cowplot())
@@ -8,7 +8,7 @@ ggplot2::theme_set(cowplot::theme_cowplot())
 
 
 ## Global colour palette for cell types
-palette <- NULL
+# palette <- NULL
 
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 
@@ -48,6 +48,7 @@ cytosel <- function(...) {
   
   applications_parsed <- get_antibody_applications(antibody_info, 'Symbol', 'Listed Applications')
   
+  full_palette <- create_global_colour_palette()
   
   ui <- fluidPage(
     # Navigation prompt
@@ -249,6 +250,7 @@ cytosel <- function(...) {
     current_cell_type_marker_fm <- NULL
     selected_cell_type_markers <- reactive(getReactableState("cell_type_marker_reactable", "selected"))
     
+    cytosel_palette <- reactiveVal()
     
     ### MODALS ###
     invalid_modal <- function() { # Input file is invalid
@@ -414,7 +416,7 @@ cytosel <- function(...) {
       
       # plots$all_plot
       plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
-              type='scatter', hoverinfo="text", colors=palette) %>% 
+              type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
         layout(title = "UMAP all genes")
     })
     # },
@@ -442,7 +444,7 @@ cytosel <- function(...) {
       # 
       # plots$top_plot
       plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
-              type='scatter', hoverinfo="text", colors=palette) %>% 
+              type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
         layout(title = "UMAP selected markers")
     })
     
@@ -895,22 +897,24 @@ cytosel <- function(...) {
     ### UPDATE SELECTED MARKERS ###
     update_BL <- function(markers, selected, unique_cell_types) {
       
-      # unique_cell_types <- sort(unique(markers$associated_cell_types))
-      n_cell_types <- length(unique_cell_types)
-      # palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
-      set.seed(12345L)
-      palette <<- distinctColorPalette(n_cell_types)
-      names(palette) <<- sort(unique_cell_types)
+      unique_cell_types <- sort(unique_cell_types)
+      
+      palette_to_use <- full_palette[1:length(unique_cell_types)]
+      names(palette_to_use) <- unique_cell_types
+      
+      cytosel_palette(palette_to_use)
       
       # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
       
       labels_top <- lapply(markers$top_markers, 
-                           function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
+                           function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', 
+                                                                                                      cytosel_palette()[ markers$associated_cell_types[x] ])))
       labels_scratch <- lapply(markers$scratch_markers, 
-                               function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', palette[ markers$associated_cell_types[x] ])))
+                               function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', 
+                                                                                                          cytosel_palette()[ markers$associated_cell_types[x] ])))
       
             
-      output$legend <- renderPlot(cowplot::ggdraw(get_legend(palette)))
+      output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
             
       output$BL <- renderUI({
         bucket_list(

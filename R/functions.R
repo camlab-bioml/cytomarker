@@ -904,3 +904,18 @@ get_cell_type_add_markers_reactable <- function(fm, current_markers) {
     )
 )
 }
+
+#' Filter a singlecellexperiment for metadata types with low counts. NOTE: repeats unique colours twice as the palette
+#' generates only 74 unique colours, for a total palette length of 148. 
+#' @importFrom RColorBrewer brewer.pal
+#' @param pal_seed random seed used to shuffle the palette
+create_global_colour_palette <- function(pal_seed = NULL) {
+  qual_col_pals <- brewer.pal.info[brewer.pal.info$category == 'qual',]
+  unique_palette <- unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+  if (! is.null(pal_seed)) {
+    set.seed(pal_seed)
+    unique_palette <- sample(unique_palette, length(unique_palette))
+  }
+  return(rep(unique_palette, 2))
+}
+

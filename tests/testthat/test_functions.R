@@ -81,3 +81,39 @@ test_that("get_markers and compute_fm returns valid output", {
 # test_that("get_scores returns valid scores", {
 #   
 # })
+
+context("Testing palette")
+
+test_that("palette always returns consistent colors with and without seeding", {
+  test_palettes <- list()
+  
+  pal_1 = c("#7FC97F", "#FFFF99", "#386CB0", "#6A3D9A","#CCEBC5")
+  pal_2 <- c("#BEAED4", "#666666", "#A6CEE3", "#CAB2D6", "#B3CDE3",
+             "#66C2A5", "#A6D854")
+  
+  pal_seed_1 <- c("#CCEBC5", "#80B1D3", "#E6F5C9", "#FDCDAC", "#CBD5E8")
+  pal_seed_2 <- c("#FFFF33", "#BC80BD", "#6A3D9A", "#FDB462", "#FC8D62",
+                  "#E31A1C", "#FFED6F")
+  
+  i <- 1
+  while(i <= 10) {
+    new_pal <- create_global_colour_palette()
+    new_pal_1 <- as.vector(new_pal[c(1, 4, 5, 26, 73)])
+    new_pal_2 <- as.vector(new_pal[c(2, 8, 17, 25, 30, 55, 59)])
+    
+    
+    expect_equal(new_pal_1, pal_1)
+    expect_equal(new_pal_2, pal_2)
+    
+    
+    new_pal_seed <- create_global_colour_palette(pal_seed = 123)
+    new_pal_1_seed <- as.vector(new_pal_seed[c(1, 4, 5, 26, 73)])
+    new_pal_2_seed <- as.vector(new_pal_seed[c(2, 8, 17, 25, 30, 55, 59)])
+    
+    expect_equal(new_pal_1_seed, pal_seed_1)
+    expect_equal(new_pal_2_seed, pal_seed_2)
+    
+    i <- i + 1
+  }
+  
+})
