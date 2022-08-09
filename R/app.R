@@ -475,8 +475,8 @@ cytosel <- function(...) {
       # plots$all_plot <- 
       
       # plots$all_plot
-      plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]),
-              text=~get(columns[1]), 
+
+      plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
         layout(title = "UMAP all genes")
     })
@@ -504,9 +504,8 @@ cytosel <- function(...) {
       # plots$top_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
       # 
       # plots$top_plot
-      
-      plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]),
-              text=~get(columns[1]), 
+
+      plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
         layout(title = "UMAP selected markers")
     })
@@ -1019,6 +1018,7 @@ cytosel <- function(...) {
     ### UPDATE SELECTED MARKERS ###
     update_BL <- function(markers, selected, unique_cell_types) {
       
+
       # unique_cell_types <- sort(unique(markers$associated_cell_types))
       # n_cell_types <- length(unique_cell_types)
       # palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
@@ -1034,12 +1034,13 @@ cytosel <- function(...) {
       # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
       
       labels_top <- lapply(markers$top_markers, 
-                           function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', 
+                           function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
+                                                                                                      set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
                                                                                                       cytosel_palette()[ markers$associated_cell_types[x] ])))
       labels_scratch <- lapply(markers$scratch_markers, 
-                               function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; background-color:', 
+                               function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
+                                                                                                          set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
                                                                                                           cytosel_palette()[ markers$associated_cell_types[x] ])))
-      
             
       output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
             

@@ -2,8 +2,9 @@
 % Please edit documentation in R/functions.R
 \name{create_global_colour_palette}
 \alias{create_global_colour_palette}
-\title{Filter a singlecellexperiment for metadata types with low counts. NOTE: repeats unique colours as the palette
-generates only 74 unique colours.}
+\title{Create the global cytosel palette with or without seeding. The palette begins with 12 color-blind friendly colours
+then moves into 74 uniquely generated colors form brewer.pal, ending with 2 repeats from the first vector for
+a final vector of 100 unique colours..}
 \usage{
 create_global_colour_palette(pal_seed = NULL)
 }
@@ -11,6 +12,7 @@ create_global_colour_palette(pal_seed = NULL)
 \item{pal_seed}{random seed used to shuffle the palette}
 }
 \description{
-Filter a singlecellexperiment for metadata types with low counts. NOTE: repeats unique colours as the palette
-generates only 74 unique colours.
+Create the global cytosel palette with or without seeding. The palette begins with 12 color-blind friendly colours
+then moves into 74 uniquely generated colors form brewer.pal, ending with 2 repeats from the first vector for
+a final vector of 100 unique colours..
 }

@@ -74,16 +74,16 @@ test_that("get_markers errors for non unique values", {
 context("Plotting")
 
 test_that("get_umap returns valid dataframe", {
-  obj <- test_path("test_sce.rds")
+  obj <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(obj)
 
-  umap_frame_log <- get_umap(sce, "cell_type", "logcounts")
-  umap_frame_norm <- get_umap(sce, "cell_type", "counts")
+  umap_frame_log <- get_umap(sce, "seurat_annotations", "logcounts")
+  umap_frame_norm <- get_umap(sce, "seurat_annotations", "counts")
   expect_is(umap_frame_log, 'data.frame')
-  expect_equal(ncol(umap_frame_log), 2)
+  expect_equal(ncol(umap_frame_log), 3)
   expect_equal(nrow(umap_frame_log), ncol(sce))
   expect_is(umap_frame_norm, 'data.frame')
-  expect_equal(ncol(umap_frame_norm), 2)
+  expect_equal(ncol(umap_frame_norm), 3)
   expect_equal(nrow(umap_frame_log), ncol(sce))
   expect_false(unique(umap_frame_norm[,1] == umap_frame_log[,1]))
   expect_false(unique(umap_frame_norm[,2] == umap_frame_log[,2]))
@@ -97,5 +97,53 @@ test_that("get_umap returns valid dataframe", {
 # })
   
 
+#   
+# })
+
+context("Testing palette and colour conversions")
+
+test_that("palette always returns consistent colors with and without seeding", {
+  test_palettes <- list()
+  
+  pal_1 = c("#88CCEE", "#117733", "#332288", "#E6AB02", "#E5C494")
+  pal_2 <- c("#CC6677", "#999933", "#386CB0", "#66A61E",
+             "#1F78B4", "#FFF2AE","#377EB8")
+  
+  pal_seed_1 <- c("#88CCEE", "#117733", "#332288", "#FBB4AE", "#33A02C")
+  pal_seed_2 <- c("#CC6677", "#999933", "#E6F5C9", "#1B9E77",
+                  "#BF5B17", "#386CB0", "#1F78B4")
+  
+  i <- 1
+  while(i <= 10) {
+    new_pal <- create_global_colour_palette()
+    new_pal_1 <- as.vector(new_pal[c(1, 4, 5, 26, 73)])
+    new_pal_2 <- as.vector(new_pal[c(2, 8, 17, 25, 30, 55, 59)])
+    
+    
+    expect_equal(new_pal_1, pal_1)
+    expect_equal(new_pal_2, pal_2)
+    
+    
+    new_pal_seed <- create_global_colour_palette(pal_seed = 123)
+    new_pal_1_seed <- as.vector(new_pal_seed[c(1, 4, 5, 26, 73)])
+    new_pal_2_seed <- as.vector(new_pal_seed[c(2, 8, 17, 25, 30, 55, 59)])
+    
+    expect_equal(new_pal_1_seed, pal_seed_1)
+    expect_equal(new_pal_2_seed, pal_seed_2)
+    
+    i <- i + 1
+  }
+
+})
+
+test_that("conversion of the background colours always yields black or white",
+          {
+            background_texts <- sapply(create_global_colour_palette(), 
+            FUN = function(x) set_text_colour_based_on_background(x))
+            
+            expect_equal(length(background_texts[!is.null(background_texts)]), 100)
+            expect_equivalent(unique(background_texts), c("#000000", "#ffffff"))
+            
+          })
 
 

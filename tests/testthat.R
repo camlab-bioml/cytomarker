@@ -5,5 +5,6 @@ if (!interactive()) {
 library(testthat)
 library(shinytest)
 library(cytosel)
+library(RColorBrewer)
 
 test_check("cytosel")

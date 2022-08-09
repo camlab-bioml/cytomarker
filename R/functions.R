@@ -762,6 +762,7 @@ get_legend <- function(palette) {
 #' @param gene_id An element in the marker list
 #' @param markers the list of markers
 map_gene_name_to_antibody_icon <- function(gene_id, markers) {
+  
   if(gene_id %in% markers$recommended_markers){
     return(icon("star"))
   }else{
@@ -907,6 +908,7 @@ get_cell_type_add_markers_reactable <- function(fm, current_markers) {
 )
 }
 
+
 #' Create a data frame table of counts for a hetergeneity category
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter mutate
@@ -931,17 +933,42 @@ remove_cell_types_by_min_counts <- function(grouped_frame, sce, metadata_column,
                           as.vector(keep_frame[metadata_column][,1])])
 }
 
-#' Filter a singlecellexperiment for metadata types with low counts. NOTE: repeats unique colours as the palette
-#' generates only 74 unique colours. 
+
+
+#' Create the global cytosel palette with or without seeding. The palette begins with 12 color-blind friendly colours
+#' then moves into 74 uniquely generated colors form brewer.pal, ending with 2 repeats from the first vector for
+#' a final vector of 100 unique colours.. 
 #' @importFrom RColorBrewer brewer.pal brewer.pal.info
 #' @param pal_seed random seed used to shuffle the palette
 create_global_colour_palette <- function(pal_seed = NULL) {
+  
+  # color blind friendly palette: https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
+  
+  safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                               "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
   qual_col_pals <- brewer.pal.info[brewer.pal.info$category == 'qual',]
   unique_palette <- unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
   if (! is.null(pal_seed)) {
     set.seed(pal_seed)
     unique_palette <- sample(unique_palette, length(unique_palette))
   }
-  return(rep(unique_palette, 2))
+  unique_palette <- unique_palette[!unique_palette %in% safe_colorblind_palette]
+  
+  return(c(safe_colorblind_palette, unique_palette, safe_colorblind_palette,
+           unique_palette[1:2]))
+}
+
+
+#' Convert a text colour into black or white for its background to improve visibility
+#' @importFrom grDevices col2rgb
+#' @param text_colour the colour to be converted into black or white
+set_text_colour_based_on_background <- function(text_colour) {
+  rgb_code <- as.vector(col2rgb(text_colour))
+  # https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
+  if (rgb_code[1]*0.299 + rgb_code[2]*0.587 + rgb_code[3]*0.114 > 150) {
+    return("#000000")
+  } else {
+    return("#ffffff")
+  }
 }
 
