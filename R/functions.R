@@ -933,7 +933,7 @@ remove_cell_types_by_min_counts <- function(grouped_frame, sce, metadata_column,
 
 #' Filter a singlecellexperiment for metadata types with low counts. NOTE: repeats unique colours as the palette
 #' generates only 74 unique colours. 
-#' @importFrom RColorBrewer brewer.pal
+#' @importFrom RColorBrewer brewer.pal brewer.pal.info
 #' @param pal_seed random seed used to shuffle the palette
 create_global_colour_palette <- function(pal_seed = NULL) {
   qual_col_pals <- brewer.pal.info[brewer.pal.info$category == 'qual',]

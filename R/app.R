@@ -266,6 +266,7 @@ cytosel <- function(...) {
     current_cell_type_marker_fm <- NULL
     selected_cell_type_markers <- reactive(getReactableState("cell_type_marker_reactable", "selected"))
     
+    cell_summary_at_run <- reactiveVal()
     
     ### MODALS ###
     invalid_modal <- function() { # Input file is invalid
@@ -383,11 +384,12 @@ cytosel <- function(...) {
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
+      first_time_checking_low_cell(FALSE)
+      updateNumericInput(session, "min_category_count", value = 1)
       input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
-      first_time_checking_low_cell(FALSE)
       input_assays <- c(names(assays(sce())))
 
       # If there is more than 1 assay user to select appropriate assay
@@ -503,8 +505,6 @@ cytosel <- function(...) {
       # 
       # plots$top_plot
       
-      # print(cytosel_palette)
-      
       plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]),
               text=~get(columns[1]), 
               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
@@ -552,6 +552,24 @@ cytosel <- function(...) {
       
     })
     
+    ### If the min category count is set over 1, allow analysis to proceed
+    
+    observeEvent(input$min_category_count, {
+      req(input$coldata_column)
+      req(sce())
+      
+      
+      cell_summary_at_run(create_table_of_hetero_cat(sce(),
+                                                     input$coldata_column))
+      
+      if (min(cell_summary_at_run()$Freq, na.rm = T) >= 2 &
+           ! min(cell_summary_at_run()$`Proportion Percentage`,
+               na.rm = T) >= 5) {
+        proceed_with_analysis(TRUE)
+        first_time_checking_low_cell(TRUE)
+      }
+       })
+    
     ### ANALYSIS ###
     observeEvent(input$start_analysis, {
       req(input$coldata_column)
@@ -575,14 +593,14 @@ cytosel <- function(...) {
         
         if ((min(cell_cat_summary$Freq, na.rm = T) < 2 |
              min(cell_cat_summary$`Proportion Percentage`,
-                 na.rm = T) <= 5) & !isTruthy(first_time_checking_low_cell())) {
-          
-          proceed_with_analysis(FALSE)
+                 na.rm = T) < 5) & !isTruthy(first_time_checking_low_cell())) {
           
           output$reduced_cat_table <- renderDataTable(subset(cell_cat_summary, Freq < 2 |
                                       `Proportion Percentage` <= 5))
           
           showModal(low_cell_category_modal())
+          
+          proceed_with_analysis(FALSE)
           
           observeEvent(input$analysis_go_ahead, {
             
@@ -598,10 +616,6 @@ cytosel <- function(...) {
       
       withProgress(message = 'Conducting analysis', value = 0, {
         incProgress(detail = "Acquiring data")
-        req(input$coldata_column)
-        req(input$panel_size)
-        req(input$min_category_count)
-        req(sce())
         req(proceed_with_analysis())
           
           ## Set initial markers:
@@ -700,7 +714,6 @@ cytosel <- function(...) {
           
         
       })
-      first_time_checking_low_cell(FALSE)
       
     })
     

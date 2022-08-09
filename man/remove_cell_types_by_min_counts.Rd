@@ -4,7 +4,12 @@
 \alias{remove_cell_types_by_min_counts}
 \title{Filter a singlecellexperiment for metadata types with low counts}
 \usage{
-remove_cell_types_by_min_counts(sce, metadata_column, min_counts)
+remove_cell_types_by_min_counts(
+  grouped_frame,
+  sce,
+  metadata_column,
+  min_counts
+)
 }
 \description{
 Filter a singlecellexperiment for metadata types with low counts
