@@ -906,8 +906,9 @@ get_cell_type_add_markers_reactable <- function(fm, current_markers) {
 )
 }
 
-#' Create the global cytosel palette with or without seeding. Note: repeats unique colours twice as the palette
-#' generates only 74 unique colours, for a total palette length of 148. 
+#' Create the global cytosel palette with or without seeding. The palette begins with 12 color-blind friendly colours
+#' then moves into 74 uniquely generated colors form brewer.pal, ending with 2 repeats from the first vector for
+#' a final vector of 100 unique colours.. 
 #' @importFrom RColorBrewer brewer.pal brewer.pal.info
 #' @param pal_seed random seed used to shuffle the palette
 create_global_colour_palette <- function(pal_seed = NULL) {
