@@ -82,18 +82,18 @@ test_that("get_markers and compute_fm returns valid output", {
 #   
 # })
 
-context("Testing palette")
+context("Testing palette and colour conversions")
 
 test_that("palette always returns consistent colors with and without seeding", {
   test_palettes <- list()
   
-  pal_1 = c("#7FC97F", "#FFFF99", "#386CB0", "#6A3D9A","#CCEBC5")
-  pal_2 <- c("#BEAED4", "#666666", "#A6CEE3", "#CAB2D6", "#B3CDE3",
-             "#66C2A5", "#A6D854")
+  pal_1 = c("#88CCEE", "#117733", "#332288", "#E6AB02", "#E5C494")
+  pal_2 <- c("#CC6677", "#999933", "#386CB0", "#66A61E",
+             "#1F78B4", "#FFF2AE","#377EB8")
   
-  pal_seed_1 <- c("#CCEBC5", "#80B1D3", "#E6F5C9", "#FDCDAC", "#CBD5E8")
-  pal_seed_2 <- c("#FFFF33", "#BC80BD", "#6A3D9A", "#FDB462", "#FC8D62",
-                  "#E31A1C", "#FFED6F")
+  pal_seed_1 <- c("#88CCEE", "#117733", "#332288", "#FBB4AE", "#33A02C")
+  pal_seed_2 <- c("#CC6677", "#999933", "#E6F5C9", "#1B9E77",
+                  "#BF5B17", "#386CB0", "#1F78B4")
   
   i <- 1
   while(i <= 10) {
@@ -115,5 +115,17 @@ test_that("palette always returns consistent colors with and without seeding", {
     
     i <- i + 1
   }
-  
+
 })
+
+test_that("conversion of the background colours always yields black or white",
+          {
+            background_texts <- sapply(create_global_colour_palette(), 
+            FUN = function(x) set_text_colour_based_on_background(x))
+            
+            expect_equal(length(background_texts[!is.null(background_texts)]), 100)
+            expect_equivalent(unique(background_texts), c("#000000", "#ffffff"))
+            
+          })
+
+

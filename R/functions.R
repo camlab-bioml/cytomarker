@@ -908,7 +908,7 @@ get_cell_type_add_markers_reactable <- function(fm, current_markers) {
 
 #' Create the global cytosel palette with or without seeding. Note: repeats unique colours twice as the palette
 #' generates only 74 unique colours, for a total palette length of 148. 
-#' @importFrom RColorBrewer brewer.pal
+#' @importFrom RColorBrewer brewer.pal brewer.pal.info
 #' @param pal_seed random seed used to shuffle the palette
 create_global_colour_palette <- function(pal_seed = NULL) {
   
@@ -926,7 +926,8 @@ create_global_colour_palette <- function(pal_seed = NULL) {
   
   unique_palette <- unique_palette[!unique_palette %in% safe_colorblind_palette]
   
-  return(c(safe_colorblind_palette, unique_palette, safe_colorblind_palette))
+  return(c(safe_colorblind_palette, unique_palette, safe_colorblind_palette,
+           unique_palette[1:2]))
 }
 
 
@@ -936,7 +937,7 @@ create_global_colour_palette <- function(pal_seed = NULL) {
 set_text_colour_based_on_background <- function(text_colour) {
   rgb_code <- as.vector(col2rgb(text_colour))
   # https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
-  if (rgb_code[1]*0.299 + rgb_code[2]*0.587 + rgb_code[3]*0.114 > 186) {
+  if (rgb_code[1]*0.299 + rgb_code[2]*0.587 + rgb_code[3]*0.114 > 150) {
     return("#000000")
   } else {
     return("#ffffff")
