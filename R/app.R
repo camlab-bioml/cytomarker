@@ -93,7 +93,7 @@ cytosel <- function(...) {
               bs_embed_popover(content = get_tooltip('panel_size'),
                                placement = "right")
           ),
-        numericInput("min_category_count", "Minimum cell category cutoff:", 1, min = 1, max = 100, step = NA, width = NULL) %>%
+        numericInput("min_category_count", "Minimum cell category cutoff:", 2, min = 2, max = 100, step = NA, width = NULL) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
               bs_embed_popover(content = get_tooltip('cat_cutoff'),
@@ -260,7 +260,8 @@ cytosel <- function(...) {
     
     proceed_with_analysis <- reactiveVal(TRUE)
     
-    first_time_checking_low_cell <- reactiveVal(FALSE)
+    cell_types_to_keep <- reactiveVal()
+    cell_type_ignored <- reactiveVal()
     
     ## Current data frame of selected cell type markers and the reactable
     current_cell_type_marker_fm <- NULL
@@ -356,36 +357,40 @@ cytosel <- function(...) {
       modalDialog(
         dataTableOutput("cell_cat_table"),
         title = "Tally summary for selected heterogeneity category",
-        helpText("A table of the tallies for the selected cell category.<br>
-                 The user should ensure that a reasonable minimum count is set for
-                 the category prior to analysis in Minimum cell category cutoff."),
+        helpText("A table of the raw counts and proportions for the selected cell category.
+                 Note that these values reflect the original uploaded dataset and not necessarily the analyzed 
+                 data depending on the threshold set in Minimum cell category cutoff."),
         size = "m",
         easyClose = TRUE,        
         footer = tagList(
           modalButton("Ok.")))
     }
     
-    low_cell_category_modal <- function() {
-      modalDialog(
-        dataTableOutput("reduced_cat_table"),
-        title = "Warning: lowly cell type numbers present.",
-        helpText("Cytosel has detected that the following cell type categories have either
-                 very low raw counts or are a small percentage of the sample. These may
-                 interfere with downstream analysis."),
-        size = "m",
-        easyClose = TRUE,
-        footer = tagList(
-          modalButton("Close and review."),
-          actionButton("analysis_go_ahead", "Permit run to proceed."),
-          ))
+    threshold_too_low_modal <- function() { # Input marker is not in the dataset
+      shinyalert(title = "Error", 
+                 text = "Cytosel requires the minimum cell type category to be set to 2 or greater for statistical inference. Please adjust the value of minimum cell category cutoff to at least 2.", 
+                 type = "error", 
+                 showConfirmButton = TRUE,
+                 confirmButtonCol = "#337AB7")
     }
 
-
+    cell_type_ignored_modal <- function() {
+      shinyalert(title = "Warning",
+                 text = tagList(paste("Cytosel has detected cell types with abundance below the set threshold of ",
+                                      input$min_category_count,
+                                      ". They are to be ignored during analysis. The threshold can be changed using Minimum cell category cutoff."),
+                                ),
+                 type = "warning",
+                 showConfirmButton = TRUE,
+                 confirmButtonCol = "#337AB7",
+                 html = TRUE)
+    }
+    
+    
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
-      first_time_checking_low_cell(FALSE)
-      updateNumericInput(session, "min_category_count", value = 1)
+      updateNumericInput(session, "min_category_count", value = 2)
       input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
@@ -419,8 +424,10 @@ cytosel <- function(...) {
     req(input$input_scrnaseq)
     req(input$assay_select)
     req(input$coldata_column)
+    req(input$min_category_count)
 
-    output$cell_cat_table <- renderDataTable(create_table_of_hetero_cat(sce(),
+    output$cell_cat_table <- renderDataTable(
+                          create_table_of_hetero_cat(sce(),
                       input$coldata_column))
 
      showModal(cell_cat_modal())
@@ -457,8 +464,6 @@ cytosel <- function(...) {
       req(column)
       
       columns <- column()
-      
-      print(columns)
       
       if (is.null(umap_all())) {
         return(NULL)
@@ -551,24 +556,6 @@ cytosel <- function(...) {
       
     })
     
-    ### If the min category count is set over 1, allow analysis to proceed
-    
-    observeEvent(input$min_category_count, {
-      req(input$coldata_column)
-      req(sce())
-      
-      
-      cell_summary_at_run(create_table_of_hetero_cat(sce(),
-                                                     input$coldata_column))
-      
-      if (min(cell_summary_at_run()$Freq, na.rm = T) >= 2 &
-           ! min(cell_summary_at_run()$`Proportion Percentage`,
-               na.rm = T) >= 5) {
-        proceed_with_analysis(TRUE)
-        first_time_checking_low_cell(TRUE)
-      }
-       })
-    
     ### ANALYSIS ###
     observeEvent(input$start_analysis, {
       req(input$coldata_column)
@@ -576,39 +563,40 @@ cytosel <- function(...) {
       req(input$min_category_count)
       req(sce())
       
+      if (input$min_category_count < 2) {
+        proceed_with_analysis(FALSE)
+        threshold_too_low_modal()
+      } else {
+        proceed_with_analysis(TRUE)
+      }
+      
       withProgress(message = 'Initializing analysis', value = 0, {
         incProgress(detail = "Checking data")
-        cell_cat_summary <- create_table_of_hetero_cat(sce(),
-                                                       input$coldata_column)
-        
-        new_sce <- remove_cell_types_by_min_counts(cell_cat_summary,
-                                                   sce(), input$coldata_column, input$min_category_count)
-        
-        sce(new_sce)
-        
         
         cell_cat_summary <- create_table_of_hetero_cat(sce(),
                                                        input$coldata_column)
         
-        if ((min(cell_cat_summary$Freq, na.rm = T) < 2 |
-             min(cell_cat_summary$`Proportion Percentage`,
-                 na.rm = T) < 5) & !isTruthy(first_time_checking_low_cell())) {
-          
-          output$reduced_cat_table <- renderDataTable(subset(cell_cat_summary, Freq < 2 |
-                                      `Proportion Percentage` <= 5))
-          
-          showModal(low_cell_category_modal())
-          
-          proceed_with_analysis(FALSE)
-          
-          observeEvent(input$analysis_go_ahead, {
-            
-            proceed_with_analysis(TRUE)
-            first_time_checking_low_cell(TRUE)
-            removeModal()
-            
-          })
-          
+        cell_types_to_keep(remove_cell_types_by_min_counts(cell_cat_summary,
+                                                   sce(), 
+                                                   input$coldata_column, 
+                                                   input$min_category_count))
+        
+        sce_with_cat <- create_sce_column_for_analysis(sce(), cell_types_to_keep(), 
+                                                  input$coldata_column)
+        
+        
+        
+        sce(sce_with_cat)
+        
+        all_cell_types <- unique(sce()[[input$coldata_column]])
+        
+        cell_type_ignored(all_cell_types[!all_cell_types %in%
+                                                 cell_types_to_keep()])
+        
+        if (length(cell_type_ignored()) > 0) {
+          output$ignored_cell_types <- renderDataTable(data.frame(
+            `Cell Type Ignored` = cell_type_ignored()))
+            cell_type_ignored_modal()
         }
       
       })
@@ -622,7 +610,7 @@ cytosel <- function(...) {
           
           incProgress(detail = "Computing markers")
           
-          columns <- good_col(sce(), input$coldata_column)
+          columns <- good_col(sce()[,sce()$keep_for_analysis == "Yes"], input$coldata_column)
           column(columns$good)
           col <- columns$bad
           
@@ -648,16 +636,19 @@ cytosel <- function(...) {
             
             ## Compute set of allowed genes
             allowed_genes(
-              get_allowed_genes(input$select_aa, applications_parsed, sce())
+              get_allowed_genes(input$select_aa, applications_parsed, 
+                                sce()[,sce()$keep_for_analysis == "Yes"])
             )
+            
             
             ## Change selected column to character to avoid factor levels without data
             sce <- sce()
             sce[[column()]] <- as.character(sce[[column()]])
             sce(sce)
+            
             ## Get the markers first time          
             fms(
-              compute_fm(sce(), 
+              compute_fm(sce()[,sce()$keep_for_analysis == "Yes"], 
                          column(), 
                          pref_assay(),
                          allowed_genes()
@@ -685,7 +676,7 @@ cytosel <- function(...) {
                                      # b) excess markers are removed
                                      input$panel_size, 
                                      input$marker_strategy, 
-                                     sce(),
+                                     sce()[,sce()$keep_for_analysis == "Yes"],
                                      allowed_genes())
               
               if(length(markers$recommended_markers) < input$panel_size){
@@ -702,7 +693,8 @@ cytosel <- function(...) {
             current_markers(set_current_markers_safely(markers, fms()))
             
             num_selected(length(current_markers()$top_markers))
-            cells_per_type(table(colData(sce())[[column()]]))
+            cells_per_type(table(colData(
+              sce()[,sce()$keep_for_analysis == "Yes"])[[column()]]))
             
             update_analysis()
             
@@ -909,7 +901,7 @@ cytosel <- function(...) {
           
           for(col in columns) {
             heatmap(
-              create_heatmap(sce(), current_markers(), col, display(), "Expression", pref_assay())
+              create_heatmap(sce()[,sce()$keep_for_analysis == "Yes"], current_markers(), col, display(), "Expression", pref_assay())
             )
           }
         } else { # Display heatmap for gene expression in a specific column
@@ -917,7 +909,7 @@ cytosel <- function(...) {
           for(col in columns) {
             if(col == display()) {
               heatmap(
-                create_heatmap(sce(), current_markers(), display(), display(), input$heatmap_expression_norm, pref_assay())
+                create_heatmap(sce()[,sce()$keep_for_analysis == "Yes"], current_markers(), display(), display(), input$heatmap_expression_norm, pref_assay())
               )
               break
             }
@@ -933,7 +925,7 @@ cytosel <- function(...) {
     observeEvent(input$suggest_gene_removal, { # Generate suggested markers to remove
       req(input$n_genes)
       
-      expression <- as.matrix(assay(sce(), pref_assay())[current_markers()$top_markers,])
+      expression <- as.matrix(assay(sce()[,sce()$keep_for_analysis == "Yes"], pref_assay())[current_markers()$top_markers,])
       cmat <- cor(t(expression))
       
       suggestions <- suggest_genes_to_remove(cmat, input$n_genes)
@@ -979,7 +971,9 @@ cytosel <- function(...) {
           
           # Make this sampling dependent on the input sample argument
           replacements(
-            compute_alternatives(input$input_gene, sce(), pref_assay(), input$number_correlations)
+            compute_alternatives(input$input_gene, 
+                                 sce()[,sce()$keep_for_analysis == "Yes"], 
+                                 pref_assay(), input$number_correlations)
           )
           
           output$alternative_markers <- renderDT(replacements(), server = TRUE)
@@ -1013,6 +1007,14 @@ cytosel <- function(...) {
       output$add_success <- renderText({"Marker(s) added successfully."})
       
     })
+    
+    # shinyInput <- function(FUN,id,num,...) {
+    #   inputs <- character(num)
+    #   for (i in seq_len(num)) {
+    #     inputs[i] <- as.character(FUN(paste0(id,i),label=NULL,...))
+    #   }
+    #   inputs
+    # }
     
     
     ### UPDATE SELECTED MARKERS ###
@@ -1076,7 +1078,8 @@ cytosel <- function(...) {
         ## Re-set the set of allowed genes (these may have changed if a different
         ## antibody application is selected)
         allowed_genes(
-          get_allowed_genes(input$select_aa, applications_parsed, sce())
+          get_allowed_genes(input$select_aa, applications_parsed, 
+                            sce()[,sce()$keep_for_analysis == "Yes"])
         )
         
         ## Set that these genes can be selected
@@ -1094,9 +1097,11 @@ cytosel <- function(...) {
         
         # Update UMAP
         incProgress(detail = "Computing UMAP")
-        umap_all(get_umap(sce(), column(), pref_assay()))
-        umap_top(get_umap(sce()[markers$top_markers,], column(), pref_assay()))
-
+        umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
+                          column(), pref_assay()))
+        umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][markers$top_markers,], column(), pref_assay()))
+        
+        
         # Update heatmap
         incProgress(detail = "Drawing heatmap")
         
@@ -1106,30 +1111,40 @@ cytosel <- function(...) {
         if(display() == "Marker-marker correlation") {
           for(col in columns) {
             heatmap(
-              create_heatmap(sce(), current_markers(), col, display(), "Expression", pref_assay())
-            )
+              create_heatmap(sce()[,sce()$keep_for_analysis == "Yes"], 
+                             current_markers(), col, 
+                             display(), "Expression", pref_assay()))
+            
           }
         } else {
           for(col in columns) {
             if(col == display()) {
               heatmap(
-                create_heatmap(sce(), current_markers(), display(), display(), input$heatmap_expression_norm, pref_assay())
+                create_heatmap(sce()[,sce()$keep_for_analysis == "Yes"], 
+                               current_markers(), display(), 
+                               display(), input$heatmap_expression_norm, 
+                               pref_assay())
               )
+              
+              
               break
             }
           }
         }
-        cells_per_type(table(colData(sce())[[column()]]))
+        cells_per_type(table(colData(sce()[,
+                            sce()$keep_for_analysis == "Yes"])[[column()]]))
         
         # Update metrics
         incProgress(detail = "Computing panel score")
-        scores <- get_scores(sce(), column(), markers$top_markers, pref_assay())
+        scores <- get_scores(sce()[,sce()$keep_for_analysis == "Yes"], 
+                             column(), markers$top_markers, pref_assay())
         metrics(scores)
         
         
         # Show help text popover
         shinyjs::show(id = "marker_visualization")
         shinyjs::show(id = "marker_display")
+        
         
       })
     }

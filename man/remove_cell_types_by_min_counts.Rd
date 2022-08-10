@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{remove_cell_types_by_min_counts}
 \alias{remove_cell_types_by_min_counts}
-\title{Filter a singlecellexperiment for metadata types with low counts}
+\title{Create a vector of metadata values that pass a minimum count}
 \usage{
 remove_cell_types_by_min_counts(
   grouped_frame,
@@ -12,5 +12,5 @@ remove_cell_types_by_min_counts(
 )
 }
 \description{
-Filter a singlecellexperiment for metadata types with low counts
+Create a vector of metadata values that pass a minimum count
 }

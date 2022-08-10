@@ -920,7 +920,7 @@ create_table_of_hetero_cat <- function(sce, metadata_column) {
 }
 
 
-#' Filter a singlecellexperiment for metadata types with low counts
+#' Create a vector of metadata values that pass a minimum count
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter
 remove_cell_types_by_min_counts <- function(grouped_frame, sce, metadata_column, min_counts) {
@@ -929,11 +929,8 @@ remove_cell_types_by_min_counts <- function(grouped_frame, sce, metadata_column,
   
   # keep_frame[,] <- lapply(df, function(x) {as.numeric(as.character(x))})
   
-  return(sce[,sce[[metadata_column]] %in% 
-                          as.vector(keep_frame[metadata_column][,1])])
+  return(as.vector(keep_frame[metadata_column][,1]))
 }
-
-
 
 #' Create the global cytosel palette with or without seeding. The palette begins with 12 color-blind friendly colours
 #' then moves into 74 uniquely generated colors form brewer.pal, ending with 2 repeats from the first vector for
@@ -970,5 +967,13 @@ set_text_colour_based_on_background <- function(text_colour) {
   } else {
     return("#ffffff")
   }
+}
+
+#' Given a vector of col inputs, create a sce column for 
+create_sce_column_for_analysis <- function(sce, vec_to_keep, input_column) {
+  sce$keep_for_analysis <- ifelse(sce[[input_column]] %in% vec_to_keep,
+                                  "Yes", "No")
+  
+  return(sce)
 }
 
