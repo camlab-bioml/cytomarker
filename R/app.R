@@ -226,6 +226,23 @@ cytosel <- function(...) {
   
   server <- function(input, output, session) {
     
+    shinyInput = function(FUN, len, id, ...) {
+      inputs = character(len)
+      for (i in seq_len(len)) {
+        inputs[i] = as.character(FUN(paste0(id, i), label = NULL, ...))
+      }
+      return(inputs)
+    }
+    
+    # obtain the values of inputs
+    shinyValue = function(id, len) {
+      unlist(lapply(seq_len(len), function(i) {
+        value = input[[paste0(id, i)]]
+        if (is.null(value)) NA else value
+      }))
+      
+    }
+    
     ### REACTIVE VARIABLES ###
     plots <- reactiveValues(all_plot = NULL, top_plot = NULL, metric_plot = NULL) # Save plots for download
     
@@ -355,15 +372,16 @@ cytosel <- function(...) {
     
     cell_cat_modal <- function() {
       modalDialog(
-        dataTableOutput("cell_cat_table"),
+        DT::dataTableOutput("cell_cat_table"),
         title = "Tally summary for selected heterogeneity category",
         helpText("A table of the raw counts and proportions for the selected cell category.
                  Note that these values reflect the original uploaded dataset and not necessarily the analyzed 
                  data depending on the threshold set in Minimum cell category cutoff."),
-        size = "m",
+        size = "l",
         easyClose = TRUE,        
         footer = tagList(
-          modalButton("Ok.")))
+          modalButton("Ok."),
+          actionButton("keep_for_analysis", "Keep Selected for analysis")))
     }
     
     threshold_too_low_modal <- function() { # Input marker is not in the dataset
@@ -425,14 +443,33 @@ cytosel <- function(...) {
     req(input$assay_select)
     req(input$coldata_column)
     req(input$min_category_count)
-
-    output$cell_cat_table <- renderDataTable(
-                          create_table_of_hetero_cat(sce(),
-                      input$coldata_column))
+    
+    cell_category_table <- create_table_of_hetero_cat(sce(),
+                                                 input$coldata_column)
+    
+    cell_category_table$Select <- shinyInput(checkboxInput, 
+                                             nrow(cell_category_table), 'cell_type_', 
+                                             value = TRUE)
+    
+    summary_cat_tally(cell_category_table)
+    
+    output$cell_cat_table <- DT::renderDataTable(
+      summary_cat_tally(), server = FALSE, escape = FALSE, selection = 'none', options = list(
+        preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'),
+        drawCallback = JS('function() { Shiny.bindAll(this.api().table().node()); } ')
+      )
+    )
 
      showModal(cell_cat_modal())
     })
     
+    
+    observeEvent(input$keep_for_analysis, {
+      to_keep_frame <- data.frame(type =  summary_cat_tally()[,1],
+                                  keep = shinyValue('cell_type_', nrow(summary_cat_tally())))
+      
+      print(to_keep_frame)
+    })
     
     
     ### SELECT ASSAY TYPE ###
@@ -568,6 +605,18 @@ cytosel <- function(...) {
         threshold_too_low_modal()
       } else {
         proceed_with_analysis(TRUE)
+      }
+      
+      if (isTruthy(summary_cat_tally())) {
+        to_keep_frame <- data.frame(type =  summary_cat_tally()[,1],
+                                    keep = shinyValue('cell_type_', nrow(summary_cat_tally())))
+        
+        print(to_keep_frame)
+      } else {
+        to_keep_frame <- data.frame(type = unique(sce()[[input$coldata_column]]),
+                                    keep = TRUE)
+        
+        print(to_keep_frame)
       }
       
       withProgress(message = 'Initializing analysis', value = 0, {
@@ -1007,15 +1056,6 @@ cytosel <- function(...) {
       output$add_success <- renderText({"Marker(s) added successfully."})
       
     })
-    
-    # shinyInput <- function(FUN,id,num,...) {
-    #   inputs <- character(num)
-    #   for (i in seq_len(num)) {
-    #     inputs[i] <- as.character(FUN(paste0(id,i),label=NULL,...))
-    #   }
-    #   inputs
-    # }
-    
     
     ### UPDATE SELECTED MARKERS ###
     update_BL <- function(markers, selected, unique_cell_types) {
