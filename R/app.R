@@ -54,6 +54,7 @@ cytosel <- function(...) {
     tags$head(
       tags$script(HTML("window.onbeforeunload = function() {return 'Your changes will be lost!';};"))
     ),
+    tags$head(tags$style(".modal-dialog{ width:750px}")),
     
     # Use packages
     useShinyalert(force = TRUE),
@@ -85,8 +86,8 @@ cytosel <- function(...) {
               bs_embed_popover(content = get_tooltip('coldata_column'),
                       placement = "right", html = "true")
           ),
-        actionButton("show_cat_table", "Input distribution",
-                     width = '100%'),
+        actionButton("show_cat_table", "Summary/Subset selection",
+                     width = '100%', style='font-size:85%'),
         numericInput("panel_size", "Targeted panel size:", 32, min = 1, max = 200, step = NA, width = NULL) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
@@ -226,6 +227,14 @@ cytosel <- function(...) {
   
   server <- function(input, output, session) {
     
+    create_checkbox_with_vec <- function(FUN, len, id, vec, ...) {
+      inputs = character(len)
+      for (i in seq_len(len)) {
+        inputs[i] = as.character(FUN(paste0(id, i), label = NULL, value = vec[i], ...))
+      }
+      return(inputs)
+    }
+    
     shinyInput = function(FUN, len, id, ...) {
       inputs = character(len)
       for (i in seq_len(len)) {
@@ -235,7 +244,7 @@ cytosel <- function(...) {
     }
     
     # obtain the values of inputs
-    shinyValue = function(id, len) {
+    shinyValue <- function(id, len) {
       unlist(lapply(seq_len(len), function(i) {
         value = input[[paste0(id, i)]]
         if (is.null(value)) NA else value
@@ -277,14 +286,25 @@ cytosel <- function(...) {
     
     proceed_with_analysis <- reactiveVal(TRUE)
     
+    specific_cell_types_selected <- reactiveVal()
+    
+    cell_types_high_enough <- reactiveVal()
+    
     cell_types_to_keep <- reactiveVal()
     cell_type_ignored <- reactiveVal()
+    
+    cell_types_user_selected <- reactiveVal(FALSE)
+    checked_input_to_selection <- reactiveVal(FALSE)
     
     ## Current data frame of selected cell type markers and the reactable
     current_cell_type_marker_fm <- NULL
     selected_cell_type_markers <- reactive(getReactableState("cell_type_marker_reactable", "selected"))
     
     cell_summary_at_run <- reactiveVal()
+    
+    cell_cat_checkboxes <- reactiveVal()
+    
+    current_cell_cat_been_reviewed <- reactiveVal()
     
     ### MODALS ###
     invalid_modal <- function() { # Input file is invalid
@@ -373,15 +393,16 @@ cytosel <- function(...) {
     cell_cat_modal <- function() {
       modalDialog(
         DT::dataTableOutput("cell_cat_table"),
-        title = "Tally summary for selected heterogeneity category",
-        helpText("A table of the raw counts and proportions for the selected cell category.
-                 Note that these values reflect the original uploaded dataset and not necessarily the analyzed 
-                 data depending on the threshold set in Minimum cell category cutoff."),
-        size = "l",
+        selectInput("user_selected_cells", "Create a subset for analysis", NULL, multiple=TRUE),
+        title = "Frequency Count for selected heterogeneity category",
+        helpText("A subset of cell types can be selected for analysis above. If this cell is left empty, then by default 
+                 all cell types with a Freq of 2 or greater will be retained for analysis."),
+        size = "xl",
         easyClose = TRUE,        
         footer = tagList(
-          modalButton("Ok."),
-          actionButton("keep_for_analysis", "Keep Selected for analysis")))
+          actionButton("add_selected_to_analysis", "Add cell types to analysis."),
+          modalButton("Exit.")
+          ))
     }
     
     threshold_too_low_modal <- function() { # Input marker is not in the dataset
@@ -436,41 +457,44 @@ cytosel <- function(...) {
       )
 
     })
-
-
+    
+    observeEvent(input$coldata_column, {
+      req(input$input_scrnaseq)
+      specific_cell_types_selected(NULL)
+      })
+    
+    observeEvent(input$add_selected_to_analysis, {
+      req(input$input_scrnaseq)
+      req(input$coldata_column)
+      specific_cell_types_selected(input$user_selected_cells)
+    })
+    
     observeEvent(input$show_cat_table, {
     req(input$input_scrnaseq)
     req(input$assay_select)
     req(input$coldata_column)
     req(input$min_category_count)
+    req(sce())
     
     cell_category_table <- create_table_of_hetero_cat(sce(),
-                                                 input$coldata_column)
-    
-    cell_category_table$Select <- shinyInput(checkboxInput, 
-                                             nrow(cell_category_table), 'cell_type_', 
-                                             value = TRUE)
-    
+                                                        input$coldata_column)
+
     summary_cat_tally(cell_category_table)
     
     output$cell_cat_table <- DT::renderDataTable(
-      summary_cat_tally(), server = FALSE, escape = FALSE, selection = 'none', options = list(
-        preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'),
-        drawCallback = JS('function() { Shiny.bindAll(this.api().table().node()); } ')
+      summary_cat_tally()
       )
+    
+    updateSelectInput(
+      session,
+      "user_selected_cells",
+      choices = unique(sce()[[input$coldata_column]]),
+      selected = specific_cell_types_selected()
     )
 
      showModal(cell_cat_modal())
+    
     })
-    
-    
-    observeEvent(input$keep_for_analysis, {
-      to_keep_frame <- data.frame(type =  summary_cat_tally()[,1],
-                                  keep = shinyValue('cell_type_', nrow(summary_cat_tally())))
-      
-      print(to_keep_frame)
-    })
-    
     
     ### SELECT ASSAY TYPE ###
     observeEvent(input$assay_select, {
@@ -607,16 +631,10 @@ cytosel <- function(...) {
         proceed_with_analysis(TRUE)
       }
       
-      if (isTruthy(summary_cat_tally())) {
-        to_keep_frame <- data.frame(type =  summary_cat_tally()[,1],
-                                    keep = shinyValue('cell_type_', nrow(summary_cat_tally())))
-        
-        print(to_keep_frame)
+      if(length(input$user_selected_cells) < 1) {
+        specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       } else {
-        to_keep_frame <- data.frame(type = unique(sce()[[input$coldata_column]]),
-                                    keep = TRUE)
-        
-        print(to_keep_frame)
+        specific_cell_types_selected(input$user_selected_cells)
       }
       
       withProgress(message = 'Initializing analysis', value = 0, {
@@ -625,28 +643,31 @@ cytosel <- function(...) {
         cell_cat_summary <- create_table_of_hetero_cat(sce(),
                                                        input$coldata_column)
         
-        cell_types_to_keep(remove_cell_types_by_min_counts(cell_cat_summary,
+        cell_types_high_enough(remove_cell_types_by_min_counts(cell_cat_summary,
                                                    sce(), 
                                                    input$coldata_column, 
                                                    input$min_category_count))
         
+        cell_types_to_keep(intersect(specific_cell_types_selected(),
+                                     cell_types_high_enough()))
+        
+        print(cell_types_to_keep)
+        
         sce_with_cat <- create_sce_column_for_analysis(sce(), cell_types_to_keep(), 
                                                   input$coldata_column)
         
-        
-        
         sce(sce_with_cat)
-        
-        all_cell_types <- unique(sce()[[input$coldata_column]])
-        
-        cell_type_ignored(all_cell_types[!all_cell_types %in%
-                                                 cell_types_to_keep()])
-        
-        if (length(cell_type_ignored()) > 0) {
-          output$ignored_cell_types <- renderDataTable(data.frame(
-            `Cell Type Ignored` = cell_type_ignored()))
-            cell_type_ignored_modal()
-        }
+        # 
+        # all_cell_types <- unique(sce()[[input$coldata_column]])
+        # 
+        # cell_type_ignored(all_cell_types[!all_cell_types %in%
+        #                                          cell_types_to_keep()])
+        # 
+        # if (length(cell_type_ignored()) > 0) {
+        #   output$ignored_cell_types <- renderDataTable(data.frame(
+        #     `Cell Type Ignored` = cell_type_ignored()))
+        #     cell_type_ignored_modal()
+        # }
       
       })
       
