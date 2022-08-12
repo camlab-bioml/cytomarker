@@ -189,7 +189,6 @@ set_current_markers_safely <- function(markers, fms) {
   markers
 }
 
-
 #' Compute the UMAP 
 #'
 #' @param sce A SingleCellExperiment object
@@ -978,7 +977,16 @@ create_sce_column_for_analysis <- function(sce, vec_to_keep, input_column) {
 }
 
 #' Given a vector of membership during subsetting, create a sce column for retaining during analysis
+#' @importFrom magrittr %>% 
+#' @importFrom dplyr mutate
 create_keep_vector_during_subsetting <- function(sce, vec_to_keep) {
-  sce$keep_for_analysis <- ifelse(rownames(colData(sce)) %in% vec_to_keep, "Yes", "No")
+  placeholder_frame <- data.frame(index = seq(1, nrow(colData(sce)))) %>%
+    mutate(in_subsample = ifelse(index %in% vec_to_keep, "Yes", "No"))
+  
+  sce$in_subsample <- placeholder_frame$in_subsample
+  sce$keep_for_analysis <- ifelse(sce$in_subsample == "Yes" & sce$keep_for_analysis == "Yes",
+                                 "Yes", "No")
+  sce$in_subsample <- NULL
+  return(sce)
 }
 

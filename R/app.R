@@ -400,7 +400,7 @@ cytosel <- function(...) {
         size = "xl",
         easyClose = TRUE,        
         footer = tagList(
-          actionButton("add_selected_to_analysis", "Add cell types to analysis."),
+          actionButton("add_selected_to_analysis", "Set subset for analysis."),
           modalButton("Exit.")
           ))
     }
@@ -467,6 +467,15 @@ cytosel <- function(...) {
       req(input$input_scrnaseq)
       req(input$coldata_column)
       specific_cell_types_selected(input$user_selected_cells)
+      
+      if (length(specific_cell_types_selected()) > 0) {
+        showNotification("Setting subset for analysis to selected cell types",
+                         duration = 2)
+      } else {
+        showNotification("Empty subset selection, defaulting to using all cell types in analysis.",
+                         duration = 2)
+      }
+      
     })
     
     observeEvent(input$show_cat_table, {
@@ -682,9 +691,16 @@ cytosel <- function(...) {
           if (input$subsample_sce) {
             incProgress(detail = "Subsampling data")
             
-            nc <- ncol(sce())
-            to_subsample <- sample(seq_len(nc), min(nc, 2000), replace = FALSE)
-            sce(sce()[,to_subsample])
+            avail_cols <- which(sce()$keep_for_analysis == "Yes")
+            to_subsample <- sample(avail_cols, min(length(avail_cols), 2000),
+                                   replace = FALSE)
+            
+            print(length(to_subsample))
+            
+            sce(create_keep_vector_during_subsetting(sce(), to_subsample))
+            
+            print(table(sce()$keep_for_analysis))
+            
           } 
           
           if(isTruthy(!is.null(column()))) {
