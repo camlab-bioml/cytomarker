@@ -102,7 +102,7 @@ test_that("get_umap returns valid dataframe", {
 
 context("Testing palette and colour conversions")
 
-test_that("palette always returns consistent colors with and without seeding", {
+test_that("Palette always returns consistent colors with and without seeding", {
   test_palettes <- list()
   
   pal_1 = c("#88CCEE", "#117733", "#332288", "#E6AB02", "#E5C494")
@@ -136,7 +136,7 @@ test_that("palette always returns consistent colors with and without seeding", {
 
 })
 
-test_that("conversion of the background colours always yields black or white",
+test_that("Conversion of the background colours always yields black or white",
           {
             background_texts <- sapply(create_global_colour_palette(), 
             FUN = function(x) set_text_colour_based_on_background(x))
@@ -145,5 +145,28 @@ test_that("conversion of the background colours always yields black or white",
             expect_equivalent(unique(background_texts), c("#000000", "#ffffff"))
             
           })
+
+
+context("check filtering steps")
+
+test_that("Filtering sce objects by minimum count passes", {
+  
+  obj <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(obj)
+  
+  grouped <- create_table_of_hetero_cat(
+    sce, "seurat_annotations")
+  expect_is(grouped, 'data.frame')
+  
+  cells_retained <- remove_cell_types_by_min_counts(
+  grouped, sce, "seurat_annotations", 5)
+  
+  expect_vector(cells_retained)
+  expect_false("Platelet" %in% cells_retained)
+  expect_false("Undetermined" %in% cells_retained)
+  expect_true("NK" %in% cells_retained)
+  
+})
+
 
 

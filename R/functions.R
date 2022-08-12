@@ -969,11 +969,16 @@ set_text_colour_based_on_background <- function(text_colour) {
   }
 }
 
-#' Given a vector of col inputs, create a sce column for 
+#' Given a vector of col inputs, create a sce column for retaining during analysis
 create_sce_column_for_analysis <- function(sce, vec_to_keep, input_column) {
   sce$keep_for_analysis <- ifelse(sce[[input_column]] %in% vec_to_keep,
                                   "Yes", "No")
   
   return(sce)
+}
+
+#' Given a vector of membership during subsetting, create a sce column for retaining during analysis
+create_keep_vector_during_subsetting <- function(sce, vec_to_keep) {
+  sce$keep_for_analysis <- ifelse(rownames(colData(sce)) %in% vec_to_keep, "Yes", "No")
 }
 

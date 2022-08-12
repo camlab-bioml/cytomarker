@@ -650,24 +650,18 @@ cytosel <- function(...) {
         
         cell_types_to_keep(intersect(specific_cell_types_selected(),
                                      cell_types_high_enough()))
+
+        sce(create_sce_column_for_analysis(sce(), cell_types_to_keep(), 
+                                                  input$coldata_column))
         
-        print(cell_types_to_keep)
-        
-        sce_with_cat <- create_sce_column_for_analysis(sce(), cell_types_to_keep(), 
-                                                  input$coldata_column)
-        
-        sce(sce_with_cat)
-        # 
-        # all_cell_types <- unique(sce()[[input$coldata_column]])
-        # 
-        # cell_type_ignored(all_cell_types[!all_cell_types %in%
-        #                                          cell_types_to_keep()])
-        # 
-        # if (length(cell_type_ignored()) > 0) {
-        #   output$ignored_cell_types <- renderDataTable(data.frame(
-        #     `Cell Type Ignored` = cell_type_ignored()))
-        #     cell_type_ignored_modal()
-        # }
+        different_cells <- setdiff(specific_cell_types_selected(),
+                                   cell_types_high_enough())
+      
+        if (length(different_cells) > 0) {
+          output$ignored_cell_types <- renderDataTable(data.frame(
+            `Cell Type Ignored` = different_cells))
+            cell_type_ignored_modal()
+        }
       
       })
       
@@ -687,6 +681,7 @@ cytosel <- function(...) {
           
           if (input$subsample_sce) {
             incProgress(detail = "Subsampling data")
+            
             nc <- ncol(sce())
             to_subsample <- sample(seq_len(nc), min(nc, 2000), replace = FALSE)
             sce(sce()[,to_subsample])

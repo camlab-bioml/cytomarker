@@ -2,10 +2,10 @@
 % Please edit documentation in R/functions.R
 \name{create_sce_column_for_analysis}
 \alias{create_sce_column_for_analysis}
-\title{Given a vector of col inputs, create a sce column for}
+\title{Given a vector of col inputs, create a sce column for retaining during analysis}
 \usage{
 create_sce_column_for_analysis(sce, vec_to_keep, input_column)
 }
 \description{
-Given a vector of col inputs, create a sce column for
+Given a vector of col inputs, create a sce column for retaining during analysis
 }
