@@ -306,6 +306,8 @@ cytosel <- function(...) {
     
     current_cell_cat_been_reviewed <- reactiveVal()
     
+    any_cells_present <- reactiveVal(TRUE)
+    
     ### MODALS ###
     invalid_modal <- function() { # Input file is invalid
       shinyalert(
@@ -423,6 +425,14 @@ cytosel <- function(...) {
                  showConfirmButton = TRUE,
                  confirmButtonCol = "#337AB7",
                  html = TRUE)
+    }
+    
+    no_cells_left_modal <- function() { # Uploaded marker is not in SCE
+      shinyalert(title = "Error", 
+                 text = "No cells remain after filtering/subsetting. Please review the input parameters.", 
+                 type = "error", 
+                 showConfirmButton = TRUE,
+                 confirmButtonCol = "#337AB7")
     }
     
     
@@ -646,6 +656,7 @@ cytosel <- function(...) {
         specific_cell_types_selected(input$user_selected_cells)
       }
       
+      
       withProgress(message = 'Initializing analysis', value = 0, {
         incProgress(detail = "Checking data")
         
@@ -663,10 +674,17 @@ cytosel <- function(...) {
         sce(create_sce_column_for_analysis(sce(), cell_types_to_keep(), 
                                                   input$coldata_column))
         
+        if (dim(sce()[,sce()$keep_for_analysis == "Yes"])[2] == 0) {
+          no_cells_left_modal()
+          any_cells_present(FALSE)
+        } else {
+          any_cells_present(TRUE)
+        }
+        
         different_cells <- setdiff(specific_cell_types_selected(),
                                    cell_types_high_enough())
       
-        if (length(different_cells) > 0) {
+        if (length(different_cells) > 0 & isTruthy(any_cells_present())) {
           output$ignored_cell_types <- renderDataTable(data.frame(
             `Cell Type Ignored` = different_cells))
             cell_type_ignored_modal()
@@ -677,6 +695,7 @@ cytosel <- function(...) {
       withProgress(message = 'Conducting analysis', value = 0, {
         incProgress(detail = "Acquiring data")
         req(proceed_with_analysis())
+        req(any_cells_present())
           
           ## Set initial markers:
           scratch_markers_to_keep <- input$bl_scratch
@@ -695,11 +714,7 @@ cytosel <- function(...) {
             to_subsample <- sample(avail_cols, min(length(avail_cols), 2000),
                                    replace = FALSE)
             
-            print(length(to_subsample))
-            
             sce(create_keep_vector_during_subsetting(sce(), to_subsample))
-            
-            print(table(sce()$keep_for_analysis))
             
           } 
           
