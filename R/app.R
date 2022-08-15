@@ -758,7 +758,7 @@ cytosel <- function(...) {
             )
             
             if(!is.null(input$bl_top)) {
-              ## We get here if input$bl_top exists, ie if tis
+              ## We get here if input$bl_top exists, ie if this
               ## is an analysis refresh
               ## in this case we set the markers to their existing values
               markers <- list(recommended_markers = input$bl_recommended,
@@ -889,7 +889,10 @@ cytosel <- function(...) {
     ### MARKER SELECTION ###
     observeEvent(input$enter_marker, { # Manually add markers one by one
       
-      if(!is.null(input$add_markers) && stringr::str_length(input$add_markers) > 1 && (input$add_markers %in% allowed_genes())) {
+      if(!is.null(input$add_markers) && stringr::str_length(input$add_markers) > 1 && 
+         (input$add_markers %in% allowed_genes()) && (! input$add_markers %in% 
+            current_markers()$top_markers) && (! input$add_markers %in% 
+                                               current_markers()$scratch_markers)) {
         ## Need to update markers:
         new_marker <- input$add_markers
         

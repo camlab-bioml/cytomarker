@@ -29,6 +29,7 @@ test_that("Server has functionality", {
                                               "Platelet"),
                       panel_size = 24, min_category_count = 2,
                       coldata_column = "seurat_annotations",
+                      column = "seurat_annotations",
                       subsample_sce = T,
                       proceed_with_analysis = T,
                       start_analysis = T)
