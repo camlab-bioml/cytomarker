@@ -132,7 +132,8 @@ cytosel <- function(...) {
                  br(),
                  fluidRow(column(5,
                           splitLayout(cellWidths = c(150, 150),
-                                      div(style = "", autocomplete_input("add_markers", "Manual add markers", options=c(), width = "100%")),
+                                      div(style = "", autocomplete_input("add_markers", "Manual add markers", options=c(), width = "100%",
+                                                                         max_options = 6, contains = T)),
                                       div(style = "margin-top:25px;", actionButton("enter_marker", "Add")))) ,
                           column(6,
                           splitLayout(cellWidths = c(200, 120, 140),
@@ -153,7 +154,8 @@ cytosel <- function(...) {
                    tags$span(shiny_iconlink() %>%
                      bs_embed_popover(content = get_tooltip('marker_visualization'),
                                       placement = "top", html = TRUE)))),
-                 fluidRow(column(12, uiOutput("BL")))
+                 fluidRow(column(8, uiOutput("BL", width= "100%"),
+                                 ))
           ),
         
         tabPanel("UMAP",
@@ -307,6 +309,9 @@ cytosel <- function(...) {
     current_cell_cat_been_reviewed <- reactiveVal()
     
     any_cells_present <- reactiveVal(TRUE)
+    
+    num_markers_in_selected <- reactiveVal()
+    num_markers_in_scratch <- reactiveVal()
     
     ### MODALS ###
     invalid_modal <- function() { # Input file is invalid
@@ -787,8 +792,9 @@ cytosel <- function(...) {
             
             # SMH
             current_markers(set_current_markers_safely(markers, fms()))
-            
-            num_selected(length(current_markers()$top_markers))
+          
+            num_markers_in_selected(length(current_markers()$top_markers))
+            num_markers_in_scratch(length(current_markers()$scratch_markers))
             cells_per_type(table(colData(
               sce()[,sce()$keep_for_analysis == "Yes"])[[column()]]))
             
@@ -803,6 +809,34 @@ cytosel <- function(...) {
       })
       
     })
+    
+    # re-count the number of markers in each space when the sortable js is changed
+    observeEvent(input$bl_scratch, {
+      markers <- list(recommended_markers = current_markers()$recommended_markers,
+                      scratch_markers = input$bl_scratch,
+                      top_markers = current_markers()$top_markers)
+      current_markers(set_current_markers_safely(markers, fms()))
+      num_markers_in_selected(length(current_markers()$top_markers))
+      num_markers_in_scratch(length(current_markers()$scratch_markers))
+      update_BL(current_markers(), num_markers_in_selected(),
+                num_markers_in_scratch(),
+                names(fms()[[1]]))
+    })
+    
+    # re-count the number of markers in each space when the sortable js is changed
+    observeEvent(input$bl_top, {
+      markers <- list(recommended_markers = current_markers()$recommended_markers,
+                      scratch_markers = current_markers()$scratch_markers,
+                      top_markers = input$bl_top)
+      current_markers(set_current_markers_safely(markers, fms()))
+      num_markers_in_selected(length(current_markers()$top_markers))
+      num_markers_in_scratch(length(current_markers()$scratch_markers))
+      update_BL(current_markers(), num_markers_in_selected(),
+                num_markers_in_scratch(),
+                names(fms()[[1]]))
+    })
+    
+    
     
     # observeEvent(input$refresh_analysis, {
     #   withProgress(message = 'Initializing analysis', value = 0, {
@@ -880,8 +914,11 @@ cytosel <- function(...) {
         set_current_markers_safely(markers, fms())
       )
       
-      num_selected(length(current_markers()$top_markers))
-      update_BL(current_markers(), num_selected(), names(fms()[[1]]))
+      num_markers_in_selected(length(current_markers()$top_markers))
+      num_markers_in_scratch(length(current_markers()$scratch_markers))
+      update_BL(current_markers(), num_markers_in_selected(),
+                num_markers_in_scratch(),
+                names(fms()[[1]]))
       
       removeModal()
     })
@@ -906,10 +943,11 @@ cytosel <- function(...) {
           set_current_markers_safely(markers, fms())
         )
         
-        num_selected(length(current_markers()$top_markers))
-        
-        # names(fms()[[1]]) -> unique cell type names
-        update_BL(current_markers(), num_selected(), names(fms()[[1]]))
+        num_markers_in_selected(length(current_markers()$top_markers))
+        num_markers_in_scratch(length(current_markers()$scratch_markers))
+        update_BL(current_markers(), num_markers_in_selected(),
+                  num_markers_in_scratch(),
+                  names(fms()[[1]]))
         
       } else if(!(input$add_markers %in% rownames(sce()))) {
         dne_modal(dne = input$add_markers)
@@ -944,9 +982,11 @@ cytosel <- function(...) {
         warning_modal(not_sce)
       }
       
-      num_selected(length(current_markers()$top_markers))
-          
-      update_BL(current_markers(), num_selected(), names(fms()[[1]]))
+      num_markers_in_selected(length(current_markers()$top_markers))
+      num_markers_in_scratch(length(current_markers()$scratch_markers))
+      update_BL(current_markers(), num_markers_in_selected(),
+                num_markers_in_scratch(),
+                names(fms()[[1]]))
     })
     
     observeEvent(input$replace_selected, { # Replace selected markers by uploaded markers
@@ -977,9 +1017,11 @@ cytosel <- function(...) {
         warning_modal(not_sce)
       }
       
-      num_selected(length(current_markers()$top_markers))
-      
-      update_BL(current_markers(), num_selected(), names(fms()[[1]]))
+      num_markers_in_selected(length(current_markers()$top_markers))
+      num_markers_in_scratch(length(current_markers()$scratch_markers))
+      update_BL(current_markers(), num_markers_in_selected(),
+                num_markers_in_scratch(),
+                names(fms()[[1]]))
     })
     
     
@@ -1037,9 +1079,9 @@ cytosel <- function(...) {
       
       if (!is.null(input$markers_to_remove)) {
         remove_marker <- c(input$markers_to_remove)
-        num_selected(length(cm$top_markers))
+        num_markers_in_selected(length(current_markers()$top_markers))
+        num_markers_in_scratch(length(current_markers()$scratch_markers))
 
-        
         markers <- list(recommended_markers = cm$recommended_markers,
                    scratch_markers = unique(c(remove_marker, input$bl_scratch)),
                    top_markers = setdiff(cm$top_markers, remove_marker))       
@@ -1048,7 +1090,11 @@ cytosel <- function(...) {
           set_current_markers_safely(markers, fms())
         )
         
-        update_BL(current_markers(), num_selected(), names(fms()[[1]]))
+        num_markers_in_selected(length(current_markers()$top_markers))
+        num_markers_in_scratch(length(current_markers()$scratch_markers))
+        update_BL(current_markers(), num_markers_in_selected(),
+                  num_markers_in_scratch(),
+                  names(fms()[[1]]))
         
         removeModal()
       } else {
@@ -1099,16 +1145,19 @@ cytosel <- function(...) {
         set_current_markers_safely(markers, fms())
       )
       
-      num_selected(length(current_markers()$top_markers))
+      num_markers_in_selected(length(current_markers()$top_markers))
+      num_markers_in_scratch(length(current_markers()$scratch_markers))
 
-      update_BL(current_markers(), num_selected(), names(fms()[[1]]))
+      update_BL(current_markers(), num_markers_in_selected(),
+                num_markers_in_scratch(),
+                names(fms()[[1]]))
       
       output$add_success <- renderText({"Marker(s) added successfully."})
       
     })
     
     ### UPDATE SELECTED MARKERS ###
-    update_BL <- function(markers, selected, unique_cell_types) {
+    update_BL <- function(markers, top_size, scratch_size, unique_cell_types) {
       
 
       # unique_cell_types <- sort(unique(markers$associated_cell_types))
@@ -1135,6 +1184,7 @@ cytosel <- function(...) {
                                                                                                           cytosel_palette()[ markers$associated_cell_types[x] ])))
             
       output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
+     
             
       output$BL <- renderUI({
         bucket_list(
@@ -1142,15 +1192,17 @@ cytosel <- function(...) {
           orientation = "horizontal",
           group_name = "bucket_list_group",
           add_rank_list(
-            text = "Scratch space",
+            text = paste0("Scatch space (", scratch_size, ")"),
             labels = labels_scratch,
             input_id = "bl_scratch",
+            options = c(width = 3, multiDrag = TRUE),
             class = c("default-sortable", "cytocellbl")
           ),
           add_rank_list(
-            text = paste0("Selected markers (", selected, ")"),
+            text = paste0("Selected markers (", top_size, ")"),
             labels = labels_top,
             input_id = "bl_top",
+            options = c(width = 3, multiDrag = TRUE),
             class = c("default-sortable", "cytocellbl")
           )
         )
@@ -1180,16 +1232,17 @@ cytosel <- function(...) {
                                   options = allowed_genes())
         
         
-        markers <- current_markers()
-        selected <- num_selected()
-        
-        update_BL(markers, selected, names(fms()[[1]]))
+        num_markers_in_selected(length(current_markers()$top_markers))
+        num_markers_in_scratch(length(current_markers()$scratch_markers))
+        update_BL(current_markers(), num_markers_in_selected(),
+                  num_markers_in_scratch(),
+                  names(fms()[[1]]))
         
         # Update UMAP
         incProgress(detail = "Computing UMAP")
         umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
                           column(), pref_assay()))
-        umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][markers$top_markers,], column(), pref_assay()))
+        umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][current_markers()$top_markers,], column(), pref_assay()))
         
         
         # Update heatmap
@@ -1227,7 +1280,7 @@ cytosel <- function(...) {
         # Update metrics
         incProgress(detail = "Computing panel score")
         scores <- get_scores(sce()[,sce()$keep_for_analysis == "Yes"], 
-                             column(), markers$top_markers, pref_assay())
+                             column(), current_markers()$top_markers, pref_assay())
         metrics(scores)
         
         
