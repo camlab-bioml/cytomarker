@@ -142,7 +142,8 @@ cytosel <- function(...) {
                                       div(style = "margin-top:25px;", actionButton("replace_selected", "Replace selected", width = "100%"))))),
                  fluidRow(column(12, splitLayout(cellWidths = c(150, 150),
                                                 selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL),
-                                            div(style = "margin-top:25px;", actionButton('add_cell_type_markers', "Suggest"))))
+                                            div(style = "margin-top:25px;", actionButton('add_cell_type_markers', "Suggest"),
+                                                )))
                           ),
                  hr(),
                  hidden(div(id = "marker_display",
@@ -150,6 +151,11 @@ cytosel <- function(...) {
                      bs_embed_popover(content = get_tooltip('marker_display'),
                                       placement = "top", html = TRUE)))),
                  plotOutput("legend", height='80px'),
+                 fluidRow(column(1, actionButton("refresh_marker_counts", "Refresh Marker Space counts",
+                                                 style='font-size:85%'),
+                                 align = "center"
+                                 , style = "margin-bottom: 10px;"
+                                 , style = "margin-top: 10px;")),
                  hidden(div(id = "marker_visualization",
                    tags$span(shiny_iconlink() %>%
                      bs_embed_popover(content = get_tooltip('marker_visualization'),
@@ -810,23 +816,26 @@ cytosel <- function(...) {
       
     })
     
-    # re-count the number of markers in each space when the sortable js is changed
-    observeEvent(input$bl_scratch, {
-      markers <- list(recommended_markers = current_markers()$recommended_markers,
-                      scratch_markers = input$bl_scratch,
-                      top_markers = current_markers()$top_markers)
-      current_markers(set_current_markers_safely(markers, fms()))
-      num_markers_in_selected(length(current_markers()$top_markers))
-      num_markers_in_scratch(length(current_markers()$scratch_markers))
-      update_BL(current_markers(), num_markers_in_selected(),
-                num_markers_in_scratch(),
-                names(fms()[[1]]))
-    })
+    # # re-count the number of markers in each space when the sortable js is changed
+    # observeEvent(input$bl_scratch, {
+    #   markers <- list(recommended_markers = current_markers()$recommended_markers,
+    #                   scratch_markers = input$bl_scratch,
+    #                   top_markers = current_markers()$top_markers)
+    #   current_markers(set_current_markers_safely(markers, fms()))
+    #   num_markers_in_selected(length(current_markers()$top_markers))
+    #   num_markers_in_scratch(length(current_markers()$scratch_markers))
+    #   update_BL(current_markers(), num_markers_in_selected(),
+    #             num_markers_in_scratch(),
+    #             names(fms()[[1]]))
+    # })
     
     # re-count the number of markers in each space when the sortable js is changed
-    observeEvent(input$bl_top, {
+    observeEvent(input$refresh_marker_counts, {
+      req(sce())
+      req(current_markers())
+      
       markers <- list(recommended_markers = current_markers()$recommended_markers,
-                      scratch_markers = current_markers()$scratch_markers,
+                      scratch_markers = input$bl_scratch,
                       top_markers = input$bl_top)
       current_markers(set_current_markers_safely(markers, fms()))
       num_markers_in_selected(length(current_markers()$top_markers))
