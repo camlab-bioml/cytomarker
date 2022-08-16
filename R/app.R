@@ -87,6 +87,7 @@ cytosel <- function(...) {
                       placement = "right", html = "true")
           ),
         actionButton("show_cat_table", "Summary/Subset selection",
+                     align = "center",
                      width = '100%', style='font-size:85%'),
         numericInput("panel_size", "Targeted panel size:", 32, min = 1, max = 200, step = NA, width = NULL) %>%
           shinyInput_label_embed(
@@ -278,7 +279,6 @@ cytosel <- function(...) {
     fms <- reactiveVal() # Where to store the findMarker outputs
     allowed_genes <- reactiveVal() # Set of "allowed" genes (those with anotibodies, not ribo or mito)
     current_markers <- reactiveVal() # Currently selected markers
-    num_selected <- reactiveVal()
     
     display <- reactiveVal() # Display options for heatmap
     
@@ -508,22 +508,31 @@ cytosel <- function(...) {
     
     cell_category_table <- create_table_of_hetero_cat(sce(),
                                                         input$coldata_column)
-
-    summary_cat_tally(cell_category_table)
     
-    output$cell_cat_table <- DT::renderDataTable(
-      summary_cat_tally()
+    if (nrow(cell_category_table) > 100) {
+      shinyalert(
+        title = "Error",
+        text = paste("Column", input$coldata_column, "has more than 100 unique elements. Please select another column."),
+        type = "error",
+        showConfirmButton = TRUE,
+        confirmButtonCol = "#337AB7"
       )
-    
-    updateSelectInput(
-      session,
-      "user_selected_cells",
-      choices = unique(sce()[[input$coldata_column]]),
-      selected = specific_cell_types_selected()
-    )
-
-     showModal(cell_cat_modal())
-    
+    } else {
+      summary_cat_tally(cell_category_table)
+      
+      output$cell_cat_table <- DT::renderDataTable(
+        summary_cat_tally()
+      )
+      
+      updateSelectInput(
+        session,
+        "user_selected_cells",
+        choices = unique(sce()[[input$coldata_column]]),
+        selected = specific_cell_types_selected()
+      )
+      
+      showModal(cell_cat_modal())
+    }
     })
     
     ### SELECT ASSAY TYPE ###
