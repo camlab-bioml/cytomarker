@@ -73,7 +73,7 @@ test_that("get_markers errors for non unique values", {
 
 context("Plotting")
 
-test_that("get_umap returns valid dataframe", {
+test_that("get_umap returns valid dataframe and values with different assays", {
   obj <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(obj)
 
@@ -147,9 +147,9 @@ test_that("Conversion of the background colours always yields black or white",
           })
 
 
-context("check filtering steps")
+context("Check filtering steps")
 
-test_that("Filtering sce objects by minimum count passes", {
+test_that("Filtering sce objects by minimum count passes & retains original size", {
   
   obj <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(obj)
@@ -157,14 +157,33 @@ test_that("Filtering sce objects by minimum count passes", {
   grouped <- create_table_of_hetero_cat(
     sce, "seurat_annotations")
   expect_is(grouped, 'data.frame')
+  expect_equal(nrow(grouped), 9)
   
   cells_retained <- remove_cell_types_by_min_counts(
   grouped, sce, "seurat_annotations", 5)
   
   expect_vector(cells_retained)
+  
+  # expect 3 cell types dropped
+  expect_equal(length(cells_retained), 6)
+  # expect cells types below 5 are not retained
   expect_false("Platelet" %in% cells_retained)
   expect_false("Undetermined" %in% cells_retained)
+  expect_false("FCGR3A+ Mono" %in% cells_retained)
   expect_true("NK" %in% cells_retained)
+  
+  
+  sce_with_retention <- create_sce_column_for_analysis(sce, cells_retained, 
+                                                       "seurat_annotations")
+  
+  expect_is(sce_with_retention, 'SingleCellExperiment')
+  # expect that the length of the sce does not change when adding the keep_for_analysis
+  # annotations
+  expect_equal(dim(sce_with_retention)[2], dim(sce)[2])
+  
+  # Expect 7 cells not kept for analysis due to filtering
+  expect_equivalent(c(7, 93),
+                    as.data.frame(table(sce_with_retention$keep_for_analysis))[,2])
   
 })
 

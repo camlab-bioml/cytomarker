@@ -161,7 +161,7 @@ cytosel <- function(...) {
                    tags$span(shiny_iconlink() %>%
                      bs_embed_popover(content = get_tooltip('marker_visualization'),
                                       placement = "top", html = TRUE)))),
-                 fluidRow(column(8, uiOutput("BL", width= "100%"),
+                 fluidRow(column(12, uiOutput("BL"),
                                  ))
           ),
         
@@ -1203,7 +1203,7 @@ cytosel <- function(...) {
             
       output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
      
-            
+      
       output$BL <- renderUI({
         bucket_list(
           header = "Marker selection",
@@ -1213,14 +1213,14 @@ cytosel <- function(...) {
             text = paste0("Scatch space (", scratch_size, ")"),
             labels = labels_scratch,
             input_id = "bl_scratch",
-            options = c(width = 3, multiDrag = TRUE),
+            options = c(multiDrag = TRUE),
             class = c("default-sortable", "cytocellbl")
           ),
           add_rank_list(
             text = paste0("Selected markers (", top_size, ")"),
             labels = labels_top,
             input_id = "bl_top",
-            options = c(width = 3, multiDrag = TRUE),
+            options = c(multiDrag = TRUE),
             class = c("default-sortable", "cytocellbl")
           )
         )
