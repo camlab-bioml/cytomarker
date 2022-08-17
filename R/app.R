@@ -95,7 +95,7 @@ cytosel <- function(...) {
               bs_embed_popover(content = get_tooltip('panel_size'),
                                placement = "right")
           ),
-        numericInput("min_category_count", "Minimum cell category cutoff:", 2, min = 2, max = 100, step = NA, width = NULL) %>%
+        numericInput("min_category_count", "Minimum cell category cutoff:", 2, min = 2, max = 100, step = 0.5, width = NULL) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
               bs_embed_popover(content = get_tooltip('cat_cutoff'),
