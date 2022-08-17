@@ -908,16 +908,15 @@ get_cell_type_add_markers_reactable <- function(fm, current_markers) {
 }
 
 
-#' Create a data frame table of counts for a hetergeneity category
-#' @importFrom magrittr %>%
-#' @importFrom dplyr filter mutate
+#' Create a data frame table of counts for a heterogeneity category
+#' @importFrom dplyr filter mutate rename
 #' @param sce A SingleCellExperiment object
 #' @param metadata_column the string name of a metadata column held within sce, on which to create frequency counts
 create_table_of_hetero_cat <- function(sce, metadata_column) {
-  
-  return(as.data.frame(table(as.vector(
-    as.data.frame(colData(sce))[metadata_column]))) %>%
-      mutate(`Proportion Percentage` = 100*(Freq/sum(Freq))))
+  table(sce[[metadata_column]]) |> 
+    as.data.frame() |> 
+    mutate(`Proportion Percentage` = 100*(Freq/sum(Freq))) |> 
+    rename(!!metadata_column := "Var1")
 }
 
 

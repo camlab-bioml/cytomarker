@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{create_table_of_hetero_cat}
 \alias{create_table_of_hetero_cat}
-\title{Create a data frame table of counts for a hetergeneity category}
+\title{Create a data frame table of counts for a heterogeneity category}
 \usage{
 create_table_of_hetero_cat(sce, metadata_column)
 }
@@ -12,5 +12,5 @@ create_table_of_hetero_cat(sce, metadata_column)
 \item{metadata_column}{the string name of a metadata column held within sce, on which to create frequency counts}
 }
 \description{
-Create a data frame table of counts for a hetergeneity category
+Create a data frame table of counts for a heterogeneity category
 }
