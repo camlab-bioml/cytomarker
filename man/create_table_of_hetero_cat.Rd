@@ -6,6 +6,11 @@
 \usage{
 create_table_of_hetero_cat(sce, metadata_column)
 }
+\arguments{
+\item{sce}{A SingleCellExperiment object}
+
+\item{metadata_column}{the string name of a metadata column held within sce, on which to create frequency counts}
+}
 \description{
 Create a data frame table of counts for a hetergeneity category
 }

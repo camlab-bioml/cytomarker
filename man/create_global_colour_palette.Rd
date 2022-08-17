@@ -9,7 +9,7 @@ a final vector of 100 unique colours..}
 create_global_colour_palette(pal_seed = NULL)
 }
 \arguments{
-\item{pal_seed}{random seed used to shuffle the palette}
+\item{pal_seed}{random seed used to shuffle the palette (Default is NULL)}
 }
 \description{
 Create the global cytosel palette with or without seeding. The palette begins with 12 color-blind friendly colours

@@ -2,10 +2,15 @@
 % Please edit documentation in R/functions.R
 \name{create_keep_vector_during_subsetting}
 \alias{create_keep_vector_during_subsetting}
-\title{Given a vector of membership during subsetting, create a sce column for retaining during analysis}
+\title{Given a vector of membership during sce sub-sampling, overwrite the keep_for_analysis column in the sce}
 \usage{
 create_keep_vector_during_subsetting(sce, vec_to_keep)
 }
+\arguments{
+\item{sce}{A SingleCellExperiment object}
+
+\item{vec_to_keep}{A vector containing the values of an input column that should be retained for analysis}
+}
 \description{
-Given a vector of membership during subsetting, create a sce column for retaining during analysis
+Given a vector of membership during sce sub-sampling, overwrite the keep_for_analysis column in the sce
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{set_text_colour_based_on_background}
 \alias{set_text_colour_based_on_background}
-\title{Convert a text colour into black or white for its background to improve visibility}
+\title{Convert a text colour into black or white based on the RGB values of its background to improve visibility}
 \usage{
 set_text_colour_based_on_background(text_colour)
 }
@@ -10,5 +10,5 @@ set_text_colour_based_on_background(text_colour)
 \item{text_colour}{the colour to be converted into black or white}
 }
 \description{
-Convert a text colour into black or white for its background to improve visibility
+Convert a text colour into black or white based on the RGB values of its background to improve visibility
 }

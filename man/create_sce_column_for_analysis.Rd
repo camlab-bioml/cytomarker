@@ -2,10 +2,17 @@
 % Please edit documentation in R/functions.R
 \name{create_sce_column_for_analysis}
 \alias{create_sce_column_for_analysis}
-\title{Given a vector of col inputs, create a sce column for retaining during analysis}
+\title{Given a vector of input values, create an sce column for retaining during analysis based on membership of the input column in the retention vector}
 \usage{
 create_sce_column_for_analysis(sce, vec_to_keep, input_column)
 }
+\arguments{
+\item{sce}{A SingleCellExperiment object}
+
+\item{vec_to_keep}{A vector containing the values of an input column that should be retained for analysis}
+
+\item{input_column}{The string name of the desired input column in sce. The values in this column should have overlap with vec_to_keep}
+}
 \description{
-Given a vector of col inputs, create a sce column for retaining during analysis
+Given a vector of input values, create an sce column for retaining during analysis based on membership of the input column in the retention vector
 }

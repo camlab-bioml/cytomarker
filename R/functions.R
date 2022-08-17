@@ -911,6 +911,8 @@ get_cell_type_add_markers_reactable <- function(fm, current_markers) {
 #' Create a data frame table of counts for a hetergeneity category
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter mutate
+#' @param sce A SingleCellExperiment object
+#' @param metadata_column the string name of a metadata column held within sce, on which to create frequency counts
 create_table_of_hetero_cat <- function(sce, metadata_column) {
   
   return(as.data.frame(table(as.vector(
@@ -922,7 +924,11 @@ create_table_of_hetero_cat <- function(sce, metadata_column) {
 #' Create a vector of metadata values that pass a minimum count
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter
-remove_cell_types_by_min_counts <- function(grouped_frame, sce, metadata_column, min_counts) {
+#' @param grouped_frame a data frame generated using `create_table_of_hetero_cat`
+#' @param sce A SingleCellExperiment object
+#' @param metadata_column The string name of a metadata column held within sce. Should be the same as the column used in grouped_frame.
+#' @param min_counts the minimum counts to retain a category in grouped frame. Suggested minimum is 2. 
+remove_cell_types_by_min_counts <- function(grouped_frame, sce, metadata_column, min_counts = 2) {
   
   keep_frame <- grouped_frame %>% filter(Freq >= min_counts)
   
@@ -935,7 +941,7 @@ remove_cell_types_by_min_counts <- function(grouped_frame, sce, metadata_column,
 #' then moves into 74 uniquely generated colors form brewer.pal, ending with 2 repeats from the first vector for
 #' a final vector of 100 unique colours.. 
 #' @importFrom RColorBrewer brewer.pal brewer.pal.info
-#' @param pal_seed random seed used to shuffle the palette
+#' @param pal_seed random seed used to shuffle the palette (Default is NULL)
 create_global_colour_palette <- function(pal_seed = NULL) {
   
   # color blind friendly palette: https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
@@ -955,7 +961,7 @@ create_global_colour_palette <- function(pal_seed = NULL) {
 }
 
 
-#' Convert a text colour into black or white for its background to improve visibility
+#' Convert a text colour into black or white based on the RGB values of its background to improve visibility
 #' @importFrom grDevices col2rgb
 #' @param text_colour the colour to be converted into black or white
 set_text_colour_based_on_background <- function(text_colour) {
@@ -968,7 +974,10 @@ set_text_colour_based_on_background <- function(text_colour) {
   }
 }
 
-#' Given a vector of col inputs, create a sce column for retaining during analysis
+#' Given a vector of input values, create an sce column for retaining during analysis based on membership of the input column in the retention vector
+#' @param sce A SingleCellExperiment object
+#' @param vec_to_keep A vector containing the values of an input column that should be retained for analysis
+#' @param input_column The string name of the desired input column in sce. The values in this column should have overlap with vec_to_keep
 create_sce_column_for_analysis <- function(sce, vec_to_keep, input_column) {
   sce$keep_for_analysis <- ifelse(sce[[input_column]] %in% vec_to_keep,
                                   "Yes", "No")
@@ -976,9 +985,11 @@ create_sce_column_for_analysis <- function(sce, vec_to_keep, input_column) {
   return(sce)
 }
 
-#' Given a vector of membership during subsetting, create a sce column for retaining during analysis
+#' Given a vector of membership during sce sub-sampling, overwrite the keep_for_analysis column in the sce
 #' @importFrom magrittr %>% 
 #' @importFrom dplyr mutate
+#' @param sce A SingleCellExperiment object
+#' @param vec_to_keep A vector containing the values of an input column that should be retained for analysis
 create_keep_vector_during_subsetting <- function(sce, vec_to_keep) {
   placeholder_frame <- data.frame(index = seq(1, nrow(colData(sce)))) %>%
     mutate(in_subsample = ifelse(index %in% vec_to_keep, "Yes", "No"))
