@@ -236,31 +236,6 @@ cytosel <- function(...) {
   
   server <- function(input, output, session) {
     
-    create_checkbox_with_vec <- function(FUN, len, id, vec, ...) {
-      inputs = character(len)
-      for (i in seq_len(len)) {
-        inputs[i] = as.character(FUN(paste0(id, i), label = NULL, value = vec[i], ...))
-      }
-      return(inputs)
-    }
-    
-    shinyInput = function(FUN, len, id, ...) {
-      inputs = character(len)
-      for (i in seq_len(len)) {
-        inputs[i] = as.character(FUN(paste0(id, i), label = NULL, ...))
-      }
-      return(inputs)
-    }
-    
-    # obtain the values of inputs
-    shinyValue <- function(id, len) {
-      unlist(lapply(seq_len(len), function(i) {
-        value = input[[paste0(id, i)]]
-        if (is.null(value)) NA else value
-      }))
-      
-    }
-    
     ### REACTIVE VARIABLES ###
     plots <- reactiveValues(all_plot = NULL, top_plot = NULL, metric_plot = NULL) # Save plots for download
     
