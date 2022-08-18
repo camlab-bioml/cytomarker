@@ -24,7 +24,9 @@ test_that("Server has functionality", {
     expect_equal(pref_assay(), "counts")
     expect_equal(output$selected_assay, paste("Selected assay: ", "counts"))
     
-    session$setInputs(user_removed_cells = c("Undetermined"),
+    session$setInputs(user_selected_cells = c("CD8 T", "Memory CD4 T",
+                                              "Naive CD4 T",
+                                              "Platelet"),
                       panel_size = 24, min_category_count = 2,
                       coldata_column = "seurat_annotations",
                       column = "seurat_annotations",
@@ -34,6 +36,7 @@ test_that("Server has functionality", {
     
     expect_true("Yes" %in% unique(sce()$keep_for_analysis))
     expect_true("No" %in% unique(sce()$keep_for_analysis))
+    expect_equal(length(unique(sce()$keep_for_analysis)), 2)
     expect_equivalent(dim(sce()), c(13714, 100))
     
     # do not keep Platelet even though it was not selected for removal
