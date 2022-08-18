@@ -269,30 +269,24 @@ cytosel <- function(...) {
     
     proceed_with_analysis <- reactiveVal(TRUE)
     
-    specific_cell_types_selected <- reactiveVal()
+    specific_cell_types_removed <- reactiveVal()
     
     cell_types_high_enough <- reactiveVal()
     
     cell_types_to_keep <- reactiveVal()
-    cell_type_ignored <- reactiveVal()
-    
-    cell_types_user_selected <- reactiveVal(FALSE)
-    checked_input_to_selection <- reactiveVal(FALSE)
     
     ## Current data frame of selected cell type markers and the reactable
     current_cell_type_marker_fm <- NULL
     selected_cell_type_markers <- reactive(getReactableState("cell_type_marker_reactable", "selected"))
     
-    cell_summary_at_run <- reactiveVal()
-    
-    cell_cat_checkboxes <- reactiveVal()
-    
-    current_cell_cat_been_reviewed <- reactiveVal()
-    
     any_cells_present <- reactiveVal(TRUE)
     
     num_markers_in_selected <- reactiveVal()
     num_markers_in_scratch <- reactiveVal()
+    
+    cell_types_excluded <- reactiveVal()
+    cell_types_below_threshold <- reactiveVal()
+    low_cell_types_missed <- reactiveVal()
     
     ### MODALS ###
     invalid_modal <- function() { # Input file is invalid
@@ -381,14 +375,14 @@ cytosel <- function(...) {
     cell_cat_modal <- function() {
       modalDialog(
         DT::dataTableOutput("cell_cat_table"),
-        selectInput("user_selected_cells", "Create a subset for analysis", NULL, multiple=TRUE),
+        selectInput("user_removed_cells", "Remove certain cell types from analysis", NULL, multiple=TRUE),
         title = "Frequency Count for selected heterogeneity category",
-        helpText("A subset of cell types can be selected for analysis above. If this cell is left empty, then by default 
+        helpText("A subset of cell types can be removed from analysis. If this cell is left empty, then by default 
                  all cell types with a Freq of 2 or greater will be retained for analysis."),
         size = "xl",
         easyClose = TRUE,        
         footer = tagList(
-          actionButton("add_selected_to_analysis", "Set subset for analysis."),
+          actionButton("remove_selected_from_analysis", "Remove selected from analysis."),
           modalButton("Exit.")
           ))
     }
@@ -402,11 +396,14 @@ cytosel <- function(...) {
     }
 
     cell_type_ignored_modal <- function() {
+      
       shinyalert(title = "Warning",
-                 text = tagList(paste("Cytosel has detected cell types with abundance below the set threshold of ",
+                 text = HTML(paste("Cell types with abundance below the set threshold of ",
                                       input$min_category_count,
-                                      ". They are to be ignored during analysis. The threshold can be changed using Minimum cell category cutoff."),
-                                ),
+                                      ":", '<br/>',
+                                      toString(cell_types_excluded()), '<br/>',
+                                      "were identified and not removed by the user.",
+                                      "They are to be ignored during analysis. The threshold can be changed using Minimum cell category cutoff.")),
                  type = "warning",
                  showConfirmButton = TRUE,
                  confirmButtonCol = "#337AB7",
@@ -456,16 +453,16 @@ cytosel <- function(...) {
     
     observeEvent(input$coldata_column, {
       req(input$input_scrnaseq)
-      specific_cell_types_selected(NULL)
+      specific_cell_types_removed(NULL)
       })
     
-    observeEvent(input$add_selected_to_analysis, {
+    observeEvent(input$remove_selected_from_analysis, {
       req(input$input_scrnaseq)
       req(input$coldata_column)
-      specific_cell_types_selected(input$user_selected_cells)
+      specific_cell_types_removed(input$user_removed_cells)
       
-      if (length(specific_cell_types_selected()) > 0) {
-        showNotification("Setting subset for analysis to selected cell types",
+      if (length(specific_cell_types_removed()) > 0) {
+        showNotification("removing selected cell types",
                          duration = 2)
       } else {
         showNotification("Empty subset selection, defaulting to using all cell types in analysis.",
@@ -501,9 +498,9 @@ cytosel <- function(...) {
       
       updateSelectInput(
         session,
-        "user_selected_cells",
+        "user_removed_cells",
         choices = unique(sce()[[input$coldata_column]]),
-        selected = specific_cell_types_selected()
+        selected = specific_cell_types_removed()
       )
       
       showModal(cell_cat_modal())
@@ -645,15 +642,14 @@ cytosel <- function(...) {
         proceed_with_analysis(TRUE)
       }
       
-      if(length(input$user_selected_cells) < 1) {
-        specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
-      } else {
-        specific_cell_types_selected(input$user_selected_cells)
+      if(length(input$user_removed_cells) > 1) {
+        specific_cell_types_removed(input$user_removed_cells)
       }
-      
       
       withProgress(message = 'Initializing analysis', value = 0, {
         incProgress(detail = "Checking data")
+        
+        all_unique_cell_types <- unique(sce()[[input$coldata_column]])
         
         cell_cat_summary <- create_table_of_hetero_cat(sce(),
                                                        input$coldata_column)
@@ -663,9 +659,12 @@ cytosel <- function(...) {
                                                    input$coldata_column, 
                                                    input$min_category_count))
         
-        cell_types_to_keep(intersect(specific_cell_types_selected(),
-                                     cell_types_high_enough()))
-
+        cell_types_below_threshold(all_unique_cell_types[! all_unique_cell_types %in%
+                                                           cell_types_high_enough()])
+        
+        cell_types_to_keep(cell_types_high_enough()[
+          !cell_types_high_enough() %in% specific_cell_types_removed()])
+        
         sce(create_sce_column_for_analysis(sce(), cell_types_to_keep(), 
                                                   input$coldata_column))
         
@@ -676,13 +675,13 @@ cytosel <- function(...) {
           any_cells_present(TRUE)
         }
         
-        different_cells <- setdiff(specific_cell_types_selected(),
-                                   cell_types_high_enough())
+        # if low cells are still retained after removal, throw a warning
+        different_cells <- setdiff(cell_types_below_threshold(),
+                                   specific_cell_types_removed())
       
         if (length(different_cells) > 0 & isTruthy(any_cells_present())) {
-          output$ignored_cell_types <- renderDataTable(data.frame(
-            `Cell Type Ignored` = different_cells))
-            cell_type_ignored_modal()
+          cell_types_excluded(different_cells[!is.null(different_cells)])
+          cell_type_ignored_modal()
         }
       
       })
