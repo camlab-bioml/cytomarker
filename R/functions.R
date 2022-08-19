@@ -36,13 +36,13 @@ good_col <- function(sce, columns) {
 #' @param sce A SingleCellExperiment object
 #' @param columns A vector storing columns
 #' @param pref_assay Assay loaded
-#' 
 #' @importFrom SingleCellExperiment colData
 #' @importFrom scran findMarkers
 #' @importFrom parallel mclapply
+#' @importFrom parallelly availableCores
 compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
 
-  fms <- mclapply(columns, mc.cores = 16, function(col) {
+  fms <- mclapply(columns, mc.cores = availableCores(), function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
     fm <- findMarkers(sce, colData(sce)[[col]], test.type = test_type, assay.type = pref_assay)
@@ -269,13 +269,14 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, pref_assay, max_cells =
 #' @importFrom nnet multinom
 #' @importFrom dplyr sample_n
 #' @importFrom parallel mclapply
+#' @importFrom parallelly availableCores
 train_nb <- function(x,y, cell_types) {
   
   flds <- caret::createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
   x <- scale(x)
   
   metrics <- suppressWarnings({ 
-    mclapply(flds, mc.cores = 16, function(test_idx) {
+    mclapply(flds, mc.cores = availableCores(), function(test_idx) {
       # fit <- naive_bayes(x[-test_idx,], y[-test_idx])
       # p <- stats::predict(fit, newdata = x[test_idx,])
       df_train <- as.data.frame(x[-test_idx,])
