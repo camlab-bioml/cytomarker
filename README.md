@@ -42,7 +42,8 @@ dependencies <- c(
 "ComplexHeatmap",
 "bsplus",
 "shinyjs",
-"zip"
+"zip",
+"RColorBrewer"
 )
 BiocManager::install(dependencies)
 remotes::install_github("daqana/dqshiny")

@@ -99,6 +99,8 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
         f <- f[!(rownames(f) %in% recommended),]
         
         ## Only keep markers that are over-expressed
+        
+        f[is.na(f)] <- 0
         f <- f[f$summary.logFC > 0,]
         
         selected_markers <- rownames(f)[seq_len(top_select)]
@@ -187,7 +189,6 @@ set_current_markers_safely <- function(markers, fms) {
   markers
 }
 
-
 #' Compute the UMAP 
 #'
 #' @param sce A SingleCellExperiment object
@@ -201,13 +202,14 @@ get_umap <- function(sce, columns, pref_assay) {
   
   sce <- runUMAP(sce, exprs_values = pref_assay)
   
-  df <- tibble(
-    UMAP1 = reducedDim(sce, 'UMAP')[,1],
-    UMAP2 = reducedDim(sce, 'UMAP')[,2]
-  )
+  df <- as.data.frame(tibble(
+    UMAP1 = as.numeric(reducedDim(sce, 'UMAP')[,1]),
+    UMAP2 = as.numeric(reducedDim(sce, 'UMAP')[,2])
+  ))
   
   for(column in columns) {
     df[[column]] <- as.data.frame(colData(sce))[[column]]
+    df[[column]] <- as.character(df[[column]])
   }
 
   df
@@ -433,7 +435,6 @@ read_input_scrnaseq <- function(sce_path) {
 detect_assay_and_create_logcounts <- function(sce){
   count_sums <- assays(sce)$logcounts |> 
     rowSums()
-  
   ## calculate residuals after dividing by 1
   modulo_residuals <- lapply(count_sums, function(x) x %% 1) |> 
     unlist() |> 
@@ -760,6 +761,7 @@ get_legend <- function(palette) {
 #' @param gene_id An element in the marker list
 #' @param markers the list of markers
 map_gene_name_to_antibody_icon <- function(gene_id, markers) {
+  
   if(gene_id %in% markers$recommended_markers){
     return(icon("star"))
   }else{
@@ -904,3 +906,98 @@ get_cell_type_add_markers_reactable <- function(fm, current_markers) {
     )
 )
 }
+
+
+#' Create a data frame table of counts for a heterogeneity category
+#' @importFrom dplyr filter mutate rename arrange
+#' @param sce A SingleCellExperiment object
+#' @param metadata_column the string name of a metadata column held within sce, on which to create frequency counts
+create_table_of_hetero_cat <- function(sce, metadata_column) {
+  table(sce[[metadata_column]]) |> 
+    as.data.frame() |> 
+    mutate(`Proportion Percentage` = 100*(Freq/sum(Freq))) |> 
+    rename(!!metadata_column := "Var1") |>
+    arrange(-Freq)
+}
+
+
+#' Create a vector of metadata values that pass a minimum count
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter
+#' @param grouped_frame a data frame generated using `create_table_of_hetero_cat`
+#' @param sce A SingleCellExperiment object
+#' @param metadata_column The string name of a metadata column held within sce. Should be the same as the column used in grouped_frame.
+#' @param min_counts the minimum counts to retain a category in grouped frame. Suggested minimum is 2. 
+remove_cell_types_by_min_counts <- function(grouped_frame, sce, metadata_column, min_counts = 2) {
+  
+  keep_frame <- grouped_frame %>% filter(Freq >= min_counts)
+  
+  # keep_frame[,] <- lapply(df, function(x) {as.numeric(as.character(x))})
+  
+  return(as.vector(keep_frame[metadata_column][,1]))
+}
+
+#' Create the global cytosel palette with or without seeding. The palette begins with 12 color-blind friendly colours
+#' then moves into 74 uniquely generated colors form brewer.pal, ending with 2 repeats from the first vector for
+#' a final vector of 100 unique colours.. 
+#' @importFrom RColorBrewer brewer.pal brewer.pal.info
+#' @param pal_seed random seed used to shuffle the palette (Default is NULL)
+create_global_colour_palette <- function(pal_seed = NULL) {
+  
+  # color blind friendly palette: https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
+  
+  safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                               "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+  qual_col_pals <- brewer.pal.info[brewer.pal.info$category == 'qual',]
+  unique_palette <- unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+  if (! is.null(pal_seed)) {
+    set.seed(pal_seed)
+    unique_palette <- sample(unique_palette, length(unique_palette))
+  }
+  unique_palette <- unique_palette[!unique_palette %in% safe_colorblind_palette]
+  
+  return(c(safe_colorblind_palette, unique_palette, safe_colorblind_palette,
+           unique_palette[1:2]))
+}
+
+
+#' Convert a text colour into black or white based on the RGB values of its background to improve visibility
+#' @importFrom grDevices col2rgb
+#' @param text_colour the colour to be converted into black or white
+set_text_colour_based_on_background <- function(text_colour) {
+  rgb_code <- as.vector(col2rgb(text_colour))
+  # https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
+  if (rgb_code[1]*0.299 + rgb_code[2]*0.587 + rgb_code[3]*0.114 > 150) {
+    return("#000000")
+  } else {
+    return("#ffffff")
+  }
+}
+
+#' Given a vector of input values, create an sce column for retaining during analysis based on membership of the input column in the retention vector
+#' @param sce A SingleCellExperiment object
+#' @param vec_to_keep A vector containing the values of an input column that should be retained for analysis
+#' @param input_column The string name of the desired input column in sce. The values in this column should have overlap with vec_to_keep
+create_sce_column_for_analysis <- function(sce, vec_to_keep, input_column) {
+  sce$keep_for_analysis <- ifelse(sce[[input_column]] %in% vec_to_keep,
+                                  "Yes", "No")
+  
+  return(sce)
+}
+
+#' Given a vector of membership during sce sub-sampling, overwrite the keep_for_analysis column in the sce
+#' @importFrom magrittr %>% 
+#' @importFrom dplyr mutate
+#' @param sce A SingleCellExperiment object
+#' @param vec_to_keep A vector containing the values of an input column that should be retained for analysis
+create_keep_vector_during_subsetting <- function(sce, vec_to_keep) {
+  placeholder_frame <- data.frame(index = seq(1, nrow(colData(sce)))) %>%
+    mutate(in_subsample = ifelse(index %in% vec_to_keep, "Yes", "No"))
+  
+  sce$in_subsample <- placeholder_frame$in_subsample
+  sce$keep_for_analysis <- ifelse(sce$in_subsample == "Yes" & sce$keep_for_analysis == "Yes",
+                                 "Yes", "No")
+  sce$in_subsample <- NULL
+  return(sce)
+}
+

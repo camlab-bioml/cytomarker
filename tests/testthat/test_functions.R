@@ -1,26 +1,29 @@
 
 context("Data reading")
 
-# test_that("SingleCellExperiment object reading", {
-#   obj <- readRDS("~/Github/cytosel/tests/testthat/test_sce.rds")
-#   sce <- read_input_scrnaseq(obj)
-# 
-#   expect_is(sce, 'SingleCellExperiment')
-# })
-# 
-# test_that("Seurat object reading", {
-#   obj <- readRDS("~/Github/cytosel/tests/testthat/test_seu.rds")
-#   seu <- read_input_scrnaseq(obj)
-# 
-#   ## Seurat objects are converted to SingleCellExperiments by read_input_scrnaseq
-#   expect_is(seu, 'SingleCellExperiment')
-# })
+test_that("SingleCellExperiment object reading", {
+  obj <- test_path("test_sce.rds")
+  sce <- read_input_scrnaseq(obj)
+
+  expect_is(sce, 'SingleCellExperiment')
+  expect_equivalent(dim(sce), c(100, 500))
+  expect_equivalent(rownames(sce), paste("feature-", seq(1, 100, 1), sep=""))
+})
+
+test_that("Seurat object reading", {
+  obj <- test_path("test_seu.rds")
+  seu <- read_input_scrnaseq(obj)
+
+  ## Seurat objects are converted to SingleCellExperiments by read_input_scrnaseq
+  expect_is(seu, 'SingleCellExperiment')
+  expect_equivalent(dim(seu), c(100, 500))
+  expect_equivalent(rownames(seu), paste("feature-", seq(1, 100, 1), sep=""))
+})
 
 context("Marker finding")
 
 test_that("good_col returns valid columns", {
-  sce_path <- system.file("tests/testthat/test_sce.rds", package="cytosel")
-  sce_path <- "test_sce.rds"
+  sce_path <- test_path("test_sce.rds")
   sce <- read_input_scrnaseq(sce_path)
   columns <- good_col(sce, colnames(colData(sce)))
 
@@ -34,24 +37,23 @@ test_that("good_col returns valid columns", {
 })
 
 test_that("get_markers and compute_fm returns valid output", {
-  sce_path <- system.file("tests/testthat/test_sce.rds", package="cytosel")
-  sce_path <- "test_sce.rds"
+  sce_path <- test_path("test_sce.rds")
   sce <- read_input_scrnaseq(sce_path)
-  
+
   sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
-  
-  fms <- compute_fm(sce, 
-             "cell_type", 
+
+  fms <- compute_fm(sce,
+             "cell_type",
               "logcounts",
             rownames(sce)
   )
-  
+
   expect_is(fms, 'list')
   expect_equal(length(fms), 1)
   expect_equal(nrow(fms[[1]][[1]]), nrow(sce))
-  
-  markers <- get_markers(fms, panel_size = 32, marker_strategy = 'standard', 
-                         sce = sce, 
+
+  markers <- get_markers(fms, panel_size = 32, marker_strategy = 'standard',
+                         sce = sce,
                          allowed_genes = rownames(sce))
 
 
@@ -60,24 +62,130 @@ test_that("get_markers and compute_fm returns valid output", {
   expect_gt(length(markers$recommended_markers), 0)
   expect_gt(length(markers$top_markers), 0)
 })
-# 
-# 
-# test_that("get_markers errors for non unique values", {
-#   obj <- readRDS("~/Github/cytosel/tests/testthat/test_sce.rds")
-#   sce <- read_input_scrnaseq(obj)
+
+test_that("get_markers errors for non unique values", {
+  obj <- test_path("test_sce.rds")
+  sce <- read_input_scrnaseq(obj)
+
+  expect_error(get_markers(sce, 'col2', 10, 'logcounts'))
+})
+
+
+context("Plotting")
+
+test_that("get_umap returns valid dataframe and values with different assays", {
+  obj <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(obj)
+
+  umap_frame_log <- get_umap(sce, "seurat_annotations", "logcounts")
+  umap_frame_norm <- get_umap(sce, "seurat_annotations", "counts")
+  expect_is(umap_frame_log, 'data.frame')
+  expect_equal(ncol(umap_frame_log), 3)
+  expect_equal(nrow(umap_frame_log), ncol(sce))
+  expect_is(umap_frame_norm, 'data.frame')
+  expect_equal(ncol(umap_frame_norm), 3)
+  expect_equal(nrow(umap_frame_log), ncol(sce))
+  expect_false(unique(umap_frame_norm[,1] == umap_frame_log[,1]))
+  expect_false(unique(umap_frame_norm[,2] == umap_frame_log[,2]))
+
+})
+
+# context("Scoring")
+#
+# test_that("get_scores returns valid scores", {
+#
+# })
+  
+
 #   
-#   expect_error(get_markers(sce, 'col2', 10, 'logcounts'))
 # })
 
-# 
-# context("Plotting")
-# 
-# test_that("get_umap returns valid dataframe", {
-#   
-# })
-# 
-# context("Scoring")
-# 
-# test_that("get_scores returns valid scores", {
-#   
-# })
+context("Testing palette and colour conversions")
+
+test_that("Palette always returns consistent colors with and without seeding", {
+  test_palettes <- list()
+  
+  pal_1 = c("#88CCEE", "#117733", "#332288", "#E6AB02", "#E5C494")
+  pal_2 <- c("#CC6677", "#999933", "#386CB0", "#66A61E",
+             "#1F78B4", "#FFF2AE","#377EB8")
+  
+  pal_seed_1 <- c("#88CCEE", "#117733", "#332288", "#FBB4AE", "#33A02C")
+  pal_seed_2 <- c("#CC6677", "#999933", "#E6F5C9", "#1B9E77",
+                  "#BF5B17", "#386CB0", "#1F78B4")
+  
+  i <- 1
+  while(i <= 10) {
+    new_pal <- create_global_colour_palette()
+    new_pal_1 <- as.vector(new_pal[c(1, 4, 5, 26, 73)])
+    new_pal_2 <- as.vector(new_pal[c(2, 8, 17, 25, 30, 55, 59)])
+    
+    
+    expect_equal(new_pal_1, pal_1)
+    expect_equal(new_pal_2, pal_2)
+    
+    
+    new_pal_seed <- create_global_colour_palette(pal_seed = 123)
+    new_pal_1_seed <- as.vector(new_pal_seed[c(1, 4, 5, 26, 73)])
+    new_pal_2_seed <- as.vector(new_pal_seed[c(2, 8, 17, 25, 30, 55, 59)])
+    
+    expect_equal(new_pal_1_seed, pal_seed_1)
+    expect_equal(new_pal_2_seed, pal_seed_2)
+    
+    i <- i + 1
+  }
+
+})
+
+test_that("Conversion of the background colours always yields black or white",
+          {
+            background_texts <- sapply(create_global_colour_palette(), 
+            FUN = function(x) set_text_colour_based_on_background(x))
+            
+            expect_equal(length(background_texts[!is.null(background_texts)]), 100)
+            expect_equivalent(unique(background_texts), c("#000000", "#ffffff"))
+            
+          })
+
+
+context("Check filtering steps")
+
+test_that("Filtering sce objects by minimum count passes & retains original size", {
+  
+  obj <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(obj)
+  
+  grouped <- create_table_of_hetero_cat(
+    sce, "seurat_annotations")
+  expect_is(grouped, 'data.frame')
+  expect_equal(nrow(grouped), 9)
+  
+  cells_retained <- remove_cell_types_by_min_counts(
+  grouped, sce, "seurat_annotations", 5)
+  
+  expect_vector(cells_retained)
+  
+  # expect 3 cell types dropped
+  expect_equal(length(cells_retained), 6)
+  # expect cells types below 5 are not retained
+  expect_false("Platelet" %in% cells_retained)
+  expect_false("Undetermined" %in% cells_retained)
+  expect_false("FCGR3A+ Mono" %in% cells_retained)
+  expect_true("NK" %in% cells_retained)
+  
+  
+  sce_with_retention <- create_sce_column_for_analysis(sce, cells_retained, 
+                                                       "seurat_annotations")
+  
+  expect_is(sce_with_retention, 'SingleCellExperiment')
+  # expect that the length of the sce does not change when adding the keep_for_analysis
+  # annotations
+  expect_equal(dim(sce_with_retention)[2], dim(sce)[2])
+  
+  # Expect 7 cells not kept for analysis due to filtering
+  expect_equivalent(c(7, 93),
+                    as.data.frame(table(sce_with_retention$keep_for_analysis))[,2])
+  
+})
+
+
+

@@ -9,3 +9,5 @@ Rplots.pdf
 
 *.pdf
 *.txt
+
+*.Rcheck/

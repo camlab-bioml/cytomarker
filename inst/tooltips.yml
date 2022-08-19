@@ -62,9 +62,6 @@ metrics_explanation: "Balanced accuracy = Sum of recall for each category / numb
 alternative_markers: "Input a marker that you want to replace. The top markers most correlated to your input will be recommended as a replacement. 
                           You can search for any marker that is present in your uploaded scRNAseq data, including ones not currently present in your selected panel."
 
-
-
-
-
+cat_cutoff: "Set the minimum number of cells in a heterogeneity category to remove cells that may interfere with analysis."
 
                       
