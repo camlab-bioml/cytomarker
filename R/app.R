@@ -1274,7 +1274,6 @@ cytosel <- function(...) {
                              column(), current_markers()$top_markers, pref_assay())
         metrics(scores)
         
-        
         # Show help text popover
         shinyjs::show(id = "marker_visualization")
         shinyjs::show(id = "marker_display")
