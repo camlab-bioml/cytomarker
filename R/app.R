@@ -286,138 +286,6 @@ cytosel <- function(...) {
     
     cell_types_excluded <- reactiveVal()
 
-    
-    ### MODALS ###
-    invalid_modal <- function() { # Input file is invalid
-      shinyalert(
-        title = "Error",
-        text = paste("Input must be a Single Cell Experiment or Seurat object. Please upload a different file."),
-        type = "error",
-        showConfirmButton = TRUE,
-        confirmButtonCol = "#337AB7"
-      )
-    }
-    
-    assay_modal <- function(assays, failed = FALSE) { # Assay selection
-      modalDialog(
-        selectInput("assay",
-                    "Choose which assay to load",
-                    assays),
-        helpText("Recommended assay type is logcounts, as otherwise panel selection 
-                 will be skewed towards high abundance transcripts rather than heterogeneously expressed transcripts."),
-        if (failed) {
-          div(tags$b("Error", style = "color: red;"))
-        },
-        footer = tagList(
-          actionButton("assay_select", "Select")
-        )
-      )
-    }
-    
-    unique_element_modal <- function(col) { # Column is invalid
-      
-      for(c in seq_len(length(col$colname))) {
-        if(col$n[[c]] == 1) {
-          shinyalert(
-            title = "Error",
-            text = paste("Only one level in column", col$colname[[c]], ". Please select another column."),
-            type = "error",
-            showConfirmButton = TRUE,
-            confirmButtonCol = "#337AB7"
-          )
-        } else if(col$n[[c]] > 100) {
-          shinyalert(
-            title = "Error",
-            text = paste("Column", col$colname[[c]], "has more than 100 unique elements. Please select another column."),
-            type = "error",
-            showConfirmButton = TRUE,
-            confirmButtonCol = "#337AB7"
-          )
-        }
-      }
-
-    }
-    
-    warning_modal <- function(not_sce) { # Uploaded marker is not in SCE
-      shinyalert(title = "Warning", 
-                 text = paste(paste(not_sce, collapse = ", "), " are not in SCE."), 
-                 type = "warning", 
-                 showConfirmButton = TRUE,
-                 confirmButtonCol = "#337AB7")
-    }
-    
-    suggestion_modal <- function(failed = FALSE, suggestions) { # Marker removal suggestion
-      modalDialog(
-        selectInput("markers_to_remove",
-                    "Select markers to remove",
-                    choices = current_markers()$top_markers,
-                    selected = suggestions,
-                    multiple = TRUE),
-        if (failed) {
-          div(tags$b("Error", style = "color: red;"))
-        },
-        footer = tagList(
-          modalButton("Cancel"),
-          actionButton("remove_suggested", "Move selected markers to scratch")
-        )
-      )
-    }
-    
-    dne_modal <- function(dne) { # Input marker is not in the dataset
-      shinyalert(title = "Error", 
-                 text = paste("Marker ", paste(dne), " does not exist or has no corresponding antibody."), 
-                 type = "error", 
-                 showConfirmButton = TRUE,
-                 confirmButtonCol = "#337AB7")
-    }
-    
-    cell_cat_modal <- function() {
-      modalDialog(
-        DT::dataTableOutput("cell_cat_table"),
-        selectInput("user_selected_cells", "Create a custom subset for analysis", NULL, multiple=TRUE),
-        title = "Frequency Count for selected heterogeneity category",
-        helpText("Certain cell types can be manually ignored by the user during analysis in the dialog box above. If this cell is left empty, then by default 
-                 all cell types with a Freq of 2 or greater will be retained for analysis."),
-        size = "xl",
-        easyClose = TRUE,        
-        footer = tagList(
-          actionButton("add_selected_to_analysis", "Set subset for analysis."),
-          modalButton("Exit.")
-        ))
-    }
-    
-    threshold_too_low_modal <- function() { # Input marker is not in the dataset
-      shinyalert(title = "Error", 
-                 text = "Cytosel requires the minimum cell type category to be set to 2 or greater for statistical inference. Please adjust the value of minimum cell category cutoff to at least 2.", 
-                 type = "error", 
-                 showConfirmButton = TRUE,
-                 confirmButtonCol = "#337AB7")
-    }
-
-    cell_type_ignored_modal <- function() {
-      
-      shinyalert(title = "Warning",
-                 text = HTML(paste("Cell types with abundance below the set threshold of ",
-                                   input$min_category_count,
-                                      ":", '<br/>',
-                                   "<b>", toString(cell_types_excluded()), "</b>", '<br/>',
-                                      "were identified and not removed by the user.",
-                                      "They are to be ignored during analysis. The threshold can be changed using Minimum cell category cutoff.")),
-                 type = "warning",
-                 showConfirmButton = TRUE,
-                 confirmButtonCol = "#337AB7",
-                 html = TRUE)
-    }
-    
-    no_cells_left_modal <- function() { # Uploaded marker is not in SCE
-      shinyalert(title = "Error", 
-                 text = "No cells remain after filtering/subsetting. Please review the input parameters.", 
-                 type = "error", 
-                 showConfirmButton = TRUE,
-                 confirmButtonCol = "#337AB7")
-    }
-    
-    
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
@@ -680,7 +548,8 @@ cytosel <- function(...) {
           output$ignored_cell_types <- renderDataTable(data.frame(
             `Cell Type Ignored` = different_cells))
           cell_types_excluded(different_cells[!is.null(different_cells)])
-          cell_type_ignored_modal()
+          cell_type_ignored_modal(input$min_category_count,
+                                  cell_types_excluded())
         }
         
       })
