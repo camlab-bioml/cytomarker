@@ -46,7 +46,8 @@ Imports:
     magrittr,
     Matrix,
     annotables (>= 0.1.91),
-    RColorBrewer
+    RColorBrewer,
+    shinytest
 Suggests:
   stringr,
   yardstick,

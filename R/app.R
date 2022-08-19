@@ -12,7 +12,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' 
 #' @export
 #' 
-#' @import shiny
+#' @import shiny shinytest
 #' @importFrom shinyalert useShinyalert shinyalert
 #' @importFrom dqshiny autocomplete_input update_autocomplete_input
 #' @importFrom DT DTOutput renderDT
