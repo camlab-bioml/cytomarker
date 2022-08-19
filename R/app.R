@@ -29,6 +29,8 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom zip zip
 #' @importFrom randomcoloR distinctColorPalette
 #' @importFrom plotly plot_ly plotlyOutput renderPlotly layout
+#' @importFrom parallelly availableCores
+#' @importFrom BiocParallel MulticoreParam
 #' @export
 #' 
 #' @param ... Additional arguments
@@ -40,6 +42,8 @@ cytosel <- function(...) {
                                         package = "cytosel"))
   antibody_info <- dplyr::rename(antibody_info, Symbol = `Gene Name (Upper)`)
   antibody_info <- tidyr::drop_na(antibody_info)
+  
+  options(MulticoreParam=quote(MulticoreParam(workers=availableCores())))
   
   # Read in grch38 file
   grch38 <- read_tsv(system.file("annotables_grch38.tsv",
@@ -645,6 +649,8 @@ cytosel <- function(...) {
         proceed_with_analysis(TRUE)
       }
       
+      # if the user never opened up the tally table, automatically set all cell types
+      # for analysis
       if (!isTruthy(specific_cell_types_selected())) {
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
@@ -735,7 +741,8 @@ cytosel <- function(...) {
             sce[[column()]] <- as.character(sce[[column()]])
             sce(sce)
             
-            ## Get the markers first time          
+            ## Get the markers first time 
+            
             fms(
               compute_fm(sce()[,sce()$keep_for_analysis == "Yes"], 
                          column(), 
@@ -1225,6 +1232,7 @@ cytosel <- function(...) {
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
+        
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
                   names(fms()[[1]]))

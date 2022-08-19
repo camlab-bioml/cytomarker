@@ -198,9 +198,16 @@ set_current_markers_safely <- function(markers, fms) {
 #' @importFrom scater runUMAP
 #' @importFrom tibble tibble
 #' @importFrom SingleCellExperiment reducedDim
+#' @importFrom parallelly availableCores
+#' @importFrom BiocParallel MulticoreParam
 get_umap <- function(sce, columns, pref_assay) {
   
-  sce <- runUMAP(sce, exprs_values = pref_assay)
+  sce <- runUMAP(sce, exprs_values = pref_assay,
+                 n_threads = availableCores(),
+                 ncomponents = 20, 
+                 pca = 20,
+                 # BPPARAM = MulticoreParam(workers = availableCores()),
+                 external_neighbors	= T)
   
   df <- as.data.frame(tibble(
     UMAP1 = as.numeric(reducedDim(sce, 'UMAP')[,1]),
