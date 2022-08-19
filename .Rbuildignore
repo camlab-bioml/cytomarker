@@ -1,3 +1,5 @@
 ^cytosel\.Rproj$
 ^\.Rproj\.user$
 ^data/
+
+cytosel.Rcheck/

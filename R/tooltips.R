@@ -2,7 +2,7 @@
 ## Read the tooltips yaml on package load
 tooltips <- yaml::read_yaml(
   # system.file("inst", "tooltips.yml", package="cytosel")
-  file.path("inst", "tooltips.yml")
+  file.path("inst", "tooltips.yml"), readLines.warn = F
 )
 
 
