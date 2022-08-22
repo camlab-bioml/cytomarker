@@ -1,8 +1,3 @@
-# # 
-# if (!interactive()) {
-#   skip("Do not run server side tests if non-interactive")
-# 
-# }
 
 context("Test Shiny app server functionality")
 
