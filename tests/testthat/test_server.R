@@ -1,10 +1,8 @@
-
-if (!interactive()) {
-  skip("Do not run server side tests if non-interactive")
-
-}
-
-skip_on_cran()
+# # 
+# if (!interactive()) {
+#   skip("Do not run server side tests if non-interactive")
+# 
+# }
 
 context("Test Shiny app server functionality")
 
@@ -14,10 +12,7 @@ test_that("Server has functionality", {
     
     expect_equal(pref_assay(), "logcounts")
     session$setInputs(input_scrnaseq = list(datapath =
-                                              system.file("/tests/testthat/pbmc_small.rds",
-                                                          package="cytosel",
-                                                          lib.loc = "cytosel",
-                                                          mustWork = T)))
+                                              test_path("pbmc_small.rds")))
     expect_is(sce(), 'SingleCellExperiment')
     expect_equivalent(dim(sce()), c(13714, 100))
     session$setInputs(assay_select = "counts", assay = "counts")

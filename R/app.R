@@ -38,16 +38,15 @@ cytosel <- function(...) {
   ## First up -- parse the antibodies
   # antibody_info <- read_tsv(system.file("inst", "abcam_antibodies_gene_symbol_associated.tsv", package="cytosel"))
   # antibody_info <- read_csv(system.file("inst", "Abcam_published_monos_with_gene.csv", package="cytosel"))
-  antibody_info <- read_csv(system.file("Abcam_published_monos_with_gene.csv",
-                                        package = "cytosel"))
+  
+  antibody_info <- read_csv(file.path("Abcam_published_monos_with_gene.csv"))
+  grch38 <- read_tsv(file.path("annotables_grch38.tsv"))
+  
   antibody_info <- dplyr::rename(antibody_info, Symbol = `Gene Name (Upper)`)
   antibody_info <- tidyr::drop_na(antibody_info)
   
   options(MulticoreParam=quote(MulticoreParam(workers=availableCores())))
   
-  # Read in grch38 file
-  grch38 <- read_tsv(system.file("annotables_grch38.tsv",
-                                 package = "cytosel"))
   
   applications_parsed <- get_antibody_applications(antibody_info, 'Symbol', 'Listed Applications')
   
