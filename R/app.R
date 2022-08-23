@@ -288,6 +288,8 @@ cytosel <- function(...) {
     num_markers_in_scratch <- reactiveVal()
     
     cell_types_excluded <- reactiveVal()
+    
+    marker_suggestions <- reactiveVal()
 
     
     ### MODALS ###
@@ -882,6 +884,8 @@ cytosel <- function(...) {
                                             unique(unlist(current_markers())))
         
         current_cell_type_marker_fm <<- tmp$fm
+        marker_suggestions(tmp$fm)
+        
         output$cell_type_marker_reactable <- renderReactable({ tmp$reactable })
         
         modal_add_marker <- modalDialog(

@@ -43,6 +43,7 @@ test_that("Server has functionality", {
     
     # resetting the min count to 2 allows to proceed with analysis
     expect_true(proceed_with_analysis())
+    expect_true(any_cells_present())
     
     # platelet does not meet the cutoff, so of the 9 cell types, 8 pass high enough
     expect_equal(length(cell_types_high_enough()), 8)
@@ -97,6 +98,34 @@ test_that("Server has functionality", {
     session$setInputs(add_markers = different[1],
                       enter_marker = T)
     expect_equal(num_markers_in_selected(), 15)
+    
+    # expect null since no markers have been suggested
+    expect_true(is.null(selected_cell_type_markers()))
+    
+    # generate suggested replacement markers
+    session$setInputs(input_gene = current_markers()$top_markers[3],
+                      number_correlations = 10,
+                      enter_gene = T)
+    
+    # replacements should be of length 10
+    expect_false(is.null(replacements()))
+    
+    expect_equal(nrow(replacements()), 10)
+    
+    # get 50 suggested markers for the specific cell type
+    session$setInputs(cell_type_markers = "CD8 T",
+                      add_cell_type_markers = T)
+    
+    expect_equal(nrow(marker_suggestions()), 50)
+    
+   expect_false(is.null(output$cell_type_marker_reactable))
+    
+   session$setInputs(add_select_markers = T)
+    
+   session$setInputs(min_category_count = 50,
+                      start_analysis = T)
+    
+    expect_false(any_cells_present())
     
     
   })
