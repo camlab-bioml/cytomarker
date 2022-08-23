@@ -47,7 +47,10 @@ Imports:
     Matrix,
     annotables (>= 0.1.91),
     RColorBrewer,
-    shinytest
+    shinytest,
+    parallelly,
+    parallel,
+    BiocParallel
 Suggests:
   stringr,
   yardstick,
@@ -60,9 +63,12 @@ Suggests:
 Remotes: 
     github::daqana/dqshiny,
     github::MarioniLab/geneBasisR,
-    camlab-bioml/inferorg,
-    stephenturner/annotables
+    github::camlab-bioml/inferorg,
+    github::stephenturner/annotables,
+    github::HenrikBengtsson/parallelly
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1
+Depends: 
+    R (>= 2.10)
