@@ -94,22 +94,36 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
       top <- marker$top_markers
       scratch <- marker$scratch_markers
         
+      ## Create a vector of cell types for which no markers were found
+      cell_types_wout_markers <- c()
       for(i in seq_len(n)) {
         f <- fm[[i]]
         f <- f[!(rownames(f) %in% recommended),]
         
         ## Only keep markers that are over-expressed
-        
         f[is.na(f)] <- 0
         f <- f[f$summary.logFC > 0,]
         
-        selected_markers <- rownames(f)[seq_len(top_select)]
-        recommended_df <- bind_rows(recommended_df, 
-                                    tibble(marker = selected_markers,
-                                           cell_type = names(fm)[i],
-                                           summary.logFC = f[selected_markers,]$summary.logFC))
+        if(nrow(f) > 0){
+          selected_markers <- rownames(f)[seq_len(top_select)]
+          recommended_df <- bind_rows(recommended_df, 
+                                      tibble(marker = selected_markers,
+                                             cell_type = names(fm)[i],
+                                             summary.logFC = f[selected_markers,]$summary.logFC))
+        }else{
+          cell_types_wout_markers <- c(cell_types_wout_markers, names(fm)[i])
+        }
         #recommended <- c(top, rownames(f)[seq_len(top_select)])
         #top <- c(top, rownames(f)[seq_len(top_select)])
+      }
+      
+      if(!is.null(cell_types_wout_markers)){
+        throw_error_or_warning(type = 'notification',
+                               message = paste("No markers were found for the following cell types: ",
+                                               paste(cell_types_wout_markers, 
+                                                     collapse = ", "), 
+                                               ". This is likely because there are too few cells of these types."),
+                               duration = 10)
       }
       
       #recommended_df <- group_by(recommended_df, marker, cell_type)
@@ -293,7 +307,7 @@ train_nb <- function(x,y, cell_types) {
       df_test <- as.data.frame(x[test_idx,])
       df_test$y <- y[test_idx]
       
-      fit <- multinom(y~., data = df_train)
+      fit <- multinom(y~., data = df_train, trace = FALSE)
       p <- stats::predict(fit, df_test)
       
       overall <- yardstick::bal_accuracy_vec(y[test_idx], p)
