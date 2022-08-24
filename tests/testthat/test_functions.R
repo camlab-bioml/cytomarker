@@ -1,3 +1,8 @@
+context("Test basic functions")
+
+test_that("round3 function is effective", {
+  expect_equal(round3(0.3456), "0.300")
+})
 
 context("Data reading")
 
@@ -184,6 +189,34 @@ test_that("Filtering sce objects by minimum count passes & retains original size
   # Expect 7 cells not kept for analysis due to filtering
   expect_equivalent(c(7, 93),
                     as.data.frame(table(sce_with_retention$keep_for_analysis))[,2])
+  
+})
+
+
+context("Antibody finding in the abcam table")
+
+test_that("Filtering sce objects by minimum count passes & retains original size", {
+  antibody_info <- dplyr::rename(cytosel_data$antibody_info, Symbol = `Gene Name (Upper)`)
+  antibody_info <- tidyr::drop_na(antibody_info)
+  
+  
+  expect_equal(get_antibody_info("CD45", antibody_info)$status, "NO_GENE_FOUND")
+  expect_equal(get_antibody_info("CD74", antibody_info)$status, "ANTIBODY_FOUND")
+  
+  
+})
+
+
+context("Return types from catch-all error/notification function")
+
+test_that("throw_error_or_warning returns the correct type", {
+  antibody_info <- dplyr::rename(cytosel_data$antibody_info, Symbol = `Gene Name (Upper)`)
+  antibody_info <- tidyr::drop_na(antibody_info)
+  
+  expect_error(throw_error_or_warning(type = 'error', message = "Testing error"))
+  expect_error(throw_error_or_warning(type = 'notification', 
+                                                   message = "Testing notif"))
+  
   
 })
 

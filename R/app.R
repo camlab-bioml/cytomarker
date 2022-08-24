@@ -466,7 +466,7 @@ cytosel <- function(...) {
       specific_cell_types_selected(input$user_selected_cells)
       
       if (length(specific_cell_types_selected()) > 0) {
-        showNotification("removing selected cell types",
+        showNotification("Setting subset to select cell types",
                          duration = 2)
       } else {
         showNotification("Empty subset selection, defaulting to using all cell types in analysis.",

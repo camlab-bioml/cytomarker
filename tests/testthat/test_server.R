@@ -119,14 +119,14 @@ test_that("Server has functionality", {
     expect_equal(nrow(marker_suggestions()), 50)
     
    expect_false(is.null(output$cell_type_marker_reactable))
+   
     
    session$setInputs(add_select_markers = T)
     
    session$setInputs(min_category_count = 50,
                       start_analysis = T)
     
-    expect_false(any_cells_present())
-    
+  expect_false(any_cells_present())
     
   })
 })
