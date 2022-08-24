@@ -66,6 +66,23 @@ test_that("get_markers and compute_fm returns valid output", {
   expect_equal(names(markers), c("recommended_markers", "scratch_markers", "top_markers"))
   expect_gt(length(markers$recommended_markers), 0)
   expect_gt(length(markers$top_markers), 0)
+  
+  
+  markers_geneBasis <- get_markers(fms, panel_size = 24, marker_strategy = 'geneBasis',
+                                   sce = sce,
+                                   allowed_genes = rownames(sce))
+  
+  expect_is(markers, 'list')
+  expect_equal(names(markers_geneBasis), 
+               c("recommended_markers", "scratch_markers", "top_markers"))
+  expect_null(markers_geneBasis$scratch_markers)
+  expect_gt(length(markers_geneBasis$recommended_markers), 0)
+  expect_gt(length(markers_geneBasis$top_markers), 0)
+  
+  # expect the different selections to give different top markers
+  expect_false(setequal(sort(markers_geneBasis$topmarkers),
+                        sort(markers$top_markers)))
+  
 })
 
 test_that("get_markers errors for non unique values", {

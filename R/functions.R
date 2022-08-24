@@ -197,9 +197,20 @@ get_associated_cell_types <- function(markers, fms) {
 #' @param markers A list storing three lists of markers: 
 #' recommended_markers, scratch_markers, and top_markers
 #' @param fms Stored findMarkers outputs
-set_current_markers_safely <- function(markers, fms) {
-  markers$associated_cell_types <- get_associated_cell_types(markers, fms)
-
+set_current_markers_safely <- function(markers, fms, default_type = NULL) {
+  
+  if (is.null(markers$associated_cell_types)) {
+    markers$associated_cell_types <- get_associated_cell_types(markers, fms)
+  }
+  if (is.list(markers$associated_cell_types)) {
+    
+    markers$associated_cell_types <- lapply(markers$associated_cell_types,
+                                            FUN = function(X)
+                                              replace_missing_types(X, default_type))
+    markers$associated_cell_types <- unlist(markers$associated_cell_types)
+    
+  }
+    
   markers
 }
 
@@ -1024,3 +1035,13 @@ create_keep_vector_during_subsetting <- function(sce, vec_to_keep) {
   return(sce)
 }
 
+#' Replace a zero character or NA with a new string
+#' @param current_string The current zero character string
+#' @param replacement_string The string to replace the zero character string
+replace_missing_types <- function(current_string, replacement_string) {
+  if (identical(current_string, character(0))) {
+    return(replacement_string)
+  } else {
+    return (current_string)
+  }
+}

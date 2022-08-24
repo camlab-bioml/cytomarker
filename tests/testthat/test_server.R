@@ -5,6 +5,7 @@ test_that("Server has functionality", {
   
   testServer(cytosel::cytosel(), expr = {
     
+    # Verify the input sce and default + selected assays
     expect_equal(pref_assay(), "logcounts")
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")))
@@ -18,10 +19,13 @@ test_that("Server has functionality", {
                       min_category_count = 2,
                       show_cat_table = T)
     
+    
+    # expect all 9 cell types to be in the tally and selected category
     expect_equal(nrow(summary_cat_tally()), 9)
     expect_equal(length(specific_cell_types_selected()), 9)
     expect_equal(specific_cell_types_selected(), unique(sce()[["seurat_annotations"]]))                
     
+    # Set analysis parameters that will not proceed
     session$setInputs(user_selected_cells = c("CD8 T", "Memory CD4 T",
                                               "Naive CD4 T",
                                               "Platelet"),
@@ -34,8 +38,15 @@ test_that("Server has functionality", {
     # if the min count is set below 2, do not proceed with analysis
     expect_false(proceed_with_analysis())
     
+    # do not have a plot generated if the analysis cannot proceed
     expect_null(plots$top_plot)
     
+    session$setInputs(min_category_count = 50,
+                      start_analysis = T)
+    expect_false(any_cells_present())
+    
+    
+    # Change to passable input parameters
     session$setInputs(min_category_count = 2,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
@@ -55,6 +66,7 @@ test_that("Server has functionality", {
     expect_true("No" %in% unique(sce()$keep_for_analysis))
     expect_equal(length(unique(sce()$keep_for_analysis)), 2)
     
+    # Ensure that the dimensions od the sce are not reduced after subsetting
     expect_equivalent(dim(sce()), c(13714, 100))
     
     # do not keep Platelet even though it was not selected for removal
@@ -62,6 +74,7 @@ test_that("Server has functionality", {
                              seurat_annotations == "Platelet")$keep_for_analysis,
                       "No")
     
+    # Verify proper format of the findmarkers output and marker lists
     expect_equal("seurat_annotations", column())
     expect_equal(length(names(fms()[[1]])), 3)
     
@@ -86,10 +99,26 @@ test_that("Server has functionality", {
     expect_equal(num_markers_in_selected(), 14)
     expect_equal(num_markers_in_scratch(), 10)
     
+    # suggest 5 genes to remove from the top marker space
+    
+    session$setInputs(suggest_gene_removal = T,
+                      n_genes = 5)
+    
+    expect_equal(length(suggestions()), 5)
+    
+    # move 5 of the top markers into scratch and assert new numbers
+    session$setInputs(markers_to_remove = suggestions(),
+                      refresh_marker_counts = T,
+                      remove_suggested = T)
+    
+    expect_equal(length(current_markers()$top_markers), 9)
+    expect_equal(length(current_markers()$scratch_markers), 15)
+    
+
     # if you try to add a marker that's already there, the length will stay the same
     session$setInputs(add_markers = current_markers()$top_markers[1],
                       enter_marker = T)
-    expect_equal(num_markers_in_selected(), 14)
+    expect_equal(num_markers_in_selected(), 9)
     
     # add a gene that isn't in either selected or scratch to increase the count by 1
     different <- allowed_genes()[!allowed_genes() %in% current_markers()$top_markers]
@@ -97,7 +126,7 @@ test_that("Server has functionality", {
     
     session$setInputs(add_markers = different[1],
                       enter_marker = T)
-    expect_equal(num_markers_in_selected(), 15)
+    expect_equal(num_markers_in_selected(), 10)
     
     # expect null since no markers have been suggested
     expect_true(is.null(selected_cell_type_markers()))
@@ -105,12 +134,17 @@ test_that("Server has functionality", {
     # generate suggested replacement markers
     session$setInputs(input_gene = current_markers()$top_markers[3],
                       number_correlations = 10,
-                      enter_gene = T)
+                      enter_gene = T,
+                      # send_markers = T,
+                      # send = T,
+                      alternative_markers_rows_selected = c(1, 3, 4, 7, 8, 10))
     
     # replacements should be of length 10
     expect_false(is.null(replacements()))
     
     expect_equal(nrow(replacements()), 10)
+    
+    expect_equal(length(current_markers()$top_markers), 10)
     
     # get 50 suggested markers for the specific cell type
     session$setInputs(cell_type_markers = "CD8 T",
@@ -118,15 +152,34 @@ test_that("Server has functionality", {
     
     expect_equal(nrow(marker_suggestions()), 50)
     
-   expect_false(is.null(output$cell_type_marker_reactable))
-   
+    expect_false(is.null(output$cell_type_marker_reactable))
+    session$setInputs(add_select_markers = T)
     
-   session$setInputs(add_select_markers = T)
+    # Simulate uploading own markers
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("upload_markers.txt")),
+                     add_to_selected = T)
     
-   session$setInputs(min_category_count = 50,
-                      start_analysis = T)
+    # after adding 5 markers to 10, assert how many top markers there should be
+    expect_equal(length(current_markers()$top_markers), 15)
     
-  expect_false(any_cells_present())
+    # Look for the uploaded markers in the top markers
+    expect_true("EEF2" %in% current_markers()$top_markers)
+    expect_true("MARCKS" %in% current_markers()$top_markers)
+    
+    # instead of add, replace markers
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("upload_markers.txt")),
+                      replace_selected = T)
+    
+    # after replacing all top markers with 5, assert how many top markers there should be
+    expect_equal(length(current_markers()$top_markers), 5)
+    
+    
+    session$setInputs(send_markers = T, analysis_panels = T)
+    
+    # expect_equal(length(current_markers()$top_markers), 10)
+    
     
   })
 })
