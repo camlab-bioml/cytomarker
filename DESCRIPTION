@@ -50,7 +50,8 @@ Imports:
     shinytest,
     parallelly,
     parallel,
-    BiocParallel
+    BiocParallel,
+    tidyr
 Suggests:
   stringr,
   yardstick,

@@ -1,3 +1,8 @@
+context("Test basic functions")
+
+test_that("round3 function is effective", {
+  expect_equal(round3(0.3456), "0.300")
+})
 
 context("Data reading")
 
@@ -61,6 +66,23 @@ test_that("get_markers and compute_fm returns valid output", {
   expect_equal(names(markers), c("recommended_markers", "scratch_markers", "top_markers"))
   expect_gt(length(markers$recommended_markers), 0)
   expect_gt(length(markers$top_markers), 0)
+  
+  
+  markers_geneBasis <- get_markers(fms, panel_size = 24, marker_strategy = 'geneBasis',
+                                   sce = sce,
+                                   allowed_genes = rownames(sce))
+  
+  expect_is(markers, 'list')
+  expect_equal(names(markers_geneBasis), 
+               c("recommended_markers", "scratch_markers", "top_markers"))
+  expect_null(markers_geneBasis$scratch_markers)
+  expect_gt(length(markers_geneBasis$recommended_markers), 0)
+  expect_gt(length(markers_geneBasis$top_markers), 0)
+  
+  # expect the different selections to give different top markers
+  expect_false(setequal(sort(markers_geneBasis$topmarkers),
+                        sort(markers$top_markers)))
+  
 })
 
 test_that("get_markers errors for non unique values", {
@@ -185,6 +207,32 @@ test_that("Filtering sce objects by minimum count passes & retains original size
   expect_equivalent(c(7, 93),
                     as.data.frame(table(sce_with_retention$keep_for_analysis))[,2])
   
+})
+
+
+context("Antibody finding in the abcam table")
+
+test_that("Filtering sce objects by minimum count passes & retains original size", {
+  antibody_info <- dplyr::rename(cytosel_data$antibody_info, Symbol = `Gene Name (Upper)`)
+  antibody_info <- tidyr::drop_na(antibody_info)
+  
+  
+  expect_equal(get_antibody_info("CD45", antibody_info)$status, "NO_GENE_FOUND")
+  expect_equal(get_antibody_info("CD74", antibody_info)$status, "ANTIBODY_FOUND")
+  
+  
+})
+
+
+context("Return types from catch-all error/notification function")
+
+test_that("throw_error_or_warning returns the correct type", {
+  antibody_info <- dplyr::rename(cytosel_data$antibody_info, Symbol = `Gene Name (Upper)`)
+  antibody_info <- tidyr::drop_na(antibody_info)
+  
+  expect_error(throw_error_or_warning(type = 'error', message = "Testing error"))
+  expect_error(throw_error_or_warning(type = 'notification', 
+                                                   message = "Testing notif"))
 })
 
 

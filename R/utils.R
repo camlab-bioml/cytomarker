@@ -75,3 +75,17 @@ throw_error_or_warning <- function(type = 'notification',
   }
 }
 
+#' Convert a SingleCellExperiment column to a factor or a character
+#' @param sce a SingleCellExperiment object
+#' @param input_column a metadata column in the sce input
+convert_column_to_character_or_factor <- function(sce, input_column) {
+  if (is.numeric(sce[[input_column]])) {
+    sce[[input_column]] <- as.character(factor(sce[[input_column]],
+                                               levels = sort(unique(sce[[input_column]]))
+    ))
+  } else {
+    sce[[input_column]] <- as.character(sce[[input_column]])
+  }
+  sce
+}
+
