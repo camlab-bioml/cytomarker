@@ -2,6 +2,11 @@ context("Test basic functions")
 
 test_that("round3 function is effective", {
   expect_equal(round3(0.3456), "0.300")
+  obj <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(obj)
+  expect_is(convert_column_to_character_or_factor(sce, "num_col")$num_col,
+            "character")
+  
 })
 
 context("Data reading")

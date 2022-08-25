@@ -152,8 +152,10 @@ test_that("Server has functionality", {
     session$setInputs(cell_type_markers = "CD8 T",
                       add_cell_type_markers = T)
     
+    # expect the number of suggestions to be 50
     expect_equal(nrow(marker_suggestions()), 50)
     
+    # expect the suggestion output table is created
     expect_false(is.null(output$cell_type_marker_reactable))
     session$setInputs(add_select_markers = T)
     
