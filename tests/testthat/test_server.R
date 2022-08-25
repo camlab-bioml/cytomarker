@@ -99,26 +99,43 @@ test_that("Server has functionality", {
     expect_equal(num_markers_in_selected(), 14)
     expect_equal(num_markers_in_scratch(), 10)
     
-    # suggest 5 genes to remove from the top marker space
+    # suggest markers to remove
     
     session$setInputs(suggest_gene_removal = T,
-                      n_genes = 5)
+                      n_genes = 3)
     
-    expect_equal(length(suggestions()), 5)
+    expect_equal(length(suggestions()), 3)
     
     # move 5 of the top markers into scratch and assert new numbers
     session$setInputs(markers_to_remove = suggestions(),
                       refresh_marker_counts = T,
                       remove_suggested = T)
     
-    expect_equal(length(current_markers()$top_markers), 9)
-    expect_equal(length(current_markers()$scratch_markers), 15)
+    # remove 3 from 11
+    expect_equal(length(current_markers()$top_markers), 11)
     
-
+    
+    # generate suggested alternative markers
+    session$setInputs(input_gene = current_markers()$top_markers[3],
+                      number_correlations = 10,
+                      enter_gene = T)
+    
+    # replacements should be of length 10
+    expect_false(is.null(output$alternative_markers))
+    
+    expect_equal(nrow(replacements()), 10)
+    
+    session$setInputs(alternative_markers_rows_selected = c(1, 3, 4, 7, 8, 10),
+                      send_markers = T,
+                      send = T)
+    
+    expect_equal(length(current_markers()$top_markers), 17)
+    
+    
     # if you try to add a marker that's already there, the length will stay the same
     session$setInputs(add_markers = current_markers()$top_markers[1],
                       enter_marker = T)
-    expect_equal(num_markers_in_selected(), 9)
+    expect_equal(num_markers_in_selected(), 17)
     
     # add a gene that isn't in either selected or scratch to increase the count by 1
     different <- allowed_genes()[!allowed_genes() %in% current_markers()$top_markers]
@@ -126,25 +143,10 @@ test_that("Server has functionality", {
     
     session$setInputs(add_markers = different[1],
                       enter_marker = T)
-    expect_equal(num_markers_in_selected(), 10)
+    expect_equal(num_markers_in_selected(), 18)
     
     # expect null since no markers have been suggested
     expect_true(is.null(selected_cell_type_markers()))
-    
-    # generate suggested replacement markers
-    session$setInputs(input_gene = current_markers()$top_markers[3],
-                      number_correlations = 10,
-                      enter_gene = T,
-                      # send_markers = T,
-                      # send = T,
-                      alternative_markers_rows_selected = c(1, 3, 4, 7, 8, 10))
-    
-    # replacements should be of length 10
-    expect_false(is.null(replacements()))
-    
-    expect_equal(nrow(replacements()), 10)
-    
-    expect_equal(length(current_markers()$top_markers), 10)
     
     # get 50 suggested markers for the specific cell type
     session$setInputs(cell_type_markers = "CD8 T",
@@ -160,12 +162,13 @@ test_that("Server has functionality", {
                                              test_path("upload_markers.txt")),
                      add_to_selected = T)
     
-    # after adding 5 markers to 10, assert how many top markers there should be
-    expect_equal(length(current_markers()$top_markers), 15)
+    # after adding 5 markers to 18, assert how many top markers there should be
+    expect_equal(length(current_markers()$top_markers), 23)
     
     # Look for the uploaded markers in the top markers
     expect_true("EEF2" %in% current_markers()$top_markers)
     expect_true("MARCKS" %in% current_markers()$top_markers)
+
     
     # instead of add, replace markers
     session$setInputs(uploadMarkers = list(datapath =
@@ -175,11 +178,7 @@ test_that("Server has functionality", {
     # after replacing all top markers with 5, assert how many top markers there should be
     expect_equal(length(current_markers()$top_markers), 5)
     
-    
-    session$setInputs(send_markers = T, analysis_panels = T)
-    
-    # expect_equal(length(current_markers()$top_markers), 10)
-    
+    expect_false("LTB" %in% current_markers()$top_markers)
     
   })
 })

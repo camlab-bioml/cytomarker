@@ -290,6 +290,7 @@ cytosel <- function(...) {
     cell_types_excluded <- reactiveVal()
     
     marker_suggestions <- reactiveVal()
+    alternative_marks <- reactiveVal()
 
     
     ### MODALS ###
@@ -824,12 +825,12 @@ cytosel <- function(...) {
       req(sce())
       req(current_markers())
       
-      markers <- list(recommended_markers = current_markers()$recommended_markers,
+      current_markers(list(recommended_markers = current_markers()$recommended_markers,
                       scratch_markers = input$bl_scratch,
                       top_markers = input$bl_top,
-                      associated_cell_types <- current_markers()$associated_cell_types)
+                      associated_cell_types = current_markers()$associated_cell_types))
       
-      current_markers(set_current_markers_safely(markers, fms()))
+      # current_markers(set_current_markers_safely(markers, fms()))
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
       unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
@@ -837,7 +838,6 @@ cytosel <- function(...) {
                 num_markers_in_scratch(),
                 unique_cell_types)
     })
-    
     
     
     # observeEvent(input$refresh_analysis, {
@@ -1146,21 +1146,15 @@ cytosel <- function(...) {
     observeEvent(input$send_markers, { # Send alternative markers to selected markers panel
       n <- c(input$alternative_markers_rows_selected)
       replacements <- as.vector(replacements()[n,]$Gene)
-      print(replacements)
+      alternative_marks(replacements)
       cm <- current_markers()
-      # get the default cell type if one cannot be found for the alternative
-      default_cell_type <- cm$associated_cell_types[input$input_gene]
-      names(default_cell_type) <- NULL
       markers <- list(recommended_markers = cm$recommended_markers,
                       scratch_markers = input$bl_scratch,
                       top_markers = unique(c(replacements, setdiff(cm$top_markers, input$bl_scratch))))
       
-      print(markers$top_markers)
-      
       # SMH
       current_markers(
-        set_current_markers_safely(markers, fms(),
-                                   default_type = default_cell_type)
+        set_current_markers_safely(markers, fms())
       )
       
       num_markers_in_selected(length(current_markers()$top_markers))
@@ -1169,7 +1163,7 @@ cytosel <- function(...) {
       unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                unique_cell_types, adding_alternative = T)
+                unique_cell_types, adding_alternative = F)
       
       output$add_success <- renderText({"Marker(s) added successfully."})
       

@@ -233,8 +233,6 @@ test_that("throw_error_or_warning returns the correct type", {
   expect_error(throw_error_or_warning(type = 'error', message = "Testing error"))
   expect_error(throw_error_or_warning(type = 'notification', 
                                                    message = "Testing notif"))
-  
-  
 })
 
 
