@@ -374,7 +374,7 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
   
   if(display == "Marker-marker correlation") {
     
-    cc <- cor(t(mat))
+    cc <- round(cor(t(mat)), 4)
     cor_map <- plot_ly(z=cc, 
             type='heatmap',
             x = rownames(cc),
@@ -384,9 +384,7 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     return(cor_map)
   } else {
     
-    
-    
-    expression_map <- plot_ly(z=t(mat), 
+    expression_map <- plot_ly(z=round(t(mat), 4), 
             type='heatmap',
             x = rownames(mat),
             y = colnames(mat)) %>% 
@@ -1029,3 +1027,18 @@ create_keep_vector_during_subsetting <- function(sce, vec_to_keep) {
   sce$in_subsample <- NULL
   return(sce)
 }
+
+#' Convert a SingleCellExperiment column to a factor or a character
+#' @param sce a SingleCellExperiment object
+#' @param input_column a metadata column in the sce input
+convert_column_to_character_or_factor <- function(sce, input_column) {
+  if (is.numeric(sce[[input_column]])) {
+    sce[[input_column]] <- as.character(factor(sce[[input_column]],
+                                               levels = sort(unique(sce[[input_column]]))
+    ))
+  } else {
+    sce[[input_column]] <- as.character(sce[[input_column]])
+  }
+  sce
+}
+

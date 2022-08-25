@@ -223,8 +223,7 @@ cytosel <- function(...) {
                  br(),
                  DTOutput("alternative_markers"),
                  hidden(div(id = "send", actionButton("send_markers", "Send markers to selection panel"))),
-                 br(),
-                 verbatimTextOutput("add_success")
+                 br()
           ),
 
         tabPanel("Antibody explorer",
@@ -739,9 +738,9 @@ cytosel <- function(...) {
             
             
             ## Change selected column to character to avoid factor levels without data
-            sce <- sce()
-            sce[[column()]] <- as.character(sce[[column()]])
-            sce(sce)
+            # sce <- sce()
+            sce(convert_column_to_character_or_factor(sce(), column()))
+            # sce(sce)
             
             ## Get the markers first time 
             
@@ -1165,7 +1164,8 @@ cytosel <- function(...) {
                 num_markers_in_scratch(),
                 unique_cell_types, adding_alternative = F)
       
-      output$add_success <- renderText({"Marker(s) added successfully."})
+      showNotification("Marker(s) added successfully.",
+                       duration = 3)
       
     })
     
