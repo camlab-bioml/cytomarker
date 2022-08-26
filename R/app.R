@@ -16,6 +16,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom shinyalert useShinyalert shinyalert
 #' @importFrom dqshiny autocomplete_input update_autocomplete_input
 #' @importFrom DT DTOutput renderDT
+#' @importFrom tidyr drop_na
 #' @import SummarizedExperiment
 #' @import ggplot2
 #' @import forcats
@@ -29,6 +30,8 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom zip zip
 #' @importFrom randomcoloR distinctColorPalette
 #' @importFrom plotly plot_ly plotlyOutput renderPlotly layout
+#' @importFrom parallelly availableCores
+#' @importFrom BiocParallel MulticoreParam
 #' @export
 #' 
 #' @param ... Additional arguments
@@ -36,16 +39,17 @@ cytosel <- function(...) {
   ## First up -- parse the antibodies
   # antibody_info <- read_tsv(system.file("inst", "abcam_antibodies_gene_symbol_associated.tsv", package="cytosel"))
   # antibody_info <- read_csv(system.file("inst", "Abcam_published_monos_with_gene.csv", package="cytosel"))
-  antibody_info <- read_csv(system.file("Abcam_published_monos_with_gene.csv",
-                                        package = "cytosel"))
-  antibody_info <- dplyr::rename(antibody_info, Symbol = `Gene Name (Upper)`)
+  
+  antibody_info <- dplyr::rename(cytosel_data$antibody_info, Symbol = `Gene Name (Upper)`)
   antibody_info <- tidyr::drop_na(antibody_info)
   
-  # Read in grch38 file
-  grch38 <- read_tsv(system.file("annotables_grch38.tsv",
-                                 package = "cytosel"))
+  options(MulticoreParam=quote(MulticoreParam(workers=availableCores())))
   
-  applications_parsed <- get_antibody_applications(antibody_info, 'Symbol', 'Listed Applications')
+  
+  applications_parsed <- get_antibody_applications(antibody_info, 
+                                                   'Symbol', 'Listed Applications')
+  
+  grch38 <- cytosel_data$grch38
   
   full_palette <- create_global_colour_palette()
   
@@ -126,8 +130,7 @@ cytosel <- function(...) {
       ),
       
       # Tabs
-      mainPanel(tabsetPanel(
-        
+      mainPanel(tabsetPanel(id = "analysis_panels",
         tabPanel("Marker selection",
                  icon = icon("list"),
                  br(),
@@ -220,8 +223,7 @@ cytosel <- function(...) {
                  br(),
                  DTOutput("alternative_markers"),
                  hidden(div(id = "send", actionButton("send_markers", "Send markers to selection panel"))),
-                 br(),
-                 verbatimTextOutput("add_success")
+                 br()
           ),
 
         tabPanel("Antibody explorer",
@@ -285,6 +287,9 @@ cytosel <- function(...) {
     num_markers_in_scratch <- reactiveVal()
     
     cell_types_excluded <- reactiveVal()
+    
+    marker_suggestions <- reactiveVal()
+    alternative_marks <- reactiveVal()
 
     
     ### MODALS ###
@@ -351,7 +356,7 @@ cytosel <- function(...) {
         selectInput("markers_to_remove",
                     "Select markers to remove",
                     choices = current_markers()$top_markers,
-                    selected = suggestions,
+                    selected = suggestions(),
                     multiple = TRUE),
         if (failed) {
           div(tags$b("Error", style = "color: red;"))
@@ -461,7 +466,7 @@ cytosel <- function(...) {
       specific_cell_types_selected(input$user_selected_cells)
       
       if (length(specific_cell_types_selected()) > 0) {
-        showNotification("removing selected cell types",
+        showNotification("Setting subset to select cell types",
                          duration = 2)
       } else {
         showNotification("Empty subset selection, defaulting to using all cell types in analysis.",
@@ -645,6 +650,8 @@ cytosel <- function(...) {
         proceed_with_analysis(TRUE)
       }
       
+      # if the user never opened up the tally table, automatically set all cell types
+      # for analysis
       if (!isTruthy(specific_cell_types_selected())) {
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
@@ -731,11 +738,12 @@ cytosel <- function(...) {
             
             
             ## Change selected column to character to avoid factor levels without data
-            sce <- sce()
-            sce[[column()]] <- as.character(sce[[column()]])
-            sce(sce)
+            # sce <- sce()
+            sce(convert_column_to_character_or_factor(sce(), column()))
+            # sce(sce)
             
-            ## Get the markers first time          
+            ## Get the markers first time 
+            
             fms(
               compute_fm(sce()[,sce()$keep_for_analysis == "Yes"], 
                          column(), 
@@ -816,17 +824,19 @@ cytosel <- function(...) {
       req(sce())
       req(current_markers())
       
-      markers <- list(recommended_markers = current_markers()$recommended_markers,
+      current_markers(list(recommended_markers = current_markers()$recommended_markers,
                       scratch_markers = input$bl_scratch,
-                      top_markers = input$bl_top)
-      current_markers(set_current_markers_safely(markers, fms()))
+                      top_markers = input$bl_top,
+                      associated_cell_types = current_markers()$associated_cell_types))
+      
+      # current_markers(set_current_markers_safely(markers, fms()))
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
+      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                names(fms()[[1]]))
+                unique_cell_types)
     })
-    
     
     
     # observeEvent(input$refresh_analysis, {
@@ -876,6 +886,8 @@ cytosel <- function(...) {
                                             unique(unlist(current_markers())))
         
         current_cell_type_marker_fm <<- tmp$fm
+        marker_suggestions(tmp$fm)
+        
         output$cell_type_marker_reactable <- renderReactable({ tmp$reactable })
         
         modal_add_marker <- modalDialog(
@@ -907,9 +919,10 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
+      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                names(fms()[[1]]))
+                unique_cell_types)
       
       removeModal()
     })
@@ -936,9 +949,10 @@ cytosel <- function(...) {
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
+        unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  names(fms()[[1]]))
+                  unique_cell_types)
         
       } else if(!(input$add_markers %in% rownames(sce()))) {
         dne_modal(dne = input$add_markers)
@@ -975,9 +989,10 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
+      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                names(fms()[[1]]))
+                unique_cell_types)
     })
     
     observeEvent(input$replace_selected, { # Replace selected markers by uploaded markers
@@ -1010,9 +1025,10 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
+      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                names(fms()[[1]]))
+                unique_cell_types)
     })
     
     
@@ -1060,9 +1076,11 @@ cytosel <- function(...) {
       expression <- as.matrix(assay(sce()[,sce()$keep_for_analysis == "Yes"], pref_assay())[current_markers()$top_markers,])
       cmat <- cor(t(expression))
       
-      suggestions <- suggest_genes_to_remove(cmat, input$n_genes)
+      # suggestions <- suggest_genes_to_remove(cmat, input$n_genes)
       
-      showModal(suggestion_modal(suggestions = suggestions))
+      suggestions(suggest_genes_to_remove(cmat, input$n_genes))
+      
+      showModal(suggestion_modal(suggestions = suggestions()))
     })
     
     observeEvent(input$remove_suggested, { # Remove suggested markers
@@ -1083,9 +1101,10 @@ cytosel <- function(...) {
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
+        unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  names(fms()[[1]]))
+                  unique_cell_types)
         
         removeModal()
       } else {
@@ -1109,7 +1128,8 @@ cytosel <- function(...) {
           replacements(
             compute_alternatives(input$input_gene, 
                                  sce()[,sce()$keep_for_analysis == "Yes"], 
-                                 pref_assay(), input$number_correlations)
+                                 pref_assay(), input$number_correlations) |>
+              drop_na()
           )
           
           output$alternative_markers <- renderDT(replacements(), server = TRUE)
@@ -1124,8 +1144,8 @@ cytosel <- function(...) {
       
     observeEvent(input$send_markers, { # Send alternative markers to selected markers panel
       n <- c(input$alternative_markers_rows_selected)
-      
-      replacements <- replacements()[n,]$Gene
+      replacements <- as.vector(replacements()[n,]$Gene)
+      alternative_marks(replacements)
       cm <- current_markers()
       markers <- list(recommended_markers = cm$recommended_markers,
                       scratch_markers = input$bl_scratch,
@@ -1138,17 +1158,20 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
-
+      
+      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                names(fms()[[1]]))
+                unique_cell_types, adding_alternative = F)
       
-      output$add_success <- renderText({"Marker(s) added successfully."})
+      showNotification("Marker(s) added successfully.",
+                       duration = 3)
       
     })
     
     ### UPDATE SELECTED MARKERS ###
-    update_BL <- function(markers, top_size, scratch_size, unique_cell_types) {
+    update_BL <- function(markers, top_size, scratch_size, unique_cell_types,
+                          adding_alternative = F) {
       
 
       # unique_cell_types <- sort(unique(markers$associated_cell_types))
@@ -1172,8 +1195,9 @@ cytosel <- function(...) {
       labels_scratch <- lapply(markers$scratch_markers, 
                                function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
                                                                                                           set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
-                                                                                                          cytosel_palette()[ markers$associated_cell_types[x] ])))
-            
+     
+                                                                                   cytosel_palette()[ markers$associated_cell_types[x] ])))
+ 
       output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
      
       
@@ -1225,9 +1249,13 @@ cytosel <- function(...) {
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
+        
+        
+        unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+        
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  names(fms()[[1]]))
+                  unique_cell_types)
         
         # Update UMAP
         incProgress(detail = "Computing UMAP")
@@ -1273,7 +1301,6 @@ cytosel <- function(...) {
         scores <- get_scores(sce()[,sce()$keep_for_analysis == "Yes"], 
                              column(), current_markers()$top_markers, pref_assay())
         metrics(scores)
-        
         
         # Show help text popover
         shinyjs::show(id = "marker_visualization")

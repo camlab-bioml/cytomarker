@@ -36,13 +36,13 @@ good_col <- function(sce, columns) {
 #' @param sce A SingleCellExperiment object
 #' @param columns A vector storing columns
 #' @param pref_assay Assay loaded
-#' 
 #' @importFrom SingleCellExperiment colData
 #' @importFrom scran findMarkers
+#' @importFrom parallel mclapply
+#' @importFrom parallelly availableCores
 compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
 
-
-  fms <- lapply(columns, function(col) {
+  fms <- mclapply(columns, mc.cores = availableCores(), function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
     fm <- findMarkers(sce, colData(sce)[[col]], test.type = test_type, assay.type = pref_assay)
@@ -197,9 +197,14 @@ get_associated_cell_types <- function(markers, fms) {
 #' @param markers A list storing three lists of markers: 
 #' recommended_markers, scratch_markers, and top_markers
 #' @param fms Stored findMarkers outputs
-set_current_markers_safely <- function(markers, fms) {
+set_current_markers_safely <- function(markers, fms, default_type = NULL) {
+  
   markers$associated_cell_types <- get_associated_cell_types(markers, fms)
-
+  
+  if (is.list(markers$associated_cell_types)) {
+    markers$associated_cell_types <- unlist(markers$associated_cell_types)
+  }
+    
   markers
 }
 
@@ -212,9 +217,16 @@ set_current_markers_safely <- function(markers, fms) {
 #' @importFrom scater runUMAP
 #' @importFrom tibble tibble
 #' @importFrom SingleCellExperiment reducedDim
+#' @importFrom parallelly availableCores
+#' @importFrom BiocParallel MulticoreParam
 get_umap <- function(sce, columns, pref_assay) {
   
-  sce <- runUMAP(sce, exprs_values = pref_assay)
+  sce <- runUMAP(sce, exprs_values = pref_assay,
+                 n_threads = availableCores(),
+                 ncomponents = 20, 
+                 pca = 20,
+                 # BPPARAM = MulticoreParam(workers = availableCores()),
+                 external_neighbors	= T)
   
   df <- as.data.frame(tibble(
     UMAP1 = as.numeric(reducedDim(sce, 'UMAP')[,1]),
@@ -282,13 +294,15 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, pref_assay, max_cells =
 #' @importFrom dplyr bind_rows
 #' @importFrom nnet multinom
 #' @importFrom dplyr sample_n
+#' @importFrom parallel mclapply
+#' @importFrom parallelly availableCores
 train_nb <- function(x,y, cell_types) {
   
   flds <- caret::createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
   x <- scale(x)
   
   metrics <- suppressWarnings({ 
-    lapply(flds, function(test_idx) {
+    mclapply(flds, mc.cores = availableCores(), function(test_idx) {
       # fit <- naive_bayes(x[-test_idx,], y[-test_idx])
       # p <- stats::predict(fit, newdata = x[test_idx,])
       df_train <- as.data.frame(x[-test_idx,])
@@ -359,7 +373,7 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
   
   if(display == "Marker-marker correlation") {
     
-    cc <- cor(t(mat))
+    cc <- round(cor(t(mat)), 4)
     cor_map <- plot_ly(z=cc, 
             type='heatmap',
             x = rownames(cc),
@@ -369,9 +383,7 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     return(cor_map)
   } else {
     
-    
-    
-    expression_map <- plot_ly(z=t(mat), 
+    expression_map <- plot_ly(z=round(t(mat), 4), 
             type='heatmap',
             x = rownames(mat),
             y = colnames(mat)) %>% 
@@ -1013,5 +1025,19 @@ create_keep_vector_during_subsetting <- function(sce, vec_to_keep) {
                                  "Yes", "No")
   sce$in_subsample <- NULL
   return(sce)
+}
+
+#' Convert a SingleCellExperiment column to a factor or a character
+#' @param sce a SingleCellExperiment object
+#' @param input_column a metadata column in the sce input
+convert_column_to_character_or_factor <- function(sce, input_column) {
+  if (is.numeric(sce[[input_column]])) {
+    sce[[input_column]] <- as.character(factor(sce[[input_column]],
+                                               levels = sort(unique(sce[[input_column]]))
+    ))
+  } else {
+    sce[[input_column]] <- as.character(sce[[input_column]])
+  }
+  sce
 }
 
