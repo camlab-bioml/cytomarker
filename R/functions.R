@@ -41,7 +41,7 @@ good_col <- function(sce, columns) {
 #' @importFrom parallel mclapply
 #' @importFrom parallelly availableCores
 compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
-
+  
   fms <- mclapply(columns, mc.cores = availableCores(), function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
@@ -175,7 +175,9 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
 get_associated_cell_types <- function(markers, fms) {
   fm <- fms[[1]] # For now, we're only doing this for the first
   
-  all_markers <- unique(unlist(markers[c('recommended_markers', 'scratch_markers', 'top_markers')]))
+  all_markers <- unique(unlist(markers[c('recommended_markers', 
+                                         'scratch_markers', 
+                                         'top_markers')]))
   
   associated_cell_types <- sapply(all_markers, function(tm) {
     pvals <- sapply(fm, function(f) {
@@ -186,6 +188,7 @@ get_associated_cell_types <- function(markers, fms) {
       ## New: return summary logFC
       -tmp$summary.logFC
     })
+    
     names(pvals)[which.min(pvals)]
   })
   associated_cell_types
@@ -225,7 +228,7 @@ get_umap <- function(sce, columns, pref_assay) {
                  n_threads = availableCores(),
                  ncomponents = 20, 
                  pca = 20,
-                 # BPPARAM = MulticoreParam(workers = availableCores()),
+                 BPPARAM = MulticoreParam(workers = availableCores()),
                  external_neighbors	= T)
   
   df <- as.data.frame(tibble(
@@ -833,7 +836,8 @@ get_antibody_info <- function(gene_id, df) {
 #' @param sce A SingleCellExperiment object
 #' @param pref_assay Assay loaded
 #' @param n_correlations Number of markers to replace gene_to_replace
-compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlations) {
+compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlations,
+                                 remove_unwanted = T) {
   x <- as.matrix(assay(sce, pref_assay))[,sample(ncol(sce), min(5000, ncol(sce)))]
   
   y <- x[gene_to_replace, ]
@@ -843,6 +847,9 @@ compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlation
   correlations <- cor(t(yo), y)
   
   alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
+  if (remove_unwanted == T) {
+    alternatives <- alternatives[!grepl("^RP[L|S]|^MT-|^MALAT", alternatives$Gene),]
+  }
   alternatives <- alternatives[!is.na(alternatives$Correlation),]
   alternatives <- alternatives[order(-(alternatives$Correlation)),]
   alternatives <- alternatives[1:n_correlations,]
