@@ -125,6 +125,9 @@ test_that("Server has functionality", {
     
     expect_equal(nrow(replacements()), 10)
     
+    expect_equal(0, nrow(replacements()[grepl("^RP[L|S]|^MT-|^MALAT",
+                                              replacements()$Gene),]))
+    
     session$setInputs(alternative_markers_rows_selected = c(1, 3, 4, 7, 8, 10),
                       send_markers = T,
                       send = T)
@@ -154,6 +157,11 @@ test_that("Server has functionality", {
     
     # expect the number of suggestions to be 50
     expect_equal(nrow(marker_suggestions()), 50)
+    
+    
+    # expect no rows when looking for unwanted genes
+    expect_equal(0, nrow(marker_suggestions()[grepl("^RP[L|S]|^MT-|^MALAT",
+                                            marker_suggestions()$Gene),]))
     
     # expect the suggestion output table is created
     expect_false(is.null(output$cell_type_marker_reactable))

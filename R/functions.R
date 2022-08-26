@@ -370,14 +370,14 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
   
   legend <- "Mean\nexpression"
   if(normalization == "z-score") {
-    mat <- t(scale(t(mat)))
     legend <- "z-score\nexpression"
   }
   
   if(display == "Marker-marker correlation") {
     
-    cc <- round(cor(t(mat)), 4)
-    cor_map <- plot_ly(z=cc, 
+    cc <- as.data.frame(round(cor(t(mat)), 4)) 
+    cc <- cc[ order(rownames(cc)) , ,drop=F]
+    cor_map <- plot_ly(z=data.matrix(cc), 
             type='heatmap',
             x = rownames(cc),
             y = colnames(cc)) %>% 
@@ -385,8 +385,9 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     
     return(cor_map)
   } else {
-    
-    expression_map <- plot_ly(z=round(t(mat), 4), 
+    cc <- as.data.frame(round(t(mat), 4))
+    cc <- cc[ order(rownames(cc)) , ,drop=F]
+    expression_map <- plot_ly(z=data.matrix(cc), 
             type='heatmap',
             x = rownames(mat),
             y = colnames(mat)) %>% 

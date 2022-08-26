@@ -832,10 +832,10 @@ cytosel <- function(...) {
       # current_markers(set_current_markers_safely(markers, fms()))
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
-      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+      
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                unique_cell_types)
+                names(fms()[[1]]))
     })
     
     
@@ -919,10 +919,10 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
-      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+      
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                unique_cell_types)
+                names(fms()[[1]]))
       
       removeModal()
     })
@@ -949,10 +949,10 @@ cytosel <- function(...) {
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
-        unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+        
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  unique_cell_types)
+                  names(fms()[[1]]))
         
       } else if(!(input$add_markers %in% rownames(sce()))) {
         dne_modal(dne = input$add_markers)
@@ -989,10 +989,10 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
-      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+      
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                unique_cell_types)
+                names(fms()[[1]]))
     })
     
     observeEvent(input$replace_selected, { # Replace selected markers by uploaded markers
@@ -1025,10 +1025,10 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
-      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+      
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                unique_cell_types)
+                names(fms()[[1]]))
     })
     
     
@@ -1101,10 +1101,10 @@ cytosel <- function(...) {
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
-        unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+        
         update_BL(current_markers(), num_markers_in_selected(),
-                  num_markers_in_scratch(),
-                  unique_cell_types)
+                               num_markers_in_scratch(),
+                               names(fms()[[1]]))
         
         removeModal()
       } else {
@@ -1163,10 +1163,10 @@ cytosel <- function(...) {
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
       
-      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+      
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                unique_cell_types, adding_alternative = F)
+                names(fms()[[1]]))
       
       showNotification("Marker(s) added successfully.",
                        duration = 3)
@@ -1255,11 +1255,9 @@ cytosel <- function(...) {
         num_markers_in_scratch(length(current_markers()$scratch_markers))
         
         
-        unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
-        
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  unique_cell_types)
+                  names(fms()[[1]]))
         
         # Update UMAP
         incProgress(detail = "Computing UMAP")
