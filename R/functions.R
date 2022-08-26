@@ -836,8 +836,9 @@ get_antibody_info <- function(gene_id, df) {
 #' @param sce A SingleCellExperiment object
 #' @param pref_assay Assay loaded
 #' @param n_correlations Number of markers to replace gene_to_replace
+#' @param allowed_genes A list of genes permitted to be suggested. Prevents suggestion of unwanted genes such as mitochondrial, etc.
 compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlations,
-                                 remove_unwanted = T) {
+                                 allowed_genes) {
   x <- as.matrix(assay(sce, pref_assay))[,sample(ncol(sce), min(5000, ncol(sce)))]
   
   y <- x[gene_to_replace, ]
@@ -847,9 +848,7 @@ compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlation
   correlations <- cor(t(yo), y)
   
   alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
-  if (remove_unwanted == T) {
-    alternatives <- alternatives[!grepl("^RP[L|S]|^MT-|^MALAT", alternatives$Gene),]
-  }
+  alternatives <- alternatives[alternatives$Gene %in% allowed_genes,]
   alternatives <- alternatives[!is.na(alternatives$Correlation),]
   alternatives <- alternatives[order(-(alternatives$Correlation)),]
   alternatives <- alternatives[1:n_correlations,]

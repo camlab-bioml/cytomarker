@@ -1120,7 +1120,8 @@ cytosel <- function(...) {
       req(sce())
       
       if(!is.null(input$input_gene) && stringr::str_length(input$input_gene) > 1 && (input$input_gene %in% 
-                                    rownames(sce()[,sce()$keep_for_analysis == "Yes"]))) {
+                                    rownames(sce()[,sce()$keep_for_analysis == "Yes"])) &&
+         (input$input_gene %in% allowed_genes())) {
         
         withProgress(message = 'Processing data', value = 0, {
           incProgress(6, detail = "Computing alternatives")
@@ -1129,14 +1130,16 @@ cytosel <- function(...) {
           replacements(
             compute_alternatives(input$input_gene, 
                                  sce()[,sce()$keep_for_analysis == "Yes"], 
-                                 pref_assay(), input$number_correlations) |>
+                                 pref_assay(), input$number_correlations,
+                                 allowed_genes()) |>
               drop_na()
           )
           
           output$alternative_markers <- renderDT(replacements(), server = TRUE)
         })
         
-      } else if(!(input$input_gene %in% rownames(sce()[,sce()$keep_for_analysis == "Yes"]))) {
+      } else if(!(input$input_gene %in% rownames(sce()[,sce()$keep_for_analysis == "Yes"])) |
+                !(input$input_gene %in% allowed_genes())) {
         dne_modal(dne = input$input_gene)
       }
     })
