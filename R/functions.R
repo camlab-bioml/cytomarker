@@ -354,6 +354,9 @@ train_nb <- function(x,y, cell_types) {
 #' @importFrom stats cor
 #' @importFrom viridis viridis
 #' @importFrom plotly plot_ly layout
+#' @importFrom tibble rownames_to_column
+#' @importFrom dplyr mutate
+#' @importFrom tidyr pivot_longer
 create_heatmap <- function(sce, markers, column, display, normalization, pref_assay) {
   
   normalization <- match.arg(normalization, c("Expression", "z-score"))
@@ -385,13 +388,28 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     
     return(cor_map)
   } else {
+    # Convert to dataframe to prevent issues when rownames are numbers
+    df <- t(mat) |> 
+      round(4) |> 
+      as.data.frame() |> 
+      rownames_to_column("y") |> 
+      pivot_longer(-y, names_to = "gene", values_to = "expression")
     
-    expression_map <- plot_ly(z=round(t(mat), 4), 
-                              type='heatmap',
-                              x = rownames(mat),
-                              y = colnames(mat)) %>% 
-      layout(title=as.character(normalization))
+    if(!all(is.na(as.numeric(df$y)))){
+      # get row names and order (used to relevel factor)
+      row_levels <- df$y |> 
+        unique() |> 
+        as.numeric() |> 
+        sort()
+      
+      df <- mutate(df, y = factor(y, levels = row_levels))
+    }
     
+    expression_map <- plot_ly(df, x = ~gene, y = ~y, z = ~expression, 
+                              type = "heatmap") |> 
+      layout(title = as.character(normalization),
+             xaxis = list(title = ''),
+             yaxis = list(title = ''))
     return(expression_map)
   }
   
