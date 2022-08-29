@@ -239,7 +239,7 @@ cytosel <- function(...) {
   server <- function(input, output, session) {
     
     ### REACTIVE VARIABLES ###
-    plots <- reactiveValues(all_plot = NULL, top_plot = NULL, metric_plot = NULL) # Save plots for download
+    plots <- reactiveValues() # Save plots for download
     
     umap_top <- reactiveVal()
     umap_all <- reactiveVal()
@@ -542,6 +542,7 @@ cytosel <- function(...) {
     output$all_plot <- renderPlotly({
       req(umap_all)
       req(column)
+      req(plots$all_plot)
       
       columns <- column()
       
@@ -558,12 +559,8 @@ cytosel <- function(...) {
       # }
       # plots$all_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
       # plots$all_plot <- 
-      
-      # plots$all_plot
 
-      plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
-              type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-        layout(title = "UMAP all genes")
+      plots$all_plot
     })
     # },
     # width=350,
@@ -572,6 +569,7 @@ cytosel <- function(...) {
     output$top_plot <- renderPlotly({
       req(umap_top)
       req(column)
+      req(plots$top_plot)
       
       columns <- column()
       
@@ -589,10 +587,9 @@ cytosel <- function(...) {
       # plots$top_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
       # 
       # plots$top_plot
-
-      plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
-              type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-        layout(title = "UMAP selected markers")
+      
+      plots$top_plot
+      
     })
     
     output$heatmap <- renderPlotly({
@@ -609,30 +606,9 @@ cytosel <- function(...) {
     output$metric_plot <- renderPlotly({
       req(metrics)
       req(cells_per_type)
-      mm <- metrics()
-      if (is.null(mm)) {
-        return(NULL)
-      }
-      columns <- names(mm)
-      plts <- list()
-      column <- columns[1]
-      m <- mm[[column]]
-      
-      ## Add in number of cells per condition
-      cpt <- cells_per_type()
-      cpt['Overall'] <- sum(cpt)
-      m$what <- plyr::mapvalues(as.character(m$what),
-                                from = names(cpt), 
-                                to = paste0(names(cpt), " (n = ", cpt, ")"))
-      m$what <- as.factor(m$what)
-      
-      m$what <- fct_reorder(m$what, desc(m$score))
-      m$what <- fct_relevel(m$what, paste0("Overall (n = ", cpt['Overall'], ")"))
-      m$what <- fct_rev(m$what)
-      
-      plot_ly(m, x = ~score, y = ~what, type='box', hoverinfo = 'none') %>% 
-        layout(xaxis = list(title="Score"),
-               yaxis = list(title="Source"))
+      req(plots$metric_plot)
+     
+      plots$metric_plot
       
     })
     
@@ -1260,10 +1236,20 @@ cytosel <- function(...) {
                   names(fms()[[1]]))
         
         # Update UMAP
-        incProgress(detail = "Computing UMAP")
+        incProgress(detail = "Computing & creating UMAP plots")
         umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
                           column(), pref_assay()))
         umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][current_markers()$top_markers,], column(), pref_assay()))
+        
+        plots$all_plot <- plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
+                                 type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+          layout(title = "UMAP all genes")
+        
+        plots$top_plot <- plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
+                                 type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+          layout(title = "UMAP selected markers")
+        
+        
         
         
         # Update heatmap
@@ -1304,6 +1290,32 @@ cytosel <- function(...) {
                              column(), current_markers()$top_markers, pref_assay())
         metrics(scores)
         
+        mm <- metrics()
+        if (is.null(mm)) {
+          return(NULL)
+        }
+        columns <- names(mm)
+        plts <- list()
+        column <- columns[1]
+        m <- mm[[column]]
+        
+        ## Add in number of cells per condition
+        cpt <- cells_per_type()
+        cpt['Overall'] <- sum(cpt)
+        m$what <- plyr::mapvalues(as.character(m$what),
+                                  from = names(cpt), 
+                                  to = paste0(names(cpt), " (n = ", cpt, ")"))
+        m$what <- as.factor(m$what)
+        
+        m$what <- fct_reorder(m$what, desc(m$score))
+        m$what <- fct_relevel(m$what, paste0("Overall (n = ", cpt['Overall'], ")"))
+        m$what <- fct_rev(m$what)
+        
+        plots$metric_plot <- plot_ly(m, x = ~score, y = ~what, type='box', hoverinfo = 'none') %>% 
+          layout(xaxis = list(title="Score"),
+                 yaxis = list(title="Source"))
+        
+        
         # Show help text popover
         shinyjs::show(id = "marker_visualization")
         shinyjs::show(id = "marker_display")
@@ -1315,7 +1327,12 @@ cytosel <- function(...) {
     
     ### SAVE PANEL ###
     output$downloadData <- downloadHandler(
-      filename = paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
+      filename <- paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
+      # reactive_vals <- c(current_markers(), heatmap(), pref_assay(),
+      #                    column(), sce())
+      # 
+      # truthiness <- sapply(reactive_vals, FUN = function(x) isTruthy(x))
+      
       content = function(fname) {
         download_data(fname, current_markers(), plots, heatmap(),
                       input_file = input$input_scrnaseq$datapath,
