@@ -31,13 +31,13 @@ download_data <- function(zip_filename,
     write_yaml(config, paths_zip$config)
     
     
-    paths_zip$marker_selection <-file.path(tmpdir, paste0("markers-", Sys.Date(), ".txt"))
+    paths_zip$marker_selection <- file.path(tmpdir, paste0("markers-", Sys.Date(), ".txt"))
     
     selected_markers <- current_markers$top_markers
     write_lines(selected_markers, paths_zip$marker_selection)
     
     if (isTruthy(heatmap)) {
-      paths_zip$heatmap <-file.path(tmpdir, paste0("Heatmap-", Sys.Date(), ".html"))
+      paths_zip$heatmap <- file.path(tmpdir, paste0("Heatmap-", Sys.Date(), ".html"))
       saveWidget(heatmap, paths_zip$heatmap)
     }    
       

@@ -263,5 +263,64 @@ test_that("throw_error_or_warning returns the correct type", {
                                                    message = "Testing notif"))
 })
 
+context("test download")
+
+test_that("download works as expected", {
+  
+  td <- tempdir(check = TRUE)
+  obj <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(obj)
+  
+  heatmap <- create_heatmap(sce, list(top_markers = rownames(sce)[1:100]),
+                            "seurat_annotations", "Marker-marker correlation",
+                            "z-score", "logcounts")
+  
+  umap_all <- get_umap(sce, "seurat_annotations", "logcounts")
+  umap_top <- get_umap(sce[rownames(sce)[1:100]], "seurat_annotations", "logcounts")
+  
+  plots <- list()
+  
+  plots$all_plot <- plot_ly(umap_all, x=~UMAP1, y=~UMAP2,
+                            type='scatter', hoverinfo="text") %>% 
+    layout(title = "UMAP all genes")
+  
+  plots$top_plot <- plot_ly(umap_top, x=~UMAP1, y=~UMAP2, 
+                            type='scatter', hoverinfo="text") %>% 
+    layout(title = "UMAP selected markers")
+  
+  score_frame <- data.frame(what = c("sam_1", "sam_2"),
+                            score = c(0.55, 0.66))
+  
+  
+  plots$metric_plot <- plot_ly(score_frame, x = ~score, y = ~what, type='box', hoverinfo = 'none') %>% 
+    layout(xaxis = list(title="Score"),
+           yaxis = list(title="Source"))
+  
+  withr::with_tempdir({
+    filepath <- file.path(paste0("Cytosel-Panel-", Sys.Date(), ".zip"))
+    
+    download_data(filepath,
+                  list(top_markers = rownames(sce)[1:100]), 
+                  plots, heatmap, "fake_path_to_sce", "logcounts",
+                  "seurat_annotations", 24)
+    
+    unzip(filepath, exdir = td)
+    # print(list.files(file.path(td)))
+    # expect_true(exists(file.path(td, paste0("metrics-", Sys.Date(), ".html"))))
+    
+    marks_back <- read.table(file.path(td, paste0("markers-", Sys.Date(), ".txt")))
+    expect_equal(marks_back$V1, rownames(sce)[1:100])
+    
+  })
+  
+})
+
+
+
+
+
+
+
+
 
 
