@@ -43,7 +43,8 @@ test_that("good_col returns valid columns", {
   expect_equal(length(columns$good), 1)
   expect_equal(columns$good, "col1")
   expect_equal(length(columns$bad$colname), length(columns$bad$n))
-  expect_equal(columns$bad$colname, c("orig.ident", "nCount_RNA", "nFeature_RNA", "col2", "ident"))
+  expect_equal(columns$bad$colname, 
+               c("orig.ident", "nCount_RNA", "nFeature_RNA", "col2", "ident"))
 })
 
 test_that("get_markers and compute_fm returns valid output", {
@@ -115,6 +116,28 @@ test_that("get_umap returns valid dataframe and values with different assays", {
   expect_false(unique(umap_frame_norm[,1] == umap_frame_log[,1]))
   expect_false(unique(umap_frame_norm[,2] == umap_frame_log[,2]))
 
+})
+
+context("heatmaps")
+
+test_that("create_heatmap works effectively with different normalizations", {
+  obj <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(obj)
+
+  markers <- list(top_markers = c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB"))
+  
+  heat_z <- create_heatmap(sce, markers, "seurat_annotations", "Expression",
+                 "z-score", "logcounts")
+  
+  expect_is(heat_z, 'plotly')
+  expect_equal(as.character(heat_z$x$attrs[[1]]$z)[2], "expression")
+  
+  heat_cor <- create_heatmap(sce, markers, "seurat_annotations", "Marker-marker correlation",
+                           "z-score", "logcounts")
+  
+  expect_is(heat_cor, 'plotly')
+  expect_false(as.character(heat_cor$x$attrs[[1]]$z)[2] == "expression")
+  
 })
 
 # context("Scoring")

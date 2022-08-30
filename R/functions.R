@@ -41,7 +41,7 @@ good_col <- function(sce, columns) {
 #' @importFrom parallel mclapply
 #' @importFrom parallelly availableCores
 compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
-
+  
   fms <- mclapply(columns, mc.cores = availableCores(), function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
@@ -175,7 +175,9 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
 get_associated_cell_types <- function(markers, fms) {
   fm <- fms[[1]] # For now, we're only doing this for the first
   
-  all_markers <- unique(unlist(markers[c('recommended_markers', 'scratch_markers', 'top_markers')]))
+  all_markers <- unique(unlist(markers[c('recommended_markers', 
+                                         'scratch_markers', 
+                                         'top_markers')]))
   
   associated_cell_types <- sapply(all_markers, function(tm) {
     pvals <- sapply(fm, function(f) {
@@ -186,6 +188,7 @@ get_associated_cell_types <- function(markers, fms) {
       ## New: return summary logFC
       -tmp$summary.logFC
     })
+    
     names(pvals)[which.min(pvals)]
   })
   associated_cell_types
@@ -225,7 +228,7 @@ get_umap <- function(sce, columns, pref_assay) {
                  n_threads = availableCores(),
                  ncomponents = 20, 
                  pca = 20,
-                 # BPPARAM = MulticoreParam(workers = availableCores()),
+                 BPPARAM = MulticoreParam(workers = availableCores()),
                  external_neighbors	= T)
   
   df <- as.data.frame(tibble(
@@ -355,7 +358,7 @@ train_nb <- function(x,y, cell_types) {
 #' @importFrom dplyr mutate
 #' @importFrom tidyr pivot_longer
 create_heatmap <- function(sce, markers, column, display, normalization, pref_assay) {
-
+  
   normalization <- match.arg(normalization, c("Expression", "z-score"))
   
   mat <- summarizeAssayByGroup(
@@ -378,9 +381,9 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     
     cc <- round(cor(t(mat)), 4)
     cor_map <- plot_ly(z=cc, 
-            type='heatmap',
-            x = rownames(cc),
-            y = colnames(cc)) %>% 
+                       type='heatmap',
+                       x = rownames(cc),
+                       y = colnames(cc)) %>% 
       layout(title='Correlation')
     
     return(cor_map)
@@ -404,13 +407,12 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     
     expression_map <- plot_ly(df, x = ~gene, y = ~y, z = ~expression, 
                               type = "heatmap") |> 
-      layout(title = 'Expression',
+      layout(title = as.character(normalization),
              xaxis = list(title = ''),
              yaxis = list(title = ''))
-    
     return(expression_map)
   }
- 
+  
 }
 
 #' Suggest a set of redundant genes to remove
@@ -852,7 +854,9 @@ get_antibody_info <- function(gene_id, df) {
 #' @param sce A SingleCellExperiment object
 #' @param pref_assay Assay loaded
 #' @param n_correlations Number of markers to replace gene_to_replace
-compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlations) {
+#' @param allowed_genes A list of genes permitted to be suggested. Prevents suggestion of unwanted genes such as mitochondrial, etc.
+compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlations,
+                                 allowed_genes) {
   x <- as.matrix(assay(sce, pref_assay))[,sample(ncol(sce), min(5000, ncol(sce)))]
   
   y <- x[gene_to_replace, ]
@@ -862,6 +866,7 @@ compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlation
   correlations <- cor(t(yo), y)
   
   alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
+  alternatives <- alternatives[alternatives$Gene %in% allowed_genes,]
   alternatives <- alternatives[!is.na(alternatives$Correlation),]
   alternatives <- alternatives[order(-(alternatives$Correlation)),]
   alternatives <- alternatives[1:n_correlations,]
