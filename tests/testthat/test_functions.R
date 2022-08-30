@@ -1,3 +1,4 @@
+
 context("Test basic functions")
 
 test_that("round3 function is effective", {
@@ -304,12 +305,15 @@ test_that("download works as expected", {
                   plots, heatmap, "fake_path_to_sce", "logcounts",
                   "seurat_annotations", 24)
     
+    # unzip to tempdir and read back
     unzip(filepath, exdir = td)
-    # print(list.files(file.path(td)))
-    # expect_true(exists(file.path(td, paste0("metrics-", Sys.Date(), ".html"))))
     
     marks_back <- read.table(file.path(td, paste0("markers-", Sys.Date(), ".txt")))
     expect_equal(marks_back$V1, rownames(sce)[1:100])
+    
+    yaml_back <- read_yaml(file.path(td, paste0("config-", Sys.Date(), ".yml")))
+    expect_equal(yaml_back$`Input file`, "fake_path_to_sce")
+    expect_equal(yaml_back$`Heterogeneity source`, "seurat_annotations")
     
   })
   

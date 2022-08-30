@@ -5,5 +5,6 @@ if (!interactive()) {
 library(testthat)
 library(shinytest)
 library(cytosel)
+library(yaml)
 
 test_check("cytosel")
