@@ -303,7 +303,7 @@ test_that("download works as expected", {
     download_data(filepath,
                   list(top_markers = rownames(sce)[1:100]), 
                   plots, heatmap, "fake_path_to_sce", "logcounts",
-                  "seurat_annotations", 24)
+                  "seurat_annotations", 24, 2, "no")
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)

@@ -290,7 +290,6 @@ cytosel <- function(...) {
     
     marker_suggestions <- reactiveVal()
     alternative_marks <- reactiveVal()
-
     
     ### MODALS ###
     invalid_modal <- function() { # Input file is invalid
@@ -422,7 +421,6 @@ cytosel <- function(...) {
                  confirmButtonCol = "#337AB7")
     }
     
-    
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
@@ -452,12 +450,19 @@ cytosel <- function(...) {
         inputId = "coldata_column",
         choices = colnames(colData(sce()))
       )
+      
+      if (!isTruthy(input$coldata_column)) {
+        column(colnames(colData(sce()))[1])
+      } else {
+        column(input$coldata_column)
+      }
 
     })
     
     observeEvent(input$coldata_column, {
       req(input$input_scrnaseq)
       specific_cell_types_selected(NULL)
+      column(input$coldata_column)
       })
     
     observeEvent(input$add_selected_to_analysis, {
@@ -1338,7 +1343,9 @@ cytosel <- function(...) {
                       input_file = input$input_scrnaseq$datapath,
                       assay_used = pref_assay(),
                       het_source = column(),
-                      panel_size = input$panel_size)
+                      panel_size = input$panel_size,
+                      cell_cutoff_value = input$min_category_count,
+                      subsample = input$subsample_sce)
       },
       contentType = "application/zip"
     )

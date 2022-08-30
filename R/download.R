@@ -12,7 +12,9 @@ download_data <- function(zip_filename,
                           input_file,
                           assay_used,
                           het_source,
-                          panel_size) {
+                          panel_size,
+                          cell_cutoff_value,
+                          subsample) {
 
     tmpdir <- tempdir()
   
@@ -26,7 +28,9 @@ download_data <- function(zip_filename,
       `Input file` = input_file,
       `Assay used` = assay_used,
       `Heterogeneity source` = het_source,
-      `Target panel size` = panel_size
+      `Target panel size` = panel_size,
+      `Min Cell Category cutoff` = cell_cutoff_value,
+      `Subsampling Used` = subsample
     )
     write_yaml(config, paths_zip$config)
     
