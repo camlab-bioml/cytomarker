@@ -21,6 +21,9 @@ jobs:
           use-public-rspm: true
 
       - uses: r-lib/actions/setup-renv@v2
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          _R_CHECK_FORCE_SUGGESTS_: false
       
       - name: Install cURL Headers
         run: sudo apt-get -y install libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev
