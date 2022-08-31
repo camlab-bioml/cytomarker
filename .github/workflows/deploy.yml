@@ -27,11 +27,11 @@ jobs:
         run: |
          install.packages("rsconnect")
          install.packages("BiocManager")
-         install.packages("devtools")
-         devtools::install_github("daqana/dqshiny")
-         devtools::install_github("MarioniLab/geneBasisR")
-         devtools::install_github("camlab-bioml/inferorg")
-         devtools::install_github("stephenturner/annotables")
+         install.packages("remotes")
+         remotes::install_github("daqana/dqshiny")
+         remotes::install_github("MarioniLab/geneBasisR")
+         remotes::install_github("camlab-bioml/inferorg")
+         remotes::install_github("stephenturner/annotables")
         shell: Rscript {0}
 
       - name: Authorize and deploy app
