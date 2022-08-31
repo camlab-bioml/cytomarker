@@ -11,3 +11,5 @@ Rplots.pdf
 *.txt
 
 *.Rcheck/
+
+rsconnect/*

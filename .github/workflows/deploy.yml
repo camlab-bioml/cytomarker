@@ -1,6 +1,8 @@
 on:
   push:
     branches: [main, master]
+  pull_request:
+    branches: [main, master]
 
 name: shiny-deploy
 
@@ -23,6 +25,10 @@ jobs:
 
       - name: Install rsconnect
         run: install.packages("rsconnect")
+        shell: Rscript {0}
+
+      - name: Install BiocManager
+        run: install.packages("BiocManager")
         shell: Rscript {0}
 
       - name: Authorize and deploy app
