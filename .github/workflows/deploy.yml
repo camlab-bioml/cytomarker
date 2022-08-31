@@ -1,6 +1,8 @@
 on:
   push:
     branches: [main, master]
+  pull_request:
+    branches: [main, master]
 
 name: shiny-deploy
 
@@ -20,6 +22,19 @@ jobs:
 
       - name: Install rsconnect
         run: install.packages("rsconnect")
+      
+      - name: Install cURL Headers
+        run: sudo apt-get -y install libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev
+
+      - name: Install required install packages and remote repos
+        run: |
+         install.packages("rsconnect")
+         install.packages("BiocManager")
+         install.packages("devtools")
+         devtools::install_github("daqana/dqshiny")
+         devtools::install_github("MarioniLab/geneBasisR")
+         devtools::install_github("camlab-bioml/inferorg")
+         devtools::install_github("stephenturner/annotables")
         shell: Rscript {0}
 
       - name: Authorize and deploy app
@@ -28,6 +43,7 @@ jobs:
           ACCOUNT: camlab
           SERVER: shinyapps.io
         run: |
+          options(repos=c(BiocManager::repositories()))
           rsconnect::setAccountInfo(name='camlab', token='***REMOVED***', secret='***REMOVED***')
           rsconnect::deployApp(appName = "${{ env.APPNAME }}", account = "${{ env.ACCOUNT }}", server = "${{ env.SERVER }}")
         shell: Rscript {0}
