@@ -19,7 +19,7 @@ jobs:
       - uses: r-lib/actions/setup-renv@v2
       
       - name: Install cURL Headers
-      - run: sudo apt-get install libcurl4-openssl-dev
+        run: sudo apt-get install libcurl4-openssl-dev
 
       - name: Install rsconnect
         run: install.packages("rsconnect")
