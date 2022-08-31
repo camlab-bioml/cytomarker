@@ -128,21 +128,7 @@ cytosel <- function(...) {
         tabPanel("Marker selection",
                  icon = icon("list"),
                  br(),
-                 fluidRow(column(12, splitLayout(cellWidths = c(200, 120, 140),
-                                                 div(style = "", fileInput("uploadMarkers", "Upload markers", width = "100%")),
-                                                 div(style = "margin-top:25px;", actionButton("add_to_selected", "Add uploaded", width = "100%")),
-                                                 div(style = "margin-top:25px;", actionButton("replace_selected", "Replace selected", width = "100%")))),
-                 fluidRow(column(1),column(5,
-                          splitLayout(cellWidths = c(150, 150),
-                                      div(style = "", autocomplete_input("add_markers", "Add marker by name", 
-                                                                         options=c(), width = "100%",
-                                                                         max_options = 6, contains = T)),
-                                      div(style = "margin-top:25px;", actionButton("enter_marker", "Add")))) ,
-                          column(6,splitLayout(cellWidths = c(150, 150),
-                                               selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL),
-                                               div(style = "margin-top:25px;", actionButton('add_cell_type_markers', "Suggest"),
-                                               ))))
-                          ),
+                 fluidRow(column(12, actionButton("markers_change_modal", "Add markers to panel"))),
                  hr(),
                  hidden(div(id = "marker_display",
                    tags$span(shiny_iconlink() %>%
@@ -157,8 +143,10 @@ cytosel <- function(...) {
                                  align = "left"),
                           column(1),
                           column(5, textOutput("selected_marker_counts"),
-                                 align = "left")),
+                                 align = "left"),
+                          style = "margin-left:10px;"),
                  fluidRow(column(12, uiOutput("BL"),
+                                 style = "margin-botom:0px;"
                                  ))
           ),
         
@@ -288,17 +276,8 @@ cytosel <- function(...) {
     cell_min_threshold <- reactiveVal()
     
     ### MODALS ###
-    invalid_modal <- function() { # Input file is invalid
-      shinyalert(
-        title = "Error",
-        text = paste("Input must be a Single Cell Experiment or Seurat object. Please upload a different file."),
-        type = "error",
-        showConfirmButton = TRUE,
-        confirmButtonCol = "#337AB7"
-      )
-    }
     
-    assay_modal <- function(assays, failed = FALSE) { # Assay selection
+    assay_modal <- function(assays, failed = FALSE) {
       modalDialog(
         selectInput("assay",
                     "Choose which assay to load",
@@ -312,6 +291,31 @@ cytosel <- function(...) {
           actionButton("assay_select", "Select")
         )
       )
+      
+    }
+    
+    
+    invalid_modal <- function() { # Input file is invalid
+      shinyalert(
+        title = "Error",
+        text = paste("Input must be a Single Cell Experiment or Seurat object. Please upload a different file."),
+        type = "error",
+        showConfirmButton = TRUE,
+        confirmButtonCol = "#337AB7"
+      )
+    }
+    
+    markers_add_modal <- function() { 
+      modalDialog(
+        helpText("Add, upload, Suggest markers."),
+        fileInput("uploadMarkers", "Upload markers", width = "100%"),
+        actionButton("add_to_selected", "Add uploaded", width = "100%"),
+        actionButton("replace_selected", "Replace selected", width = "100%"),
+        selectInput("add_markers", "Add marker by name", 
+              choices = NULL, width = "100%", multiple = F),
+        actionButton("enter_marker", "Add"),
+        selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL),
+        actionButton('add_cell_type_markers', "Suggest"))
     }
     
     unique_element_modal <- function(col) { # Column is invalid
@@ -543,6 +547,28 @@ cytosel <- function(...) {
       }
     })
     
+    ### bring up modal to add markers ###
+    observeEvent(input$markers_change_modal, {
+      req(sce())
+      req(current_markers())
+      req(allowed_genes())
+      req(fms())
+      
+      updateSelectInput(
+        session = session,
+        inputId = "cell_type_markers",
+        choices = names(fms()[[1]])
+      )
+      
+      updateSelectInput(
+        session = session,
+        inputId = "add_markers",
+        choices = allowed_genes()
+      )
+    
+      showModal(markers_add_modal())
+    })
+    
     ### ANTIBODY EXPLORER ###
     output$antibody_table <- renderReactable({
       req(current_markers())
@@ -751,12 +777,6 @@ cytosel <- function(...) {
               )
             )
             
-            updateSelectInput(
-              session = session,
-              inputId = "cell_type_markers",
-              choices = names(fms()[[1]])
-            )
-            
             if(!is.null(input$bl_top)) {
               ## We get here if input$bl_top exists, ie if this
               ## is an analysis refresh
@@ -946,8 +966,9 @@ cytosel <- function(...) {
     
     ### MARKER SELECTION ###
     observeEvent(input$enter_marker, { # Manually add markers one by one
+      req(input$add_markers)
       
-      if(!is.null(input$add_markers) && stringr::str_length(input$add_markers) > 1 && 
+      if(!is.null(input$add_markers) &&
          (input$add_markers %in% allowed_genes()) && (! input$add_markers %in% 
             current_markers()$top_markers) && (! input$add_markers %in% 
                                                current_markers()$scratch_markers)) {
@@ -970,6 +991,8 @@ cytosel <- function(...) {
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
                   names(fms()[[1]]))
+        
+        removeModal()
         
       } else if(!(input$add_markers %in% rownames(sce()))) {
         dne_modal(dne = input$add_markers)
@@ -1261,12 +1284,8 @@ cytosel <- function(...) {
         )
         
         ## Set that these genes can be selected
-        update_autocomplete_input(session, "add_markers",
-                                  options = allowed_genes())
-        
         update_autocomplete_input(session, "input_gene",
                                   options = allowed_genes())
-        
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
@@ -1288,9 +1307,6 @@ cytosel <- function(...) {
         plots$top_plot <- plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
           layout(title = "UMAP selected markers")
-        
-        
-        
         
         # Update heatmap
         incProgress(detail = "Drawing heatmap")
