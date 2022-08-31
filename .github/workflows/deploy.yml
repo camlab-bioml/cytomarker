@@ -23,12 +23,15 @@ jobs:
       - name: Install cURL Headers
         run: sudo apt-get install libcurl4-openssl-dev
 
-      - name: Install rsconnect
-        run: install.packages("rsconnect")
-        shell: Rscript {0}
-
-      - name: Install BiocManager
-        run: install.packages("BiocManager")
+      - name: Install required install packages and remote repos
+        run: |
+         install.packages("rsconnect")
+         install.packages("BiocManager")
+         install.packages("devtools")
+         devtools::install_github("daqana/dqshiny")
+         devtools::install_github("MarioniLab/geneBasisR")
+         devtools::install_github("camlab-bioml/inferorg")
+         devtools::install_github("stephenturner/annotables")
         shell: Rscript {0}
 
       - name: Authorize and deploy app
