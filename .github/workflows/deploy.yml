@@ -31,6 +31,7 @@ jobs:
           ACCOUNT: camlab
           SERVER: shinyapps.io
         run: |
+          options(repos=c(BiocManager::repositories()))
           rsconnect::setAccountInfo(name='camlab', token='***REMOVED***', secret='***REMOVED***')
           rsconnect::deployApp(appName = "${{ env.APPNAME }}", account = "${{ env.ACCOUNT }}", server = "${{ env.SERVER }}")
         shell: Rscript {0}
