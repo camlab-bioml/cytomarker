@@ -21,7 +21,7 @@ jobs:
       - uses: r-lib/actions/setup-renv@v2
       
       - name: Install cURL Headers
-        run: sudo apt-get install libcurl4-openssl-dev
+        run: sudo apt-get -y install libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev
 
       - name: Install required install packages and remote repos
         run: |
