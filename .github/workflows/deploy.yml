@@ -9,6 +9,8 @@ name: shiny-deploy
 jobs:
   shiny-deploy:
     runs-on: ubuntu-latest
+    env: 
+     GITHUB_PAT: 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
     steps:
       - uses: actions/checkout@v2
 
