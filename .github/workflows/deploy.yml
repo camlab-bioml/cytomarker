@@ -8,9 +8,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: deploy cytosel to shinyapps.io
-      - run: |
-	   R -e 'rsconnect::setAccountInfo(name='camlab',
-			  token='96CDA60CB4F4AB671D836E7E0CF6E77A',
-			  secret='PZxUCJz2m9bL4Mj5GPL+zjdGNm4DWbToKdjOWK57')'
-
-           Rscript deploy.R
+      - run: R -e 'rsconnect::setAccountInfo(name='camlab', token='96CDA60CB4F4AB671D836E7E0CF6E77A', secret='PZxUCJz2m9bL4Mj5GPL+zjdGNm4DWbToKdjOWK57')'
+      - run: Rscript deploy.R
