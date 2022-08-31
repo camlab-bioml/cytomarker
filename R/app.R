@@ -99,12 +99,6 @@ cytosel <- function(...) {
               bs_embed_popover(content = get_tooltip('panel_size'),
                                placement = "right")
           ),
-        numericInput("min_category_count", "Minimum cell category cutoff:", 2, min = 2, max = 100, step = 0.5, width = NULL) %>%
-          shinyInput_label_embed(
-            shiny_iconlink() %>%
-              bs_embed_popover(content = get_tooltip('cat_cutoff'),
-                               placement = "right")
-          ),
         radioButtons("marker_strategy", label = "Marker selection strategy",
                      choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
                      selected="fm"),
@@ -136,7 +130,8 @@ cytosel <- function(...) {
                  br(),
                  fluidRow(column(5,
                           splitLayout(cellWidths = c(150, 150),
-                                      div(style = "", autocomplete_input("add_markers", "Manual add markers", options=c(), width = "100%",
+                                      div(style = "", autocomplete_input("add_markers", "Add marker by name", 
+                                                                         options=c(), width = "100%",
                                                                          max_options = 6, contains = T)),
                                       div(style = "margin-top:25px;", actionButton("enter_marker", "Add")))) ,
                           column(6,
@@ -154,16 +149,16 @@ cytosel <- function(...) {
                    tags$span(shiny_iconlink() %>%
                      bs_embed_popover(content = get_tooltip('marker_display'),
                                       placement = "top", html = TRUE)))),
-                 plotOutput("legend", height='80px'),
-                 fluidRow(column(1, actionButton("refresh_marker_counts", "Refresh Marker Space counts",
-                                                 style='font-size:85%'),
-                                 align = "center"
-                                 , style = "margin-bottom: 10px;"
-                                 , style = "margin-top: 10px;")),
+                 fluidRow(column(12, plotOutput("legend", height='80px'), style = "margin-bottom: 15px;")),
                  hidden(div(id = "marker_visualization",
-                   tags$span(shiny_iconlink() %>%
-                     bs_embed_popover(content = get_tooltip('marker_visualization'),
-                                      placement = "top", html = TRUE)))),
+                            tags$span(shiny_iconlink() %>%
+                                        bs_embed_popover(content = get_tooltip('marker_visualization'),
+                                                         placement = "top", html = TRUE)))),
+                 fluidRow(column(2),column(4, textOutput("scratch_marker_counts"),
+                                 align = "left"),
+                          column(1),
+                          column(5, textOutput("selected_marker_counts"),
+                                 align = "left")),
                  fluidRow(column(12, uiOutput("BL"),
                                  ))
           ),
@@ -291,6 +286,8 @@ cytosel <- function(...) {
     marker_suggestions <- reactiveVal()
     alternative_marks <- reactiveVal()
     
+    cell_min_threshold <- reactiveVal()
+    
     ### MODALS ###
     invalid_modal <- function() { # Input file is invalid
       shinyalert(
@@ -375,10 +372,16 @@ cytosel <- function(...) {
                  confirmButtonCol = "#337AB7")
     }
     
-    cell_cat_modal <- function() {
+    cell_cat_modal <- function(cell_cat_value) {
       modalDialog(
         DT::dataTableOutput("cell_cat_table"),
         selectInput("user_selected_cells", "Create a custom subset for analysis", NULL, multiple=TRUE),
+        numericInput("min_category_count", "Minimum cell category cutoff:", cell_cat_value, min = 2, max = 100, step = 0.5, width = NULL) %>%
+          shinyInput_label_embed(
+            shiny_iconlink() %>%
+              bs_embed_popover(content = get_tooltip('cat_cutoff'),
+                               placement = "right")
+          ),
         title = "Frequency Count for selected heterogeneity category",
         helpText("Certain cell types can be manually ignored by the user during analysis in the dialog box above. If this cell is left empty, then by default 
                  all cell types with a Freq of 2 or greater will be retained for analysis."),
@@ -386,7 +389,7 @@ cytosel <- function(...) {
         easyClose = TRUE,        
         footer = tagList(
           actionButton("add_selected_to_analysis", "Set subset for analysis."),
-          modalButton("Exit.")
+          modalButton("Cancel.")
         ))
     }
     
@@ -424,6 +427,7 @@ cytosel <- function(...) {
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
+      
       updateNumericInput(session, "min_category_count", value = 2)
       input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
       input_sce <- detect_assay_and_create_logcounts(input_sce)
@@ -470,6 +474,8 @@ cytosel <- function(...) {
       req(input$coldata_column)
       specific_cell_types_selected(input$user_selected_cells)
       
+      removeModal()
+      
       if (length(specific_cell_types_selected()) > 0) {
         showNotification("Setting subset to select cell types",
                          duration = 2)
@@ -484,7 +490,6 @@ cytosel <- function(...) {
     req(input$input_scrnaseq)
     req(input$assay_select)
     req(input$coldata_column)
-    req(input$min_category_count)
     req(sce())
     
     cell_category_table <- create_table_of_hetero_cat(sce(),
@@ -516,7 +521,15 @@ cytosel <- function(...) {
         selected = specific_cell_types_selected()
       )
       
-      showModal(cell_cat_modal())
+      if (!isTruthy(input$min_category_count)) {
+        def_cat_count <- 2
+        cell_min_threshold(2)
+      } else {
+        def_cat_count <- input$min_category_count
+        cell_min_threshold(input$min_category_count)
+      }
+      
+      showModal(cell_cat_modal(def_cat_count))
     }
     })
     
@@ -621,10 +634,16 @@ cytosel <- function(...) {
     observeEvent(input$start_analysis, {
       req(input$coldata_column)
       req(input$panel_size)
-      req(input$min_category_count)
+      # req(input$min_category_count)
       req(sce())
       
-      if (input$min_category_count < 2) {
+      if (!isTruthy(input$min_category_count)) {
+        cell_min_threshold(2)
+      } else {
+        cell_min_threshold(input$min_category_count)
+      }
+      
+      if (cell_min_threshold() < 2) {
         proceed_with_analysis(FALSE)
         threshold_too_low_modal()
       } else {
@@ -646,7 +665,7 @@ cytosel <- function(...) {
         cell_types_high_enough(remove_cell_types_by_min_counts(cell_cat_summary,
                                                                sce(), 
                                                                input$coldata_column, 
-                                                               input$min_category_count))
+                                                               cell_min_threshold()))
         
         cell_types_to_keep(intersect(specific_cell_types_selected(),
                                      cell_types_high_enough()))
@@ -801,7 +820,7 @@ cytosel <- function(...) {
     # })
     
     # re-count the number of markers in each space when the sortable js is changed
-    observeEvent(input$refresh_marker_counts, {
+    observeEvent(input$bl_top, {
       req(sce())
       req(current_markers())
       
@@ -814,9 +833,27 @@ cytosel <- function(...) {
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
       
-      update_BL(current_markers(), num_markers_in_selected(),
-                num_markers_in_scratch(),
-                names(fms()[[1]]))
+      output$scratch_marker_counts <- renderText({paste("Scratch Markers:", num_markers_in_scratch())})
+      output$selected_marker_counts<- renderText({paste("Selected Markers:", num_markers_in_selected())})
+      
+    })
+    
+    observeEvent(input$bl_scratch, {
+      req(sce())
+      req(current_markers())
+      
+      current_markers(list(recommended_markers = current_markers()$recommended_markers,
+                           scratch_markers = input$bl_scratch,
+                           top_markers = input$bl_top,
+                           associated_cell_types = current_markers()$associated_cell_types))
+      
+      # current_markers(set_current_markers_safely(markers, fms()))
+      num_markers_in_selected(length(current_markers()$top_markers))
+      num_markers_in_scratch(length(current_markers()$scratch_markers))
+      
+      output$scratch_marker_counts <- renderText({paste("Scratch Markers:", num_markers_in_scratch())})
+      output$selected_marker_counts<- renderText({paste("Selected Markers:", num_markers_in_selected())})
+      
     })
     
     
@@ -939,7 +976,7 @@ cytosel <- function(...) {
         dne_modal(dne = input$add_markers)
       }
     })
-  
+    
     observeEvent(input$add_to_selected, { # Add uploaded markers
       req(input$uploadMarkers)
       
@@ -970,6 +1007,7 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
+      
       
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
@@ -1143,7 +1181,7 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
-      
+  
       
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
@@ -1158,7 +1196,6 @@ cytosel <- function(...) {
     update_BL <- function(markers, top_size, scratch_size, unique_cell_types,
                           adding_alternative = F) {
       
-
       # unique_cell_types <- sort(unique(markers$associated_cell_types))
       # n_cell_types <- length(unique_cell_types)
       # palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
@@ -1188,19 +1225,19 @@ cytosel <- function(...) {
       
       output$BL <- renderUI({
         bucket_list(
-          header = "Marker selection",
+          header = NULL,
           orientation = "horizontal",
           group_name = "bucket_list_group",
           add_rank_list(
-            text = paste0("Scatch space (", scratch_size, ")"),
+            text = NULL,
             labels = labels_scratch,
             input_id = "bl_scratch",
             options = c(multiDrag = TRUE),
             class = c("default-sortable", "cytocellbl")
           ),
           add_rank_list(
-            text = paste0("Selected markers (", top_size, ")"),
             labels = labels_top,
+            text = NULL,
             input_id = "bl_top",
             options = c(multiDrag = TRUE),
             class = c("default-sortable", "cytocellbl")
@@ -1234,7 +1271,6 @@ cytosel <- function(...) {
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
-        
         
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),

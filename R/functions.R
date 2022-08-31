@@ -42,7 +42,9 @@ good_col <- function(sce, columns) {
 #' @importFrom parallelly availableCores
 compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
   
-  fms <- mclapply(columns, mc.cores = availableCores(), function(col) {
+  fms <- mclapply(columns,
+                  mc.cores = availableCores(),
+                  function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
     fm <- findMarkers(sce, colData(sce)[[col]], test.type = test_type, assay.type = pref_assay)
@@ -305,7 +307,9 @@ train_nb <- function(x,y, cell_types) {
   x <- scale(x)
   
   metrics <- suppressWarnings({ 
-    mclapply(flds, mc.cores = availableCores(), function(test_idx) {
+    mclapply(flds, 
+             mc.cores = availableCores(),
+             function(test_idx) {
       # fit <- naive_bayes(x[-test_idx,], y[-test_idx])
       # p <- stats::predict(fit, newdata = x[test_idx,])
       df_train <- as.data.frame(x[-test_idx,])
