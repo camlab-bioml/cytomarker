@@ -1,12 +1,33 @@
-name: deploy cytosel to shinyapps.io
 on:
   push:
     branches: [main, master]
 
+name: shiny-deploy
+
 jobs:
-  deploy:
+  shiny-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: deploy cytosel to shinyapps.io
-      - run: R -e 'rsconnect::setAccountInfo(name='camlab', token='96CDA60CB4F4AB671D836E7E0CF6E77A', secret='PZxUCJz2m9bL4Mj5GPL+zjdGNm4DWbToKdjOWK57')'
-      - run: Rscript deploy.R
+      - uses: actions/checkout@v2
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-renv@v2
+
+      - name: Install rsconnect
+        run: install.packages("rsconnect")
+        shell: Rscript {0}
+
+      - name: Authorize and deploy app
+        env: 
+          APPNAME: cytosel
+          ACCOUNT: camlab
+          SERVER: shinyapps.io
+        run: |
+          rsconnect::setAccountInfo(name='camlab', token='96CDA60CB4F4AB671D836E7E0CF6E77A', secret='PZxUCJz2m9bL4Mj5GPL+zjdGNm4DWbToKdjOWK57')
+          rsconnect::deployApp(appName = "${{ env.APPNAME }}", account = "${{ env.ACCOUNT }}", server = "${{ env.SERVER }}")
+        shell: Rscript {0}
