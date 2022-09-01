@@ -9,8 +9,6 @@ name: shiny-deploy
 jobs:
   shiny-deploy:
     runs-on: ubuntu-latest
-    env: 
-     GITHUB_PAT: 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
     steps:
       - uses: actions/checkout@v2
       - name: Install cURL Headers
@@ -29,6 +27,7 @@ jobs:
 
       - name: Install required install packages and remote repos
         run: install.packages(c("rsconnect", "BiocManager"))
+        shell: Rscript {0}
 
       - name: Authorize and deploy app
         env: 
