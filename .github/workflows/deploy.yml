@@ -21,18 +21,12 @@ jobs:
           use-public-rspm: true
 
       - uses: r-lib/actions/setup-renv@v2
-        # uses: r-lib/actions/setup-r-dependencies@v2
-        env:
-          _R_CHECK_FORCE_SUGGESTS_: false
       
       - name: Install cURL Headers
         run: sudo apt-get -y install libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev
 
       - name: Install required install packages and remote repos
-        run: |
-         install.packages(c("rsconnect", "BiocManager", "remotes"))
-         remotes::install_github(c("daqana/dqshiny", "MarioniLab/geneBasisR", "camlab-bioml/inferorg", "stephenturner/annotables"), dependencies = NA)
-        shell: Rscript {0}
+        run: install.packages(c("rsconnect", "BiocManager"))
 
       - name: Authorize and deploy app
         env: 
