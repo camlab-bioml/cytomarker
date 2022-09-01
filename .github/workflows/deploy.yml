@@ -9,6 +9,8 @@ name: shiny-deploy
 jobs:
   shiny-deploy:
     runs-on: ubuntu-latest
+    env: 
+     GITHUB_PAT: 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
     steps:
       - uses: actions/checkout@v2
 
@@ -20,8 +22,9 @@ jobs:
 
       - uses: r-lib/actions/setup-renv@v2
 
-      - name: Install rsconnect
-        run: install.packages("rsconnect")
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          _R_CHECK_FORCE_SUGGESTS_: false
       
       - name: Install cURL Headers
         run: sudo apt-get -y install libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev
@@ -30,11 +33,11 @@ jobs:
         run: |
          install.packages("rsconnect")
          install.packages("BiocManager")
-         install.packages("devtools")
-         devtools::install_github("daqana/dqshiny")
-         devtools::install_github("MarioniLab/geneBasisR")
-         devtools::install_github("camlab-bioml/inferorg")
-         devtools::install_github("stephenturner/annotables")
+         install.packages("remotes")
+         remotes::install_github("daqana/dqshiny")
+         remotes::install_github("MarioniLab/geneBasisR")
+         remotes::install_github("camlab-bioml/inferorg")
+         remotes::install_github("stephenturner/annotables")
         shell: Rscript {0}
 
       - name: Authorize and deploy app
