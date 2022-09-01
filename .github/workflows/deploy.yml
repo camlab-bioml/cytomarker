@@ -30,7 +30,8 @@ jobs:
 
       - name: Install required install packages and remote repos
         run: |
-         install.packages(c("rsconnect", "BiocManager"))
+         install.packages(c("rsconnect", "BiocManager", "remotes"))
+         remotes::install_github(c("daqana/dqshiny", "MarioniLab/geneBasisR", "camlab-bioml/inferorg", "stephenturner/annotables"), dependencies = F)
         shell: Rscript {0}
 
       - name: Authorize and deploy app
@@ -39,12 +40,7 @@ jobs:
           ACCOUNT: camlab
           SERVER: shinyapps.io
         run: |
-          additional_packages <- getOption("repos")
-          additional_packages["geneBasisR"] <- "https://github.com/MarioniLab/geneBasisR"
-          additional_packages["dqshiny"] <- "https://github.com/daqana/dqshiny"
-          additional_packages["annotables"] <- "https://github.com/stephenturner/annotables"
-          additional_packages["inferorg"] <- "https://github.com/camlab-bioml/inferorg"
-          options(repos=c(BiocManager::repositories(), additional_packages[2:5]))
+          options(repos=c(BiocManager::repositories()))
           rsconnect::setAccountInfo(name='camlab', token='96CDA60CB4F4AB671D836E7E0CF6E77A', secret='PZxUCJz2m9bL4Mj5GPL+zjdGNm4DWbToKdjOWK57')
           rsconnect::deployApp(appName = "${{ env.APPNAME }}", account = "${{ env.ACCOUNT }}", server = "${{ env.SERVER }}")
         shell: Rscript {0}
