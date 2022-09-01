@@ -21,7 +21,7 @@ jobs:
           use-public-rspm: true
 
       - uses: r-lib/actions/setup-renv@v2
-      - uses: r-lib/actions/setup-r-dependencies@v2
+        # uses: r-lib/actions/setup-r-dependencies@v2
         env:
           _R_CHECK_FORCE_SUGGESTS_: false
       
@@ -31,12 +31,6 @@ jobs:
       - name: Install required install packages and remote repos
         run: |
          install.packages("rsconnect")
-         install.packages("BiocManager")
-         install.packages("remotes")
-         remotes::install_github("daqana/dqshiny")
-         remotes::install_github("MarioniLab/geneBasisR")
-         remotes::install_github("camlab-bioml/inferorg")
-         remotes::install_github("stephenturner/annotables")
         shell: Rscript {0}
 
       - name: Authorize and deploy app
@@ -45,7 +39,12 @@ jobs:
           ACCOUNT: camlab
           SERVER: shinyapps.io
         run: |
-          options(repos=c(BiocManager::repositories()))
+          additional_packages <- getOption("repos")
+          additional_packages["geneBasisR"] <- "https://github.com/MarioniLab/geneBasisR"
+          additional_packages["dqshiny"] <- "https://github.com/daqana/dqshiny"
+          additional_packages["annotables"] <- "https://github.com/stephenturner/annotables"
+          additional_packages["inferorg"] <- "https://github.com/camlab-bioml/inferorg"
+          options(repos=c(BiocManager::repositories(), additional_packages[2:5]))
           rsconnect::setAccountInfo(name='camlab', token='***REMOVED***', secret='***REMOVED***')
           rsconnect::deployApp(appName = "${{ env.APPNAME }}", account = "${{ env.ACCOUNT }}", server = "${{ env.SERVER }}")
         shell: Rscript {0}
