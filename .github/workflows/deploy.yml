@@ -32,10 +32,9 @@ jobs:
       - name: Authorize and deploy app
         env: 
           APPNAME: cytosel
-          ACCOUNT: camlab
           SERVER: shinyapps.io
         run: |
           options(repos=c(BiocManager::repositories()))
-          rsconnect::setAccountInfo(name='camlab', token='***REMOVED***', secret='***REMOVED***')
-          rsconnect::deployApp(appName = "${{ env.APPNAME }}", account = "${{ env.ACCOUNT }}", server = "${{ env.SERVER }}")
+          rsconnect::setAccountInfo("${{ secrets.SHINYAPPS_ACC }}", "${{ secrets.SHINYAPPS_TOKEN }}", "${{ secrets.SHINYAPPS_SEC }}")
+          rsconnect::deployApp(appName = "${{ env.APPNAME }}", account = "${{ secrets.SHINYAPPS_ACC }}", server = "${{ env.SERVER }}")
         shell: Rscript {0}
