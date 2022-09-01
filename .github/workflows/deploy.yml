@@ -31,7 +31,7 @@ jobs:
       - name: Install required install packages and remote repos
         run: |
          install.packages(c("rsconnect", "BiocManager", "remotes"))
-         remotes::install_github(c("daqana/dqshiny", "MarioniLab/geneBasisR", "camlab-bioml/inferorg", "stephenturner/annotables"), dependencies = F)
+         remotes::install_github(c("daqana/dqshiny", "MarioniLab/geneBasisR", "camlab-bioml/inferorg", "stephenturner/annotables"), dependencies = NA)
         shell: Rscript {0}
 
       - name: Authorize and deploy app
