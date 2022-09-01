@@ -84,15 +84,16 @@ cytosel <- function(...) {
           ),
         textOutput("selected_assay"),
         br(),
-        selectInput("coldata_column", "Capture heterogeneity of:", NULL, multiple=FALSE) %>%
+        selectInput("coldata_column", "Cell category to evaluate:", NULL, multiple=FALSE) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
               bs_embed_popover(content = get_tooltip('coldata_column'),
                       placement = "right", html = "true")
           ),
-        actionButton("show_cat_table", "Summary/Subset selection",
+        actionButton("show_cat_table", "Category distribution",
                      align = "center",
-                     width = '100%', style='font-size:85%'),
+                     width = '100%', style='font-size:85%',
+                     style = "padding:10px"),
         numericInput("panel_size", "Targeted panel size:", 32, min = 1, max = 200, step = NA, width = NULL) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
@@ -146,7 +147,7 @@ cytosel <- function(...) {
                                  align = "left"),
                           style = "margin-left:10px;"),
                  fluidRow(column(12, uiOutput("BL"),
-                                 style = "margin-botom:0px;"
+                                 style = "margin-bottom:0px;"
                                  ))
           ),
         
@@ -307,11 +308,11 @@ cytosel <- function(...) {
     
     markers_add_modal <- function() { 
       modalDialog(
-        helpText("Add, upload, Suggest markers."),
+        helpText("Upload markers from a .txt file, add individual markers by name, or view sugested markers by cell category."),
         fileInput("uploadMarkers", "Upload markers", width = "100%"),
         actionButton("add_to_selected", "Add uploaded", width = "100%"),
         actionButton("replace_selected", "Replace selected", width = "100%"),
-        selectInput("add_markers", "Add marker by name", 
+        selectizeInput("add_markers", "Add marker by name", 
               choices = NULL, width = "100%", multiple = F),
         actionButton("enter_marker", "Add"),
         selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL),
@@ -386,8 +387,9 @@ cytosel <- function(...) {
                                placement = "right")
           ),
         title = "Frequency Count for selected heterogeneity category",
-        helpText("Certain cell types can be manually ignored by the user during analysis in the dialog box above. If this cell is left empty, then by default 
-                 all cell types with a Freq of 2 or greater will be retained for analysis."),
+        helpText("Certain cell types can be manually ignored by the user during analysis in the first dialog box above. If this cell is left empty, then by default 
+                 all cell types with a Freq of 2 or greater will be retained for analysis. Additionally, 
+                 cell categories below a minimum count threshold can be excluded."),
         size = "xl",
         easyClose = TRUE,        
         footer = tagList(
@@ -560,7 +562,7 @@ cytosel <- function(...) {
         choices = names(fms()[[1]])
       )
       
-      updateSelectInput(
+      updateSelectizeInput(
         session = session,
         inputId = "add_markers",
         choices = allowed_genes()
