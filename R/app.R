@@ -92,8 +92,9 @@ cytosel <- function(...) {
           ),
         actionButton("show_cat_table", "Category distribution",
                      align = "center",
-                     width = '100%', style='font-size:85%',
-                     style = "padding:10px"),
+                     width = '100%', style='font-size:85%'),
+        # add padding space between elements
+        tags$div(style = "padding:7.5px"),
         numericInput("panel_size", "Targeted panel size:", 32, min = 1, max = 200, step = NA, width = NULL) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
@@ -145,7 +146,7 @@ cytosel <- function(...) {
                           column(1),
                           column(5, textOutput("selected_marker_counts"),
                                  align = "left"),
-                          style = "margin-left:10px;"),
+                          style = "margin-left:20px;"),
                  fluidRow(column(12, uiOutput("BL"),
                                  style = "margin-bottom:0px;"
                                  ))
@@ -311,12 +312,15 @@ cytosel <- function(...) {
         helpText("Upload markers from a .txt file, add individual markers by name, or view sugested markers by cell category."),
         fileInput("uploadMarkers", "Upload markers", width = "100%"),
         actionButton("add_to_selected", "Add uploaded", width = "100%"),
+        tags$div(style = "padding:2.5px"),
         actionButton("replace_selected", "Replace selected", width = "100%"),
-        selectizeInput("add_markers", "Add marker by name", 
-              choices = NULL, width = "100%", multiple = F),
-        actionButton("enter_marker", "Add"),
-        selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL),
-        actionButton('add_cell_type_markers', "Suggest"))
+        tags$div(style = "padding:5px"),
+        div(style="display:inline-block",selectizeInput("add_markers", "Add marker by name", 
+              choices = NULL, width = "100%", multiple = F)),
+        div(style="display:inline-block", selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL)),
+        tags$div(style = "padding:5px"),
+        div(style="display:inline-block", actionButton("enter_marker", "Add")),
+        div(style="display:inline-block", actionButton('add_cell_type_markers', "Suggest")))
     }
     
     unique_element_modal <- function(col) { # Column is invalid
@@ -379,13 +383,16 @@ cytosel <- function(...) {
     cell_cat_modal <- function(cell_cat_value) {
       modalDialog(
         DT::dataTableOutput("cell_cat_table"),
-        selectInput("user_selected_cells", "Create a custom subset for analysis", NULL, multiple=TRUE),
-        numericInput("min_category_count", "Minimum cell category cutoff:", cell_cat_value, min = 2, max = 100, step = 0.5, width = NULL) %>%
-          shinyInput_label_embed(
-            shiny_iconlink() %>%
-              bs_embed_popover(content = get_tooltip('cat_cutoff'),
-                               placement = "right")
-          ),
+    flowLayout(cellArgs = list(style = c("width: 300px;")),
+               selectInput("user_selected_cells", 
+                            "Create a custom subset for analysis", NULL, multiple=TRUE),
+    numericInput("min_category_count", "Minimum cell category cutoff:", 
+                 cell_cat_value, min = 2, max = 100, step = 0.5, width = NULL) %>%
+      shinyInput_label_embed(
+        shiny_iconlink() %>%
+          bs_embed_popover(content = get_tooltip('cat_cutoff'),
+                           placement = "right")
+      )),
         title = "Frequency Count for selected heterogeneity category",
         helpText("Certain cell types can be manually ignored by the user during analysis in the first dialog box above. If this cell is left empty, then by default 
                  all cell types with a Freq of 2 or greater will be retained for analysis. Additionally, 
@@ -565,7 +572,7 @@ cytosel <- function(...) {
       updateSelectizeInput(
         session = session,
         inputId = "add_markers",
-        choices = allowed_genes()
+        choices = c("", allowed_genes())
       )
     
       showModal(markers_add_modal())
