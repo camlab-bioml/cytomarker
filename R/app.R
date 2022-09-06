@@ -90,7 +90,7 @@ cytosel <- function(...) {
               bs_embed_popover(content = get_tooltip('coldata_column'),
                       placement = "right", html = "true")
           ),
-        actionButton("show_cat_table", "Category distribution",
+        actionButton("show_cat_table", "Category subsetting",
                      align = "center",
                      width = '100%', style='font-size:85%'),
         # add padding space between elements
@@ -314,13 +314,18 @@ cytosel <- function(...) {
         actionButton("add_to_selected", "Add uploaded", width = "100%"),
         tags$div(style = "padding:2.5px"),
         actionButton("replace_selected", "Replace selected", width = "100%"),
-        tags$div(style = "padding:5px"),
-        div(style="display:inline-block",selectizeInput("add_markers", "Add marker by name", 
-              choices = NULL, width = "100%", multiple = F)),
-        div(style="display:inline-block", selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL)),
-        tags$div(style = "padding:5px"),
-        div(style="display:inline-block", actionButton("enter_marker", "Add")),
-        div(style="display:inline-block", actionButton('add_cell_type_markers', "Suggest")))
+        tags$div(style = "padding:2.5px"),
+        flowLayout(selectizeInput("add_markers", "Add marker by name", 
+                                  choices = NULL, width = "100%", multiple = F),
+                   selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL)),
+        # div(style="display:inline-block",selectizeInput("add_markers", "Add marker by name", 
+        #       choices = NULL, width = "100%", multiple = F)),
+        # div(style="display:inline-block", selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL)),
+        tags$div(style = "padding:1px"),
+        flowLayout(actionButton("enter_marker", "Add"),
+                   actionButton('add_cell_type_markers', "Suggest")))
+        # div(style="display:inline-block", actionButton("enter_marker", "Add")),
+        # div(style="display:inline-block", actionButton('add_cell_type_markers', "Suggest")))
     }
     
     unique_element_modal <- function(col) { # Column is invalid
@@ -387,12 +392,7 @@ cytosel <- function(...) {
                selectInput("user_selected_cells", 
                             "Create a custom subset for analysis", NULL, multiple=TRUE),
     numericInput("min_category_count", "Minimum cell category cutoff:", 
-                 cell_cat_value, min = 2, max = 100, step = 0.5, width = NULL) %>%
-      shinyInput_label_embed(
-        shiny_iconlink() %>%
-          bs_embed_popover(content = get_tooltip('cat_cutoff'),
-                           placement = "right")
-      )),
+                 cell_cat_value, min = 2, max = 100, step = 0.5, width = NULL)),
         title = "Frequency Count for selected heterogeneity category",
         helpText("Certain cell types can be manually ignored by the user during analysis in the first dialog box above. If this cell is left empty, then by default 
                  all cell types with a Freq of 2 or greater will be retained for analysis. Additionally, 
@@ -421,7 +421,7 @@ cytosel <- function(...) {
                                       ":", '<br/>',
                                    "<b>", toString(cell_types_excluded()), "</b>", '<br/>',
                                       "were identified and not removed by the user.",
-                                      "They are to be ignored during analysis. The threshold can be changed using Minimum cell category cutoff.")),
+                                      "They are to be ignored during analysis. The threshold can be changed using Category subsetting.")),
                  type = "warning",
                  showConfirmButton = TRUE,
                  confirmButtonCol = "#337AB7",
