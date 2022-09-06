@@ -91,6 +91,13 @@ test_that("Server has functionality", {
     expect_equal(class(heatmap())[1], "plotly")
     expect_equal(class(heatmap())[2], "htmlwidget")
     
+    expect_equal(heatmap()[["x"]][["attrs"]][[1]][["x"]],
+                 heatmap()[["x"]][["attrs"]][[1]][["y"]])
+    
+    
+    expect_equal(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])),
+                 24)
+    
     # espect that the marker columns are set properly and the lengths are verified
     
     # espect that the marker columns are set properly and the lengths are verified
@@ -197,5 +204,11 @@ test_that("Server has functionality", {
     
     expect_false("LTB" %in% current_markers()$top_markers)
     
+    copy_markers <- current_markers()
+    
+    session$setInputs(start_analysis = T)
+    
+    expect_false(is.null(current_markers()))
+    expect_equal(copy_markers, current_markers())
   })
 })
