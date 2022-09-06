@@ -12,7 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install cURL Headers
-        run: sudo apt-get -y install libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev libgeos-dev
+        run: |
+         sudo apt-get update
+         sudo apt-get -y install libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev libgeos-dev
 
       - uses: r-lib/actions/setup-pandoc@v2
 
