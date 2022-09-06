@@ -84,25 +84,21 @@ cytosel <- function(...) {
           ),
         textOutput("selected_assay"),
         br(),
-        selectInput("coldata_column", "Capture heterogeneity of:", NULL, multiple=FALSE) %>%
+        selectInput("coldata_column", "Cell category to evaluate:", NULL, multiple=FALSE) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
               bs_embed_popover(content = get_tooltip('coldata_column'),
                       placement = "right", html = "true")
           ),
-        actionButton("show_cat_table", "Summary/Subset selection",
+        actionButton("show_cat_table", "Category subsetting",
                      align = "center",
                      width = '100%', style='font-size:85%'),
+        # add padding space between elements
+        tags$div(style = "padding:7.5px"),
         numericInput("panel_size", "Targeted panel size:", 32, min = 1, max = 200, step = NA, width = NULL) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
               bs_embed_popover(content = get_tooltip('panel_size'),
-                               placement = "right")
-          ),
-        numericInput("min_category_count", "Minimum cell category cutoff:", 2, min = 2, max = 100, step = 0.5, width = NULL) %>%
-          shinyInput_label_embed(
-            shiny_iconlink() %>%
-              bs_embed_popover(content = get_tooltip('cat_cutoff'),
                                placement = "right")
           ),
         radioButtons("marker_strategy", label = "Marker selection strategy",
@@ -134,37 +130,25 @@ cytosel <- function(...) {
         tabPanel("Marker selection",
                  icon = icon("list"),
                  br(),
-                 fluidRow(column(5,
-                          splitLayout(cellWidths = c(150, 150),
-                                      div(style = "", autocomplete_input("add_markers", "Manual add markers", options=c(), width = "100%",
-                                                                         max_options = 6, contains = T)),
-                                      div(style = "margin-top:25px;", actionButton("enter_marker", "Add")))) ,
-                          column(6,
-                          splitLayout(cellWidths = c(200, 120, 140),
-                                      div(style = "", fileInput("uploadMarkers", "Upload markers", width = "100%")),
-                                      div(style = "margin-top:25px;", actionButton("add_to_selected", "Add uploaded", width = "100%")),
-                                      div(style = "margin-top:25px;", actionButton("replace_selected", "Replace selected", width = "100%"))))),
-                 fluidRow(column(12, splitLayout(cellWidths = c(150, 150),
-                                                selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL),
-                                            div(style = "margin-top:25px;", actionButton('add_cell_type_markers', "Suggest"),
-                                                )))
-                          ),
+                 fluidRow(column(12, actionButton("markers_change_modal", "Add markers to panel"))),
                  hr(),
                  hidden(div(id = "marker_display",
                    tags$span(shiny_iconlink() %>%
                      bs_embed_popover(content = get_tooltip('marker_display'),
                                       placement = "top", html = TRUE)))),
-                 plotOutput("legend", height='80px'),
-                 fluidRow(column(1, actionButton("refresh_marker_counts", "Refresh Marker Space counts",
-                                                 style='font-size:85%'),
-                                 align = "center"
-                                 , style = "margin-bottom: 10px;"
-                                 , style = "margin-top: 10px;")),
+                 fluidRow(column(12, plotOutput("legend", height='80px'), style = "margin-bottom: 15px;")),
                  hidden(div(id = "marker_visualization",
-                   tags$span(shiny_iconlink() %>%
-                     bs_embed_popover(content = get_tooltip('marker_visualization'),
-                                      placement = "top", html = TRUE)))),
+                            tags$span(shiny_iconlink() %>%
+                                        bs_embed_popover(content = get_tooltip('marker_visualization'),
+                                                         placement = "top", html = TRUE)))),
+                 fluidRow(column(2),column(4, textOutput("scratch_marker_counts"),
+                                 align = "left"),
+                          column(1),
+                          column(5, textOutput("selected_marker_counts"),
+                                 align = "left"),
+                          style = "margin-left:20px;"),
                  fluidRow(column(12, uiOutput("BL"),
+                                 style = "margin-bottom:0px;"
                                  ))
           ),
         
@@ -239,7 +223,7 @@ cytosel <- function(...) {
   server <- function(input, output, session) {
     
     ### REACTIVE VARIABLES ###
-    plots <- reactiveValues(all_plot = NULL, top_plot = NULL, metric_plot = NULL) # Save plots for download
+    plots <- reactiveValues() # Save plots for download
     
     umap_top <- reactiveVal()
     umap_all <- reactiveVal()
@@ -291,15 +275,23 @@ cytosel <- function(...) {
     marker_suggestions <- reactiveVal()
     alternative_marks <- reactiveVal()
     
+    cell_min_threshold <- reactiveVal()
+    
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
-      updateNumericInput(session, "min_category_count", value = 2)
+      
       input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
       input_assays <- c(names(assays(sce())))
+      
+      if (!isTruthy(input$min_category_count)) {
+        cell_min_threshold(2)
+      } else {
+        cell_min_threshold(input$min_category_count)
+      }
 
       # If there is more than 1 assay user to select appropriate assay
       if(length(input_assays) > 1){
@@ -320,18 +312,27 @@ cytosel <- function(...) {
         inputId = "coldata_column",
         choices = colnames(colData(sce()))
       )
+      
+      if (!isTruthy(input$coldata_column)) {
+        column(colnames(colData(sce()))[1])
+      } else {
+        column(input$coldata_column)
+      }
 
     })
     
     observeEvent(input$coldata_column, {
       req(input$input_scrnaseq)
       specific_cell_types_selected(NULL)
+      column(input$coldata_column)
       })
     
     observeEvent(input$add_selected_to_analysis, {
       req(input$input_scrnaseq)
       req(input$coldata_column)
       specific_cell_types_selected(input$user_selected_cells)
+      
+      removeModal()
       
       if (length(specific_cell_types_selected()) > 0) {
         showNotification("Setting subset to select cell types",
@@ -347,20 +348,14 @@ cytosel <- function(...) {
     req(input$input_scrnaseq)
     req(input$assay_select)
     req(input$coldata_column)
-    req(input$min_category_count)
     req(sce())
+    req(cell_min_threshold())
     
     cell_category_table <- create_table_of_hetero_cat(sce(),
                                                         input$coldata_column)
-    
     if (nrow(cell_category_table) > 100) {
-      shinyalert(
-        title = "Error",
-        text = paste("Column", input$coldata_column, "has more than 100 unique elements. Please select another column."),
-        type = "error",
-        showConfirmButton = TRUE,
-        confirmButtonCol = "#337AB7"
-      )
+      
+      too_large_to_show_modal(input$coldata_column)
     } else {
       summary_cat_tally(cell_category_table)
       
@@ -379,7 +374,7 @@ cytosel <- function(...) {
         selected = specific_cell_types_selected()
       )
       
-      showModal(cell_cat_modal())
+      showModal(cell_cat_modal(cell_min_threshold()))
     }
     })
     
@@ -392,6 +387,28 @@ cytosel <- function(...) {
       } else {
         showModal(assay_modal(failed = TRUE, input_assays()))
       }
+    })
+    
+    ### bring up modal to add markers ###
+    observeEvent(input$markers_change_modal, {
+      req(sce())
+      req(current_markers())
+      req(allowed_genes())
+      req(fms())
+      
+      # updateSelectInput(
+      #   session = session,
+      #   inputId = "cell_type_markers",
+      #   choices = names(fms()[[1]])
+      # )
+      # 
+      # updateSelectizeInput(
+      #   session = session,
+      #   inputId = "add_markers",
+      #   choices = c("", allowed_genes())
+      # )
+    
+      showModal(markers_add_modal(allowed_genes(), names(fms()[[1]])))
     })
     
     ### ANTIBODY EXPLORER ###
@@ -410,6 +427,7 @@ cytosel <- function(...) {
     output$all_plot <- renderPlotly({
       req(umap_all)
       req(column)
+      req(plots$all_plot)
       
       columns <- column()
       
@@ -426,12 +444,8 @@ cytosel <- function(...) {
       # }
       # plots$all_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
       # plots$all_plot <- 
-      
-      # plots$all_plot
 
-      plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
-              type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-        layout(title = "UMAP all genes")
+      plots$all_plot
     })
     # },
     # width=350,
@@ -440,6 +454,7 @@ cytosel <- function(...) {
     output$top_plot <- renderPlotly({
       req(umap_top)
       req(column)
+      req(plots$top_plot)
       
       columns <- column()
       
@@ -457,10 +472,9 @@ cytosel <- function(...) {
       # plots$top_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
       # 
       # plots$top_plot
-
-      plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
-              type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-        layout(title = "UMAP selected markers")
+      
+      plots$top_plot
+      
     })
     
     output$heatmap <- renderPlotly({
@@ -477,30 +491,9 @@ cytosel <- function(...) {
     output$metric_plot <- renderPlotly({
       req(metrics)
       req(cells_per_type)
-      mm <- metrics()
-      if (is.null(mm)) {
-        return(NULL)
-      }
-      columns <- names(mm)
-      plts <- list()
-      column <- columns[1]
-      m <- mm[[column]]
-      
-      ## Add in number of cells per condition
-      cpt <- cells_per_type()
-      cpt['Overall'] <- sum(cpt)
-      m$what <- plyr::mapvalues(as.character(m$what),
-                                from = names(cpt), 
-                                to = paste0(names(cpt), " (n = ", cpt, ")"))
-      m$what <- as.factor(m$what)
-      
-      m$what <- fct_reorder(m$what, desc(m$score))
-      m$what <- fct_relevel(m$what, paste0("Overall (n = ", cpt['Overall'], ")"))
-      m$what <- fct_rev(m$what)
-      
-      plot_ly(m, x = ~score, y = ~what, type='box', hoverinfo = 'none') %>% 
-        layout(xaxis = list(title="Score"),
-               yaxis = list(title="Source"))
+      req(plots$metric_plot)
+     
+      plots$metric_plot
       
     })
     
@@ -508,10 +501,16 @@ cytosel <- function(...) {
     observeEvent(input$start_analysis, {
       req(input$coldata_column)
       req(input$panel_size)
-      req(input$min_category_count)
+      # req(input$min_category_count)
       req(sce())
       
-      if (input$min_category_count < 2) {
+      if (!isTruthy(input$min_category_count)) {
+        cell_min_threshold(2)
+      } else {
+        cell_min_threshold(input$min_category_count)
+      }
+      
+      if (cell_min_threshold() < 2) {
         proceed_with_analysis(FALSE)
         threshold_too_low_modal()
       } else {
@@ -533,7 +532,7 @@ cytosel <- function(...) {
         cell_types_high_enough(remove_cell_types_by_min_counts(cell_cat_summary,
                                                                sce(), 
                                                                input$coldata_column, 
-                                                               input$min_category_count))
+                                                               cell_min_threshold()))
         
         cell_types_to_keep(intersect(specific_cell_types_selected(),
                                      cell_types_high_enough()))
@@ -621,12 +620,6 @@ cytosel <- function(...) {
               )
             )
             
-            updateSelectInput(
-              session = session,
-              inputId = "cell_type_markers",
-              choices = names(fms()[[1]])
-            )
-            
             if(!is.null(input$bl_top)) {
               ## We get here if input$bl_top exists, ie if this
               ## is an analysis refresh
@@ -689,7 +682,7 @@ cytosel <- function(...) {
     # })
     
     # re-count the number of markers in each space when the sortable js is changed
-    observeEvent(input$refresh_marker_counts, {
+    observeEvent(input$bl_top, {
       req(sce())
       req(current_markers())
       
@@ -701,10 +694,28 @@ cytosel <- function(...) {
       # current_markers(set_current_markers_safely(markers, fms()))
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
-      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
-      update_BL(current_markers(), num_markers_in_selected(),
-                num_markers_in_scratch(),
-                unique_cell_types)
+      
+      output$scratch_marker_counts <- renderText({paste("Scratch Markers:", num_markers_in_scratch())})
+      output$selected_marker_counts<- renderText({paste("Selected Markers:", num_markers_in_selected())})
+      
+    })
+    
+    observeEvent(input$bl_scratch, {
+      req(sce())
+      req(current_markers())
+      
+      current_markers(list(recommended_markers = current_markers()$recommended_markers,
+                           scratch_markers = input$bl_scratch,
+                           top_markers = input$bl_top,
+                           associated_cell_types = current_markers()$associated_cell_types))
+      
+      # current_markers(set_current_markers_safely(markers, fms()))
+      num_markers_in_selected(length(current_markers()$top_markers))
+      num_markers_in_scratch(length(current_markers()$scratch_markers))
+      
+      output$scratch_marker_counts <- renderText({paste("Scratch Markers:", num_markers_in_scratch())})
+      output$selected_marker_counts <- renderText({paste("Selected Markers:", num_markers_in_selected())})
+      
     })
     
     
@@ -788,18 +799,19 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
-      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+      
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                unique_cell_types)
+                names(fms()[[1]]))
       
       removeModal()
     })
     
     ### MARKER SELECTION ###
     observeEvent(input$enter_marker, { # Manually add markers one by one
+      req(input$add_markers)
       
-      if(!is.null(input$add_markers) && stringr::str_length(input$add_markers) > 1 && 
+      if(!is.null(input$add_markers) &&
          (input$add_markers %in% allowed_genes()) && (! input$add_markers %in% 
             current_markers()$top_markers) && (! input$add_markers %in% 
                                                current_markers()$scratch_markers)) {
@@ -818,16 +830,18 @@ cytosel <- function(...) {
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
-        unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+        
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  unique_cell_types)
+                  names(fms()[[1]]))
+        
+        removeModal()
         
       } else if(!(input$add_markers %in% rownames(sce()))) {
         dne_modal(dne = input$add_markers)
       }
     })
-  
+    
     observeEvent(input$add_to_selected, { # Add uploaded markers
       req(input$uploadMarkers)
       
@@ -858,10 +872,11 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
-      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+      
+      
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                unique_cell_types)
+                names(fms()[[1]]))
     })
     
     observeEvent(input$replace_selected, { # Replace selected markers by uploaded markers
@@ -894,10 +909,10 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
-      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+      
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                unique_cell_types)
+                names(fms()[[1]]))
     })
     
     
@@ -941,6 +956,7 @@ cytosel <- function(...) {
     ### REMOVE MARKERS ###
     observeEvent(input$suggest_gene_removal, { # Generate suggested markers to remove
       req(input$n_genes)
+      req(current_markers())
       
       expression <- as.matrix(assay(sce()[,sce()$keep_for_analysis == "Yes"], pref_assay())[current_markers()$top_markers,])
       cmat <- cor(t(expression))
@@ -949,10 +965,12 @@ cytosel <- function(...) {
       
       suggestions(suggest_genes_to_remove(cmat, input$n_genes))
       
-      showModal(suggestion_modal(suggestions = suggestions()))
+      showModal(suggestion_modal(suggestions = suggestions(),
+                                 possible_removal = current_markers()$top_markers))
     })
     
     observeEvent(input$remove_suggested, { # Remove suggested markers
+      req(current_markers())
       cm <- current_markers()
       
       if (!is.null(input$markers_to_remove)) {
@@ -970,10 +988,10 @@ cytosel <- function(...) {
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
-        unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
+        
         update_BL(current_markers(), num_markers_in_selected(),
-                  num_markers_in_scratch(),
-                  unique_cell_types)
+                               num_markers_in_scratch(),
+                               names(fms()[[1]]))
         
         removeModal()
       } else {
@@ -988,7 +1006,9 @@ cytosel <- function(...) {
       req(input$number_correlations)
       req(sce())
       
-      if(!is.null(input$input_gene) && stringr::str_length(input$input_gene) > 1 && (input$input_gene %in% rownames(sce()))) {
+      if(!is.null(input$input_gene) && stringr::str_length(input$input_gene) > 1 && (input$input_gene %in% 
+                                    rownames(sce()[,sce()$keep_for_analysis == "Yes"])) &&
+         (input$input_gene %in% allowed_genes())) {
         
         withProgress(message = 'Processing data', value = 0, {
           incProgress(6, detail = "Computing alternatives")
@@ -997,14 +1017,16 @@ cytosel <- function(...) {
           replacements(
             compute_alternatives(input$input_gene, 
                                  sce()[,sce()$keep_for_analysis == "Yes"], 
-                                 pref_assay(), input$number_correlations) |>
+                                 pref_assay(), input$number_correlations,
+                                 allowed_genes()) |>
               drop_na()
           )
           
           output$alternative_markers <- renderDT(replacements(), server = TRUE)
         })
         
-      } else if(!(input$input_gene %in% rownames(sce()))) {
+      } else if(!(input$input_gene %in% rownames(sce()[,sce()$keep_for_analysis == "Yes"])) |
+                !(input$input_gene %in% allowed_genes())) {
         dne_modal(dne = input$input_gene)
       }
     })
@@ -1027,11 +1049,11 @@ cytosel <- function(...) {
       
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
+  
       
-      unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                unique_cell_types, adding_alternative = F)
+                names(fms()[[1]]))
       
       showNotification("Marker(s) added successfully.",
                        duration = 3)
@@ -1042,7 +1064,6 @@ cytosel <- function(...) {
     update_BL <- function(markers, top_size, scratch_size, unique_cell_types,
                           adding_alternative = F) {
       
-
       # unique_cell_types <- sort(unique(markers$associated_cell_types))
       # n_cell_types <- length(unique_cell_types)
       # palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
@@ -1072,19 +1093,19 @@ cytosel <- function(...) {
       
       output$BL <- renderUI({
         bucket_list(
-          header = "Marker selection",
+          header = NULL,
           orientation = "horizontal",
           group_name = "bucket_list_group",
           add_rank_list(
-            text = paste0("Scatch space (", scratch_size, ")"),
+            text = NULL,
             labels = labels_scratch,
             input_id = "bl_scratch",
             options = c(multiDrag = TRUE),
             class = c("default-sortable", "cytocellbl")
           ),
           add_rank_list(
-            text = paste0("Selected markers (", top_size, ")"),
             labels = labels_top,
+            text = NULL,
             input_id = "bl_top",
             options = c(multiDrag = TRUE),
             class = c("default-sortable", "cytocellbl")
@@ -1109,29 +1130,29 @@ cytosel <- function(...) {
         )
         
         ## Set that these genes can be selected
-        update_autocomplete_input(session, "add_markers",
-                                  options = allowed_genes())
-        
         update_autocomplete_input(session, "input_gene",
                                   options = allowed_genes())
-        
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
         
-        
-        unique_cell_types <- unique(unlist(current_markers()$associated_cell_types))
-        
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  unique_cell_types)
+                  names(fms()[[1]]))
         
         # Update UMAP
-        incProgress(detail = "Computing UMAP")
+        incProgress(detail = "Computing & creating UMAP plots")
         umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
                           column(), pref_assay()))
         umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][current_markers()$top_markers,], column(), pref_assay()))
         
+        plots$all_plot <- plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
+                                 type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+          layout(title = "UMAP all genes")
+        
+        plots$top_plot <- plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
+                                 type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+          layout(title = "UMAP selected markers")
         
         # Update heatmap
         incProgress(detail = "Drawing heatmap")
@@ -1171,6 +1192,32 @@ cytosel <- function(...) {
                              column(), current_markers()$top_markers, pref_assay())
         metrics(scores)
         
+        mm <- metrics()
+        if (is.null(mm)) {
+          return(NULL)
+        }
+        columns <- names(mm)
+        plts <- list()
+        column <- columns[1]
+        m <- mm[[column]]
+        
+        ## Add in number of cells per condition
+        cpt <- cells_per_type()
+        cpt['Overall'] <- sum(cpt)
+        m$what <- plyr::mapvalues(as.character(m$what),
+                                  from = names(cpt), 
+                                  to = paste0(names(cpt), " (n = ", cpt, ")"))
+        m$what <- as.factor(m$what)
+        
+        m$what <- fct_reorder(m$what, desc(m$score))
+        m$what <- fct_relevel(m$what, paste0("Overall (n = ", cpt['Overall'], ")"))
+        m$what <- fct_rev(m$what)
+        
+        plots$metric_plot <- plot_ly(m, x = ~score, y = ~what, type='box', hoverinfo = 'none') %>% 
+          layout(xaxis = list(title="Score"),
+                 yaxis = list(title="Source"))
+        
+        
         # Show help text popover
         shinyjs::show(id = "marker_visualization")
         shinyjs::show(id = "marker_display")
@@ -1182,13 +1229,20 @@ cytosel <- function(...) {
     
     ### SAVE PANEL ###
     output$downloadData <- downloadHandler(
-      filename = paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
+      filename <- paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
+      # reactive_vals <- c(current_markers(), heatmap(), pref_assay(),
+      #                    column(), sce())
+      # 
+      # truthiness <- sapply(reactive_vals, FUN = function(x) isTruthy(x))
+      
       content = function(fname) {
         download_data(fname, current_markers(), plots, heatmap(),
                       input_file = input$input_scrnaseq$datapath,
                       assay_used = pref_assay(),
                       het_source = column(),
-                      panel_size = input$panel_size)
+                      panel_size = input$panel_size,
+                      cell_cutoff_value = as.integer(cell_min_threshold()),
+                      subsample = input$subsample_sce)
       },
       contentType = "application/zip"
     )

@@ -4,7 +4,13 @@
 \alias{compute_alternatives}
 \title{Compute alternative markers}
 \usage{
-compute_alternatives(gene_to_replace, sce, pref_assay, n_correlations)
+compute_alternatives(
+  gene_to_replace,
+  sce,
+  pref_assay,
+  n_correlations,
+  allowed_genes
+)
 }
 \arguments{
 \item{gene_to_replace}{Gene to be replaced}
@@ -14,6 +20,8 @@ compute_alternatives(gene_to_replace, sce, pref_assay, n_correlations)
 \item{pref_assay}{Assay loaded}
 
 \item{n_correlations}{Number of markers to replace gene_to_replace}
+
+\item{allowed_genes}{A list of genes permitted to be suggested. Prevents suggestion of unwanted genes such as mitochondrial, etc.}
 }
 \description{
 Compute alternative markers

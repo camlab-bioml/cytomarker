@@ -1,7 +1,13 @@
+library(yaml)
 context("Test basic functions")
 
 test_that("round3 function is effective", {
   expect_equal(round3(0.3456), "0.300")
+  obj <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(obj)
+  expect_is(convert_column_to_character_or_factor(sce, "num_col")$num_col,
+            "character")
+  
 })
 
 context("Data reading")
@@ -38,7 +44,8 @@ test_that("good_col returns valid columns", {
   expect_equal(length(columns$good), 1)
   expect_equal(columns$good, "col1")
   expect_equal(length(columns$bad$colname), length(columns$bad$n))
-  expect_equal(columns$bad$colname, c("orig.ident", "nCount_RNA", "nFeature_RNA", "col2", "ident"))
+  expect_equal(columns$bad$colname, 
+               c("orig.ident", "nCount_RNA", "nFeature_RNA", "col2", "ident"))
 })
 
 test_that("get_markers and compute_fm returns valid output", {
@@ -110,6 +117,28 @@ test_that("get_umap returns valid dataframe and values with different assays", {
   expect_false(unique(umap_frame_norm[,1] == umap_frame_log[,1]))
   expect_false(unique(umap_frame_norm[,2] == umap_frame_log[,2]))
 
+})
+
+context("heatmaps")
+
+test_that("create_heatmap works effectively with different normalizations", {
+  obj <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(obj)
+
+  markers <- list(top_markers = c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB"))
+  
+  heat_z <- create_heatmap(sce, markers, "seurat_annotations", "Expression",
+                 "z-score", "logcounts")
+  
+  expect_is(heat_z, 'plotly')
+  expect_equal(as.character(heat_z$x$attrs[[1]]$z)[2], "expression")
+  
+  heat_cor <- create_heatmap(sce, markers, "seurat_annotations", "Marker-marker correlation",
+                           "z-score", "logcounts")
+  
+  expect_is(heat_cor, 'plotly')
+  expect_false(as.character(heat_cor$x$attrs[[1]]$z)[2] == "expression")
+  
 })
 
 # context("Scoring")
@@ -234,6 +263,87 @@ test_that("throw_error_or_warning returns the correct type", {
   expect_error(throw_error_or_warning(type = 'notification', 
                                                    message = "Testing notif"))
 })
+
+context("test download")
+
+test_that("download works as expected", {
+  
+  td <- tempdir(check = TRUE)
+  obj <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(obj)
+  
+  heatmap <- create_heatmap(sce, list(top_markers = rownames(sce)[1:100]),
+                            "seurat_annotations", "Marker-marker correlation",
+                            "z-score", "logcounts")
+  
+  umap_all <- get_umap(sce, "seurat_annotations", "logcounts")
+  umap_top <- get_umap(sce[rownames(sce)[1:100]], "seurat_annotations", "logcounts")
+  
+  plots <- list()
+  
+  plots$all_plot <- plot_ly(umap_all, x=~UMAP1, y=~UMAP2,
+                            type='scatter', hoverinfo="text") %>% 
+    layout(title = "UMAP all genes")
+  
+  plots$top_plot <- plot_ly(umap_top, x=~UMAP1, y=~UMAP2, 
+                            type='scatter', hoverinfo="text") %>% 
+    layout(title = "UMAP selected markers")
+  
+  score_frame <- data.frame(what = c("sam_1", "sam_2"),
+                            score = c(0.55, 0.66))
+  
+  
+  plots$metric_plot <- plot_ly(score_frame, x = ~score, y = ~what, type='box', hoverinfo = 'none') %>% 
+    layout(xaxis = list(title="Score"),
+           yaxis = list(title="Source"))
+  
+  withr::with_tempdir({
+    filepath <- file.path(paste0("Cytosel-Panel-", Sys.Date(), ".zip"))
+    
+    download_data(filepath,
+                  list(top_markers = rownames(sce)[1:100]), 
+                  plots, heatmap, "fake_path_to_sce", "logcounts",
+                  "seurat_annotations", 24, 2, "no")
+    
+    # unzip to tempdir and read back
+    unzip(filepath, exdir = td)
+    
+    marks_back <- read.table(file.path(td, paste0("markers-", Sys.Date(), ".txt")))
+    expect_equal(marks_back$V1, rownames(sce)[1:100])
+    
+    yaml_back <- read_yaml(file.path(td, paste0("config-", Sys.Date(), ".yml")))
+    expect_equal(yaml_back$`Input file`, "fake_path_to_sce")
+    expect_equal(yaml_back$`Heterogeneity source`, "seurat_annotations")
+    
+  })
+  
+})
+
+context("test error warnings from modals")
+
+test_that("Error modals throw errors", {
+  expect_error(invalid_modal())
+  fake_long_cols <- list(colnames = "Too_Many", n = 200)
+  expect_error(unique_element_modal(fake_long_cols))
+  fake_one_col <- list(colnames = "CAMLAB", n = 1)
+  expect_error(unique_element_modal(fake_one_col))
+  
+  expect_error(warning_modal("CAMLAB"))
+  expect_error(dne_modal("CAMLAB"))
+  
+  expect_error(too_large_to_show_modal("FAKE_COL"))
+  
+  expect_error(throw_error_or_warning(message = "Error!",
+                                        notificationType = 'error'))
+  
+})
+
+
+
+
+
+
+
 
 
 

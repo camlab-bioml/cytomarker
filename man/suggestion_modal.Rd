@@ -4,7 +4,7 @@
 \alias{suggestion_modal}
 \title{Show an input modal to select the markers to remove from the selected marker space to scratch}
 \usage{
-suggestion_modal(failed = FALSE, suggestions)
+suggestion_modal(failed = FALSE, suggestions, possible_removal)
 }
 \description{
 Show an input modal to select the markers to remove from the selected marker space to scratch
