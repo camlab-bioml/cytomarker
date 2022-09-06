@@ -92,12 +92,16 @@ test_that("Server has functionality", {
     expect_equal(class(heatmap())[2], "htmlwidget")
     
     # espect that the marker columns are set properly and the lengths are verified
+    
+    # espect that the marker columns are set properly and the lengths are verified
     session$setInputs(bl_scratch = current_markers()$top_markers[1:10],
-                      bl_top = current_markers()$top_markers[11:24],
-                      refresh_marker_counts = T)
+                      bl_top = current_markers()$top_markers[11:24])
     
     expect_equal(num_markers_in_selected(), 14)
     expect_equal(num_markers_in_scratch(), 10)
+    
+    expect_equal(output$scratch_marker_counts, "Scratch Markers: 10")
+    expect_equal(output$selected_marker_counts, "Selected Markers: 14")
     
     # suggest markers to remove
     
@@ -108,7 +112,6 @@ test_that("Server has functionality", {
     
     # move 5 of the top markers into scratch and assert new numbers
     session$setInputs(markers_to_remove = suggestions(),
-                      refresh_marker_counts = T,
                       remove_suggested = T)
     
     # remove 3 from 11
@@ -125,6 +128,9 @@ test_that("Server has functionality", {
     
     expect_equal(nrow(replacements()), 10)
     
+    expect_equal(0, nrow(replacements()[grepl("^RP[L|S]|^MT-|^MALAT",
+                                              replacements()$Gene),]))
+    
     session$setInputs(alternative_markers_rows_selected = c(1, 3, 4, 7, 8, 10),
                       send_markers = T,
                       send = T)
@@ -133,27 +139,38 @@ test_that("Server has functionality", {
     
     
     # if you try to add a marker that's already there, the length will stay the same
-    session$setInputs(add_markers = current_markers()$top_markers[1],
+    session$setInputs(markers_change_modal = T,
+                      add_markers = current_markers()$top_markers[1],
                       enter_marker = T)
+    
     expect_equal(num_markers_in_selected(), 17)
     
     # add a gene that isn't in either selected or scratch to increase the count by 1
     different <- allowed_genes()[!allowed_genes() %in% current_markers()$top_markers]
     different <- different[!different %in% current_markers()$scratch_markers]
     
-    session$setInputs(add_markers = different[1],
+    session$setInputs(markers_change_modal = T,
+                      add_markers = different[1],
                       enter_marker = T)
+    
     expect_equal(num_markers_in_selected(), 18)
     
     # expect null since no markers have been suggested
     expect_true(is.null(selected_cell_type_markers()))
     
     # get 50 suggested markers for the specific cell type
-    session$setInputs(cell_type_markers = "CD8 T",
+    session$setInputs(markers_change_modal = T,
+                      cell_type_markers = "CD8 T",
                       add_cell_type_markers = T)
     
+    # expect the number of suggestions to be 50
     expect_equal(nrow(marker_suggestions()), 50)
     
+    # expect no rows when looking for unwanted genes
+    expect_equal(0, nrow(marker_suggestions()[grepl("^RP[L|S]|^MT-|^MALAT",
+                                            marker_suggestions()$Gene),]))
+    
+    # expect the suggestion output table is created
     expect_false(is.null(output$cell_type_marker_reactable))
     session$setInputs(add_select_markers = T)
     

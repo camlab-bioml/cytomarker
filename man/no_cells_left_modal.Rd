@@ -2,10 +2,10 @@
 % Please edit documentation in R/modals.R
 \name{no_cells_left_modal}
 \alias{no_cells_left_modal}
-\title{Show a shinyalert error if, user subsetting an filtering, no cells remain for analysis}
+\title{Show a shinyalert error if, after user subsetting and filtering, no cells remain for analysis}
 \usage{
 no_cells_left_modal()
 }
 \description{
-Show a shinyalert error if, user subsetting an filtering, no cells remain for analysis
+Show a shinyalert error if, after user subsetting and filtering, no cells remain for analysis
 }
