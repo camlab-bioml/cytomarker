@@ -1,4 +1,4 @@
-
+library(yaml)
 context("Test basic functions")
 
 test_that("round3 function is effective", {

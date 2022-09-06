@@ -307,21 +307,29 @@ cytosel <- function(...) {
       )
     }
     
-    markers_add_modal <- function() { 
+    markers_add_modal <- function(markers_addable, suggest_cell_types) { 
       modalDialog(
-        helpText("Upload markers from a .txt file, add individual markers by name, or view sugested markers by cell category."),
+        helpText("Upload markers from a .txt file, add various markers by name, or view suggested markers from a cell category."),
         fileInput("uploadMarkers", "Upload markers", width = "100%"),
-        actionButton("add_to_selected", "Add uploaded", width = "100%"),
-        tags$div(style = "padding:2.5px"),
-        actionButton("replace_selected", "Replace selected", width = "100%"),
-        tags$div(style = "padding:2.5px"),
-        flowLayout(selectizeInput("add_markers", "Add marker by name", 
-                                  choices = NULL, width = "100%", multiple = F),
-                   selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL)),
+        div(style = "margin-bottom: -30px"),
+        flowLayout(cellArgs = list(
+          style = "margin-top: 0px;
+                         margin-right: 0px;
+                         margin-bottom: 0px; 
+          margin-left: 0px; "), actionButton("add_to_selected", "Add uploaded", width = "100%"),
+                   actionButton("replace_selected", "Replace selected", width = "100%")),
+        br(),
+        br(),
+        flowLayout(cellArgs = list(
+          style = "margin-top: 0px;
+                         margin-right: 0px;
+                         margin-bottom: -15px; 
+          margin-left: 0px; "), 
+          selectizeInput("add_markers", "Add marker by name", choices = markers_addable, width = "100%", multiple = T),
+                   selectInput('cell_type_markers', "Suggest markers for cell type:", choices=suggest_cell_types)),
         # div(style="display:inline-block",selectizeInput("add_markers", "Add marker by name", 
         #       choices = NULL, width = "100%", multiple = F)),
-        # div(style="display:inline-block", selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL)),
-        tags$div(style = "padding:1px"),
+        # div(style="display:inline-block", selectInput('cell_type_markers', "Suggest markers for cell type:", choices=NULL))
         flowLayout(actionButton("enter_marker", "Add"),
                    actionButton('add_cell_type_markers', "Suggest")))
         # div(style="display:inline-block", actionButton("enter_marker", "Add")),
@@ -405,7 +413,7 @@ cytosel <- function(...) {
         ))
     }
     
-    threshold_too_low_modal <- function() { # Input marker is not in the dataset
+    threshold_too_low_modal <- function() { # Input marker is not in the data set
       shinyalert(title = "Error", 
                  text = "Cytosel requires the minimum cell type category to be set to 2 or greater for statistical inference. Please adjust the value of minimum cell category cutoff to at least 2.", 
                  type = "error", 
@@ -440,12 +448,17 @@ cytosel <- function(...) {
     observeEvent(input$input_scrnaseq, {
       #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
       
-      updateNumericInput(session, "min_category_count", value = 2)
       input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
       input_assays <- c(names(assays(sce())))
+      
+      if (!isTruthy(input$min_category_count)) {
+        cell_min_threshold(2)
+      } else {
+        cell_min_threshold(input$min_category_count)
+      }
 
       # If there is more than 1 assay user to select appropriate assay
       if(length(input_assays) > 1){
@@ -503,6 +516,7 @@ cytosel <- function(...) {
     req(input$assay_select)
     req(input$coldata_column)
     req(sce())
+    req(cell_min_threshold())
     
     cell_category_table <- create_table_of_hetero_cat(sce(),
                                                         input$coldata_column)
@@ -533,15 +547,7 @@ cytosel <- function(...) {
         selected = specific_cell_types_selected()
       )
       
-      if (!isTruthy(input$min_category_count)) {
-        def_cat_count <- 2
-        cell_min_threshold(2)
-      } else {
-        def_cat_count <- input$min_category_count
-        cell_min_threshold(input$min_category_count)
-      }
-      
-      showModal(cell_cat_modal(def_cat_count))
+      showModal(cell_cat_modal(cell_min_threshold()))
     }
     })
     
@@ -563,19 +569,19 @@ cytosel <- function(...) {
       req(allowed_genes())
       req(fms())
       
-      updateSelectInput(
-        session = session,
-        inputId = "cell_type_markers",
-        choices = names(fms()[[1]])
-      )
-      
-      updateSelectizeInput(
-        session = session,
-        inputId = "add_markers",
-        choices = c("", allowed_genes())
-      )
+      # updateSelectInput(
+      #   session = session,
+      #   inputId = "cell_type_markers",
+      #   choices = names(fms()[[1]])
+      # )
+      # 
+      # updateSelectizeInput(
+      #   session = session,
+      #   inputId = "add_markers",
+      #   choices = c("", allowed_genes())
+      # )
     
-      showModal(markers_add_modal())
+      showModal(markers_add_modal(allowed_genes(), names(fms()[[1]])))
     })
     
     ### ANTIBODY EXPLORER ###
@@ -1404,7 +1410,7 @@ cytosel <- function(...) {
                       assay_used = pref_assay(),
                       het_source = column(),
                       panel_size = input$panel_size,
-                      cell_cutoff_value = input$min_category_count,
+                      cell_cutoff_value = as.integer(cell_min_threshold()),
                       subsample = input$subsample_sce)
       },
       contentType = "application/zip"
