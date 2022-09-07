@@ -315,10 +315,11 @@ suggest_genes_to_remove <- function(cmat, n_genes=10) {
     fcs <- findCorrelation(cmat[lgl, lgl], cutoff = 0.01)
     gene_to_remove <- colnames(cmat[lgl, lgl])[ fcs[1] ]
     rg <- c(rg, gene_to_remove)
-    rg <- round(rg, 3)
   }
   
   rg
+  
+  
 }
 
 

@@ -47,7 +47,7 @@ test_that("Server has functionality", {
     
     
     # Change to passable input parameters
-    session$setInputs(min_category_count = 2,
+    session$setInputs(min_category_count = NULL,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       start_analysis = T)

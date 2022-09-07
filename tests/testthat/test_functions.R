@@ -124,10 +124,12 @@ context("heatmaps")
 test_that("create_heatmap works effectively with different normalizations", {
   obj <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(obj)
+  
+  sce$num_placeholder <- rep(seq(5), 20)
 
   markers <- list(top_markers = c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB"))
   
-  heat_z <- create_heatmap(sce, markers, "seurat_annotations", "Expression",
+  heat_z <- create_heatmap(sce, markers, "num_placeholder", "Expression",
                  "z-score", "logcounts")
   
   expect_is(heat_z, 'plotly')
