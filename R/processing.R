@@ -298,13 +298,14 @@ parse_gene_names <- function(sce, grch38){
 
 
 #' Create a data frame table of counts for a heterogeneity category
-#' @importFrom dplyr filter mutate rename arrange
+#' @importFrom dplyr filter mutate rename arrange mutate_if
 #' @param sce A SingleCellExperiment object
 #' @param metadata_column the string name of a metadata column held within sce, on which to create frequency counts
 create_table_of_hetero_cat <- function(sce, metadata_column) {
   table(sce[[metadata_column]]) |> 
     as.data.frame() |> 
     mutate(`Proportion Percentage` = 100*(Freq/sum(Freq))) |> 
+    mutate_if(is.numeric, round, digits = 3) |>
     rename(!!metadata_column := "Var1") |>
     arrange(-Freq)
 }
