@@ -204,3 +204,18 @@ too_large_to_show_modal <- function(col_name) {
     confirmButtonCol = "#337AB7"
   )
 }
+
+
+#' Show an input modal if the user wants to use precomputed UMAP coordinates
+#' @importFrom shiny modalDialog
+pre_computed_umap_modal <- function(possible_dims) { # Marker removal suggestion
+  modalDialog(
+    title = "Use Precomputed UMAP",
+    helpText("Possible UMAP dims found in uploaded sce"),
+    selectInput("possible_precomputed_dims",
+                "Select a dimension identified in the sce for UMAP",
+                choices = possible_dims,
+                selected = NULL,
+                multiple = F)
+    )
+}

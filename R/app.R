@@ -29,6 +29,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom grDevices dev.off pdf
 #' @importFrom zip zip
 #' @importFrom randomcoloR distinctColorPalette
+#' @importFrom SingleCellExperiment reducedDimNames reducedDims
 #' @importFrom plotly plot_ly plotlyOutput renderPlotly layout
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel MulticoreParam
@@ -110,7 +111,7 @@ cytosel <- function(...) {
               bs_embed_popover(content = get_tooltip('subsample_sce'),
                                placement = "right")
           ),
-        br(),
+        checkboxInput("precomputed_dim", "Use precomputed UMAP", value = F),
         selectInput("select_aa", "Antibody applications:", applications_parsed$unique_applications, multiple=TRUE) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
@@ -276,6 +277,9 @@ cytosel <- function(...) {
     alternative_marks <- reactiveVal()
     
     cell_min_threshold <- reactiveVal()
+    
+    use_precomputed_umap <- reactiveVal()
+    umap_precomputed_vals <- reactiveVal()
     
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
@@ -1059,6 +1063,27 @@ cytosel <- function(...) {
                        duration = 3)
       
     })
+    
+    observeEvent(input$precomputed_dim, {
+      req(sce())
+      
+      possible_umap_dims <- reducedDimNames(sce())[grepl("UMAP|umap|Umap",
+                                                         reducedDimNames(sce()))]
+      
+      if (isTruthy(input$precomputed_dim)) {
+        if (length(possible_umap_dims) > 0) {
+          pre_computed_umap_modal(possible_umap_dims)
+        } else {
+          shinyalert(title = "Error",
+                     text = "No possible UMAP dims found in uploaded sce. Please double check",
+                     type = "error")
+          updateCheckboxInput(inputId = "precomputed_dim", value = F)
+          
+        }
+      }
+      
+    })
+    
     
     ### UPDATE SELECTED MARKERS ###
     update_BL <- function(markers, top_size, scratch_size, unique_cell_types,

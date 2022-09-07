@@ -192,7 +192,6 @@ test_that("Server has functionality", {
     # Look for the uploaded markers in the top markers
     expect_true("EEF2" %in% current_markers()$top_markers)
     expect_true("MARCKS" %in% current_markers()$top_markers)
-
     
     # instead of add, replace markers
     session$setInputs(uploadMarkers = list(datapath =
