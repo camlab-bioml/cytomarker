@@ -15,7 +15,7 @@ context("Data reading")
 test_that("SingleCellExperiment object reading", {
   obj <- test_path("test_sce.rds")
   sce <- read_input_scrnaseq(obj)
-
+  
   expect_is(sce, 'SingleCellExperiment')
   expect_equivalent(dim(sce), c(100, 500))
   expect_equivalent(rownames(sce), paste("feature-", seq(1, 100, 1), sep=""))
@@ -302,10 +302,15 @@ test_that("download works as expected", {
   withr::with_tempdir({
     filepath <- file.path(paste0("Cytosel-Panel-", Sys.Date(), ".zip"))
     
+    fake_table <- cytosel_data$antibody_info |>
+      rename(Symbol = `Gene Name (Upper)`) |>
+      drop_na() |>
+      filter(Symbol %in% rownames(sce)[1:17])
+    
     download_data(filepath,
                   list(top_markers = rownames(sce)[1:100]), 
                   plots, heatmap, "fake_path_to_sce", "logcounts",
-                  "seurat_annotations", 24, 2, "no")
+                  "seurat_annotations", 24, 2, "no", fake_table)
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)
@@ -316,6 +321,12 @@ test_that("download works as expected", {
     yaml_back <- read_yaml(file.path(td, paste0("config-", Sys.Date(), ".yml")))
     expect_equal(yaml_back$`Input file`, "fake_path_to_sce")
     expect_equal(yaml_back$`Heterogeneity source`, "seurat_annotations")
+    
+    table_back <- read.table(file.path(td, paste0("Antibody-info-", Sys.Date(), ".tsv")),
+                             sep = "\t", header = T)
+
+    expect_equal(unique(table_back$Symbol %in% rownames(sce)[1:17]),
+                 TRUE)
     
   })
   

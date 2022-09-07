@@ -83,7 +83,7 @@ cytosel <- function(...) {
         fluidRow(column(2),
           column(10, offset = 0, 
             downloadButton("downloadData", "Save\npanel", style = "color:black;
-                           margin-top: 15 px;")))
+                           margin-top: 30px;")))
       )
     ),
     dashboardBody(
@@ -100,35 +100,32 @@ cytosel <- function(...) {
     # Tabs
     tabItems(
       tabItem("inputs",
-        fileInput("input_scrnaseq", "Input scRNA-seq", accept = c(".rds")),
-        # %>%
-        #   shinyInput_label_embed(
-        #     shiny_iconlink() %>%
-        #       bs_embed_popover(content = get_tooltip('input_scrnaseq'),
-        #                        placement = "right")
-        #   ),
+        fileInput("input_scrnaseq", "Input scRNA-seq", accept = c(".rds")) %>%
+          shinyInput_label_embed(
+            shiny_iconlink() %>%
+              bs_embed_popover(content = get_tooltip('input_scrnaseq'),
+                               placement = "right")
+          ),
         textOutput("selected_assay"),
         br(),
-        selectInput("coldata_column", "Cell category to evaluate:", NULL, multiple=FALSE),
-        # %>%
-        #   shinyInput_label_embed(
-        #     shiny_iconlink() %>%
-        #       bs_embed_popover(content = get_tooltip('coldata_column'),
-        #               placement = "right", html = "true")
-        #   ),
+        selectInput("coldata_column", "Cell category to evaluate:", NULL, multiple=FALSE) %>%
+          shinyInput_label_embed(
+            shiny_iconlink() %>%
+              bs_embed_popover(content = get_tooltip('coldata_column'),
+                      placement = "right", html = "true")
+          ),
         actionButton("show_cat_table", "Category subsetting",
                      align = "center",
-                     width = NULL, style='font-size:85%'),
+                     width = NULL),
         # add padding space between elements
         tags$div(style = "padding:7.5px"),
         numericInput("panel_size", "Targeted panel size:", 32, 
-                     min = 1, max = 200, step = NA, width = NULL),
-        # %>%
-        #   shinyInput_label_embed(
-        #     shiny_iconlink() %>%
-        #       bs_embed_popover(content = get_tooltip('panel_size'),
-        #                        placement = "right")
-        #   ),
+                     min = 1, max = 200, step = NA, width = NULL) %>%
+          shinyInput_label_embed(
+            shiny_iconlink() %>%
+              bs_embed_popover(content = get_tooltip('panel_size'),
+                               placement = "right")
+          ),
         radioButtons("marker_strategy", label = "Marker selection strategy",
                      choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
                      selected="fm"),
@@ -140,13 +137,12 @@ cytosel <- function(...) {
           ),
         br(),
         selectInput("select_aa", "Antibody applications:", 
-                    applications_parsed$unique_applications, multiple=TRUE),
-        # %>%
-        #   shinyInput_label_embed(
-        #     shiny_iconlink() %>%
-        #       bs_embed_popover(content = "Placeholder",
-        #                        placement = "right", html = "true")
-        #   ),
+                    applications_parsed$unique_applications, multiple=TRUE) %>%
+          shinyInput_label_embed(
+            shiny_iconlink() %>%
+              bs_embed_popover(content = "Placeholder",
+                               placement = "right", html = "true")
+          ),
         
         actionButton("start_analysis", "Go", icon=icon("play")),
         # actionButton("refresh_analysis", "Refresh"),
@@ -181,6 +177,8 @@ cytosel <- function(...) {
                  icon = icon("globe"),
                  br(),
                  helpText(get_tooltip('umap')),
+              br(),
+              br(),
                  fluidRow(column(6, plotlyOutput("all_plot", width="500px", height="350px")),
                           column(6, plotlyOutput("top_plot", width="500px", height="350px")))
           ),
@@ -198,15 +196,15 @@ cytosel <- function(...) {
                                           shinyInput_label_embed(shiny_iconlink() %>%
                                                                    bs_embed_popover(content = get_tooltip('heatmap_expression_norm'),
                                                                                     placement = "right"))))),
+              splitLayout(cellWidths = c(190, 200),
+                          div(numericInput("n_genes", "Number of genes to remove", 
+                                           value = 10, min = 1, width = "50%")),
+                          div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions"))),
                  plotlyOutput("heatmap", height="600px"),
                  hr(),
                  tags$span(shiny_iconlink() %>%
                              bs_embed_popover(content = get_tooltip('gene_removal'),
-                                              placement = "top")),
-                 splitLayout(cellWidths = c(190, 200),
-                             div(numericInput("n_genes", "Number of genes to remove", 
-                                              value = 10, min = 1, width = "50%")),
-                             div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions")))
+                                              placement = "top"))
           ),
 
       tabItem("Metrics",
@@ -306,6 +304,7 @@ cytosel <- function(...) {
     cell_min_threshold <- reactiveVal()
     
     first_render_outputs <- reactiveVal(FALSE)
+    df_antibody <- reactiveVal()
     
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
@@ -444,10 +443,9 @@ cytosel <- function(...) {
     ### ANTIBODY EXPLORER ###
     output$antibody_table <- renderReactable({
       req(current_markers())
-      
-      markers <- current_markers()
-      df_antibody <- dplyr::filter(antibody_info, Symbol %in% markers$top_markers)
-      reactable(df_antibody,
+      req(df_antibody())
+  
+      reactable(df_antibody(),
                 searchable = TRUE,
                 filterable = TRUE,
                 sortable = TRUE)
@@ -685,6 +683,10 @@ cytosel <- function(...) {
             num_markers_in_scratch(length(current_markers()$scratch_markers))
             cells_per_type(table(colData(
               sce()[,sce()$keep_for_analysis == "Yes"])[[column()]]))
+            
+            
+            df_antibody(dplyr::filter(antibody_info, Symbol %in% 
+                                        current_markers()$top_markers))
             
             update_analysis()
             
@@ -1293,7 +1295,8 @@ cytosel <- function(...) {
                       het_source = column(),
                       panel_size = input$panel_size,
                       cell_cutoff_value = as.integer(cell_min_threshold()),
-                      subsample = input$subsample_sce)
+                      subsample = input$subsample_sce,
+                      antibody_table = df_antibody())
       },
       contentType = "application/zip"
     )
