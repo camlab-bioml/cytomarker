@@ -201,13 +201,16 @@ cytosel <- function(...) {
                  helpText(get_tooltip("alternative_markers")),
                  splitLayout(cellWidths = c(180, 240),
                              div(autocomplete_input("input_gene", "Input gene", options=c(), width = "100%")),
-                             div(numericInput("number_correlations", "Number of alternative markers", value = 10, min = 1, width = "35%"))),
+                             div(numericInput("number_correlations", "Number of alternative markers", 
+                                              value = 10, min = 1, width = "35%")),
+                             hidden(div(id = "send", actionButton("send_markers", 
+                                    "Send markers to selection panel")))),
                  actionButton("enter_gene", "Enter"),
                  br(),
                  br(),
-                 DTOutput("alternative_markers"),
-                 hidden(div(id = "send", actionButton("send_markers", "Send markers to selection panel"))),
-                 br()
+                 DTOutput("alternative_markers")
+                 # hidden(div(id = "send", actionButton("send_markers", "Send markers to selection panel"))),
+                 # br()
           ),
 
         tabPanel("Antibody explorer",
