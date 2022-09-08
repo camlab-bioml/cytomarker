@@ -216,6 +216,7 @@ pre_computed_umap_modal <- function(possible_dims) { # Marker removal suggestion
                 "Select a dimension identified in the sce for UMAP",
                 choices = possible_dims,
                 selected = NULL,
-                multiple = F)
+                multiple = F),
+    actionButton("select_precomputed_umap", "Use selected for UMAP")
     )
 }

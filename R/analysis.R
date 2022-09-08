@@ -187,20 +187,28 @@ set_current_markers_safely <- function(markers, fms, default_type = NULL) {
 #' @importFrom scater runUMAP
 #' @importFrom tibble tibble
 #' @importFrom SingleCellExperiment reducedDim
-get_umap <- function(sce, columns, pref_assay) {
+get_umap <- function(sce, columns, pref_assay, precomputed_vals, dim_col) {
   
-  sce <- runUMAP(sce, exprs_values = pref_assay)
-  
-  df <- as.data.frame(tibble(
-    UMAP1 = as.numeric(reducedDim(sce, 'UMAP')[,1]),
-    UMAP2 = as.numeric(reducedDim(sce, 'UMAP')[,2])
-  ))
-  
+  if (!isTruthy(precomputed_vals)) {
+    sce <- runUMAP(sce, exprs_values = pref_assay)
+    df <- as.data.frame(tibble(
+      UMAP1 = as.numeric(reducedDim(sce, 'UMAP')[,1]),
+      UMAP2 = as.numeric(reducedDim(sce, 'UMAP')[,2])
+    ))
+    
+  } else {
+    
+    df <- as.data.frame(tibble(
+      UMAP1 = as.numeric(as.data.frame(reducedDim(sce, dim_col))[,1]),
+      UMAP2 = as.numeric(as.data.frame(reducedDim(sce, dim_col))[,2])
+    ))
+  }
+    
   for(column in columns) {
     df[[column]] <- as.data.frame(colData(sce))[[column]]
     df[[column]] <- as.character(df[[column]])
   }
-  
+
   df
 }
 
