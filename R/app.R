@@ -278,13 +278,16 @@ cytosel <- function(...) {
     
     cell_min_threshold <- reactiveVal()
     
-    use_precomputed_umap <- reactiveVal()
-    umap_precomputed_vals <- reactiveVal()
+    use_precomputed_umap <- reactiveVal(FALSE)
+    umap_precomputed_col <- reactiveVal(NULL)
     
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
       
+      updateCheckboxInput(inputId = "precomputed_dim", value = F)
+      use_precomputed_umap(FALSE)
+      umap_precomputed_col(NULL)
       input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
@@ -1072,7 +1075,7 @@ cytosel <- function(...) {
       
       if (isTruthy(input$precomputed_dim)) {
         if (length(possible_umap_dims) > 0) {
-          pre_computed_umap_modal(possible_umap_dims)
+          showModal(pre_computed_umap_modal(possible_umap_dims))
         } else {
           shinyalert(title = "Error",
                      text = "No possible UMAP dims found in uploaded sce. Please double check",
@@ -1083,6 +1086,20 @@ cytosel <- function(...) {
       }
       
     })
+    
+    observeEvent(input$select_precomputed_umap, {
+      req(sce())
+      req(input$possible_precomputed_dims)
+      
+      if (isTruthy(input$precomputed_dim)) {
+        use_precomputed_umap(TRUE)
+        umap_precomputed_col(input$possible_precomputed_dims)
+        removeModal()
+      }
+      
+    })
+    
+    
     
     
     ### UPDATE SELECTED MARKERS ###
@@ -1168,8 +1185,12 @@ cytosel <- function(...) {
         # Update UMAP
         incProgress(detail = "Computing & creating UMAP plots")
         umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
-                          column(), pref_assay()))
-        umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][current_markers()$top_markers,], column(), pref_assay()))
+                          column(), pref_assay(), 
+                          use_precomputed_umap(),
+                          umap_precomputed_col()))
+        umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][current_markers()$top_markers,], 
+                          column(), pref_assay(), use_precomputed_umap(),
+                          umap_precomputed_col()))
         
         plots$all_plot <- plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
