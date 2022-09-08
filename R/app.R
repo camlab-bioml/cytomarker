@@ -1070,7 +1070,7 @@ cytosel <- function(...) {
     observeEvent(input$precomputed_dim, {
       req(sce())
       
-      possible_umap_dims <- reducedDimNames(sce())[grepl("UMAP|umap|Umap",
+      possible_umap_dims <- reducedDimNames(sce())[grepl("UMAP|umap|Umap|uMap|uMAP",
                                                          reducedDimNames(sce()))]
       
       if (isTruthy(input$precomputed_dim)) {
@@ -1190,7 +1190,8 @@ cytosel <- function(...) {
                           umap_precomputed_col()))
         umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][current_markers()$top_markers,], 
                           column(), pref_assay(), use_precomputed_umap(),
-                          umap_precomputed_col()))
+                          umap_precomputed_col(),
+                          T))
         
         plots$all_plot <- plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
