@@ -63,6 +63,7 @@ cytosel <- function(...) {
       tags$script(HTML("window.onbeforeunload = function() {return 'Your changes will be lost!';};"))
     ),
     tags$head(tags$style(".modal-dialog{ width:750px}")),
+    tags$style("@import url(https://use.fontawesome.com/releases/v5.7.2/css/all.css);"),
 
     # Use packages
     useShinyalert(force = TRUE),
@@ -78,7 +79,7 @@ cytosel <- function(...) {
     dashboardSidebar(
       sidebarMenu(
         # width = 300,
-        menuItem("Inputs", tabName = "inputs", icon = icon("inputs")),
+        menuItem("Inputs", tabName = "inputs", icon = icon("folder-open")),
         sidebarMenuOutput(outputId = 'output_menu'),
         fluidRow(column(2),
           column(10, offset = 0, 
@@ -149,7 +150,7 @@ cytosel <- function(...) {
         br()
       ),
       tabItem("marker_selection",
-                 icon = icon("list"),
+                 # icon = icon("list"),
                  br(),
                  fluidRow(column(12, actionButton("markers_change_modal", "Add markers to panel"))),
                  hr(),
@@ -174,7 +175,7 @@ cytosel <- function(...) {
           ),
         
       tabItem("UMAP",
-                 icon = icon("globe"),
+                 # icon = icon("globe"),
                  br(),
                  helpText(get_tooltip('umap')),
               br(),
@@ -184,7 +185,7 @@ cytosel <- function(...) {
           ),
         
       tabItem("Heatmap",
-                 icon = icon("table"),
+                 # icon = icon("table"),
                  br(),
                  splitLayout(cellWidths = c(320, 280),
                              div(selectInput("display_options", "Display expression or gene correlation", choices = c("Marker-marker correlation"), width = "86%") %>%
@@ -208,7 +209,7 @@ cytosel <- function(...) {
           ),
 
       tabItem("Metrics",
-                 icon = icon("ruler"),
+                 # icon = icon("ruler"),
                  br(),
                  helpText(get_tooltip('metrics')),
                  tags$span(shiny_iconlink() %>%
@@ -219,7 +220,7 @@ cytosel <- function(...) {
           ),
 
       tabItem("alternative_markers",
-                 icon = icon("exchange-alt"),
+                 # icon = icon("exchange-alt"),
                  br(),
                  helpText(get_tooltip("alternative_markers")),
                  splitLayout(cellWidths = c(180, 240),
@@ -237,7 +238,7 @@ cytosel <- function(...) {
           ),
 
       tabItem("antibody_explorer",
-                 icon = icon("wpexplorer"),
+                 # icon = icon("wpexplorer"),
                  br(),
                  reactableOutput("antibody_table")
           )
@@ -700,17 +701,17 @@ cytosel <- function(...) {
             output$output_menu <- renderMenu(expr = {
               sidebarMenu(
                 menuItem("Marker selection", tabName = "marker_selection", 
-                         icon = icon("marker_selection")),
+                         icon = icon("barcode")),
                 menuItem("UMAP", tabName = "UMAP", 
-                         icon = icon("UMAP")),
+                         icon = icon("arrows-alt")),
                 menuItem("Heatmap", tabName = "Heatmap", 
-                         icon = icon("Heatmap")),
+                         icon = icon("th-large")),
                 menuItem("Metrics", tabName = "Metrics", 
-                         icon = icon("Metrics")),
+                         icon = icon("line-chart")),
                 menuItem("Alternative Markers", tabName = "alternative_markers", 
-                         icon = icon("alternative_markers")),
+                         icon = icon("arrows-h")),
                 menuItem("Antibody Explorer", tabName = "antibody_explorer", 
-                         icon = icon("antibody_explorer"))
+                         icon = icon("list-alt"))
                 )
             })
             
