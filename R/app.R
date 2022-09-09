@@ -23,7 +23,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @import sortable
 #' @import reactable
 #' @importFrom readr write_lines read_tsv read_csv
-#' @importFrom dplyr desc
+#' @importFrom dplyr desc mutate_if
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_popover
 #' @importFrom shinyjs useShinyjs hidden toggle
 #' @importFrom grDevices dev.off pdf
@@ -33,6 +33,9 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom plotly plot_ly plotlyOutput renderPlotly layout
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel MulticoreParam
+#' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar 
+#' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
+#' valueBoxOutput renderMenu
 #' @export
 #' 
 #' @param ... Additional arguments
@@ -45,7 +48,7 @@ cytosel <- function(...) {
   antibody_info <- tidyr::drop_na(antibody_info)
   
   options(MulticoreParam=quote(MulticoreParam(workers=availableCores())))
-  
+
   
   applications_parsed <- get_antibody_applications(antibody_info, 
                                                    'Symbol', 'Listed Applications')
@@ -54,29 +57,55 @@ cytosel <- function(...) {
   
   full_palette <- create_global_colour_palette()
   
-  ui <- fluidPage(
-    # Navigation prompt
+  ui <- tagList(
+    includeCSS(system.file(file.path("www", "cytosel.css"),
+                          package = "cytosel")),
     tags$head(
       tags$script(HTML("window.onbeforeunload = function() {return 'Your changes will be lost!';};"))
     ),
     tags$head(tags$style(".modal-dialog{ width:750px}")),
-    
+    tags$style("@import url(https://use.fontawesome.com/releases/v5.7.2/css/all.css);"),
+
     # Use packages
     useShinyalert(force = TRUE),
     use_bs_popover(),
     useShinyjs(),
     
-    # Title
-    titlePanel("cytosel"),
-    tags$head(
-      # includeCSS(system.file("www", "cytosel.css", package="cytosel"))
-      includeCSS(system.file(file.path("www", "cytosel.css"),
-                             package = "cytosel"))
-    ),
+    dashboardPage(
     
-    # Side panel
-    sidebarLayout(
-      sidebarPanel(
+    # Title
+    dashboardHeader(title = "cytosel"
+                    ),
+    
+    dashboardSidebar(
+      sidebarMenu(
+        # width = 300,
+        menuItem("Run Configuration", tabName = "inputs", icon = icon("folder-open")),
+        sidebarMenuOutput(outputId = 'output_menu'),
+        br(),
+        # div(style="display:inline-block;width:110%;text-align: center;",
+        #     actionButton("start_analysis", "Go!", icon=icon("play", style = "color:black;"))),
+        column(10, offset = 0, align = "center",
+                        actionButton("start_analysis", "Run analysis!", icon=icon("play", style = "color:black;"))),
+        column(10, offset = 0, align = "center",
+            downloadButton("downloadData", "Save panel", style = "color:black;
+                           margin-top: 15px;"))
+      )
+    ),
+    dashboardBody(
+      
+      # https://stackoverflow.com/questions/52198452/how-to-change-the-background-color-of-the-shiny-dashboard-body
+      tags$head(tags$style(HTML('
+                                /* body */
+                                .content-wrapper, .right-side {
+                                background-color: #FFFFFF;
+                                }
+                                
+                                '))),
+      
+    # Tabs
+    tabItems(
+      tabItem("inputs",
         fileInput("input_scrnaseq", "Input scRNA-seq", accept = c(".rds")) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
@@ -93,10 +122,11 @@ cytosel <- function(...) {
           ),
         actionButton("show_cat_table", "Category subsetting",
                      align = "center",
-                     width = '100%', style='font-size:85%'),
+                     width = NULL),
         # add padding space between elements
         tags$div(style = "padding:7.5px"),
-        numericInput("panel_size", "Targeted panel size:", 32, min = 1, max = 200, step = NA, width = NULL) %>%
+        numericInput("panel_size", "Targeted panel size:", 32, 
+                     min = 1, max = 200, step = NA, width = NULL) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
               bs_embed_popover(content = get_tooltip('panel_size'),
@@ -112,24 +142,19 @@ cytosel <- function(...) {
                                placement = "right")
           ),
         checkboxInput("precomputed_dim", "Use precomputed UMAP", value = F),
-        selectInput("select_aa", "Antibody applications:", applications_parsed$unique_applications, multiple=TRUE) %>%
+        br(),
+        selectInput("select_aa", "Antibody applications:", 
+                    applications_parsed$unique_applications, multiple=TRUE) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
               bs_embed_popover(content = "Placeholder",
                                placement = "right", html = "true")
           ),
-        
-        actionButton("start_analysis", "Go", icon=icon("play")),
         # actionButton("refresh_analysis", "Refresh"),
-        hr(),
-        downloadButton("downloadData", "Save\npanel"),
-        width = 3
+        br()
       ),
-      
-      # Tabs
-      mainPanel(tabsetPanel(id = "analysis_panels",
-        tabPanel("Marker selection",
-                 icon = icon("list"),
+      tabItem("marker_selection",
+                 # icon = icon("list"),
                  br(),
                  fluidRow(column(12, actionButton("markers_change_modal", "Add markers to panel"))),
                  hr(),
@@ -153,16 +178,18 @@ cytosel <- function(...) {
                                  ))
           ),
         
-        tabPanel("UMAP",
-                 icon = icon("globe"),
+      tabItem("UMAP",
+                 # icon = icon("globe"),
                  br(),
                  helpText(get_tooltip('umap')),
+              br(),
+              br(),
                  fluidRow(column(6, plotlyOutput("all_plot", width="500px", height="350px")),
                           column(6, plotlyOutput("top_plot", width="500px", height="350px")))
           ),
         
-        tabPanel("Heatmap",
-                 icon = icon("table"),
+      tabItem("Heatmap",
+                 # icon = icon("table"),
                  br(),
                  splitLayout(cellWidths = c(320, 280),
                              div(selectInput("display_options", "Display expression or gene correlation", choices = c("Marker-marker correlation"), width = "86%") %>%
@@ -174,19 +201,19 @@ cytosel <- function(...) {
                                           shinyInput_label_embed(shiny_iconlink() %>%
                                                                    bs_embed_popover(content = get_tooltip('heatmap_expression_norm'),
                                                                                     placement = "right"))))),
+              splitLayout(cellWidths = c(190, 200),
+                          div(numericInput("n_genes", "Number of genes to remove", 
+                                           value = 10, min = 1, width = "50%")),
+                          div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions"))),
                  plotlyOutput("heatmap", height="600px"),
                  hr(),
                  tags$span(shiny_iconlink() %>%
                              bs_embed_popover(content = get_tooltip('gene_removal'),
-                                              placement = "top")),
-                 splitLayout(cellWidths = c(190, 200),
-                             div(numericInput("n_genes", "Number of genes to remove", 
-                                              value = 10, min = 1, width = "50%")),
-                             div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions")))
+                                              placement = "top"))
           ),
 
-        tabPanel("Metrics",
-                 icon = icon("ruler"),
+      tabItem("Metrics",
+                 # icon = icon("ruler"),
                  br(),
                  helpText(get_tooltip('metrics')),
                  tags$span(shiny_iconlink() %>%
@@ -196,29 +223,32 @@ cytosel <- function(...) {
                  plotlyOutput("metric_plot")
           ),
 
-        tabPanel("Alternative markers",
-                 icon = icon("exchange-alt"),
+      tabItem("alternative_markers",
+                 # icon = icon("exchange-alt"),
                  br(),
                  helpText(get_tooltip("alternative_markers")),
                  splitLayout(cellWidths = c(180, 240),
                              div(autocomplete_input("input_gene", "Input gene", options=c(), width = "100%")),
-                             div(numericInput("number_correlations", "Number of alternative markers", value = 10, min = 1, width = "35%"))),
+                             div(numericInput("number_correlations", "Number of alternative markers", 
+                                              value = 10, min = 1, width = "35%")),
+                             hidden(div(id = "send", actionButton("send_markers", 
+                                    "Send markers to selection panel")))),
                  actionButton("enter_gene", "Enter"),
                  br(),
                  br(),
-                 DTOutput("alternative_markers"),
-                 hidden(div(id = "send", actionButton("send_markers", "Send markers to selection panel"))),
-                 br()
+                 DTOutput("alternative_markers")
+                 # hidden(div(id = "send", actionButton("send_markers", "Send markers to selection panel"))),
+                 # br()
           ),
 
-        tabPanel("Antibody explorer",
-                 icon = icon("wpexplorer"),
+      tabItem("antibody_explorer",
+                 # icon = icon("wpexplorer"),
                  br(),
                  reactableOutput("antibody_table")
           )
-        )
       )
     )
+  )
   )
   
   server <- function(input, output, session) {
@@ -280,6 +310,9 @@ cytosel <- function(...) {
     
     use_precomputed_umap <- reactiveVal(FALSE)
     umap_precomputed_col <- reactiveVal(NULL)
+    first_render_outputs <- reactiveVal(FALSE)
+    df_antibody <- reactiveVal()
+
     
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
@@ -421,10 +454,9 @@ cytosel <- function(...) {
     ### ANTIBODY EXPLORER ###
     output$antibody_table <- renderReactable({
       req(current_markers())
-      
-      markers <- current_markers()
-      df_antibody <- dplyr::filter(antibody_info, Symbol %in% markers$top_markers)
-      reactable(df_antibody,
+      req(df_antibody())
+  
+      reactable(df_antibody(),
                 searchable = TRUE,
                 filterable = TRUE,
                 sortable = TRUE)
@@ -663,13 +695,38 @@ cytosel <- function(...) {
             cells_per_type(table(colData(
               sce()[,sce()$keep_for_analysis == "Yes"])[[column()]]))
             
+            
+            df_antibody(dplyr::filter(antibody_info, Symbol %in% 
+                                        current_markers()$top_markers))
+            
             update_analysis()
             
             
           } else {
             unique_element_modal(col)
           }
-          
+        
+          if (!isTruthy(first_render_outputs())) {
+            
+            output$output_menu <- renderMenu(expr = {
+              sidebarMenu(
+                menuItem("Marker selection", tabName = "marker_selection", 
+                         icon = icon("barcode")),
+                menuItem("UMAP", tabName = "UMAP", 
+                         icon = icon("arrows-alt")),
+                menuItem("Heatmap", tabName = "Heatmap", 
+                         icon = icon("th-large")),
+                menuItem("Metrics", tabName = "Metrics", 
+                         icon = icon("line-chart")),
+                menuItem("Alternative Markers", tabName = "alternative_markers", 
+                         icon = icon("arrows-h")),
+                menuItem("Antibody Explorer", tabName = "antibody_explorer", 
+                         icon = icon("list-alt"))
+                )
+            })
+            
+            first_render_outputs(TRUE)
+          } 
         
       })
       
@@ -1289,7 +1346,8 @@ cytosel <- function(...) {
                       het_source = column(),
                       panel_size = input$panel_size,
                       cell_cutoff_value = as.integer(cell_min_threshold()),
-                      subsample = input$subsample_sce)
+                      subsample = input$subsample_sce,
+                      antibody_table = df_antibody())
       },
       contentType = "application/zip"
     )
