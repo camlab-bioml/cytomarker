@@ -183,6 +183,10 @@ set_current_markers_safely <- function(markers, fms, default_type = NULL) {
 #' @param sce A SingleCellExperiment object
 #' @param columns A vector storing columns
 #' @param pref_assay Assay loaded
+#' @param precomputed_vals Whether or not precomputed UMAP vals exist for the input SCE
+#' @param dim_col If precomputed values exist, the name of the dimension holding the coordinates
+#' @param only_top_markers Whether or not the UMAP computed will contain a subset of markers (Default is False)
+#' @param marker_num The number of markers being used. Used to compute the number of PCA components used
 #' 
 #' @importFrom scater runUMAP
 #' @importFrom tibble tibble
@@ -190,13 +194,16 @@ set_current_markers_safely <- function(markers, fms, default_type = NULL) {
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel MulticoreParam
 get_umap <- function(sce, columns, pref_assay, precomputed_vals = NULL, dim_col = NULL,
-                     only_top_markers = F) {
+                     only_top_markers = F, marker_num) {
+  
+  # set max components to 25, or set components to the number of top markers if fewer than 25
+  num_comp_use <- ifelse(marker_num <= 25, marker_num, 25)
   
   if (!isTruthy(precomputed_vals) | isTRUE(only_top_markers)) {
     sce <- runUMAP(sce, exprs_values = pref_assay,
                    n_threads = availableCores(),
-                   ncomponents = 20, 
-                   pca = 20,
+                   ncomponents = num_comp_use, 
+                   pca = num_comp_use,
                    BPPARAM = MulticoreParam(workers = availableCores()),
                    external_neighbors	= T)
     df <- as.data.frame(tibble(

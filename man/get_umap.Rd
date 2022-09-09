@@ -10,7 +10,8 @@ get_umap(
   pref_assay,
   precomputed_vals = NULL,
   dim_col = NULL,
-  only_top_markers = F
+  only_top_markers = F,
+  marker_num
 )
 }
 \arguments{
@@ -19,6 +20,14 @@ get_umap(
 \item{columns}{A vector storing columns}
 
 \item{pref_assay}{Assay loaded}
+
+\item{precomputed_vals}{Whether or not precomputed UMAP vals exist for the input SCE}
+
+\item{dim_col}{If precomputed values exist, the name of the dimension holding the coordinates}
+
+\item{only_top_markers}{Whether or not the UMAP computed will contain a subset of markers (Default is False)}
+
+\item{marker_num}{The number of markers being used. Used to compute the number of PCA components used}
 }
 \description{
 Compute the UMAP

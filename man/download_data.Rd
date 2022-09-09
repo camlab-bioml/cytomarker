@@ -14,7 +14,8 @@ download_data(
   het_source,
   panel_size,
   cell_cutoff_value,
-  subsample
+  subsample,
+  antibody_table
 )
 }
 \description{
