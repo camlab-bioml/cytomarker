@@ -211,12 +211,14 @@ too_large_to_show_modal <- function(col_name) {
 pre_computed_umap_modal <- function(possible_dims) { # Marker removal suggestion
   modalDialog(
     title = "Use Precomputed UMAP",
-    helpText("Possible UMAP dims found in uploaded sce"),
+    helpText("Select a possible UMAP dimension detected in the uploaded SCE."),
+    flowLayout(
     selectInput("possible_precomputed_dims",
-                "Select a dimension identified in the sce for UMAP",
+                NULL,
                 choices = possible_dims,
                 selected = NULL,
                 multiple = F),
     actionButton("select_precomputed_umap", "Use selected for UMAP")
+    )
     )
 }

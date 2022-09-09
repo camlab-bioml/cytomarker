@@ -7,18 +7,24 @@ test_that("Server has functionality", {
     
     # Verify the input sce and default + selected assays
     expect_equal(pref_assay(), "logcounts")
+    
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")))
+    
     expect_is(sce(), 'SingleCellExperiment')
     expect_equivalent(dim(sce()), c(13714, 100))
     session$setInputs(assay_select = "counts", assay = "counts")
     expect_equal(pref_assay(), "counts")
     expect_equal(output$selected_assay, paste("Selected assay: ", "counts"))
     
+    session$setInputs(precomputed_dim = T, select_precomputed_umap = "UMAP",
+                      possible_precomputed_dims = reducedDimNames(sce()))
+    expect_true(use_precomputed_umap())
+    expect_equal(umap_precomputed_col(), "UMAP")
+    
     session$setInputs(coldata_column = "seurat_annotations",
                       min_category_count = 2,
                       show_cat_table = T)
-    
     
     # expect all 9 cell types to be in the tally and selected category
     expect_equal(nrow(summary_cat_tally()), 9)

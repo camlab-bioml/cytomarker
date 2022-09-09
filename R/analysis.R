@@ -189,7 +189,7 @@ set_current_markers_safely <- function(markers, fms, default_type = NULL) {
 #' @importFrom SingleCellExperiment reducedDim
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel MulticoreParam
-get_umap <- function(sce, columns, pref_assay, precomputed_vals, dim_col,
+get_umap <- function(sce, columns, pref_assay, precomputed_vals = NULL, dim_col = NULL,
                      only_top_markers = F) {
   
   if (!isTruthy(precomputed_vals) | isTRUE(only_top_markers)) {
