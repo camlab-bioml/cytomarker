@@ -106,8 +106,8 @@ test_that("get_umap returns valid dataframe and values with different assays", {
   obj <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(obj)
 
-  umap_frame_log <- get_umap(sce, "seurat_annotations", "logcounts")
-  umap_frame_norm <- get_umap(sce, "seurat_annotations", "counts")
+  umap_frame_log <- get_umap(sce, "seurat_annotations", "logcounts", marker_num = 20)
+  umap_frame_norm <- get_umap(sce, "seurat_annotations", "counts", marker_num = 20)
   expect_is(umap_frame_log, 'data.frame')
   expect_equal(ncol(umap_frame_log), 3)
   expect_equal(nrow(umap_frame_log), ncol(sce))
@@ -278,8 +278,9 @@ test_that("download works as expected", {
                             "seurat_annotations", "Marker-marker correlation",
                             "z-score", "logcounts")
   
-  umap_all <- get_umap(sce, "seurat_annotations", "logcounts")
-  umap_top <- get_umap(sce[rownames(sce)[1:100]], "seurat_annotations", "logcounts")
+  umap_all <- get_umap(sce, "seurat_annotations", "logcounts", marker_num = 20)
+  umap_top <- get_umap(sce[rownames(sce)[1:100]], "seurat_annotations", "logcounts",
+                       marker_num = 20)
   
   plots <- list()
   

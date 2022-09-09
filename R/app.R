@@ -35,7 +35,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
 #' @importFrom BiocParallel MulticoreParam
 #' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar 
 #' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
-#' valueBoxOutput renderMenu
+#' valueBoxOutput renderMenu updateTabItems
 #' @export
 #' 
 #' @param ... Additional arguments
@@ -78,9 +78,9 @@ cytosel <- function(...) {
                     ),
     
     dashboardSidebar(
-      sidebarMenu(
+      sidebarMenu(id = "tabs",
         # width = 300,
-        menuItem("Run Configuration", tabName = "inputs", icon = icon("folder-open")),
+        menuItem("Run Configuration", tabName = "inputs", icon = icon("gear")),
         sidebarMenuOutput(outputId = 'output_menu'),
         br(),
         # div(style="display:inline-block;width:110%;text-align: center;",
@@ -1058,10 +1058,14 @@ cytosel <- function(...) {
                                names(fms()[[1]]))
         
         removeModal()
+        
+        # updateTabItems(session, "tabs", "inputs")
+        updateTabsetPanel(session, "tabs", "marker_selection")
+        
       } else {
         showModal(suggestion_modal(failed = TRUE, suggestions()))
       }
-
+    
     })
     
     
@@ -1121,6 +1125,9 @@ cytosel <- function(...) {
       
       showNotification("Marker(s) added successfully.",
                        duration = 3)
+      
+      updateTabsetPanel(session, "tabs", "marker_selection")
+      
       
     })
     
@@ -1244,11 +1251,11 @@ cytosel <- function(...) {
         umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
                           column(), pref_assay(), 
                           use_precomputed_umap(),
-                          umap_precomputed_col()))
+                          umap_precomputed_col(), F, num_markers_in_selected()))
         umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][current_markers()$top_markers,], 
                           column(), pref_assay(), use_precomputed_umap(),
                           umap_precomputed_col(),
-                          T))
+                          T, num_markers_in_selected()))
         
         plots$all_plot <- plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
