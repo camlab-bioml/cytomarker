@@ -334,6 +334,8 @@ suggest_genes_to_remove <- function(cmat, n_genes=10) {
   }
   
   rg
+  
+  
 }
 
 
@@ -385,7 +387,7 @@ compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlation
   
   correlations <- cor(t(yo), y)
   
-  alternatives <- data.frame(Gene = rownames(yo), Correlation = correlations[,1])
+  alternatives <- data.frame(Gene = rownames(yo), Correlation = round(correlations[,1], 3))
   alternatives <- alternatives[alternatives$Gene %in% allowed_genes,]
   alternatives <- alternatives[!is.na(alternatives$Correlation),]
   alternatives <- alternatives[order(-(alternatives$Correlation)),]
@@ -461,12 +463,14 @@ get_allowed_genes <- function(selected_applications, applications_parsed, sce) {
 #' Get the reactable for the modal dialogue when add
 #' markers for a given cell type
 #' @importFrom tibble rownames_to_column
+#' @importFrom dplyr mutate_if
 get_cell_type_add_markers_reactable <- function(fm, current_markers) {
   fm <- fm[!rownames(fm) %in% current_markers,]
   fm <- fm[fm$summary.logFC > 0,]
   fm <- as.data.frame(head(fm, 50))
   fm <- rownames_to_column(fm, 'Gene')
   fm <- fm[,c("Gene", "FDR", "summary.logFC")]
+  fm <- fm %>% mutate_if(is.numeric, round, digits = 3)
   list(fm = fm,
        reactable = 
          reactable(
