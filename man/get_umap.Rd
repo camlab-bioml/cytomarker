@@ -8,8 +8,8 @@ get_umap(
   sce,
   columns,
   pref_assay,
-  precomputed_vals,
-  dim_col,
+  precomputed_vals = NULL,
+  dim_col = NULL,
   only_top_markers = F
 )
 }
@@ -19,12 +19,6 @@ get_umap(
 \item{columns}{A vector storing columns}
 
 \item{pref_assay}{Assay loaded}
-
-\item{precomputed_vals}{A boolean stating whether or not the given sce has a precomputed UMAP dim}
-
-\item{dim_col}{If the precomputed UMAP values exist, what is the name of the dimension in the sce}
-
-\item{only_top_markers}{Boolean stating whether or not the UMAP should use only top markers (Default is False)}
 }
 \description{
 Compute the UMAP
