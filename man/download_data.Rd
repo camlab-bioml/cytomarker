@@ -12,7 +12,9 @@ download_data(
   input_file,
   assay_used,
   het_source,
-  panel_size
+  panel_size,
+  cell_cutoff_value,
+  subsample
 )
 }
 \description{
