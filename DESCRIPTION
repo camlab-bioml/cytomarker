@@ -51,7 +51,8 @@ Imports:
     parallelly,
     parallel,
     BiocParallel,
-    tidyr
+    tidyr,
+    htmlwidgets
 Suggests:
   stringr,
   yardstick,

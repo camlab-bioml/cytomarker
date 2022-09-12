@@ -136,28 +136,32 @@ test_that("Server has functionality", {
     
     
     # if you try to add a marker that's already there, the length will stay the same
-    session$setInputs(add_markers = current_markers()$top_markers[1],
+    session$setInputs(markers_change_modal = T,
+                      add_markers = current_markers()$top_markers[1],
                       enter_marker = T)
+    
     expect_equal(num_markers_in_selected(), 17)
     
     # add a gene that isn't in either selected or scratch to increase the count by 1
     different <- allowed_genes()[!allowed_genes() %in% current_markers()$top_markers]
     different <- different[!different %in% current_markers()$scratch_markers]
     
-    session$setInputs(add_markers = different[1],
+    session$setInputs(markers_change_modal = T,
+                      add_markers = different[1],
                       enter_marker = T)
+    
     expect_equal(num_markers_in_selected(), 18)
     
     # expect null since no markers have been suggested
     expect_true(is.null(selected_cell_type_markers()))
     
     # get 50 suggested markers for the specific cell type
-    session$setInputs(cell_type_markers = "CD8 T",
+    session$setInputs(markers_change_modal = T,
+                      cell_type_markers = "CD8 T",
                       add_cell_type_markers = T)
     
     # expect the number of suggestions to be 50
     expect_equal(nrow(marker_suggestions()), 50)
-    
     
     # expect no rows when looking for unwanted genes
     expect_equal(0, nrow(marker_suggestions()[grepl("^RP[L|S]|^MT-|^MALAT",
