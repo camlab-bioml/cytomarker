@@ -350,6 +350,9 @@ test_that("Error modals throw errors", {
   expect_error(throw_error_or_warning(message = "Error!",
                                         notificationType = 'error'))
   
+  expect_null(high_cell_number_warning(99, 100))
+  expect_error(high_cell_number_warning(200, 100))
+  
 })
 
 

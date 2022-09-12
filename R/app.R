@@ -167,12 +167,16 @@ cytosel <- function(...) {
                             tags$span(shiny_iconlink() %>%
                                         bs_embed_popover(content = get_tooltip('marker_visualization'),
                                                          placement = "top", html = TRUE)))),
-                 fluidRow(column(2),column(4, textOutput("scratch_marker_counts"),
-                                 align = "left"),
-                          column(1),
-                          column(5, textOutput("selected_marker_counts"),
-                                 align = "left"),
-                          style = "margin-left:20px;"),
+                 # fluidRow(column(1), column(5, textOutput("scratch_marker_counts"),
+                 #                 align = "center"),
+                 #          # column(1),
+                 #          column(6, textOutput("selected_marker_counts"),
+                 #                 align = "center"),
+                 #          style = "margin-left:20px;"),
+                fluidRow(column(6, align = "center", div(style="display: inline-block; font-size: 15px", 
+                                  htmlOutput("scratch_marker_counts"))),
+                         column(6, align = "center", div(style="display: inline-block; font-size: 15px", 
+                                  htmlOutput("selected_marker_counts")))),
                  fluidRow(column(12, uiOutput("BL"),
                                  style = "margin-bottom:0px;"
                                  ))
@@ -346,7 +350,7 @@ cytosel <- function(...) {
                                duration = 5,
                                notificationType = 'message')
       }
-
+      
       updateSelectInput(
         session = session,
         inputId = "coldata_column",
@@ -600,11 +604,12 @@ cytosel <- function(...) {
           output$ignored_cell_types <- renderDataTable(data.frame(
             `Cell Type Ignored` = different_cells))
           cell_types_excluded(different_cells[!is.null(different_cells)])
-          cell_type_ignored_modal(input$min_category_count,
+          cell_type_ignored_modal(cell_min_threshold(),
                                   cell_types_excluded())
         }
         
       })
+      
       
       withProgress(message = 'Conducting analysis', value = 0, {
         incProgress(detail = "Acquiring data")
@@ -631,6 +636,8 @@ cytosel <- function(...) {
             sce(create_keep_vector_during_subsetting(sce(), to_subsample))
             
           } 
+          
+          high_cell_number_warning(ncol(sce()[,sce()$keep_for_analysis == "Yes"]), 10000)
           
           if(isTruthy(!is.null(column()))) {
             
@@ -766,8 +773,10 @@ cytosel <- function(...) {
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
       
-      output$scratch_marker_counts <- renderText({paste("Scratch Markers:", num_markers_in_scratch())})
-      output$selected_marker_counts<- renderText({paste("Selected Markers:", num_markers_in_selected())})
+      output$scratch_marker_counts <- renderText({paste("<B>", 
+                                      "Scratch Markers:", num_markers_in_scratch(), "</B>")})
+      output$selected_marker_counts<- renderText({paste("<B>",
+                                      "Selected Markers:", num_markers_in_selected(), "</B>")})
       
     })
     
@@ -784,8 +793,10 @@ cytosel <- function(...) {
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
       
-      output$scratch_marker_counts <- renderText({paste("Scratch Markers:", num_markers_in_scratch())})
-      output$selected_marker_counts <- renderText({paste("Selected Markers:", num_markers_in_selected())})
+      output$scratch_marker_counts <- renderText({HTML(paste0("<b>", 
+                                                             "Scratch Markers:", num_markers_in_scratch(), "</b>"))})
+      output$selected_marker_counts<- renderText({HTML(paste0("<b>",
+                                                             "Selected Markers:", num_markers_in_selected(), "</b>"))})
       
     })
     

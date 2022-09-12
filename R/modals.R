@@ -222,3 +222,24 @@ pre_computed_umap_modal <- function(possible_dims) { # Marker removal suggestion
     )
     )
 }
+
+
+#' Show a shinyalert warning if the sce for analysis has more than a set threshold of cell counts
+#' @importFrom shinyalert shinyalert
+#' @param ncell_sce The number of cells in the Singlecellexperiment object used for analysis
+#' @param num_cells The threshold for cell number for the sce. An ace with a cell number greater than this threshold will trigger the warning.
+high_cell_number_warning <- function(ncell_sce, num_cells) { # Uploaded marker is not in SCE
+  
+  if (ncell_sce > num_cells) {
+    shinyalert(title = paste("Warning: cell counts greater than ", num_cells, sep = ""), 
+               text = paste("The object retained for analysis has", 
+                            ncell_sce, " cells which is greater than the recommended threshold of:",
+                            num_cells, "Consider using the downsample function for better performance.", 
+                            sep = " "), 
+               type = "warning", 
+               showConfirmButton = TRUE,
+               confirmButtonCol = "#337AB7")
+  }
+  
+  
+}
