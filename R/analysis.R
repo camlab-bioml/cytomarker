@@ -206,6 +206,7 @@ get_umap <- function(sce, columns, pref_assay, precomputed_vals = NULL, dim_col 
                    pca = num_comp_use,
                    BPPARAM = MulticoreParam(workers = availableCores()),
                    external_neighbors	= T)
+    
     df <- as.data.frame(tibble(
       UMAP1 = as.numeric(reducedDim(sce, 'UMAP')[,1]),
       UMAP2 = as.numeric(reducedDim(sce, 'UMAP')[,2])
