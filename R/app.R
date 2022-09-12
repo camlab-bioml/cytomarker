@@ -384,6 +384,13 @@ cytosel <- function(...) {
       
     })
     
+    observeEvent(input$min_category_count, {
+      req(sce())
+      
+      cell_min_threshold(input$min_category_count)
+      
+    })
+    
     observeEvent(input$show_cat_table, {
     req(input$input_scrnaseq)
     req(input$assay_select)
