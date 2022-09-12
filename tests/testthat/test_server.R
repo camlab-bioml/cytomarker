@@ -113,8 +113,8 @@ test_that("Server has functionality", {
     expect_equal(num_markers_in_selected(), 14)
     expect_equal(num_markers_in_scratch(), 10)
     
-    expect_equal(output$scratch_marker_counts, "Scratch Markers: 10")
-    expect_equal(output$selected_marker_counts, "Selected Markers: 14")
+    expect_equal(output$scratch_marker_counts, "<B> Scratch Markers: 10 </B>")
+    expect_equal(output$selected_marker_counts, "<B> Selected Markers: 14 </B>")
     
     # suggest markers to remove
     
