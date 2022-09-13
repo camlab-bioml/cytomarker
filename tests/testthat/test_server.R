@@ -33,7 +33,7 @@ test_that("Server has functionality", {
     
     # Set analysis parameters that will not proceed
     session$setInputs(user_selected_cells = NULL,
-                      panel_size = 24, min_category_count = 0,
+                      panel_size = 200, min_category_count = 0,
                       subsample_sce = T,
                       start_analysis = T,
                       add_selected_to_analysis = T,
@@ -102,13 +102,14 @@ test_that("Server has functionality", {
     expect_equal(heatmap()[["x"]][["attrs"]][[1]][["x"]],
                  heatmap()[["x"]][["attrs"]][[1]][["y"]])
     
+    # expect of 200 markers to get somewhere between 100 to 200 for redundancy
+    expect_gt(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])), 100)
+    expect_lte(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])),
+                 200)
     
-    expect_equal(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])),
-                 24)
+    # expect that the marker columns are set properly and the lengths are verified
     
-    # espect that the marker columns are set properly and the lengths are verified
-    
-    # espect that the marker columns are set properly and the lengths are verified
+    # expect that the marker columns are set properly and the lengths are verified
     session$setInputs(bl_scratch = current_markers()$top_markers[1:10],
                       bl_top = current_markers()$top_markers[11:24])
     
