@@ -6,7 +6,7 @@ utils::globalVariables(c("palette_to_use", "full_palette"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
 
-options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2)
+options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 
 #' Define main entrypoint of app
 #' 
@@ -726,7 +726,7 @@ cytosel <- function(...) {
             unique_element_modal(col)
           }
         
-          if (!isTruthy(first_render_outputs())) {
+          if (!isTruthy(first_render_outputs()) & isTruthy(current_markers())) {
             
             output$output_menu <- renderMenu(expr = {
               sidebarMenu(

@@ -32,9 +32,7 @@ test_that("Server has functionality", {
     expect_equal(specific_cell_types_selected(), unique(sce()[["seurat_annotations"]]))                
     
     # Set analysis parameters that will not proceed
-    session$setInputs(user_selected_cells = c("CD8 T", "Memory CD4 T",
-                                              "Naive CD4 T",
-                                              "Platelet"),
+    session$setInputs(user_selected_cells = NULL,
                       panel_size = 24, min_category_count = 0,
                       subsample_sce = T,
                       start_analysis = T,
@@ -53,7 +51,11 @@ test_that("Server has functionality", {
     
     
     # Change to passable input parameters
-    session$setInputs(min_category_count = NULL,
+    session$setInputs(user_selected_cells = c("CD8 T", "Memory CD4 T",
+                                              "Naive CD4 T",
+                                              "Platelet"),
+                      add_selected_to_analysis = T,
+                      min_category_count = NULL,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       start_analysis = T)
