@@ -369,7 +369,7 @@ set_text_colour_based_on_background <- function(text_colour) {
 #' @param vec_to_keep A vector containing the values of an input column that should be retained for analysis
 #' @param input_column The string name of the desired input column in sce. The values in this column should have overlap with vec_to_keep
 create_sce_column_for_analysis <- function(sce, vec_to_keep, input_column) {
-  sce$keep_for_analysis <- ifelse(sce[[input_column]] %in% vec_to_keep,
+  sce$keep_for_analysis <- ifelse(sce[[input_column]] %in% vec_to_keep & sce$keep_for_analysis == "Yes",
                                   "Yes", "No")
   
   return(sce)
@@ -388,5 +388,20 @@ create_keep_vector_during_subsetting <- function(sce, vec_to_keep) {
   sce$keep_for_analysis <- ifelse(sce$in_subsample == "Yes" & sce$keep_for_analysis == "Yes",
                                   "Yes", "No")
   sce$in_subsample <- NULL
+  return(sce)
+}
+
+
+#' Update the keep_for_analysis vector in an SCE to exclude null and NA values
+#' @param sce A SingleCellExperiment object
+#' @param input_column The string name of the desired input column in sce
+remove_null_and_va_from_cell_cat <- function(sce, input_column) {
+  sce$keep_for_analysis <- ifelse((!is.null(sce[[input_column]]) |
+                                     sce[[input_column]] != "NA" |
+                                     sce[[input_column]] != "Na" |
+                                     sce[[input_column]] != "na" |
+                                     !is.na(sce[[input_column]])),
+                                  "Yes", "No")
+  
   return(sce)
 }
