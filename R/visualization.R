@@ -41,8 +41,10 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     cor_map <- plot_ly(z=cc, 
                        type='heatmap',
                        x = rownames(cc),
-                       y = colnames(cc)) %>% 
-      layout(title='Correlation')
+                       y = rownames(cc),
+                       hovertemplate = "Gene(x): %{x}<br>Gene(y): %{y}<br>Correlation: %{z}<extra></extra>",
+                       showticklabels = F) %>% 
+      layout(title='Correlation', width = 650, height = 650)
     
     return(cor_map)
   } else {
@@ -64,10 +66,14 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     }
     
     expression_map <- plot_ly(df, x = ~gene, y = ~y, z = ~expression, 
-                              type = "heatmap") |> 
+                              type = "heatmap",
+                              colorbar = list(title = as.character(normalization)),
+                              hovertemplate = paste("Gene: %{x}<br>Cell Type: %{y}<br>",
+                             as.character(normalization), ": %{z}<extra></extra>", sep = "")) |> 
       layout(title = as.character(normalization),
              xaxis = list(title = ''),
-             yaxis = list(title = ''))
+             yaxis = list(title = ''),
+            height = 600, width = 800)
     return(expression_map)
   }
   
