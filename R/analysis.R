@@ -11,7 +11,6 @@
 #' @importFrom scran findMarkers
 compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
   
-  
   fms <- lapply(columns, function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
@@ -145,7 +144,8 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
 get_associated_cell_types <- function(markers, fms) {
   fm <- fms[[1]] # For now, we're only doing this for the first
   
-  all_markers <- unique(unlist(markers[c('recommended_markers', 'scratch_markers', 'top_markers')]))
+  all_markers <- unique(unlist(markers[c('recommended_markers', 
+                        'scratch_markers', 'top_markers')]))
   
   associated_cell_types <- sapply(all_markers, function(tm) {
     pvals <- sapply(fm, function(f) {

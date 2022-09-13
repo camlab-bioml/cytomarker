@@ -587,6 +587,12 @@ cytosel <- function(...) {
         cell_types_to_keep(intersect(specific_cell_types_selected(),
                                      cell_types_high_enough()))
         
+        sce(remove_null_and_va_from_cell_cat(sce(), input$coldata_column))
+        
+        showNotification("Ignoring any cells with input category set to NA or null",
+                         type = 'message',
+                         duration = 2)
+        
         sce(create_sce_column_for_analysis(sce(), cell_types_to_keep(), 
                                            input$coldata_column))
         
@@ -692,8 +698,8 @@ cytosel <- function(...) {
                                      allowed_genes())
               
               if(length(markers$recommended_markers) < input$panel_size){
-                showNotification("The cell types of the uploaded dataset show expression redundancy.\n
-                               This results in fewer genes being shown than requested.",
+                showNotification("Cytosel found genes that are good markers for multiple cell types. This will result in a smaller panel size than requested.
+                                 You may manually add additional markers.",
                                  type = 'message',
                                  duration = NULL)
               }
@@ -793,9 +799,9 @@ cytosel <- function(...) {
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
       
-      output$scratch_marker_counts <- renderText({HTML(paste0("<b>", 
+      output$scratch_marker_counts <- renderText({HTML(paste("<b>", 
                                                              "Scratch Markers:", num_markers_in_scratch(), "</b>"))})
-      output$selected_marker_counts<- renderText({HTML(paste0("<b>",
+      output$selected_marker_counts<- renderText({HTML(paste("<b>",
                                                              "Selected Markers:", num_markers_in_selected(), "</b>"))})
       
     })
@@ -1096,7 +1102,7 @@ cytosel <- function(...) {
                                     rownames(sce()[,sce()$keep_for_analysis == "Yes"])) &&
          (input$input_gene %in% allowed_genes())) {
         
-        withProgress(message = 'Processing data', value = 0, {
+        withProgress(message = 'Updating analysis', value = 0, {
           incProgress(6, detail = "Computing alternatives")
           
           # Make this sampling dependent on the input sample argument
@@ -1243,7 +1249,7 @@ cytosel <- function(...) {
     ### UPDATE ANALYSIS ###
     update_analysis <- function() {
       
-      withProgress(message = 'Processing data', value = 0, {
+      withProgress(message = 'Updating analysis', value = 0, {
 
         
         ## Re-set the set of allowed genes (these may have changed if a different
