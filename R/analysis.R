@@ -297,7 +297,13 @@ train_nb <- function(x,y, cell_types) {
       df_test <- as.data.frame(x[test_idx,])
       df_test$y <- y[test_idx]
       
-      fit <- multinom(y~., data = df_train, trace = FALSE)
+      fit <- multinom(y~., data = df_train, trace = FALSE, MaxNWts = 100000)
+      # fit <- glmnet::glmnet(
+      #   x = iris.x, y = iris.y,
+      #   family = "multinomial",
+      #   lambda = 0,
+      #   type.multinomial = "grouped"
+      # )
       p <- stats::predict(fit, df_test)
       
       overall <- yardstick::bal_accuracy_vec(y[test_idx], p)

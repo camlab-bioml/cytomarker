@@ -226,12 +226,16 @@ test_that("Filtering sce objects by minimum count passes & retains original size
   expect_true("NK" %in% cells_retained)
   
   
-  sce_with_retention <- create_sce_column_for_analysis(sce, cells_retained, 
+  # expect that the length of the sce does not change when adding the keep_for_analysis
+  # annotations
+  sce_no_null <- remove_null_and_va_from_cell_cat(sce, "seurat_annotations")
+  
+  expect_equal(dim(sce_no_null)[2], dim(sce)[2])
+  
+  sce_with_retention <- create_sce_column_for_analysis(sce_no_null, cells_retained, 
                                                        "seurat_annotations")
   
   expect_is(sce_with_retention, 'SingleCellExperiment')
-  # expect that the length of the sce does not change when adding the keep_for_analysis
-  # annotations
   expect_equal(dim(sce_with_retention)[2], dim(sce)[2])
   
   # Expect 7 cells not kept for analysis due to filtering
