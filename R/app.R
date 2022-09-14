@@ -167,25 +167,20 @@ cytosel <- function(...) {
                    tags$span(shiny_iconlink() %>%
                      bs_embed_popover(content = get_tooltip('marker_display'),
                                       placement = "top", html = TRUE)))),
-                 fluidRow(column(12, plotOutput("legend", height='80px'), style = "margin-bottom: 15px;")),
+                 # fluidRow(column(12, plotOutput("legend", height='80px'), style = "margin-bottom: 15px;")),
                  hidden(div(id = "marker_visualization",
                             tags$span(shiny_iconlink() %>%
                                         bs_embed_popover(content = get_tooltip('marker_visualization'),
                                                          placement = "top", html = TRUE)))),
-                 # fluidRow(column(1), column(5, textOutput("scratch_marker_counts"),
-                 #                 align = "center"),
-                 #          # column(1),
-                 #          column(6, textOutput("selected_marker_counts"),
-                 #                 align = "center"),
-                 #          style = "margin-left:20px;"),
-                fluidRow(column(6, align = "center", div(style="display: inline-block; font-size: 15px", 
+                fluidRow(column(4, align = "center", div(style="display: inline-block; font-size: 15px", 
                                   htmlOutput("scratch_marker_counts"))),
-                         column(6, align = "center", div(style="display: inline-block; font-size: 15px", 
+                         column(4, align = "center", div(style="display: inline-block; font-size: 15px", 
                                   htmlOutput("selected_marker_counts")))),
-                 fluidRow(column(12, uiOutput("BL"),
+                 fluidRow(column(8, uiOutput("BL"),
                                  style = "margin-bottom:0px;"
-                                 ))
-          ),
+                                 ),
+                          column(3, plotOutput("legend", width = "250px",
+                                               ), style = "margin-top:-25px;"))),
         
       tabItem("UMAP",
                  # icon = icon("globe"),
@@ -1299,7 +1294,7 @@ cytosel <- function(...) {
         
         plots$all_plot <- plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-          layout(title = "UMAP all genes")
+          layout(title = "UMAP all genes", showlegend = F)
         
         plots$top_plot <- plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
