@@ -32,8 +32,7 @@ test_that("Server has functionality", {
     expect_equal(specific_cell_types_selected(), unique(sce()[["seurat_annotations"]]))                
     
     # Set analysis parameters that will not proceed
-    session$setInputs(advanced = T,
-                      user_selected_cells = NULL,
+    session$setInputs(user_selected_cells = NULL,
                       panel_size = 200, min_category_count = 0,
                       subsample_sce = T,
                       start_analysis = T,

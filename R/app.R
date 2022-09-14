@@ -36,6 +36,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar 
 #' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
 #' valueBoxOutput renderMenu updateTabItems
+#' @importFrom shinyBS bsButton bsPopover addPopover
 #' @export
 #' 
 #' @param ... Additional arguments
@@ -106,58 +107,68 @@ cytosel <- function(...) {
     # Tabs
     tabItems(
       tabItem("inputs",
-        fileInput("input_scrnaseq", "Input scRNA-seq", accept = c(".rds")) %>%
-          shinyInput_label_embed(
-            shiny_iconlink() %>%
-              bs_embed_popover(content = get_tooltip('input_scrnaseq'),
-                               placement = "right")
-          ),
+              fluidRow(column(5, div(
+                id = 'q1_div',
+                h4(
+                  'Input scRNA-seq',
+                  bsButton(
+                    inputId = 'q1_input',
+                    label = '',
+                    icon = icon(name = 'question'),
+                    style = 'info',
+                    size = 'extra-small'
+                  )
+                ),
+                bsPopover(
+                  id = 'q1_input',
+                  title = 'Input scRNA-seq file',
+                  content = paste('Upload SingleCellExperiment/Seurat data as an .rds file.',
+                                  'Gene names should be in Gene Symbol format. If a dataset is too large (>1Gb),',
+                                  'subsampling of cells is recommended. For some applications,',
+                                  'filtering for protein coding-only genes may also increase the relevance ',
+                                  'of the markers suggested by Cytosel.'),
+                  placement = 'right',
+                  trigger = 'focus'),
+        fileInput("input_scrnaseq",
+                  label = NULL), accept = c(".rds")),
         selectInput("coldata_column", "Cell category to evaluate:", NULL, multiple=FALSE) %>%
           shinyInput_label_embed(
             shiny_iconlink() %>%
-              bs_embed_popover(content = get_tooltip('coldata_column'),
+              bs_embed_popover(content = get_tooltip_q_coldata_column(),
                       placement = "right", html = "true")
-          ),
+          ))),
         # add padding space between elements
-        actionButton("advanced", "Advanced settings"),
-        br(),
-        br(),
-        hidden(div(id = "assay_text", textOutput("selected_assay"))),
-        br(),
-        hidden(div(id = "cats",  actionButton("show_cat_table", "Category subsetting",
-                                              align = "center",
-                                              width = NULL))),
-        br(),
-        hidden(div(id = "panel", numericInput("panel_size", "Targeted panel size:", 32, 
-                     min = 1, max = 200, step = NA, width = NULL) %>%
-          shinyInput_label_embed(
-            shiny_iconlink() %>%
-              bs_embed_popover(content = get_tooltip('panel_size'),
-                               placement = "right")
-          ))),
-        hidden(div(id = "strategy", radioButtons("marker_strategy", label = "Marker selection strategy",
-                     choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
-                     selected="fm"))),
-        hidden(div(id = "sub", checkboxInput("subsample_sce", "Subsample cells", value = TRUE) %>%
-          shinyInput_label_embed(
-            shiny_iconlink() %>%
-              bs_embed_popover(content = get_tooltip('subsample_sce'),
-                               placement = "right")
-          ))),
-        hidden(div(id = "precomputed",
+        fluidRow(column(4, bsCollapse(id = "advanced_collapse",
+                       bsCollapsePanel("Advanced Settings", style = "info",
+                                   textOutput("selected_assay"),
+                                   br(),
+                                   actionButton("show_cat_table", "Category subsetting",
+                                    align = "center",
+                                    width = NULL),
+                   br(),
+                   br(),
+                   numericInput("panel_size", "Targeted panel size:", 32, 
+                                min = 1, max = 200, step = NA, width = NULL) %>%
+                                shinyInput_label_embed(
+                                shiny_iconlink() %>%
+                                bs_embed_popover(content = get_tooltip('panel_size'),
+                                placement = "right")),
+                   radioButtons("marker_strategy", label = "Marker selection strategy",
+                                choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
+                                selected="fm"),
+                   checkboxInput("subsample_sce", "Subsample cells", value = TRUE) %>%
+                     shinyInput_label_embed(
+                     shiny_iconlink() %>%
+                     bs_embed_popover(content = get_tooltip('subsample_sce'),
+                     placement = "right")),
+                   hidden(div(id = "precomputed",
                    checkboxInput("precomputed_dim", "Use precomputed UMAP", value = F))),
-        br(),
-        hidden(div(id = "applications",
                    selectInput("select_aa", "Antibody applications:", 
-                    applications_parsed$unique_applications, multiple=TRUE) %>%
-          shinyInput_label_embed(
-            shiny_iconlink() %>%
-              bs_embed_popover(content = "Placeholder",
-                               placement = "right", html = "true")
-          ))),
-        # actionButton("refresh_analysis", "Refresh"),
-        br()
-      ),
+                              applications_parsed$unique_applications, multiple=TRUE) %>%
+                               shinyInput_label_embed(
+                               shiny_iconlink() %>%
+                               bs_embed_popover(content = "Placeholder",
+                               placement = "right", html = "true"))))))),
       tabItem("marker_selection",
                  # icon = icon("list"),
                  br(),
@@ -319,7 +330,6 @@ cytosel <- function(...) {
     df_antibody <- reactiveVal()
     
     view_advanced_settings <- reactiveVal(FALSE)
-  
     
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
@@ -369,6 +379,8 @@ cytosel <- function(...) {
       
       possible_umap_dims(reducedDimNames(sce())[grepl("UMAP|umap|Umap|uMap|uMAP",
                                                          reducedDimNames(sce()))])
+      
+      toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
 
     })
     
@@ -394,28 +406,6 @@ cytosel <- function(...) {
       }
       
     })
-    
-    
-    observeEvent(input$advanced, {
-      req(sce())
-      req(input$coldata_column)
-      
-      # switch TRUE FALSE every time the button is used
-      view_advanced_settings(!view_advanced_settings())
-      
-      
-      toggle("assay_text")
-      toggle("cats")
-      toggle("panel")
-      toggle("strategy")
-      toggle("sub")
-      # don't show precomputed if the advanced isn't turned on
-      toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0 &
-               isTruthy(view_advanced_settings()))
-      toggle("applications")
-      
-    })
-    
     
     observeEvent(input$min_category_count, {
       req(sce())
@@ -620,7 +610,7 @@ cytosel <- function(...) {
         
         showNotification("Ignoring any cells with input category set to NA or null",
                          type = 'message',
-                         duration = 2)
+                         duration = 4)
         
         sce(create_sce_column_for_analysis(sce(), cell_types_to_keep(), 
                                            input$coldata_column))
@@ -1182,8 +1172,9 @@ cytosel <- function(...) {
       req(sce())
       req(possible_umap_dims())
       
-      showModal(pre_computed_umap_modal(possible_umap_dims()))
-       
+      if (isTruthy(input$precomputed_dim)) {
+        showModal(pre_computed_umap_modal(possible_umap_dims()))
+      }
     })
     
     observeEvent(input$select_precomputed_umap, {
@@ -1197,10 +1188,7 @@ cytosel <- function(...) {
       }
       
     })
-    
-    
-    
-    
+
     ### UPDATE SELECTED MARKERS ###
     update_BL <- function(markers, top_size, scratch_size, unique_cell_types,
                           adding_alternative = F) {
