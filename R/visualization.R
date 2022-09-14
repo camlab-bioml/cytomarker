@@ -93,9 +93,10 @@ get_legend <- function(palette) {
   plt <- ggplot(df, aes(x = r, fill = `Cell type`)) + 
     geom_histogram() +
     scale_fill_manual(values = palette) +
-    guides(fill = guide_legend(ncol = 8)) 
+    guides(fill = guide_legend(ncol = 1)) 
   
   legend <- cowplot::get_legend(plt)
+  
   legend
 }
 

@@ -32,7 +32,8 @@ test_that("Server has functionality", {
     expect_equal(specific_cell_types_selected(), unique(sce()[["seurat_annotations"]]))                
     
     # Set analysis parameters that will not proceed
-    session$setInputs(user_selected_cells = NULL,
+    session$setInputs(advanced = T,
+                      user_selected_cells = NULL,
                       panel_size = 200, min_category_count = 0,
                       subsample_sce = T,
                       start_analysis = T,
@@ -102,8 +103,8 @@ test_that("Server has functionality", {
     expect_equal(heatmap()[["x"]][["attrs"]][[1]][["x"]],
                  heatmap()[["x"]][["attrs"]][[1]][["y"]])
     
-    # expect of 200 markers to get somewhere between 100 to 200 for redundancy
-    expect_gt(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])), 100)
+    # expect of 200 markers to get somewhere between 150 to 200 for redundancy
+    expect_gt(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])), 150)
     expect_lte(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])),
                  200)
     
