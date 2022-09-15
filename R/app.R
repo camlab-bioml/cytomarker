@@ -24,7 +24,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @import reactable
 #' @importFrom readr write_lines read_tsv read_csv
 #' @importFrom dplyr desc mutate_if
-#' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_popover
+#' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_tooltip use_bs_tooltip
 #' @importFrom shinyjs useShinyjs hidden toggle
 #' @importFrom grDevices dev.off pdf
 #' @importFrom zip zip
@@ -36,14 +36,10 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar 
 #' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
 #' valueBoxOutput renderMenu updateTabItems
-#' @importFrom shinyBS bsButton bsPopover addPopover
 #' @export
 #' 
 #' @param ... Additional arguments
 cytosel <- function(...) {
-  ## First up -- parse the antibodies
-  # antibody_info <- read_tsv(system.file("inst", "abcam_antibodies_gene_symbol_associated.tsv", package="cytosel"))
-  # antibody_info <- read_csv(system.file("inst", "Abcam_published_monos_with_gene.csv", package="cytosel"))
   
   antibody_info <- dplyr::rename(cytosel_data$antibody_info, Symbol = `Gene Name (Upper)`)
   antibody_info <- tidyr::drop_na(antibody_info)
@@ -69,7 +65,7 @@ cytosel <- function(...) {
 
     # Use packages
     useShinyalert(force = TRUE),
-    use_bs_popover(),
+    use_bs_tooltip(),
     useShinyjs(),
     
     dashboardPage(
@@ -104,39 +100,29 @@ cytosel <- function(...) {
                                 
                                 '))),
       
+      
+    # bsPopover(id = 'q1', 'Upload an Input scRNA-seq file', content = 'Input scRNA-seq file',
+    #             trigger = 'click', options = list(container = "body")),
+      
     # Tabs
     tabItems(
       tabItem("inputs",
-              fluidRow(column(5, div(
-                id = 'q1_div',
-                h4(
-                  'Input scRNA-seq',
-                  bsButton(
-                    inputId = 'q1_input',
-                    label = '',
-                    icon = icon(name = 'question'),
-                    style = 'info',
-                    size = 'extra-small'
-                  )
-                ),
-                bsPopover(
-                  id = 'q1_input',
-                  title = 'Input scRNA-seq file',
-                  content = paste('Upload SingleCellExperiment/Seurat data as an .rds file.',
-                                  'Gene names should be in Gene Symbol format. If a dataset is too large (>1Gb),',
-                                  'subsampling of cells is recommended. For some applications,',
-                                  'filtering for protein coding-only genes may also increase the relevance ',
-                                  'of the markers suggested by Cytosel.'),
-                  placement = 'right',
-                  trigger = 'focus'),
+              fluidRow(column(5,
         fileInput("input_scrnaseq",
-                  label = NULL), accept = c(".rds")),
+                  label = p(
+                    'Input scRNA-seq',
+                  ), accept = c(".rds")) %>%
+          shinyInput_label_embed(
+            icon("circle-info") %>%
+              bs_embed_tooltip(title = get_tooltip('input_scrnaseq'),
+                               placement = "right", html = "true")
+          ))),
         selectInput("coldata_column", "Cell category to evaluate:", NULL, multiple=FALSE) %>%
           shinyInput_label_embed(
-            shiny_iconlink() %>%
-              bs_embed_popover(content = get_tooltip_q_coldata_column(),
+            icon("circle-info") %>%
+              bs_embed_tooltip(title = get_tooltip('coldata_column'),
                       placement = "right", html = "true")
-          ))),
+          ),
         # add padding space between elements
         fluidRow(column(4, bsCollapse(id = "advanced_collapse",
                        bsCollapsePanel("Advanced Settings", style = "info",
@@ -150,39 +136,41 @@ cytosel <- function(...) {
                    numericInput("panel_size", "Targeted panel size:", 32, 
                                 min = 1, max = 200, step = NA, width = NULL) %>%
                                 shinyInput_label_embed(
-                                shiny_iconlink() %>%
-                                bs_embed_popover(content = get_tooltip('panel_size'),
+                                icon("circle-info") %>%
+                                bs_embed_tooltip(title = get_tooltip('panel_size'),
                                 placement = "right")),
                    radioButtons("marker_strategy", label = "Marker selection strategy",
                                 choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
                                 selected="fm"),
                    checkboxInput("subsample_sce", "Subsample cells", value = TRUE) %>%
                      shinyInput_label_embed(
-                     shiny_iconlink() %>%
-                     bs_embed_popover(content = get_tooltip('subsample_sce'),
+                     icon("circle-info") %>%
+                     bs_embed_tooltip(title = get_tooltip('subsample_sce'),
                      placement = "right")),
                    hidden(div(id = "precomputed",
                    checkboxInput("precomputed_dim", "Use precomputed UMAP", value = F))),
                    selectInput("select_aa", "Antibody applications:", 
                               applications_parsed$unique_applications, multiple=TRUE) %>%
                                shinyInput_label_embed(
-                               shiny_iconlink() %>%
-                               bs_embed_popover(content = "Placeholder",
-                               placement = "right", html = "true"))))))),
+                               icon("circle-info") %>%
+                               bs_embed_tooltip(title = "Placeholder",
+                               placement = "right", html = "true"))
+                   ))))),
       tabItem("marker_selection",
                  # icon = icon("list"),
                  br(),
                  fluidRow(column(12, actionButton("markers_change_modal", "Add markers to panel"))),
                  hr(),
                  hidden(div(id = "marker_display",
-                   tags$span(shiny_iconlink() %>%
-                     bs_embed_popover(content = get_tooltip('marker_display'),
-                                      placement = "top", html = TRUE)))),
-                 # fluidRow(column(12, plotOutput("legend", height='80px'), style = "margin-bottom: 15px;")),
+                   tags$span(icon("circle-info")
+                           %>%
+                   bs_embed_tooltip(title = get_tooltip('marker_display'),
+                                    placement = "right", html = TRUE)))),
                  hidden(div(id = "marker_visualization",
-                            tags$span(shiny_iconlink() %>%
-                                        bs_embed_popover(content = get_tooltip('marker_visualization'),
-                                                         placement = "top", html = TRUE)))),
+                            tags$span(icon("circle-info")
+                                      %>%
+                                        bs_embed_tooltip(title = get_tooltip('marker_visualization'),
+                                                         placement = "right", html = TRUE)))),
                 fluidRow(column(4, align = "center", div(style="display: inline-block; font-size: 15px", 
                                   htmlOutput("scratch_marker_counts"))),
                          column(4, align = "center", div(style="display: inline-block; font-size: 15px", 
@@ -190,8 +178,8 @@ cytosel <- function(...) {
                  fluidRow(column(8, uiOutput("BL"),
                                  style = "margin-bottom:0px;"
                                  ),
-                          column(3, plotOutput("legend", width = "250px",
-                                               ), style = "margin-top:-25px;"))),
+                          column(3, plotOutput("legend", width = "250px"),
+                                 style = "margin-top:-25px;"))),
         
       tabItem("UMAP",
                  # icon = icon("globe"),
@@ -207,32 +195,38 @@ cytosel <- function(...) {
                  # icon = icon("table"),
                  br(),
                  splitLayout(cellWidths = c(320, 280),
-                             div(selectInput("display_options", "Display expression or gene correlation", choices = c("Marker-marker correlation"), width = "86%") %>%
-                                 shinyInput_label_embed(shiny_iconlink() %>%
-                                                          bs_embed_popover(content = get_tooltip('heatmap_display_options'),
-                                                                           placement = "right", html = "true"))),
+                             div(selectInput("display_options", 
+                              "Display expression or gene correlation", 
+                              choices = c("Marker-marker correlation"), width = "86%") %>%
+                                 shinyInput_label_embed(icon("circle-info") %>%
+                                bs_embed_tooltip(title = get_tooltip('heatmap_display_options'),
+                                  placement = "right", html = "true"))
+                              ),
                              hidden(div(id = "norm",
-                                        selectInput("heatmap_expression_norm", "Heatmap expression normalization", choices = c("Expression", "z-score"), width = "89%") %>%
-                                          shinyInput_label_embed(shiny_iconlink() %>%
-                                                                   bs_embed_popover(content = get_tooltip('heatmap_expression_norm'),
-                                                                                    placement = "right"))))),
+                                selectInput("heatmap_expression_norm", 
+                                            "Heatmap expression normalization", 
+                                            choices = c("Expression", "z-score"), width = "89%") %>%
+                                  shinyInput_label_embed(icon("circle-info") %>%
+                                  bs_embed_tooltip(title = get_tooltip('heatmap_expression_norm'),
+                                      placement = "right"))
+                                ))),
               splitLayout(cellWidths = c(190, 200),
                           div(numericInput("n_genes", "Number of genes to remove", 
                                            value = 10, min = 1, width = "50%")),
                           div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions"))),
                  plotlyOutput("heatmap", height="600px"),
                  hr(),
-                 tags$span(shiny_iconlink() %>%
-                             bs_embed_popover(content = get_tooltip('gene_removal'),
-                                              placement = "top"))
+                 tags$span(icon("circle-info") %>%
+                             bs_embed_tooltip(title = get_tooltip('gene_removal'),
+                                              placement = "right"))
           ),
 
       tabItem("Metrics",
                  # icon = icon("ruler"),
                  br(),
                  helpText(get_tooltip('metrics')),
-                 tags$span(shiny_iconlink() %>%
-                             bs_embed_popover(content = get_tooltip('metrics_explanation'),
+                 tags$span(icon("circle-info") %>%
+                             bs_embed_tooltip(title = get_tooltip('metrics_explanation'),
                                               placement = "right", html = TRUE)),
                  textOutput("cells_per_category"),
                  plotlyOutput("metric_plot")
@@ -330,6 +324,10 @@ cytosel <- function(...) {
     df_antibody <- reactiveVal()
     
     view_advanced_settings <- reactiveVal(FALSE)
+    
+    
+    # addPopover(session, "q1", "Upload an Input scRNA-seq file", content = 'Input scRNA-seq file',
+    #            trigger = 'click')
     
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
