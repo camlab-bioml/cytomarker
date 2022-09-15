@@ -53,8 +53,7 @@ Imports:
     BiocParallel,
     tidyr,
     htmlwidgets,
-    shinydashboard,
-    shinyBS
+    shinydashboard
 Suggests:
   stringr,
   yardstick,

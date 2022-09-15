@@ -1,4 +1,10 @@
+/* Styles for shinyBS popover buttons */
+/* use !important to override shinyDashboard btn-info settings */
 
+.btn-info {
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
 
 .rank-list-item {
   padding-left: 0px !important;
