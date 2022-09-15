@@ -33,9 +33,10 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @importFrom plotly plot_ly plotlyOutput renderPlotly layout
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel MulticoreParam
-#' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar 
+#' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar
 #' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
 #' valueBoxOutput renderMenu updateTabItems
+#' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @export
 #' 
 #' @param ... Additional arguments
