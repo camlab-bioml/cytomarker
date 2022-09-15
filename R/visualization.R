@@ -73,7 +73,11 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
       layout(title = as.character(normalization),
              xaxis = list(title = ''),
              yaxis = list(title = ''),
-            height = 600, width = 800)
+            height = 600, width = ifelse(25*length(unique(df$gene)) <= 450,
+                                         450, ifelse(
+                                           25*length(unique(df$gene)) <= 1000,
+                                           25*length(unique(df$gene)), 1000
+                                         )))
     return(expression_map)
   }
   
