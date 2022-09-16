@@ -37,6 +37,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
 #' valueBoxOutput renderMenu updateTabItems
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
+#' @importFrom yaml read_yaml
 #' @export
 #' 
 #' @param ... Additional arguments
@@ -156,7 +157,17 @@ cytosel <- function(...) {
                                icon("circle-info") %>%
                                bs_embed_tooltip(title = "Placeholder",
                                placement = "right", html = "true"))
-                   ))))),
+                   )))),
+        fluidRow(column(5,
+                        fileInput("read_back_analysis",
+                                  label = p(
+                                    'Upload previous analysis',
+                                  ), accept = c(".yml")) %>%
+                          shinyInput_label_embed(
+                            icon("circle-info") %>%
+                              bs_embed_tooltip(title = get_tooltip('reupload'),
+                                               placement = "right", html = "true")
+                          )))),
       tabItem("marker_selection",
                  # icon = icon("list"),
                  br(),
@@ -326,6 +337,8 @@ cytosel <- function(...) {
     
     view_advanced_settings <- reactiveVal(FALSE)
     
+    reupload_analysis <- reactiveVal(FALSE)
+    markers_reupload <- reactiveVal()
     
     # addPopover(session, "q1", "Upload an Input scRNA-seq file", content = 'Input scRNA-seq file',
     #            trigger = 'click')
@@ -344,11 +357,12 @@ cytosel <- function(...) {
       input_assays <- c(names(assays(sce())))
       
       if (!isTruthy(input$min_category_count)) {
+        updateNumericInput(session, "min_category_count", 2)
         cell_min_threshold(2)
       } else {
         cell_min_threshold(input$min_category_count)
       }
-
+    
       # If there is more than 1 assay user to select appropriate assay
       if(length(input_assays) > 1){
         if("logcounts" %in% input_assays) {
@@ -385,8 +399,11 @@ cytosel <- function(...) {
     
     observeEvent(input$coldata_column, {
       req(input$input_scrnaseq)
-      specific_cell_types_selected(NULL)
       column(input$coldata_column)
+      
+      if (!isTruthy(reupload_analysis())) {
+        specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
+      }
       })
     
     observeEvent(input$add_selected_to_analysis, {
@@ -402,26 +419,39 @@ cytosel <- function(...) {
       } else {
         showNotification("Empty subset selection, defaulting to using all cell types in analysis.",
                          duration = 2)
+        specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
       
     })
     
+    observeEvent(input$user_selected_cells, {
+      req(input$input_scrnaseq)
+      req(input$coldata_column)
+      specific_cell_types_selected(input$user_selected_cells)
+    })
+    
     observeEvent(input$min_category_count, {
-      req(sce())
-      
       cell_min_threshold(input$min_category_count)
-      
     })
     
     observeEvent(input$show_cat_table, {
-    req(input$input_scrnaseq)
-    req(input$assay_select)
-    req(input$coldata_column)
     req(sce())
-    req(cell_min_threshold())
-    
+    req(pref_assay())
+    req(input$coldata_column)
+    # req(cell_min_threshold())
+  
     cell_category_table <- create_table_of_hetero_cat(sce(),
-                                                        input$coldata_column)
+                                                      input$coldata_column)
+
+      if (!isTruthy(cell_min_threshold())) {
+        cell_min_threshold(2)
+      }
+  
+      if (!isTruthy(specific_cell_types_selected())) {
+        specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
+      }
+
+    
     if (nrow(cell_category_table) > 100) {
       
       too_large_to_show_modal(input$coldata_column)
@@ -432,18 +462,8 @@ cytosel <- function(...) {
         summary_cat_tally()
       )
       
-      if (!isTruthy(specific_cell_types_selected())) {
-        specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
-      }
-      
-      updateSelectInput(
-        session,
-        "user_selected_cells",
-        choices = unique(sce()[[input$coldata_column]]),
-        selected = specific_cell_types_selected()
-      )
-      
-      showModal(cell_cat_modal(cell_min_threshold()))
+      showModal(cell_cat_modal(cell_min_threshold(), unique(sce()[[input$coldata_column]]),
+                               specific_cell_types_selected()))
     }
     })
     
@@ -567,15 +587,20 @@ cytosel <- function(...) {
     
     ### ANALYSIS ###
     observeEvent(input$start_analysis, {
-      req(input$coldata_column)
       req(input$panel_size)
-      # req(input$min_category_count)
+      req(input$coldata_column)
       req(sce())
       
-      if (!isTruthy(input$min_category_count)) {
-        cell_min_threshold(2)
-      } else {
-        cell_min_threshold(input$min_category_count)
+        if (!isTruthy(specific_cell_types_selected())) {
+          specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
+        }
+        
+      if (!isTruthy(reupload_analysis())) {
+        if (!isTruthy(cell_min_threshold())) {
+          cell_min_threshold(2)
+        } else {
+          cell_min_threshold(input$min_category_count)
+        }
       }
       
       if (cell_min_threshold() < 2) {
@@ -587,9 +612,6 @@ cytosel <- function(...) {
       
       # if the user never opened up the tally table, automatically set all cell types
       # for analysis
-      if (!isTruthy(specific_cell_types_selected())) {
-        specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
-      }
       
       withProgress(message = 'Initializing analysis', value = 0, {
         incProgress(detail = "Checking data")
@@ -706,23 +728,30 @@ cytosel <- function(...) {
                               top_markers = input$bl_top)
             } else {
               ## We compute the set of markers for the first time
-              markers <- get_markers(fms(), 
-                                     # Adding 10 to make sure panel size is approximate 
-                                     # since a) the same marker is selected multiple times and
-                                     # b) excess markers are removed
-                                     input$panel_size, 
-                                     input$marker_strategy, 
-                                     sce()[,sce()$keep_for_analysis == "Yes"],
-                                     allowed_genes())
               
-              if(length(markers$recommended_markers) < input$panel_size){
-                showNotification("Cytosel found genes that are good markers for multiple cell types. This will result in a smaller panel size than requested.
+              if (isTruthy(markers_reupload())) {
+                markers <- list(recommended_markers = markers_reupload()$top_markers,
+                                top_markers = markers_reupload()$top_markers,
+                                scratch_markers = markers_reupload()$scratch_markers)
+              } else {
+                markers <- get_markers(fms(), 
+                                       # Adding 10 to make sure panel size is approximate 
+                                       # since a) the same marker is selected multiple times and
+                                       # b) excess markers are removed
+                                       input$panel_size, 
+                                       input$marker_strategy, 
+                                       sce()[,sce()$keep_for_analysis == "Yes"],
+                                       allowed_genes())
+                
+                if(length(markers$recommended_markers) < input$panel_size){
+                  showNotification("Cytosel found genes that are good markers for multiple cell types. This will result in a smaller panel size than requested.
                                  You may manually add additional markers.",
-                                 type = 'message',
-                                 duration = NULL)
+                                   type = 'message',
+                                   duration = NULL)
+                }
+                ## Forgotten what this is for
+                markers$scratch_markers <- scratch_markers_to_keep
               }
-              ## Forgotten what this is for
-              markers$scratch_markers <- scratch_markers_to_keep
             }
             
             # SMH
@@ -1187,7 +1216,33 @@ cytosel <- function(...) {
       }
       
     })
-
+    
+    ## Re-upload previous analysis
+    
+    observeEvent(input$read_back_analysis, {
+      req(sce())
+      
+      yaml_back <- read_back_in_saved_yaml(input$read_back_analysis$datapath)
+      updateSelectInput(session, "coldata_column", choices = colnames(colData(sce())),
+                          selected = yaml_back$`Heterogeneity source`)
+      pref_assay(yaml_back$`Assay used`)
+      updateNumericInput(session, "panel_size", value = yaml_back$`Target panel size`)
+      cell_min_threshold(yaml_back$`Min Cell Category cutoff`)
+      updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
+      updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
+      updateSelectInput(session, "select_aa", selected = yaml_back$`Antibody applications`)
+      specific_cell_types_selected(yaml_back$`User selected cells`)
+      markers_reupload(list(top_markers = yaml_back$`Selected marker panel`,
+                            scratch_markers = yaml_back$`Scratch marker panel`))
+      # if (sum(length(markers_reupload$top_markers),
+      #         length(markers_reupload$scratch_markers)) != yaml_back$`Target panel size`) {
+      #   updateNumericInput(session, "panel_size", value = sum(length(markers_reupload$top_markers),
+      #                                                         length(markers_reupload$scratch_markers)))
+      # }
+      reupload_analysis(TRUE)
+      
+    })
+    
     ### UPDATE SELECTED MARKERS ###
     update_BL <- function(markers, top_size, scratch_size, unique_cell_types,
                           adding_alternative = F) {
@@ -1376,7 +1431,10 @@ cytosel <- function(...) {
                       panel_size = input$panel_size,
                       cell_cutoff_value = as.integer(cell_min_threshold()),
                       subsample = input$subsample_sce,
-                      antibody_table = df_antibody())
+                      antibody_table = df_antibody(),
+                      marker_strat = input$marker_strategy,
+                      antibody_apps = input$select_aa,
+                      selected_cell_types = input$user_selected_cells)
       },
       contentType = "application/zip"
     )

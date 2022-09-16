@@ -5,10 +5,14 @@
 \title{Show an input modal to view the frequency tally and proportion count for a selected heterogeneity category.
 Furthermore, specify a custom subset of cell types to retain for analysis}
 \usage{
-cell_cat_modal(cell_cat_value)
+cell_cat_modal(cell_cat_value, cell_choices, cell_types_included)
 }
 \arguments{
 \item{cell_cat_value}{The minimum cell category cutoff (minimum should be set to 2)}
+
+\item{cell_choices}{A vector of all possible cell types in the selected category}
+
+\item{cell_types_included}{vector of cell types that are selected from the category}
 }
 \description{
 Show an input modal to view the frequency tally and proportion count for a selected heterogeneity category.
