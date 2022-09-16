@@ -66,5 +66,5 @@ alternative_markers: "Input a marker that you want to replace. The top markers m
 cell_subsetting: "View the frequency and proportion distribution of the 
                   selected cel category, as well as options to remove certain cell types from analysis or set a minimum category cutoff."
 
-
+reupload: "A yml config file from saved analysis output can be reuploaded, along with the matching SingleCellExperiment, to resume previous analysis."
                       

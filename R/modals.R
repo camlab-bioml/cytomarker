@@ -99,12 +99,17 @@ dne_modal <- function(dne) { # Input marker is not in the dataset
 #' Furthermore, specify a custom subset of cell types to retain for analysis
 #' @importFrom shiny modalDialog
 #' @param cell_cat_value The minimum cell category cutoff (minimum should be set to 2)
-cell_cat_modal <- function(cell_cat_value) {
+#' @param cell_choices A vector of all possible cell types in the selected category
+#' @param cell_types_included vector of cell types that are selected from the category
+cell_cat_modal <- function(cell_cat_value, cell_choices, cell_types_included) {
   modalDialog(
     DT::dataTableOutput("cell_cat_table"),
     flowLayout(cellArgs = list(style = c("width: 300px;")),
                selectInput("user_selected_cells", 
-                           "Create a custom subset for analysis", NULL, multiple=TRUE),
+                           "Create a custom subset for analysis", 
+                           choices = cell_choices, 
+                           selected = cell_types_included,
+                           multiple=TRUE),
                numericInput("min_category_count", "Minimum cell category cutoff:", 
                             cell_cat_value, min = 2, max = 100, step = 0.5, width = NULL)),
     title = "Frequency Count for selected heterogeneity category",
