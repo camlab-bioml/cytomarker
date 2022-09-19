@@ -7,18 +7,24 @@ test_that("Server has functionality", {
     
     # Verify the input sce and default + selected assays
     expect_equal(pref_assay(), "logcounts")
+    
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")))
+    
     expect_is(sce(), 'SingleCellExperiment')
     expect_equivalent(dim(sce()), c(13714, 100))
     session$setInputs(assay_select = "counts", assay = "counts")
     expect_equal(pref_assay(), "counts")
     expect_equal(output$selected_assay, paste("Selected assay: ", "counts"))
     
+    session$setInputs(precomputed_dim = T, select_precomputed_umap = "UMAP",
+                      possible_precomputed_dims = reducedDimNames(sce()))
+    expect_true(use_precomputed_umap())
+    expect_equal(umap_precomputed_col(), "UMAP")
+    
     session$setInputs(coldata_column = "seurat_annotations",
                       min_category_count = 2,
                       show_cat_table = T)
-    
     
     # expect all 9 cell types to be in the tally and selected category
     expect_equal(nrow(summary_cat_tally()), 9)
@@ -26,10 +32,8 @@ test_that("Server has functionality", {
     expect_equal(specific_cell_types_selected(), unique(sce()[["seurat_annotations"]]))                
     
     # Set analysis parameters that will not proceed
-    session$setInputs(user_selected_cells = c("CD8 T", "Memory CD4 T",
-                                              "Naive CD4 T",
-                                              "Platelet"),
-                      panel_size = 24, min_category_count = 0,
+    session$setInputs(user_selected_cells = NULL,
+                      panel_size = 200, min_category_count = 0,
                       subsample_sce = T,
                       start_analysis = T,
                       add_selected_to_analysis = T,
@@ -47,7 +51,11 @@ test_that("Server has functionality", {
     
     
     # Change to passable input parameters
-    session$setInputs(min_category_count = 2,
+    session$setInputs(user_selected_cells = c("CD8 T", "Memory CD4 T",
+                                              "Naive CD4 T",
+                                              "Platelet"),
+                      add_selected_to_analysis = T,
+                      min_category_count = NULL,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       start_analysis = T)
@@ -91,13 +99,25 @@ test_that("Server has functionality", {
     expect_equal(class(heatmap())[1], "plotly")
     expect_equal(class(heatmap())[2], "htmlwidget")
     
-    # espect that the marker columns are set properly and the lengths are verified
+    expect_equal(heatmap()[["x"]][["attrs"]][[1]][["x"]],
+                 heatmap()[["x"]][["attrs"]][[1]][["y"]])
+    
+    # expect of 200 markers to get somewhere between 150 to 200 for redundancy
+    expect_gt(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])), 150)
+    expect_lte(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])),
+                 200)
+    
+    # expect that the marker columns are set properly and the lengths are verified
+    
+    # expect that the marker columns are set properly and the lengths are verified
     session$setInputs(bl_scratch = current_markers()$top_markers[1:10],
-                      bl_top = current_markers()$top_markers[11:24],
-                      refresh_marker_counts = T)
+                      bl_top = current_markers()$top_markers[11:24])
     
     expect_equal(num_markers_in_selected(), 14)
     expect_equal(num_markers_in_scratch(), 10)
+    
+    expect_equal(output$scratch_marker_counts, "<B> Scratch Markers: 10 </B>")
+    expect_equal(output$selected_marker_counts, "<B> Selected Markers: 14 </B>")
     
     # suggest markers to remove
     
@@ -108,7 +128,6 @@ test_that("Server has functionality", {
     
     # move 5 of the top markers into scratch and assert new numbers
     session$setInputs(markers_to_remove = suggestions(),
-                      refresh_marker_counts = T,
                       remove_suggested = T)
     
     # remove 3 from 11
@@ -182,7 +201,6 @@ test_that("Server has functionality", {
     # Look for the uploaded markers in the top markers
     expect_true("EEF2" %in% current_markers()$top_markers)
     expect_true("MARCKS" %in% current_markers()$top_markers)
-
     
     # instead of add, replace markers
     session$setInputs(uploadMarkers = list(datapath =
@@ -194,5 +212,11 @@ test_that("Server has functionality", {
     
     expect_false("LTB" %in% current_markers()$top_markers)
     
+    copy_markers <- current_markers()
+    
+    session$setInputs(start_analysis = T)
+    
+    expect_false(is.null(current_markers()))
+    expect_equal(copy_markers, current_markers())
   })
 })
