@@ -245,6 +245,18 @@ high_cell_number_warning <- function(ncell_sce, num_cells) { # Uploaded marker i
                showConfirmButton = TRUE,
                confirmButtonCol = "#337AB7")
   }
-  
-  
+}
+
+
+#' Show a shinyalert error if the reupload files with the selected sce
+#' @importFrom shinyalert shinyalert
+reupload_failed_modal <- function() {
+  shinyalert(
+    title = "Error",
+    text = paste("The provided yaml reupload file does not match the upload input file. Please double check that the
+                 number of cells, features, metadata and dimension assays (i.e. UMAP) in the input file match the yml fields."),
+    type = "error",
+    showConfirmButton = TRUE,
+    confirmButtonCol = "#337AB7"
+  )
 }

@@ -18,7 +18,10 @@ download_data <- function(zip_filename,
                           antibody_table,
                           marker_strat,
                           antibody_apps,
-                          selected_cell_types) {
+                          selected_cell_types,
+                          precomputed_umap_used,
+                          num_cells,
+                          num_genes) {
 
     tmpdir <- tempdir()
   
@@ -30,6 +33,8 @@ download_data <- function(zip_filename,
     config <- list(
       Time = as.character(Sys.time()),
       `Input file` = input_file,
+      `Number of columns (cells)` = num_cells,
+      `Number of rows (features)` = num_genes,
       `Assay used` = assay_used,
       `Heterogeneity source` = het_source,
       `Target panel size` = panel_size,
@@ -39,7 +44,8 @@ download_data <- function(zip_filename,
       `Scratch marker panel` = current_markers$scratch_markers,
       `Marker strategy` = marker_strat,
       `Antibody applications` = antibody_apps,
-      `User selected cells` = selected_cell_types
+      `User selected cells` = selected_cell_types,
+      `Pre-computed UMAP` = precomputed_umap_used
     )
     write_yaml(config, paths_zip$config)
     

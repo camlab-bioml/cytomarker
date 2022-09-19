@@ -316,7 +316,7 @@ test_that("download works as expected", {
                   list(top_markers = rownames(sce)[1:100]), 
                   plots, heatmap, "fake_path_to_sce", "logcounts",
                   "seurat_annotations", 24, 2, "no", fake_table,
-                  "fm", NULL, NULL)
+                  "fm", NULL, NULL, FALSE, 100, 13714)
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)
@@ -357,6 +357,8 @@ test_that("Error modals throw errors", {
   
   expect_null(high_cell_number_warning(99, 100))
   expect_error(high_cell_number_warning(200, 100))
+  
+  expect_error(reupload_failed_modal())
   
 })
 

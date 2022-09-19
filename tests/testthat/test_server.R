@@ -1,7 +1,7 @@
 
-context("Test Shiny app server functionality")
+context("Test basic Shiny app server functionality")
 
-test_that("Server has functionality", {
+test_that("Server has basic functionality", {
   
   testServer(cytosel::cytosel(), expr = {
     
@@ -55,7 +55,7 @@ test_that("Server has functionality", {
                                               "Naive CD4 T",
                                               "Platelet"),
                       add_selected_to_analysis = T,
-                      min_category_count = NULL,
+                      min_category_count = 2,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       start_analysis = T)
@@ -218,5 +218,35 @@ test_that("Server has functionality", {
     
     expect_false(is.null(current_markers()))
     expect_equal(copy_markers, current_markers())
+    
+    
   })
 })
+
+context("Test reupload Shiny app server functionality")
+
+#### Re-upload analysis ######
+test_that("Re-upload works on server", {
+  
+  testServer(cytosel::cytosel(), expr = {
+  
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_config.yml")))
+    
+    expect_equal(length(specific_cell_types_selected()), 6)
+    expect_equal(cell_min_threshold(), 10)
+    expect_equal(length(markers_reupload()$top_markers), 18)
+    expect_equal(length(markers_reupload()$scratch_markers), 6)
+    
+    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
+                      start_analysis = T)
+    
+    expect_false("NK" %in% cell_types_to_keep())
+    expect_equal(length(cell_types_to_keep()), 5)
+    
+  })
+})
+
+
