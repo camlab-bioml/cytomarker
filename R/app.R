@@ -127,7 +127,9 @@ cytosel <- function(...) {
           ),
         # add padding space between elements
         fluidRow(column(4, bsCollapse(id = "advanced_collapse",
-                       bsCollapsePanel("Advanced Settings", style = "info",
+                       bsCollapsePanel(title = HTML(paste0(
+                         "Advanced settings", tags$span(icon("sort-down",
+                                                       style = "position:right; margin-left: 4px; margin-top: -4px;")))), style = "info",
                                    textOutput("selected_assay"),
                                    br(),
                                    actionButton("show_cat_table", "Category subsetting",
@@ -450,7 +452,7 @@ cytosel <- function(...) {
       if (!isTruthy(specific_cell_types_selected())) {
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
-
+  
     
     if (nrow(cell_category_table) > 100) {
       
@@ -591,17 +593,13 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(sce())
       
-        if (!isTruthy(specific_cell_types_selected())) {
+      if (!isTruthy(specific_cell_types_selected())) {
           specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
-        }
+      }
         
-      if (!isTruthy(reupload_analysis())) {
         if (!isTruthy(cell_min_threshold())) {
           cell_min_threshold(2)
-        } else {
-          cell_min_threshold(input$min_category_count)
         }
-      }
       
       if (cell_min_threshold() < 2) {
         proceed_with_analysis(FALSE)
@@ -1228,6 +1226,7 @@ cytosel <- function(...) {
       pref_assay(yaml_back$`Assay used`)
       updateNumericInput(session, "panel_size", value = yaml_back$`Target panel size`)
       cell_min_threshold(yaml_back$`Min Cell Category cutoff`)
+      updateNumericInput(session, "min_category_count", value = yaml_back$`Min Cell Category cutoff`)
       updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
       updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
       updateSelectInput(session, "select_aa", selected = yaml_back$`Antibody applications`)
@@ -1239,6 +1238,7 @@ cytosel <- function(...) {
       #   updateNumericInput(session, "panel_size", value = sum(length(markers_reupload$top_markers),
       #                                                         length(markers_reupload$scratch_markers)))
       # }
+      updateCheckboxInput(session, inputId = "precomputed_dim", value = NULL)
       reupload_analysis(TRUE)
       
     })
