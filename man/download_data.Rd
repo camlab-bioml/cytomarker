@@ -18,7 +18,10 @@ download_data(
   antibody_table,
   marker_strat,
   antibody_apps,
-  selected_cell_types
+  selected_cell_types,
+  precomputed_umap_used,
+  num_cells,
+  num_genes
 )
 }
 \description{
