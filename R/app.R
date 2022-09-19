@@ -33,6 +33,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @importFrom plotly plot_ly plotlyOutput renderPlotly layout
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel MulticoreParam
+#' @importFrom stringr str_split_fixed
 #' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar
 #' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
 #' valueBoxOutput renderMenu updateTabItems
@@ -283,6 +284,8 @@ cytosel <- function(...) {
     umap_all <- reactiveVal()
     heatmap <- reactiveVal()
     metrics <- reactiveVal()
+    previous_metrics <- reactiveVal()
+    current_metrics <- reactiveVal()
     
     sce <- reactiveVal()
     
@@ -392,8 +395,7 @@ cytosel <- function(...) {
         column(input$coldata_column)
       }
       
-      possible_umap_dims(reducedDimNames(sce())[grepl("UMAP|umap|Umap|uMap|uMAP",
-                                                         reducedDimNames(sce()))])
+      possible_umap_dims(detect_umap_dims_in_sce(sce()))
       
       toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
 
@@ -592,6 +594,10 @@ cytosel <- function(...) {
       req(input$panel_size)
       req(input$coldata_column)
       req(sce())
+      
+      if (isTruthy(current_metrics())) {
+        previous_metrics(current_metrics() |> mutate(Run = "Previous"))
+      }
       
       if (!isTruthy(specific_cell_types_selected())) {
           specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
@@ -1252,8 +1258,7 @@ cytosel <- function(...) {
         use_precomputed_umap(yaml_back$`Pre-computed UMAP`)
         
         if (isTruthy(use_precomputed_umap())) {
-          possible_umap_dims(reducedDimNames(sce())[grepl("UMAP|umap|Umap|uMap|uMAP",
-                                                          reducedDimNames(sce()))])
+          possible_umap_dims(detect_umap_dims_in_sce(sce()))
           showModal(pre_computed_umap_modal(possible_umap_dims()))
         }
         
@@ -1402,6 +1407,8 @@ cytosel <- function(...) {
                              column(), current_markers()$top_markers, pref_assay())
         metrics(scores)
         
+        print(metrics())
+        
         mm <- metrics()
         if (is.null(mm)) {
           return(NULL)
@@ -1423,8 +1430,19 @@ cytosel <- function(...) {
         m$what <- fct_relevel(m$what, paste0("Overall (n = ", cpt['Overall'], ")"))
         m$what <- fct_rev(m$what)
         
-        plots$metric_plot <- plot_ly(m, x = ~score, y = ~what, type='box', hoverinfo = 'none') %>% 
-          layout(xaxis = list(title="Score"),
+        current_metrics(m |> mutate(Run = "Current", cat = str_split_fixed(what, " ", 2)[,1]))
+        
+        if (isTruthy(previous_metrics())) {
+          all_metrics <- rbind(previous_metrics(), current_metrics()) 
+        } else {
+          all_metrics <- current_metrics()
+        }
+        
+        plots$metric_plot <- plot_ly(all_metrics, x = ~score, y = ~cat, 
+                                     color = ~Run,
+                                     type='box', hoverinfo = 'none') %>% 
+          layout(boxmode = "group",
+                 xaxis = list(title="Score"),
                  yaxis = list(title="Source"))
         
         

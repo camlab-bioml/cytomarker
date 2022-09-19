@@ -116,6 +116,8 @@ test_that("get_umap returns valid dataframe and values with different assays", {
   expect_equal(nrow(umap_frame_log), ncol(sce))
   expect_false(unique(umap_frame_norm[,1] == umap_frame_log[,1]))
   expect_false(unique(umap_frame_norm[,2] == umap_frame_log[,2]))
+  
+  expect_equal(detect_umap_dims_in_sce(sce), "UMAP")
 
 })
 
