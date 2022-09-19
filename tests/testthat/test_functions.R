@@ -133,7 +133,18 @@ test_that("create_heatmap works effectively with different normalizations", {
                  "z-score", "logcounts")
   
   expect_is(heat_z, 'plotly')
-  expect_equal(as.character(heat_z$x$attrs[[1]]$z)[2], "expression")
+  
+  heat_z_expression <- heat_z$x$attrs[[3]]$z
+  heat_z_expression <- round(heat_z_expression, 3)
+  
+  expect_equal(heat_z_expression,
+               structure(c(-1.049, -1.079, 0.33, 0.839, 0.959, 0.483, -1.289, 
+                           0.161, 1.289, -0.645, 0.943, -1.414, -0.471, 0, 0.943, 0.153, 
+                           -0.614, -0.614, -0.614, 1.687, 1.356, 0.574, -0.469, -1.252, 
+                           -0.209), .Dim = c(5L, 5L), .Dimnames = list(c("3", "1", "5", 
+                                                                         "4", "2"), 
+                                                                       c("JUNB", "EEF2", 
+                                                                         "MSN", "MARCKS", "RBM3"))))
   
   heat_cor <- create_heatmap(sce, markers, "seurat_annotations", "Marker-marker correlation",
                            "z-score", "logcounts")

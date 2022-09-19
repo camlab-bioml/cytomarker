@@ -54,7 +54,8 @@ Imports:
     tidyr,
     htmlwidgets,
     shinydashboard,
-    shinyBS
+    shinyBS,
+    heatmaply
 Suggests:
   stringr,
   yardstick,
