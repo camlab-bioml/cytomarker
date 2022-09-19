@@ -15,7 +15,7 @@ context("Data reading")
 test_that("SingleCellExperiment object reading", {
   obj <- test_path("test_sce.rds")
   sce <- read_input_scrnaseq(obj)
-
+  
   expect_is(sce, 'SingleCellExperiment')
   expect_equivalent(dim(sce), c(100, 500))
   expect_equivalent(rownames(sce), paste("feature-", seq(1, 100, 1), sep=""))
@@ -106,8 +106,8 @@ test_that("get_umap returns valid dataframe and values with different assays", {
   obj <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(obj)
 
-  umap_frame_log <- get_umap(sce, "seurat_annotations", "logcounts")
-  umap_frame_norm <- get_umap(sce, "seurat_annotations", "counts")
+  umap_frame_log <- get_umap(sce, "seurat_annotations", "logcounts", marker_num = 20)
+  umap_frame_norm <- get_umap(sce, "seurat_annotations", "counts", marker_num = 20)
   expect_is(umap_frame_log, 'data.frame')
   expect_equal(ncol(umap_frame_log), 3)
   expect_equal(nrow(umap_frame_log), ncol(sce))
@@ -124,10 +124,12 @@ context("heatmaps")
 test_that("create_heatmap works effectively with different normalizations", {
   obj <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(obj)
+  
+  sce$num_placeholder <- rep(seq(5), 20)
 
   markers <- list(top_markers = c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB"))
   
-  heat_z <- create_heatmap(sce, markers, "seurat_annotations", "Expression",
+  heat_z <- create_heatmap(sce, markers, "num_placeholder", "Expression",
                  "z-score", "logcounts")
   
   expect_is(heat_z, 'plotly')
@@ -224,12 +226,16 @@ test_that("Filtering sce objects by minimum count passes & retains original size
   expect_true("NK" %in% cells_retained)
   
   
-  sce_with_retention <- create_sce_column_for_analysis(sce, cells_retained, 
+  # expect that the length of the sce does not change when adding the keep_for_analysis
+  # annotations
+  sce_no_null <- remove_null_and_va_from_cell_cat(sce, "seurat_annotations")
+  
+  expect_equal(dim(sce_no_null)[2], dim(sce)[2])
+  
+  sce_with_retention <- create_sce_column_for_analysis(sce_no_null, cells_retained, 
                                                        "seurat_annotations")
   
   expect_is(sce_with_retention, 'SingleCellExperiment')
-  # expect that the length of the sce does not change when adding the keep_for_analysis
-  # annotations
   expect_equal(dim(sce_with_retention)[2], dim(sce)[2])
   
   # Expect 7 cells not kept for analysis due to filtering
@@ -276,8 +282,9 @@ test_that("download works as expected", {
                             "seurat_annotations", "Marker-marker correlation",
                             "z-score", "logcounts")
   
-  umap_all <- get_umap(sce, "seurat_annotations", "logcounts")
-  umap_top <- get_umap(sce[rownames(sce)[1:100]], "seurat_annotations", "logcounts")
+  umap_all <- get_umap(sce, "seurat_annotations", "logcounts", marker_num = 20)
+  umap_top <- get_umap(sce[rownames(sce)[1:100]], "seurat_annotations", "logcounts",
+                       marker_num = 20)
   
   plots <- list()
   
@@ -300,10 +307,15 @@ test_that("download works as expected", {
   withr::with_tempdir({
     filepath <- file.path(paste0("Cytosel-Panel-", Sys.Date(), ".zip"))
     
+    fake_table <- cytosel_data$antibody_info |>
+      rename(Symbol = `Gene Name (Upper)`) |>
+      drop_na() |>
+      filter(Symbol %in% rownames(sce)[1:17])
+    
     download_data(filepath,
                   list(top_markers = rownames(sce)[1:100]), 
                   plots, heatmap, "fake_path_to_sce", "logcounts",
-                  "seurat_annotations", 24, 2, "no")
+                  "seurat_annotations", 24, 2, "no", fake_table)
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)
@@ -315,7 +327,35 @@ test_that("download works as expected", {
     expect_equal(yaml_back$`Input file`, "fake_path_to_sce")
     expect_equal(yaml_back$`Heterogeneity source`, "seurat_annotations")
     
+    table_back <- read.table(file.path(td, paste0("Antibody-info-", Sys.Date(), ".tsv")),
+                             sep = "\t", header = T)
+
+    expect_equal(unique(table_back$Symbol %in% rownames(sce)[1:17]),
+                 TRUE)
+    
   })
+  
+})
+
+context("test error warnings from modals")
+
+test_that("Error modals throw errors", {
+  expect_error(invalid_modal())
+  fake_long_cols <- list(colnames = "Too_Many", n = 200)
+  expect_error(unique_element_modal(fake_long_cols))
+  fake_one_col <- list(colnames = "CAMLAB", n = 1)
+  expect_error(unique_element_modal(fake_one_col))
+  
+  expect_error(warning_modal("CAMLAB"))
+  expect_error(dne_modal("CAMLAB"))
+  
+  expect_error(too_large_to_show_modal("FAKE_COL"))
+  
+  expect_error(throw_error_or_warning(message = "Error!",
+                                        notificationType = 'error'))
+  
+  expect_null(high_cell_number_warning(99, 100))
+  expect_error(high_cell_number_warning(200, 100))
   
 })
 

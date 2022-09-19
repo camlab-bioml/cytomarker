@@ -14,7 +14,8 @@ download_data <- function(zip_filename,
                           het_source,
                           panel_size,
                           cell_cutoff_value,
-                          subsample) {
+                          subsample,
+                          antibody_table) {
 
     tmpdir <- tempdir()
   
@@ -39,6 +40,11 @@ download_data <- function(zip_filename,
     
     selected_markers <- current_markers$top_markers
     write_lines(selected_markers, paths_zip$marker_selection)
+    
+    if (isTruthy(antibody_table)) {
+      paths_zip$df <- file.path(tmpdir, paste0("Antibody-info-", Sys.Date(), ".tsv"))
+      write.table(antibody_table, paths_zip$df, quote = F, row.names = F, sep = "\t")
+    }    
     
     if (isTruthy(heatmap)) {
       paths_zip$heatmap <- file.path(tmpdir, paste0("Heatmap-", Sys.Date(), ".html"))

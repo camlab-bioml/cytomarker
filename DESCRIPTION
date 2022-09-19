@@ -52,7 +52,9 @@ Imports:
     parallel,
     BiocParallel,
     tidyr,
-    htmlwidgets
+    htmlwidgets,
+    shinydashboard,
+    shinyBS
 Suggests:
   stringr,
   yardstick,
