@@ -101,6 +101,10 @@ cytosel <- function(...) {
                                 background-color: #FFFFFF;
                                 }
                                 
+                                #cell_cat_preview {
+                                max-width: 45%;
+                                }
+                                
                                 '))),
       
       
@@ -126,6 +130,8 @@ cytosel <- function(...) {
               bs_embed_tooltip(title = get_tooltip('coldata_column'),
                       placement = "right", html = "true")
           ),
+        textOutput("cell_cat_preview"),
+        br(),
         # add padding space between elements
         fluidRow(column(4, bsCollapse(id = "advanced_collapse",
                        bsCollapsePanel(title = HTML(paste0(
@@ -160,17 +166,18 @@ cytosel <- function(...) {
                                icon("circle-info") %>%
                                bs_embed_tooltip(title = "Placeholder",
                                placement = "right", html = "true"))
+                   ),
+                   bsCollapsePanel(title = HTML(paste0(
+                     "Upload previous analysis", tags$span(icon("sort-down",
+                                                                style = "position:right; margin-left: 4px; margin-top: -4px;")))), style = "info",
+                     fileInput("read_back_analysis",
+                               label = NULL, accept = c(".yml")) %>%
+                       shinyInput_label_embed(
+                         icon("circle-info") %>%
+                           bs_embed_tooltip(title = get_tooltip('reupload'),
+                                            placement = "right", html = "true"))
+                   )
                    )))),
-        fluidRow(column(5,
-                        fileInput("read_back_analysis",
-                                  label = p(
-                                    'Upload previous analysis',
-                                  ), accept = c(".yml")) %>%
-                          shinyInput_label_embed(
-                            icon("circle-info") %>%
-                              bs_embed_tooltip(title = get_tooltip('reupload'),
-                                               placement = "right", html = "true")
-                          )))),
       tabItem("marker_selection",
                  # icon = icon("list"),
                  br(),
@@ -417,6 +424,18 @@ cytosel <- function(...) {
       req(input$input_scrnaseq)
       column(input$coldata_column)
       
+      len_possible_cats <- length(unique(sce()[[input$coldata_column]]))
+      num_limit <- ifelse(len_possible_cats <= 3, len_possible_cats, 3)
+      cats_to_show <- unique(sce()[[input$coldata_column]])[1:num_limit]
+      others_addition <- ifelse(len_possible_cats <= 3, "", "and others")
+      
+      output$cell_cat_preview <- renderText({paste(len_possible_cats,
+                                                   "categories in selected column, including",
+                                                   paste(cats_to_show,
+                                                         collapse = ", "),
+                                                   others_addition,
+                                                   sep = " ")})
+      
       if (!isTruthy(reupload_analysis())) {
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
@@ -607,15 +626,7 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(sce())
       
-      if (isTruthy(current_metrics())) {
-        previous_metrics(current_metrics() |> mutate(Run = "Previous"))
-      }
-      
-      if (isTruthy(current_distribution())) {
-        previous_distribution(current_distribution() |> mutate(Run = "Previous"))
-      }
-      
-      if (!isTruthy(specific_cell_types_selected())) {
+      if (!isTruthy(specific_cell_types_selected()) | length(specific_cell_types_selected()) < 1) {
           specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
         
@@ -818,9 +829,10 @@ cytosel <- function(...) {
             })
             
             first_render_outputs(TRUE)
-          } 
-        
+          }
       })
+      
+      reupload_analysis(FALSE)
       
     })
     
@@ -1428,6 +1440,16 @@ cytosel <- function(...) {
         scores <- get_scores(sce()[,sce()$keep_for_analysis == "Yes"], 
                              column(), current_markers()$top_markers, pref_assay())
         metrics(scores)
+        
+        # update previous metrics before current
+        
+        if (isTruthy(current_metrics())) {
+          previous_metrics(current_metrics() |> mutate(Run = "Previous"))
+        }
+        
+        if (isTruthy(current_distribution())) {
+          previous_distribution(current_distribution() |> mutate(Run = "Previous"))
+        }
         
         mm <- metrics()
         if (is.null(mm)) {

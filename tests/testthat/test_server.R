@@ -26,6 +26,9 @@ test_that("Server has basic functionality", {
                       min_category_count = 2,
                       show_cat_table = T)
     
+    expect_equal(output$cell_cat_preview,
+              "9 categories in selected column, including B, Undetermined, CD14+ Mono and others")
+    
     # expect all 9 cell types to be in the tally and selected category
     expect_equal(nrow(summary_cat_tally()), 9)
     expect_equal(length(specific_cell_types_selected()), 9)
@@ -49,6 +52,8 @@ test_that("Server has basic functionality", {
                       start_analysis = T)
     expect_false(any_cells_present())
     
+    expect_null(previous_distribution())
+    expect_null(previous_metrics())
     
     # Change to passable input parameters
     session$setInputs(user_selected_cells = c("CD8 T", "Memory CD4 T",
@@ -214,16 +219,30 @@ test_that("Server has basic functionality", {
     
     copy_markers <- current_markers()
     
-    session$setInputs(start_analysis = T)
-    
     expect_false(is.null(current_markers()))
     expect_equal(copy_markers, current_markers())
-    
     
   })
 })
 
 context("Test reupload Shiny app server functionality")
+
+
+
+#### Re-upload analysis ######
+test_that("Re-upload fails with bad config", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("fake_config.yml")))
+    
+    expect_false(reupload_analysis())
+    
+  })
+})
 
 #### Re-upload analysis ######
 test_that("Re-upload works on server", {
@@ -234,6 +253,8 @@ test_that("Re-upload works on server", {
                                               test_path("pbmc_small.rds")),
                       read_back_analysis = list(datapath =
                                                   test_path("test_config.yml")))
+    
+    expect_true(reupload_analysis())
     
     expect_equal(length(specific_cell_types_selected()), 6)
     expect_equal(cell_min_threshold(), 10)
