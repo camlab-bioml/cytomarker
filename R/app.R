@@ -23,7 +23,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @import sortable
 #' @import reactable
 #' @importFrom readr write_lines read_tsv read_csv
-#' @importFrom dplyr desc mutate_if
+#' @importFrom dplyr desc mutate_if distinct
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_tooltip use_bs_tooltip
 #' @importFrom shinyjs useShinyjs hidden toggle
 #' @importFrom grDevices dev.off pdf
@@ -36,7 +36,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @importFrom stringr str_split_fixed
 #' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar
 #' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
-#' valueBoxOutput renderMenu updateTabItems
+#' valueBoxOutput renderMenu updateTabItems tabBox
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @importFrom yaml read_yaml
 #' @export
@@ -243,9 +243,19 @@ cytosel <- function(...) {
                  tags$span(icon("circle-info") %>%
                              bs_embed_tooltip(title = get_tooltip('metrics_explanation'),
                                               placement = "right", html = TRUE)),
-                 textOutput("cells_per_category"),
-                 plotlyOutput("metric_plot")
-          ),
+                 # textOutput("cells_per_category"),
+                fluidRow(
+                column(8, plotlyOutput("metric_plot"),),
+                column(4, align = "center",
+                       tabBox(width = NULL,
+                  # Title can include an icon
+                  tabPanel("Current Run Metrics",
+                           DTOutput("current_run_metrics", width = "80%")
+                  ),
+                  tabPanel("Previous Run Metrics",
+                           DTOutput("previous_run_metrics", width = "80%"))
+                )
+          ))),
 
       tabItem("alternative_markers",
                  # icon = icon("exchange-alt"),
@@ -286,6 +296,8 @@ cytosel <- function(...) {
     metrics <- reactiveVal()
     previous_metrics <- reactiveVal()
     current_metrics <- reactiveVal()
+    previous_distribution <- reactiveVal()
+    current_distribution <- reactiveVal()
     
     sce <- reactiveVal()
     
@@ -446,7 +458,7 @@ cytosel <- function(...) {
   
     cell_category_table <- create_table_of_hetero_cat(sce(),
                                                       input$coldata_column)
-
+    
       if (!isTruthy(cell_min_threshold())) {
         cell_min_threshold(2)
       }
@@ -599,6 +611,10 @@ cytosel <- function(...) {
         previous_metrics(current_metrics() |> mutate(Run = "Previous"))
       }
       
+      if (isTruthy(current_distribution())) {
+        previous_distribution(current_distribution() |> mutate(Run = "Previous"))
+      }
+      
       if (!isTruthy(specific_cell_types_selected())) {
           specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
@@ -706,6 +722,12 @@ cytosel <- function(...) {
               get_allowed_genes(input$select_aa, applications_parsed, 
                                 sce()[,sce()$keep_for_analysis == "Yes"])
             )
+            
+            # Make metric table 
+            
+            current_distribution(create_table_of_hetero_cat(sce()[,sce()$keep_for_analysis == "Yes"],
+                                                              input$coldata_column) |>
+                               mutate(Run = "Current"))
             
             
             ## Change selected column to character to avoid factor levels without data
@@ -1407,8 +1429,6 @@ cytosel <- function(...) {
                              column(), current_markers()$top_markers, pref_assay())
         metrics(scores)
         
-        print(metrics())
-        
         mm <- metrics()
         if (is.null(mm)) {
           return(NULL)
@@ -1445,6 +1465,14 @@ cytosel <- function(...) {
                  xaxis = list(title="Score"),
                  yaxis = list(title="Source"))
         
+        output$current_run_metrics <- renderDT(current_metrics() |>
+                                      distinct(what) |> mutate(`Category Counts` = what) |> 
+                                        select(`Category Counts`))
+        if (isTruthy(previous_metrics())) {
+          output$previous_run_metrics <- renderDT(previous_metrics() |>
+                                        distinct(what) |> mutate(`Category Counts` = what) |> 
+                                          select(`Category Counts`))
+        }
         
         # Show help text popover
         shinyjs::show(id = "marker_visualization")
