@@ -44,8 +44,9 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @param ... Additional arguments
 cytosel <- function(...) {
   
-  antibody_info <- dplyr::rename(cytosel_data$antibody_info, Symbol = `Gene Name (Upper)`)
-  antibody_info <- tidyr::drop_na(antibody_info)
+  antibody_info <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
+                                                  `Gene Name (Upper)`) |>
+                    tidyr::drop_na()
   
   options(MulticoreParam=quote(MulticoreParam(workers=availableCores())))
 
@@ -102,7 +103,7 @@ cytosel <- function(...) {
                                 }
                                 
                                 #cell_cat_preview {
-                                max-width: 45%;
+                                max-width: 35%;
                                 }
                                 
                                 '))),
@@ -169,15 +170,16 @@ cytosel <- function(...) {
                    ),
                    bsCollapsePanel(title = HTML(paste0(
                      "Upload previous analysis", tags$span(icon("sort-down",
-                                                                style = "position:right; margin-left: 4px; margin-top: -4px;")))), style = "info",
+                                                style = "position:right; margin-left: 4px; margin-top: -4px;")))), style = "info",
                      fileInput("read_back_analysis",
-                               label = NULL, accept = c(".yml")) %>%
+                               label = "Select a yml file from a previous run",
+                               accept = c(".yml")) %>%
                        shinyInput_label_embed(
                          icon("circle-info") %>%
                            bs_embed_tooltip(title = get_tooltip('reupload'),
-                                            placement = "right", html = "true"))
-                   )
-                   )))),
+                                            placement = "right", html = "true")),
+                     br()
+                   ))))),
       tabItem("marker_selection",
                  # icon = icon("list"),
                  br(),
@@ -232,15 +234,18 @@ cytosel <- function(...) {
                                   bs_embed_tooltip(title = get_tooltip('heatmap_expression_norm'),
                                       placement = "right"))
                                 ))),
-              splitLayout(cellWidths = c(190, 200),
-                          div(numericInput("n_genes", "Number of genes to remove", 
-                                           value = 10, min = 1, width = "50%")),
-                          div(style = "margin-top:25px;", actionButton("suggest_gene_removal", "View suggestions"))),
+             
+                  splitLayout(cellWidths = c(320, 280),
+                                          div(style="display: inline-block;vertical-align:top; margin-right:10px;",
+                              numericInput("n_genes", "Genes to remove", 
+                                           value = 10, min = 1, width = "110%") %>%
+                                shinyInput_label_embed(icon("circle-info") %>%
+                              bs_embed_tooltip(title = get_tooltip('gene_removal'),
+                                              placement = "right"))),
+                          div(style="display: inline-block;vertical-align:top;",
+                              actionButton("suggest_gene_removal", "View suggestions"))),
                  plotlyOutput("heatmap", height="600px"),
-                 hr(),
-                 tags$span(icon("circle-info") %>%
-                             bs_embed_tooltip(title = get_tooltip('gene_removal'),
-                                              placement = "right"))
+                 br()
           ),
 
       tabItem("Metrics",
@@ -1395,13 +1400,13 @@ cytosel <- function(...) {
                           umap_precomputed_col(),
                           T, num_markers_in_selected()))
         
-        plots$all_plot <- plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
+        plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-          layout(title = "UMAP all genes", showlegend = F)
+          layout(title = "UMAP all genes", showlegend = F))
         
-        plots$top_plot <- plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
+        plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-          layout(title = "UMAP selected markers")
+          layout(title = "UMAP selected markers"))
         
         # Update heatmap
         incProgress(detail = "Drawing heatmap")
@@ -1480,12 +1485,12 @@ cytosel <- function(...) {
           all_metrics <- current_metrics()
         }
         
-        plots$metric_plot <- plot_ly(all_metrics, x = ~score, y = ~cat, 
+        plots$metric_plot <- suppressWarnings(plot_ly(all_metrics, x = ~score, y = ~cat, 
                                      color = ~Run,
                                      type='box', hoverinfo = 'none') %>% 
           layout(boxmode = "group",
                  xaxis = list(title="Score"),
-                 yaxis = list(title="Source"))
+                 yaxis = list(title="Source")))
         
         output$current_run_metrics <- renderDT(current_metrics() |>
                                       distinct(what) |> mutate(`Category Counts` = what) |> 
