@@ -84,8 +84,6 @@ cytosel <- function(...) {
         menuItem("Get Started", tabName = "inputs", icon = icon("gear")),
         sidebarMenuOutput(outputId = 'output_menu'),
         br(),
-        # div(style="display:inline-block;width:110%;text-align: center;",
-        #     actionButton("start_analysis", "Go!", icon=icon("play", style = "color:black;"))),
         column(10, offset = 0, align = "center",
                         actionButton("start_analysis", "Run analysis!", icon=icon("play", style = "color:black;"))),
         column(10, offset = 0, align = "center",
@@ -103,14 +101,10 @@ cytosel <- function(...) {
                                 }
                                 
                                 #cell_cat_preview {
-                                max-width: 35%;
+                                max-width: 30%;
                                 }
                                 
                                 '))),
-      
-      
-    # bsPopover(id = 'q1', 'Upload an Input scRNA-seq file', content = 'Input scRNA-seq file',
-    #             trigger = 'click', options = list(container = "body")),
       
     # Tabs
     tabItems(
@@ -244,7 +238,7 @@ cytosel <- function(...) {
                                               placement = "right"))),
                           div(style="display: inline-block;vertical-align:top;",
                               actionButton("suggest_gene_removal", "View suggestions"))),
-                 plotlyOutput("heatmap", height="600px"),
+                 fluidRow(column(12, plotlyOutput("heatmap", height="550px"))),
                  br()
           ),
 
@@ -842,19 +836,6 @@ cytosel <- function(...) {
       
     })
     
-    # # re-count the number of markers in each space when the sortable js is changed
-    # observeEvent(input$bl_scratch, {
-    #   markers <- list(recommended_markers = current_markers()$recommended_markers,
-    #                   scratch_markers = input$bl_scratch,
-    #                   top_markers = current_markers()$top_markers)
-    #   current_markers(set_current_markers_safely(markers, fms()))
-    #   num_markers_in_selected(length(current_markers()$top_markers))
-    #   num_markers_in_scratch(length(current_markers()$scratch_markers))
-    #   update_BL(current_markers(), num_markers_in_selected(),
-    #             num_markers_in_scratch(),
-    #             names(fms()[[1]]))
-    # })
-    
     # re-count the number of markers in each space when the sortable js is changed
     observeEvent(input$bl_top, {
       req(sce())
@@ -1096,7 +1077,6 @@ cytosel <- function(...) {
       
       ## What to do when heatmap selection is made
       req(sce())
-      
       columns <- column()
       
       observeEvent(input$heatmap_expression_norm, {
