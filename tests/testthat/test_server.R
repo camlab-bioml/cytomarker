@@ -248,6 +248,11 @@ test_that("Re-upload fails with bad config", {
 test_that("Re-upload works on server", {
   
   testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                      test_path("test_config.yml")))
+    
+    expect_false(reupload_analysis())
   
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
@@ -266,6 +271,13 @@ test_that("Re-upload works on server", {
     
     expect_false("NK" %in% cell_types_to_keep())
     expect_equal(length(cell_types_to_keep()), 5)
+    
+    expect_false(is.null(output$downloadData))
+    
+    withr::with_tempdir({
+      session$setInputs(downloadData = T)
+      expect_true(file.exists(output$downloadData))
+    })
     
   })
 })

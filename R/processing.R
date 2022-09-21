@@ -409,6 +409,6 @@ remove_null_and_va_from_cell_cat <- function(sce, input_column) {
 #' Detect if the sce has any UMAP dimension assays 
 #' @importFrom SingleCellExperiment reducedDimNames
 detect_umap_dims_in_sce <- function(sce) {
-  return(reducedDimNames(sce[grepl("UMAP|umap|Umap|uMap|uMAP",
-                                      reducedDimNames(sce))]))
+  return(reducedDimNames(sce)[grepl("UMAP|umap|Umap|uMap|uMAP",
+                          reducedDimNames(sce))])
 }
