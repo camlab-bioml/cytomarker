@@ -260,3 +260,17 @@ reupload_failed_modal <- function() {
     confirmButtonCol = "#337AB7"
   )
 }
+
+#' Show a shinyalert error if the user tries to upload the yml file before the sce
+#' @importFrom shinyalert shinyalert
+reupload_before_sce_modal <- function() {
+  shinyalert(
+    title = "Error",
+    text = paste("Please upload an scRNA-seq file prior to uploading the matching yml file."),
+    type = "error",
+    showConfirmButton = TRUE,
+    confirmButtonCol = "#337AB7"
+  )
+}
+
+

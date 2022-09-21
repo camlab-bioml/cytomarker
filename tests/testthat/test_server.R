@@ -27,7 +27,7 @@ test_that("Server has basic functionality", {
                       show_cat_table = T)
     
     expect_equal(output$cell_cat_preview,
-              "9 categories in selected column, including B, Undetermined, CD14+ Mono and others")
+              "9 groupings in selected category, including B, Undetermined, CD14+ Mono and others")
     
     # expect all 9 cell types to be in the tally and selected category
     expect_equal(nrow(summary_cat_tally()), 9)
