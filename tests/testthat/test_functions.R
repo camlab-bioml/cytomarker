@@ -361,6 +361,7 @@ test_that("Error modals throw errors", {
   expect_error(high_cell_number_warning(200, 100))
   
   expect_error(reupload_failed_modal())
+  expect_error(reupload_before_sce_modal())
   
 })
 

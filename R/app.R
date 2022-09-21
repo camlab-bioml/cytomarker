@@ -25,7 +25,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @importFrom readr write_lines read_tsv read_csv
 #' @importFrom dplyr desc mutate_if distinct
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_tooltip use_bs_tooltip
-#' @importFrom shinyjs useShinyjs hidden toggle
+#' @importFrom shinyjs useShinyjs hidden toggle reset
 #' @importFrom grDevices dev.off pdf
 #' @importFrom zip zip
 #' @importFrom randomcoloR distinctColorPalette
@@ -257,7 +257,7 @@ cytosel <- function(...) {
                                               placement = "right", html = TRUE)),
                  # textOutput("cells_per_category"),
                 fluidRow(
-                column(8, plotlyOutput("metric_plot"),),
+                column(8, plotlyOutput("metric_plot", height="550px"),),
                 column(4, align = "center",
                        tabBox(width = NULL,
                   # Title can include an icon
@@ -433,9 +433,10 @@ cytosel <- function(...) {
       num_limit <- ifelse(len_possible_cats <= 3, len_possible_cats, 3)
       cats_to_show <- unique(sce()[[input$coldata_column]])[1:num_limit]
       others_addition <- ifelse(len_possible_cats <= 3, "", "and others")
+      var_group <- ifelse(len_possible_cats < 2, "grouping", "groupings")
       
       output$cell_cat_preview <- renderText({paste(len_possible_cats,
-                                                   "categories in selected column, including",
+                                                   var_group, "in selected category, including",
                                                    paste(cats_to_show,
                                                          collapse = ", "),
                                                    others_addition,
@@ -1262,51 +1263,58 @@ cytosel <- function(...) {
     ## Re-upload previous analysis
     
     observeEvent(input$read_back_analysis, {
-      req(sce())
       
-      yaml_back <- read_back_in_saved_yaml(input$read_back_analysis$datapath)
-      
-      if (isTruthy(yaml_back$`Pre-computed UMAP`) &
-          length(reducedDimNames(sce())[grepl("UMAP|umap|Umap|uMap|uMAP",
-          reducedDimNames(sce()))]) < 1) {
-        reupload_failed_modal()
-        reupload_analysis(FALSE)
-      } else if (yaml_back$`Number of columns (cells)` == ncol(sce()) &
-          yaml_back$`Number of rows (features)` == nrow(sce()) &
-          yaml_back$`Heterogeneity source` %in% colnames(colData(sce()))) {
-        
-        updateSelectInput(session, "coldata_column", choices = colnames(colData(sce())),
-                          selected = yaml_back$`Heterogeneity source`)
-        pref_assay(yaml_back$`Assay used`)
-        updateNumericInput(session, "panel_size", value = yaml_back$`Target panel size`)
-        cell_min_threshold(yaml_back$`Min Cell Category cutoff`)
-        updateNumericInput(session, "min_category_count", value = yaml_back$`Min Cell Category cutoff`)
-        updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
-        updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
-        updateSelectInput(session, "select_aa", selected = yaml_back$`Antibody applications`)
-        specific_cell_types_selected(yaml_back$`User selected cells`)
-        markers_reupload(list(top_markers = yaml_back$`Selected marker panel`,
-                              scratch_markers = yaml_back$`Scratch marker panel`))
-        yaml_length <- sum(c(length(markers_reupload()$top_markers),
-                             length(markers_reupload()$scratch_markers)))
-        if (yaml_length != yaml_back$`Target panel size`) {
-          updateNumericInput(session, "panel_size", value = yaml_length)
-        }
-        updateCheckboxInput(session, inputId = "precomputed_dim",
-                            value = yaml_back$`Pre-computed UMAP`)
-        use_precomputed_umap(yaml_back$`Pre-computed UMAP`)
-        
-        if (isTruthy(use_precomputed_umap())) {
-          possible_umap_dims(detect_umap_dims_in_sce(sce()))
-          showModal(pre_computed_umap_modal(possible_umap_dims()))
-        }
-        
-        reupload_analysis(TRUE)
+      if (!isTruthy(sce())) {
+       reupload_before_sce_modal()
+       reupload_analysis(FALSE)
+       reset("read_back_analysis")
       } else {
-        reupload_failed_modal()
-        reupload_analysis(FALSE)
+        yaml_back <- read_back_in_saved_yaml(input$read_back_analysis$datapath)
+        
+        if (isTruthy(yaml_back$`Pre-computed UMAP`) &
+            length(reducedDimNames(sce())[grepl("UMAP|umap|Umap|uMap|uMAP",
+                                                reducedDimNames(sce()))]) < 1) {
+          reupload_failed_modal()
+          reupload_analysis(FALSE)
+          reset("read_back_analysis")
+        } else if (yaml_back$`Number of columns (cells)` == ncol(sce()) &
+                   yaml_back$`Number of rows (features)` == nrow(sce()) &
+                   yaml_back$`Heterogeneity source` %in% colnames(colData(sce()))) {
+          
+          updateSelectInput(session, "coldata_column", choices = colnames(colData(sce())),
+                            selected = yaml_back$`Heterogeneity source`)
+          pref_assay(yaml_back$`Assay used`)
+          updateNumericInput(session, "panel_size", value = yaml_back$`Target panel size`)
+          cell_min_threshold(yaml_back$`Min Cell Category cutoff`)
+          updateNumericInput(session, "min_category_count", value = yaml_back$`Min Cell Category cutoff`)
+          updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
+          updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
+          updateSelectInput(session, "select_aa", selected = yaml_back$`Antibody applications`)
+          specific_cell_types_selected(yaml_back$`User selected cells`)
+          markers_reupload(list(top_markers = yaml_back$`Selected marker panel`,
+                                scratch_markers = yaml_back$`Scratch marker panel`))
+          yaml_length <- sum(c(length(markers_reupload()$top_markers),
+                               length(markers_reupload()$scratch_markers)))
+          if (yaml_length != yaml_back$`Target panel size`) {
+            updateNumericInput(session, "panel_size", value = yaml_length)
+          }
+          updateCheckboxInput(session, inputId = "precomputed_dim",
+                              value = yaml_back$`Pre-computed UMAP`)
+          use_precomputed_umap(yaml_back$`Pre-computed UMAP`)
+          
+          if (isTruthy(use_precomputed_umap())) {
+            possible_umap_dims(detect_umap_dims_in_sce(sce()))
+            showModal(pre_computed_umap_modal(possible_umap_dims()))
+          }
+          
+          reupload_analysis(TRUE)
+        } else {
+          reupload_failed_modal()
+          reupload_analysis(FALSE)
+          reset("read_back_analysis")
+        }
+        
       }
-      
     })
     
     ### UPDATE SELECTED MARKERS ###
@@ -1468,16 +1476,17 @@ cytosel <- function(...) {
         ## Add in number of cells per condition
         cpt <- cells_per_type()
         cpt['Overall'] <- sum(cpt)
-        m$what <- plyr::mapvalues(as.character(m$what),
+        m$what_tally <- plyr::mapvalues(as.character(m$what),
                                   from = names(cpt), 
                                   to = paste0(names(cpt), " (n = ", cpt, ")"))
-        m$what <- as.factor(m$what)
+        m$what_tally <- as.factor(m$what_tally)
         
-        m$what <- fct_reorder(m$what, desc(m$score))
-        m$what <- fct_relevel(m$what, paste0("Overall (n = ", cpt['Overall'], ")"))
-        m$what <- fct_rev(m$what)
+        m$what_tally <- fct_reorder(m$what_tally, desc(m$score))
+        m$what_tally <- fct_relevel(m$what_tally, 
+                                    paste0("Overall (n = ", cpt['Overall'], ")"))
+        m$what_tally <- fct_rev(m$what_tally)
         
-        current_metrics(m |> mutate(Run = "Current", cat = str_split_fixed(what, " ", 2)[,1]))
+        current_metrics(m |> mutate(Run = "Current"))
         
         if (isTruthy(previous_metrics())) {
           all_metrics <- rbind(previous_metrics(), current_metrics()) 
@@ -1485,7 +1494,7 @@ cytosel <- function(...) {
           all_metrics <- current_metrics()
         }
         
-        plots$metric_plot <- suppressWarnings(plot_ly(all_metrics, x = ~score, y = ~cat, 
+        plots$metric_plot <- suppressWarnings(plot_ly(all_metrics, x = ~score, y = ~what, 
                                      color = ~Run,
                                      type='box', hoverinfo = 'none') %>% 
           layout(boxmode = "group",
@@ -1493,11 +1502,11 @@ cytosel <- function(...) {
                  yaxis = list(title="Source")))
         
         output$current_run_metrics <- renderDT(current_metrics() |>
-                                      distinct(what) |> mutate(`Category Counts` = what) |> 
+                                      distinct(what_tally) |> mutate(`Category Counts` = what_tally) |> 
                                         select(`Category Counts`))
         if (isTruthy(previous_metrics())) {
           output$previous_run_metrics <- renderDT(previous_metrics() |>
-                                        distinct(what) |> mutate(`Category Counts` = what) |> 
+                                        distinct(what_tally) |> mutate(`Category Counts` = what_tally) |> 
                                           select(`Category Counts`))
         }
         
