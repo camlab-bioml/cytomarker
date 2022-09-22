@@ -273,4 +273,11 @@ reupload_before_sce_modal <- function() {
   )
 }
 
+#' Show an input modal to confirm resetting the analysis
+#' @importFrom shiny modalDialog
+reset_analysis_modal <- function() {
+  modalDialog(helpText("Please confirm that you would like to reset the analysis to blank."),
+  actionButton("reset_analysis", "Reset!"))
+}
+
 
