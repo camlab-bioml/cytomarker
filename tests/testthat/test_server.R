@@ -222,12 +222,11 @@ test_that("Server has basic functionality", {
     expect_false(is.null(current_markers()))
     expect_equal(copy_markers, current_markers())
     
+    
   })
 })
 
-context("Test reupload Shiny app server functionality")
-
-
+context("Test re-upload Shiny app server functionality")
 
 #### Re-upload analysis ######
 test_that("Re-upload fails with bad config", {
@@ -244,8 +243,10 @@ test_that("Re-upload fails with bad config", {
   })
 })
 
+context("Test re-upload and reset Shiny app server functionality")
+
 #### Re-upload analysis ######
-test_that("Re-upload works on server", {
+test_that("Re-upload and reset works on server", {
   
   testServer(cytosel::cytosel(), expr = {
     
@@ -266,6 +267,36 @@ test_that("Re-upload works on server", {
     expect_equal(length(markers_reupload()$top_markers), 18)
     expect_equal(length(markers_reupload()$scratch_markers), 6)
     
+    session$setInputs(bl_scratch = markers_reupload()$scratch_markers,
+                      bl_top = markers_reupload()$top_markers)
+    
+    session$setInputs(create_reset = T, reset_marker_panel = T)
+    
+    expect_true(reset_panel())
+    expect_null(current_markers()$top_markers)
+    expect_equal(num_markers_in_selected(), 0)
+    expect_equal(num_markers_in_scratch(), 0)
+    
+  })
+})
+
+context("Downloading through the server works as intended")
+
+#### download analysis ######
+test_that("Download works on server", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                                                  test_path("test_config.yml")))
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_config.yml")))
+    
     session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
                       start_analysis = T)
     
@@ -281,5 +312,4 @@ test_that("Re-upload works on server", {
     
   })
 })
-
 
