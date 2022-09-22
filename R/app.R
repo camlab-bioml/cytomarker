@@ -1024,7 +1024,6 @@ cytosel <- function(...) {
       
       ## What to do when heatmap selection is made
       req(sce())
-      
       columns <- column()
       
       observeEvent(input$heatmap_expression_norm, {

@@ -12,6 +12,7 @@
 #' @importFrom stats cor
 #' @importFrom viridis viridis
 #' @importFrom plotly plot_ly layout
+#' @importFrom heatmaply heatmaply
 #' @importFrom tibble rownames_to_column
 #' @importFrom dplyr mutate
 #' @importFrom tidyr pivot_longer
@@ -43,41 +44,27 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
                        x = rownames(cc),
                        y = rownames(cc),
                        hovertemplate = "Gene(x): %{x}<br>Gene(y): %{y}<br>Correlation: %{z}<extra></extra>",
-                       showticklabels = F) %>% 
-      layout(title='Correlation', width = 650, height = 650)
+                       showticklabels = F, width = 650, height = 650) %>% 
+      layout(title='Correlation')
     
     return(cor_map)
   } else {
-    # Convert to dataframe to prevent issues when rownames are numbers
-    df <- t(mat) |> 
-      round(4) |> 
-      as.data.frame() |> 
-      rownames_to_column("y") |> 
-      pivot_longer(-y, names_to = "gene", values_to = "expression")
+    mat <- t(mat)
+    gene_num <- ncol(mat)
     
-    if(!all(is.na(as.numeric(df$y)))){
-      # get row names and order (used to relevel factor)
-      row_levels <- df$y |> 
-        unique() |> 
-        as.numeric() |> 
-        sort()
-      
-      df <- mutate(df, y = factor(y, levels = row_levels))
-    }
+    expression_map <- heatmaply(mat,
+                                main = as.character(normalization),
+                                plot_method = "plotly",
+                                label_names = c("Gene", y = "Cell Type", as.character(normalization)),
+                                key.title = as.character(normalization),
+                                column_text_angle = 90,
+                                height = 600, 
+                                width = ifelse(25*gene_num <= 450,
+                                               450, ifelse(25*gene_num <= 1000,
+                                                           25*gene_num, 1000)
+                                )
+    )
     
-    expression_map <- plot_ly(df, x = ~gene, y = ~y, z = ~expression, 
-                              type = "heatmap",
-                              colorbar = list(title = as.character(normalization)),
-                              hovertemplate = paste("Gene: %{x}<br>Cell Type: %{y}<br>",
-                             as.character(normalization), ": %{z}<extra></extra>", sep = "")) |> 
-      layout(title = as.character(normalization),
-             xaxis = list(title = ''),
-             yaxis = list(title = ''),
-            height = 600, width = ifelse(25*length(unique(df$gene)) <= 450,
-                                         450, ifelse(
-                                           25*length(unique(df$gene)) <= 1000,
-                                           25*length(unique(df$gene)), 1000
-                                         )))
     return(expression_map)
   }
   
