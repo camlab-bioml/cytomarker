@@ -174,7 +174,7 @@ cytosel <- function(...) {
                                             placement = "right", html = "true")),
                      br()
                    )))),
-        actionButton("create_reset", "Reset analysis", value = F)),
+        actionButton("create_reset", "Reset marker panel")),
       tabItem("marker_selection",
                  # icon = icon("list"),
                  br(),
@@ -364,6 +364,8 @@ cytosel <- function(...) {
     reupload_analysis <- reactiveVal(FALSE)
     markers_reupload <- reactiveVal()
     yaml <- reactiveVal()
+    
+    reset_panel <- reactiveVal(FALSE)
     
     # addPopover(session, "q1", "Upload an Input scRNA-seq file", content = 'Input scRNA-seq file',
     #            trigger = 'click')
@@ -626,7 +628,7 @@ cytosel <- function(...) {
       req(input$panel_size)
       req(input$coldata_column)
       req(sce())
-      
+    
       if (!isTruthy(specific_cell_types_selected()) | length(specific_cell_types_selected()) < 1) {
           specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
@@ -757,9 +759,6 @@ cytosel <- function(...) {
               )
             )
             
-            print(input$bl_top)
-            print(is_empty(input$bl_top))
-            
             if(!is_empty(input$bl_top)) {
               ## We get here if input$bl_top exists, ie if this
               ## is an analysis refresh
@@ -767,10 +766,7 @@ cytosel <- function(...) {
               markers <- list(recommended_markers = input$bl_recommended,
                               scratch_markers = input$bl_scratch,
                               top_markers = input$bl_top)
-              
-              print("using already markers")
-              print(markers)
-              
+
             } else {
               ## We compute the set of markers for the first time
               
@@ -787,9 +783,6 @@ cytosel <- function(...) {
                                        input$marker_strategy, 
                                        sce()[,sce()$keep_for_analysis == "Yes"],
                                        allowed_genes())
-                
-                print("making new markers")
-                print(markers)
                 
                 if(length(markers$recommended_markers) < input$panel_size){
                   showNotification("Cytosel found genes that are good markers for multiple cell types. This will result in a smaller panel size than requested.
@@ -883,48 +876,6 @@ cytosel <- function(...) {
                                                         "Scratch Markers:", num_markers_in_scratch(), "</B>")})
       
     })
-    
-    
-    # observeEvent(input$refresh_analysis, {
-    #   withProgress(message = 'Initializing analysis', value = 0, {
-    #     req(column())
-    #     req(input$panel_size)
-    #     req(sce())
-    #     
-    #     incProgress(detail = "Recomputing markers")
-    #     
-    #     ## Recompute the set of allowed genes (antibody applications might have changed) and get the markers
-    #     allowed_genes(
-    #       get_allowed_genes(input$select_aa, applications_parsed, sce())
-    #     )
-    #     
-    #     ## Get the markers first time          
-    #     fms(
-    #       compute_fm(sce(), 
-    #                  column(), 
-    #                  pref_assay(),
-    #                  allowed_genes()
-    #       )
-    #     )
-    #     # 
-    #     
-    #     markers <- get_markers(fms(), 
-    #                            input$panel_size, 
-    #                            input$marker_strategy, 
-    #                            sce())
-    #     
-    #     markers <- list(recommended_markers = input$bl_recommended,
-    #          scratch_markers = input$bl_scratch,
-    #          top_markers = input$bl_top)
-    #     
-    #     # SMH
-    #     current_markers(set_current_markers_safely(markers, fms()))
-    #     
-    #     num_selected(length(current_markers()$top_markers))
-    #   })
-    #   
-    #   update_analysis()
-    # })
     
     observeEvent(input$add_cell_type_markers, {
       if(!is.null(input$cell_type_markers) && !is.null(fms())) {
@@ -1116,29 +1067,6 @@ cytosel <- function(...) {
       })
       
     })
-    
-    observeEvent(input$create_reset, {
-      showModal(reset_analysis_modal())
-    })
-    
-    
-    
-    observeEvent(input$reset_analysis, {
-      reset("bl_top")
-      reset("bl_scratch")
-      current_markers(list(top_markers = NULL, recommended_markers = NULL,
-                      scratch_markers = NULL))
-      num_markers_in_selected(0)
-      num_markers_in_scratch(0)
-      umap_all(NULL)
-      umap_top(NULL)
-      # fms(NULL)
-      update_BL(current_markers(), num_markers_in_selected(),
-                num_markers_in_scratch(),
-                names(fms()[[1]]))
-      removeModal()
-      updateTabsetPanel(session, "tabs", "marker_selection")
-    })
    
     
     
@@ -1226,7 +1154,8 @@ cytosel <- function(...) {
     
     observe({toggle(id = "send", condition = !is.null(input$alternative_markers_rows_selected) && !is.null(input$input_gene))})
       
-    observeEvent(input$send_markers, { # Send alternative markers to selected markers panel
+    observeEvent(input$send_markers, {# Send alternative markers to selected markers panel
+    
       n <- c(input$alternative_markers_rows_selected)
       replacements <- as.vector(replacements()[n,]$Gene)
       alternative_marks(replacements)
@@ -1333,6 +1262,30 @@ cytosel <- function(...) {
         
       }
     })
+    
+    observeEvent(input$create_reset, {
+      req(sce())
+      req(current_markers())
+      
+      showModal(reset_analysis_modal())
+    })
+    
+    observeEvent(input$reset_marker_panel, {
+      
+      reset_panel(TRUE)
+      current_markers(list(top_markers = NULL, recommended_markers = NULL,
+                           scratch_markers = NULL))
+      num_markers_in_selected(0)
+      num_markers_in_scratch(0)
+      reset("bl_top")
+      reset("bl_scratch")
+      update_BL(current_markers(), num_markers_in_selected(),
+                num_markers_in_scratch(),
+                names(fms()[[1]]))
+      removeModal()
+      updateTabsetPanel(session, "tabs", "marker_selection")
+    
+      })
     
     ### UPDATE SELECTED MARKERS ###
     update_BL <- function(markers, top_size, scratch_size, unique_cell_types,
