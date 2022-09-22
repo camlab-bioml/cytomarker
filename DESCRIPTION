@@ -56,7 +56,8 @@ Imports:
     shinydashboard,
     shinyBS,
     heatmaply,
-    stringr
+    stringr,
+    rlang
 Suggests:
   stringr,
   yardstick,

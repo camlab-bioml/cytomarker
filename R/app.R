@@ -22,6 +22,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @import forcats
 #' @import sortable
 #' @import reactable
+#' @importFrom rlang is_empty
 #' @importFrom readr write_lines read_tsv read_csv
 #' @importFrom dplyr desc mutate_if distinct
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_tooltip use_bs_tooltip
@@ -88,8 +89,7 @@ cytosel <- function(...) {
                         actionButton("start_analysis", "Run analysis!", icon=icon("play", style = "color:black;"))),
         column(10, offset = 0, align = "center",
             downloadButton("downloadData", "Save panel", style = "color:black;
-                           margin-top: 15px;"))
-      )
+                           margin-top: 15px;")))
     ),
     dashboardBody(
       
@@ -173,7 +173,8 @@ cytosel <- function(...) {
                            bs_embed_tooltip(title = get_tooltip('reupload'),
                                             placement = "right", html = "true")),
                      br()
-                   ))))),
+                   )))),
+        actionButton("create_reset", "Reset analysis", value = F)),
       tabItem("marker_selection",
                  # icon = icon("list"),
                  br(),
@@ -756,13 +757,20 @@ cytosel <- function(...) {
               )
             )
             
-            if(!is.null(input$bl_top)) {
+            print(input$bl_top)
+            print(is_empty(input$bl_top))
+            
+            if(!is_empty(input$bl_top)) {
               ## We get here if input$bl_top exists, ie if this
               ## is an analysis refresh
               ## in this case we set the markers to their existing values
               markers <- list(recommended_markers = input$bl_recommended,
                               scratch_markers = input$bl_scratch,
                               top_markers = input$bl_top)
+              
+              print("using already markers")
+              print(markers)
+              
             } else {
               ## We compute the set of markers for the first time
               
@@ -779,6 +787,9 @@ cytosel <- function(...) {
                                        input$marker_strategy, 
                                        sce()[,sce()$keep_for_analysis == "Yes"],
                                        allowed_genes())
+                
+                print("making new markers")
+                print(markers)
                 
                 if(length(markers$recommended_markers) < input$panel_size){
                   showNotification("Cytosel found genes that are good markers for multiple cell types. This will result in a smaller panel size than requested.
@@ -833,6 +844,8 @@ cytosel <- function(...) {
       })
       
       reupload_analysis(FALSE)
+      
+      updateTabsetPanel(session, "tabs", "marker_selection")
       
     })
     
@@ -1103,6 +1116,30 @@ cytosel <- function(...) {
       })
       
     })
+    
+    observeEvent(input$create_reset, {
+      showModal(reset_analysis_modal())
+    })
+    
+    
+    
+    observeEvent(input$reset_analysis, {
+      reset("bl_top")
+      reset("bl_scratch")
+      current_markers(list(top_markers = NULL, recommended_markers = NULL,
+                      scratch_markers = NULL))
+      num_markers_in_selected(0)
+      num_markers_in_scratch(0)
+      umap_all(NULL)
+      umap_top(NULL)
+      # fms(NULL)
+      update_BL(current_markers(), num_markers_in_selected(),
+                num_markers_in_scratch(),
+                names(fms()[[1]]))
+      removeModal()
+      updateTabsetPanel(session, "tabs", "marker_selection")
+    })
+   
     
     
     ### REMOVE MARKERS ###
