@@ -1464,15 +1464,25 @@ cytosel <- function(...) {
                                     paste0("Overall (n = ", cpt['Overall'], ")"))
         m$what_tally <- fct_rev(m$what_tally)
         
-        current_metrics(m |> mutate(Run = "Current"))
+        m[is.na(m)] <- 0
+        
+        current_metrics(m |> mutate(Run = "Current",
+                                    label = factor(str_split_fixed(what_tally,
+                                                                             " \\(n = ",
+                                                                             2)[,1],
+                              levels = c(rev(unique(what[what != "Overall"])), "Overall"))))
+        
+        print(unique(current_metrics()$label))
         
         if (isTruthy(previous_metrics())) {
-          all_metrics <- rbind(previous_metrics(), current_metrics()) 
+          all_metrics <- rbind(previous_metrics(), current_metrics()) |> 
+            mutate(label = factor(label,
+                                  levels = c(rev(unique(what[what != "Overall"])), "Overall")))
         } else {
           all_metrics <- current_metrics()
         }
         
-        plots$metric_plot <- suppressWarnings(plot_ly(all_metrics, x = ~score, y = ~what, 
+        plots$metric_plot <- suppressWarnings(plot_ly(all_metrics, x = ~score, y = ~label, 
                                      color = ~Run,
                                      type='box', hoverinfo = 'none') %>% 
           layout(boxmode = "group",
