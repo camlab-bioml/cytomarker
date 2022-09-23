@@ -104,6 +104,10 @@ cytosel <- function(...) {
                                 max-width: 30%;
                                 }
                                 
+                                .fa {
+                                 font-size: 15px;
+                                }
+                                
                                 '))),
       
     # Tabs
@@ -174,22 +178,26 @@ cytosel <- function(...) {
                                             placement = "right", html = "true")),
                      br()
                    )))),
-        actionButton("create_reset", "Reset marker panel")),
+        br(),
+        br(),
+        actionButton("create_reset", label = "Reset marker panel")
+        ),
+      
       tabItem("marker_selection",
                  # icon = icon("list"),
                  br(),
                  fluidRow(column(12, actionButton("markers_change_modal", "Add markers to panel"))),
                  hr(),
-                 hidden(div(id = "marker_display",
+                 fluidRow(column(7, hidden(div(id = "marker_visualization",
+                                               tags$span(icon("circle-info")
+                                                         %>%
+                                                           bs_embed_tooltip(title = get_tooltip('marker_visualization'),
+                                                                            placement = "right", html = TRUE)))),),
+                          column(5, hidden(div(id = "marker_display",
                    tags$span(icon("circle-info")
                            %>%
                    bs_embed_tooltip(title = get_tooltip('marker_display'),
-                                    placement = "right", html = TRUE)))),
-                 hidden(div(id = "marker_visualization",
-                            tags$span(icon("circle-info")
-                                      %>%
-                                        bs_embed_tooltip(title = get_tooltip('marker_visualization'),
-                                                         placement = "right", html = TRUE)))),
+                                    placement = "right", html = TRUE)))))),
                 fluidRow(column(4, align = "center", div(style="display: inline-block; font-size: 15px", 
                                   htmlOutput("scratch_marker_counts"))),
                          column(4, align = "center", div(style="display: inline-block; font-size: 15px", 
@@ -198,7 +206,7 @@ cytosel <- function(...) {
                                  style = "margin-bottom:0px;"
                                  ),
                           column(3, plotOutput("legend", width = "250px"),
-                                 style = "margin-top:-25px;"))),
+                                 style = " margin-top:-60px;"))),
         
       tabItem("UMAP",
                  # icon = icon("globe"),
@@ -230,14 +238,14 @@ cytosel <- function(...) {
                                       placement = "right"))
                                 ))),
              
-                  splitLayout(cellWidths = c(320, 280),
-                                          div(style="display: inline-block;vertical-align:top; margin-right:10px;",
+                  splitLayout(cellWidths = c(250, 320),
+                                          div(style="margin-right:10px; margin-bottom:25px;",
                               numericInput("n_genes", "Genes to remove", 
                                            value = 10, min = 1, width = "110%") %>%
                                 shinyInput_label_embed(icon("circle-info") %>%
                               bs_embed_tooltip(title = get_tooltip('gene_removal'),
                                               placement = "right"))),
-                          div(style="display: inline-block;vertical-align:top;",
+                          div(style="margin-left:10px; margin-top: 25px; margin-bottom:25px;",
                               actionButton("suggest_gene_removal", "View suggestions"))),
                  fluidRow(column(12, plotlyOutput("heatmap", height="550px"))),
                  br()

@@ -276,8 +276,8 @@ reupload_before_sce_modal <- function() {
 #' Show an input modal to confirm resetting the analysis
 #' @importFrom shiny modalDialog
 reset_analysis_modal <- function() {
-  modalDialog(helpText("Please confirm that you would like to reset the analysis to blank."),
-  actionButton("reset_marker_panel", "Reset marker panel"))
+  modalDialog(helpText("Resetting the marker panel will erase the current top marker and scratch marker lists, and allow a new set to be generated. Please confirm that you would like to override the current panel."),
+  actionButton("reset_marker_panel", "Confirm reset marker panel"))
 }
 
 
