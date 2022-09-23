@@ -55,7 +55,7 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     expression_map <- heatmaply(mat,
                                 main = as.character(normalization),
                                 plot_method = "plotly",
-                                label_names = c("Gene", y = "Cell Type", 
+                                label_names = c("Cell Type", y = "Gene", 
                                                 as.character(normalization)),
                                 key.title = as.character(normalization),
                                 column_text_angle = 90,

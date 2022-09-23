@@ -59,7 +59,7 @@ test_that("get_markers and compute_fm returns valid output", {
               "logcounts",
             rownames(sce)
   )
-
+  
   expect_is(fms, 'list')
   expect_equal(length(fms), 1)
   expect_equal(nrow(fms[[1]][[1]]), nrow(sce))

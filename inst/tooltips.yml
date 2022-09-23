@@ -67,4 +67,5 @@ cell_subsetting: "View the frequency and proportion distribution of the
                   selected cel category, as well as options to remove certain cell types from analysis or set a minimum category cutoff."
 
 reupload: "A yml config file from previous analysis run can be reuploaded, along with the matching scRNA-seq file, to resume previous analysis."
-                      
+
+reset_panel: "Be default, repeated runs of cytosel will retain the first marker panel suggested. The panel can be fully reset to commence a new set of analyses."                      

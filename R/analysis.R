@@ -67,7 +67,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
       cell_types_wout_markers <- c()
       for(i in seq_len(n)) {
         f <- fm[[i]]
-        f <- f[!(rownames(f) %in% recommended),]
+        f <- f[!(rownames(f) %in% recommended),] |> as.data.frame()
         
         ## Only keep markers that are over-expressed
         f[is.na(f)] <- 0
