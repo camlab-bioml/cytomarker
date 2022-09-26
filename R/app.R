@@ -1218,58 +1218,70 @@ cytosel <- function(...) {
     
     observeEvent(input$read_back_analysis, {
       
-      if (!isTruthy(sce())) {
-       reupload_before_sce_modal()
-       reupload_analysis(FALSE)
-       reset("read_back_analysis")
-      } else {
-        yaml_back <- read_back_in_saved_yaml(input$read_back_analysis$datapath)
-        
-        if (isTruthy(yaml_back$`Pre-computed UMAP`) &
-            length(reducedDimNames(sce())[grepl("UMAP|umap|Umap|uMap|uMAP",
-                                                reducedDimNames(sce()))]) < 1) {
-          reupload_failed_modal()
-          reupload_analysis(FALSE)
-          reset("read_back_analysis")
-        } else if (yaml_back$`Number of columns (cells)` == ncol(sce()) &
-                   yaml_back$`Number of rows (features)` == nrow(sce()) &
-                   yaml_back$`Heterogeneity source` %in% colnames(colData(sce()))) {
-          
-          updateSelectInput(session, "coldata_column", choices = colnames(colData(sce())),
-                            selected = yaml_back$`Heterogeneity source`)
-          pref_assay(yaml_back$`Assay used`)
-          updateNumericInput(session, "panel_size", value = yaml_back$`Target panel size`)
-          cell_min_threshold(yaml_back$`Min Cell Category cutoff`)
-          updateNumericInput(session, "min_category_count", value = yaml_back$`Min Cell Category cutoff`)
-          updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
-          updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
-          updateSelectInput(session, "select_aa", selected = yaml_back$`Antibody applications`)
-          specific_cell_types_selected(yaml_back$`User selected cells`)
-          markers_reupload(list(top_markers = yaml_back$`Selected marker panel`,
-                                scratch_markers = yaml_back$`Scratch marker panel`))
-          yaml_length <- sum(c(length(markers_reupload()$top_markers),
-                               length(markers_reupload()$scratch_markers)))
-          if (yaml_length != yaml_back$`Target panel size`) {
-            updateNumericInput(session, "panel_size", value = yaml_length)
-          }
-          updateCheckboxInput(session, inputId = "precomputed_dim",
-                              value = yaml_back$`Pre-computed UMAP`)
-          use_precomputed_umap(yaml_back$`Pre-computed UMAP`)
-          
-          if (isTruthy(use_precomputed_umap())) {
-            possible_umap_dims(detect_umap_dims_in_sce(sce()))
-            showModal(pre_computed_umap_modal(possible_umap_dims()))
-          }
-          
-          reupload_analysis(TRUE)
-        } else {
-          reupload_failed_modal()
-          reupload_analysis(FALSE)
-          reset("read_back_analysis")
-        }
-        
+      yaml_back <- read_back_in_saved_yaml(input$read_back_analysis$datapath)
+      
+      if (isTruthy(yaml_back$`Target panel size`)) {
+        updateNumericInput(session, "panel_size", value = yaml_back$`Target panel size`)
       }
+      
+      markers_reupload(list(top_markers = yaml_back$`Selected marker panel`,
+      scratch_markers = yaml_back$`Scratch marker panel`))
+      showNotification("Updating the current panel to the markers from the reuploaded yml.")
+      yaml_length <- sum(c(length(markers_reupload()$top_markers),
+                           length(markers_reupload()$scratch_markers)))
+      if (yaml_length != yaml_back$`Target panel size` & yaml_length > 0) {
+        updateNumericInput(session, "panel_size", value = yaml_length)
+      }
+      
+      if (isTruthy(sce())) {
+        if (yaml_back$`Number of columns (cells)` != ncol(sce()) |
+            yaml_back$`Number of rows (features)` != nrow(sce())) {
+          reupload_warning_modal("Incompatible dimensions", "Number of cells and genes")
+    }
+        if (yaml_back$`Heterogeneity source` %in% colnames(colData(sce()))) {
+        updateSelectInput(session, "coldata_column", choices = colnames(colData(sce())),
+        selected = yaml_back$`Heterogeneity source`)
+        specific_cell_types_selected(yaml_back$`User selected cells`)
+        } else {
+          reupload_warning_modal("Cell type not found", yaml_back$`Heterogeneity source`)
+        }
+        updateCheckboxInput(session, inputId = "precomputed_dim",
+                            value = yaml_back$`Pre-computed UMAP`)
+        use_precomputed_umap(yaml_back$`Pre-computed UMAP`)
+        
+        if (isTruthy(use_precomputed_umap())) {
+          possible_umap_dims(detect_umap_dims_in_sce(sce()))
+          showModal(pre_computed_umap_modal(possible_umap_dims()))
+        }
+      }
+      
+    if (isTruthy(yaml_back$`Assay used`)) {
+      pref_assay(yaml_back$`Assay used`)
+    }
+    
+    if (isTruthy(yaml_back$`Min Cell Category cutoff`)) {
+      cell_min_threshold(yaml_back$`Min Cell Category cutoff`)
+      updateNumericInput(session, "min_category_count", value = yaml_back$`Min Cell Category cutoff`)
+    }
+    
+    updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
+    
+    if (isTruthy(yaml_back$`Marker strategy`)) {
+      updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
+    }
+    
+    if (isTruthy(yaml_back$`Marker strategy`)) {
+      updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
+    }
+    
+    
+    if (isTruthy(yaml_back$`Antibody applications`)) {
+      updateSelectInput(session, "select_aa", selected = yaml_back$`Antibody applications`)
+    }
+    
+    reupload_analysis(TRUE)
     })
+    
     
     observeEvent(input$create_reset, {
       req(sce())
@@ -1283,6 +1295,8 @@ cytosel <- function(...) {
       reset_panel(TRUE)
       current_markers(list(top_markers = NULL, recommended_markers = NULL,
                            scratch_markers = NULL))
+      reupload_analysis(FALSE)
+      markers_reupload(NULL)
       num_markers_in_selected(0)
       num_markers_in_scratch(0)
       reset("bl_top")

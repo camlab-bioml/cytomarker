@@ -261,16 +261,17 @@ reupload_failed_modal <- function() {
   )
 }
 
-#' Show a shinyalert error if the user tries to upload the yml file before the sce
+#' Show a shinyalert warning if the dimensions of the current sce do not match the input yaml
 #' @importFrom shinyalert shinyalert
-reupload_before_sce_modal <- function() {
-  shinyalert(
-    title = "Error",
-    text = paste("Please upload an scRNA-seq file prior to uploading the matching yml file."),
-    type = "error",
-    showConfirmButton = TRUE,
-    confirmButtonCol = "#337AB7"
-  )
+#' @param title_message The type of warning message in the title
+#' @param body_message The type of warning message in the body
+reupload_warning_modal <- function(title_message, body_message) {
+  shinyalert(title = paste("Warning:", title_message, sep = ""), 
+             text = paste("The following fields in the uploaded yml are different from the current SCE. They will be disregarded:",
+                          body_message, sep = "\n"), 
+             type = "warning", 
+             showConfirmButton = TRUE,
+             confirmButtonCol = "#337AB7")
 }
 
 #' Show an input modal to confirm resetting the analysis

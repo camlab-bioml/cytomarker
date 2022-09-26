@@ -228,21 +228,6 @@ test_that("Server has basic functionality", {
 
 context("Test re-upload Shiny app server functionality")
 
-#### Re-upload analysis ######
-test_that("Re-upload fails with bad config", {
-  
-  testServer(cytosel::cytosel(), expr = {
-    
-    session$setInputs(input_scrnaseq = list(datapath =
-                                              test_path("pbmc_small.rds")),
-                      read_back_analysis = list(datapath =
-                                                  test_path("fake_config.yml")))
-    
-    expect_false(reupload_analysis())
-    
-  })
-})
-
 context("Test re-upload and reset Shiny app server functionality")
 
 #### Re-upload analysis ######
@@ -250,16 +235,12 @@ test_that("Re-upload and reset works on server", {
   
   testServer(cytosel::cytosel(), expr = {
     
-    session$setInputs(read_back_analysis = list(datapath =
-                      test_path("test_config.yml")))
-    
     expect_false(reupload_analysis())
   
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
                       read_back_analysis = list(datapath =
                                                   test_path("test_config.yml")))
-    
     expect_true(reupload_analysis())
     
     expect_equal(length(specific_cell_types_selected()), 6)
@@ -286,11 +267,6 @@ context("Downloading through the server works as intended")
 test_that("Download works on server", {
   
   testServer(cytosel::cytosel(), expr = {
-    
-    session$setInputs(read_back_analysis = list(datapath =
-                                                  test_path("test_config.yml")))
-    
-    expect_false(reupload_analysis())
     
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
