@@ -1,0 +1,48 @@
+Time: 2022-09-19 14:06:41
+Input file: /var/folders/b0/t5xcnhp13831xdy00jfm2j400000gn/T//RtmpTXrsT3/3fcfa522c529cda54a836617/0.rds
+Number of columns (cells): 100
+Number of rows (features): 13714
+Assay used: logcounts
+Heterogeneity source: seurat_annotations
+Target panel size: 22
+Min Cell Category cutoff: 10
+Subsampling Used: no
+Selected marker panel:
+- CD79B
+- BTG1
+- CD74
+- HLA-DPB1
+- HLA-DRB1
+- FTL
+- S100A8
+- CCL5
+- S100A4
+- HLA-A
+- GZMK
+- S100A6
+- ANXA1
+- LDHB
+- FOS
+- CD3E
+- IL7R
+- CD7
+Scratch marker panel:
+- HLA-DRA
+- HLA-DPA1
+- LYZ
+- TYROBP
+- S100A9
+- CD3D
+Marker strategy: fm
+Antibody applications:
+- Flow Cyt (Intra)
+- ICC/IF
+- Flow Cyt
+User selected cells:
+- B
+- CD14+ Mono
+- Memory CD4 T
+- CD8 T
+- Naive CD4 T
+- NK
+Pre-computed UMAP: yes

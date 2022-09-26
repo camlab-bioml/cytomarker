@@ -15,7 +15,13 @@ download_data <- function(zip_filename,
                           panel_size,
                           cell_cutoff_value,
                           subsample,
-                          antibody_table) {
+                          antibody_table,
+                          marker_strat,
+                          antibody_apps,
+                          selected_cell_types,
+                          precomputed_umap_used,
+                          num_cells,
+                          num_genes) {
 
     tmpdir <- tempdir()
   
@@ -27,11 +33,19 @@ download_data <- function(zip_filename,
     config <- list(
       Time = as.character(Sys.time()),
       `Input file` = input_file,
+      `Number of columns (cells)` = num_cells,
+      `Number of rows (features)` = num_genes,
       `Assay used` = assay_used,
       `Heterogeneity source` = het_source,
       `Target panel size` = panel_size,
       `Min Cell Category cutoff` = cell_cutoff_value,
-      `Subsampling Used` = subsample
+      `Subsampling Used` = subsample,
+      `Selected marker panel` = current_markers$top_markers,
+      `Scratch marker panel` = current_markers$scratch_markers,
+      `Marker strategy` = marker_strat,
+      `Antibody applications` = antibody_apps,
+      `User selected cells` = selected_cell_types,
+      `Pre-computed UMAP` = precomputed_umap_used
     )
     write_yaml(config, paths_zip$config)
     
@@ -68,5 +82,12 @@ download_data <- function(zip_filename,
     
     zip(zipfile = zip_filename, files = unlist(paths_zip), mode = "cherry-pick") 
     if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), zip_filename)}
+}
+
+
+#' read back in a saved config yaml to resume analysis
+#' @importFrom yaml read_yaml
+read_back_in_saved_yaml <- function(yaml) {
+  return(read_yaml(yaml))
 }
 

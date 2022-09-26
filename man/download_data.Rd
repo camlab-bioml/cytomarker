@@ -15,7 +15,13 @@ download_data(
   panel_size,
   cell_cutoff_value,
   subsample,
-  antibody_table
+  antibody_table,
+  marker_strat,
+  antibody_apps,
+  selected_cell_types,
+  precomputed_umap_used,
+  num_cells,
+  num_genes
 )
 }
 \description{

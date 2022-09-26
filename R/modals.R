@@ -99,12 +99,17 @@ dne_modal <- function(dne) { # Input marker is not in the dataset
 #' Furthermore, specify a custom subset of cell types to retain for analysis
 #' @importFrom shiny modalDialog
 #' @param cell_cat_value The minimum cell category cutoff (minimum should be set to 2)
-cell_cat_modal <- function(cell_cat_value) {
+#' @param cell_choices A vector of all possible cell types in the selected category
+#' @param cell_types_included vector of cell types that are selected from the category
+cell_cat_modal <- function(cell_cat_value, cell_choices, cell_types_included) {
   modalDialog(
     DT::dataTableOutput("cell_cat_table"),
     flowLayout(cellArgs = list(style = c("width: 300px;")),
                selectInput("user_selected_cells", 
-                           "Create a custom subset for analysis", NULL, multiple=TRUE),
+                           "Create a custom subset for analysis", 
+                           choices = cell_choices, 
+                           selected = cell_types_included,
+                           multiple=TRUE),
                numericInput("min_category_count", "Minimum cell category cutoff:", 
                             cell_cat_value, min = 2, max = 100, step = 0.5, width = NULL)),
     title = "Frequency Count for selected heterogeneity category",
@@ -240,6 +245,39 @@ high_cell_number_warning <- function(ncell_sce, num_cells) { # Uploaded marker i
                showConfirmButton = TRUE,
                confirmButtonCol = "#337AB7")
   }
-  
-  
 }
+
+
+#' Show a shinyalert error if the reupload files with the selected sce
+#' @importFrom shinyalert shinyalert
+reupload_failed_modal <- function() {
+  shinyalert(
+    title = "Error",
+    text = paste("The provided yaml reupload file does not match the upload input file. Please double check that the
+                 number of cells, features, metadata and dimension assays (i.e. UMAP) in the input file match the yml fields."),
+    type = "error",
+    showConfirmButton = TRUE,
+    confirmButtonCol = "#337AB7"
+  )
+}
+
+#' Show a shinyalert error if the user tries to upload the yml file before the sce
+#' @importFrom shinyalert shinyalert
+reupload_before_sce_modal <- function() {
+  shinyalert(
+    title = "Error",
+    text = paste("Please upload an scRNA-seq file prior to uploading the matching yml file."),
+    type = "error",
+    showConfirmButton = TRUE,
+    confirmButtonCol = "#337AB7"
+  )
+}
+
+#' Show an input modal to confirm resetting the analysis
+#' @importFrom shiny modalDialog
+reset_analysis_modal <- function() {
+  modalDialog(helpText("Resetting the marker panel will erase the current top marker and scratch marker lists, and allow a new set to be generated. Please confirm that you would like to override the current panel."),
+  actionButton("reset_marker_panel", "Confirm reset marker panel"))
+}
+
+

@@ -44,18 +44,19 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
                        x = rownames(cc),
                        y = rownames(cc),
                        hovertemplate = "Gene(x): %{x}<br>Gene(y): %{y}<br>Correlation: %{z}<extra></extra>",
-                       showticklabels = F, width = 650, height = 650) %>% 
+                       showticklabels = F, width = 550, height = 550) %>% 
       layout(title='Correlation')
     
     return(cor_map)
   } else {
-    mat <- t(mat)
+    mat <- round(t(mat), 3)
     gene_num <- ncol(mat)
     
     expression_map <- heatmaply(mat,
                                 main = as.character(normalization),
                                 plot_method = "plotly",
-                                label_names = c("Gene", y = "Cell Type", as.character(normalization)),
+                                label_names = c("Cell Type", y = "Gene", 
+                                                as.character(normalization)),
                                 key.title = as.character(normalization),
                                 column_text_angle = 90,
                                 height = 600, 

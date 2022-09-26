@@ -340,7 +340,7 @@ create_global_colour_palette <- function(pal_seed = NULL) {
                                "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
   qual_col_pals <- brewer.pal.info[brewer.pal.info$category == 'qual',]
   unique_palette <- unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-  if (! is.null(pal_seed)) {
+  if (!is.null(pal_seed)) {
     set.seed(pal_seed)
     unique_palette <- sample(unique_palette, length(unique_palette))
   }
@@ -404,4 +404,11 @@ remove_null_and_va_from_cell_cat <- function(sce, input_column) {
                                   "Yes", "No")
   
   return(sce)
+}
+
+#' Detect if the sce has any UMAP dimension assays 
+#' @importFrom SingleCellExperiment reducedDimNames
+detect_umap_dims_in_sce <- function(sce) {
+  return(reducedDimNames(sce)[grepl("UMAP|umap|Umap|uMap|uMAP",
+                          reducedDimNames(sce))])
 }

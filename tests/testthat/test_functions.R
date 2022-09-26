@@ -59,7 +59,7 @@ test_that("get_markers and compute_fm returns valid output", {
               "logcounts",
             rownames(sce)
   )
-
+  
   expect_is(fms, 'list')
   expect_equal(length(fms), 1)
   expect_equal(nrow(fms[[1]][[1]]), nrow(sce))
@@ -116,6 +116,8 @@ test_that("get_umap returns valid dataframe and values with different assays", {
   expect_equal(nrow(umap_frame_log), ncol(sce))
   expect_false(unique(umap_frame_norm[,1] == umap_frame_log[,1]))
   expect_false(unique(umap_frame_norm[,2] == umap_frame_log[,2]))
+  
+  expect_equal(detect_umap_dims_in_sce(sce), "UMAP")
 
 })
 
@@ -326,7 +328,8 @@ test_that("download works as expected", {
     download_data(filepath,
                   list(top_markers = rownames(sce)[1:100]), 
                   plots, heatmap, "fake_path_to_sce", "logcounts",
-                  "seurat_annotations", 24, 2, "no", fake_table)
+                  "seurat_annotations", 24, 2, "no", fake_table,
+                  "fm", NULL, NULL, FALSE, 100, 13714)
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)
@@ -367,6 +370,9 @@ test_that("Error modals throw errors", {
   
   expect_null(high_cell_number_warning(99, 100))
   expect_error(high_cell_number_warning(200, 100))
+  
+  expect_error(reupload_failed_modal())
+  expect_error(reupload_before_sce_modal())
   
 })
 

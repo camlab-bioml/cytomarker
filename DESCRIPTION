@@ -55,7 +55,9 @@ Imports:
     htmlwidgets,
     shinydashboard,
     shinyBS,
-    heatmaply
+    heatmaply,
+    stringr,
+    rlang
 Suggests:
   stringr,
   yardstick,

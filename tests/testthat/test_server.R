@@ -1,7 +1,7 @@
 
-context("Test Shiny app server functionality")
+context("Test basic Shiny app server functionality")
 
-test_that("Server has functionality", {
+test_that("Server has basic functionality", {
   
   testServer(cytosel::cytosel(), expr = {
     
@@ -26,6 +26,9 @@ test_that("Server has functionality", {
                       min_category_count = 2,
                       show_cat_table = T)
     
+    expect_equal(output$cell_cat_preview,
+              "9 groupings in selected category, including B, Undetermined, CD14+ Mono and others")
+    
     # expect all 9 cell types to be in the tally and selected category
     expect_equal(nrow(summary_cat_tally()), 9)
     expect_equal(length(specific_cell_types_selected()), 9)
@@ -49,13 +52,15 @@ test_that("Server has functionality", {
                       start_analysis = T)
     expect_false(any_cells_present())
     
+    expect_null(previous_distribution())
+    expect_null(previous_metrics())
     
     # Change to passable input parameters
     session$setInputs(user_selected_cells = c("CD8 T", "Memory CD4 T",
                                               "Naive CD4 T",
                                               "Platelet"),
                       add_selected_to_analysis = T,
-                      min_category_count = NULL,
+                      min_category_count = 2,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       start_analysis = T)
@@ -214,9 +219,97 @@ test_that("Server has functionality", {
     
     copy_markers <- current_markers()
     
-    session$setInputs(start_analysis = T)
-    
     expect_false(is.null(current_markers()))
     expect_equal(copy_markers, current_markers())
+    
+    
   })
 })
+
+context("Test re-upload Shiny app server functionality")
+
+#### Re-upload analysis ######
+test_that("Re-upload fails with bad config", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("fake_config.yml")))
+    
+    expect_false(reupload_analysis())
+    
+  })
+})
+
+context("Test re-upload and reset Shiny app server functionality")
+
+#### Re-upload analysis ######
+test_that("Re-upload and reset works on server", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                      test_path("test_config.yml")))
+    
+    expect_false(reupload_analysis())
+  
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_config.yml")))
+    
+    expect_true(reupload_analysis())
+    
+    expect_equal(length(specific_cell_types_selected()), 6)
+    expect_equal(cell_min_threshold(), 10)
+    expect_equal(length(markers_reupload()$top_markers), 18)
+    expect_equal(length(markers_reupload()$scratch_markers), 6)
+    
+    session$setInputs(bl_scratch = markers_reupload()$scratch_markers,
+                      bl_top = markers_reupload()$top_markers)
+    
+    session$setInputs(create_reset = T, reset_marker_panel = T)
+    
+    expect_true(reset_panel())
+    expect_null(current_markers()$top_markers)
+    expect_equal(num_markers_in_selected(), 0)
+    expect_equal(num_markers_in_scratch(), 0)
+    
+  })
+})
+
+context("Downloading through the server works as intended")
+
+#### download analysis ######
+test_that("Download works on server", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                                                  test_path("test_config.yml")))
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_config.yml")))
+    
+    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
+                      start_analysis = T)
+    
+    expect_false("NK" %in% cell_types_to_keep())
+    expect_equal(length(cell_types_to_keep()), 5)
+    
+    expect_false(is.null(output$downloadData))
+    
+    withr::with_tempdir({
+      session$setInputs(downloadData = T)
+      expect_true(file.exists(output$downloadData))
+    })
+    
+  })
+})
+
