@@ -1472,8 +1472,6 @@ cytosel <- function(...) {
                                                                              2)[,1],
                               levels = c(rev(unique(what[what != "Overall"])), "Overall"))))
         
-        print(unique(current_metrics()$label))
-        
         if (isTruthy(previous_metrics())) {
           all_metrics <- rbind(previous_metrics(), current_metrics()) |> 
             mutate(label = factor(label,
