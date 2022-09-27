@@ -240,7 +240,7 @@ cytosel <- function(...) {
              
                   splitLayout(cellWidths = c(250, 320),
                                           div(style="margin-right:10px; margin-bottom:25px;",
-                              numericInput("n_genes", "Genes to remove", 
+                              numericInput("n_genes", "Remove redundant genes", 
                                            value = 10, min = 1, width = "110%") %>%
                                 shinyInput_label_embed(icon("circle-info") %>%
                               bs_embed_tooltip(title = get_tooltip('gene_removal'),
@@ -447,7 +447,9 @@ cytosel <- function(...) {
                                                    others_addition,
                                                    sep = " ")})
       
-      if (!isTruthy(reupload_analysis())) {
+      updateSelectInput(session, "user_selected_cells", unique(sce()[[input$coldata_column]]))
+      
+      if (!isTruthy(reupload_analysis()) | !isTruthy(input$user_selected_cells)) {
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
       })
@@ -461,10 +463,10 @@ cytosel <- function(...) {
       
       if (length(specific_cell_types_selected()) > 0) {
         showNotification("Setting subset to select cell types",
-                         duration = 2)
+                         duration = 3)
       } else {
         showNotification("Empty subset selection, defaulting to using all cell types in analysis.",
-                         duration = 2)
+                         duration = 3)
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
       
@@ -484,7 +486,6 @@ cytosel <- function(...) {
     req(sce())
     req(pref_assay())
     req(input$coldata_column)
-    # req(cell_min_threshold())
   
     cell_category_table <- create_table_of_hetero_cat(sce(),
                                                       input$coldata_column)
@@ -530,21 +531,10 @@ cytosel <- function(...) {
       req(current_markers())
       req(allowed_genes())
       req(fms())
-      
-      # updateSelectInput(
-      #   session = session,
-      #   inputId = "cell_type_markers",
-      #   choices = names(fms()[[1]])
-      # )
-      # 
-      # updateSelectizeInput(
-      #   session = session,
-      #   inputId = "add_markers",
-      #   choices = c("", allowed_genes())
-      # )
     
       showModal(markers_add_modal(allowed_genes(), names(fms()[[1]])))
     })
+    
     
     ### ANTIBODY EXPLORER ###
     output$antibody_table <- renderReactable({
@@ -703,7 +693,17 @@ cytosel <- function(...) {
         incProgress(detail = "Acquiring data")
         req(proceed_with_analysis())
         req(any_cells_present())
-          
+        
+        # TODO
+        ### find difference between sce genes and current panel
+        
+        if (!is_empty(input$bl_top)) {
+          current_panel_not_valid <- setdiff(input$bl_top, rownames(sce()))
+          if (length(current_panel_not_valid) > 0) {
+            current_pan_not_valid_modal()
+          }
+        }
+        
           ## Set initial markers:
           scratch_markers_to_keep <- input$bl_scratch
           
@@ -1226,7 +1226,8 @@ cytosel <- function(...) {
       
       markers_reupload(list(top_markers = yaml_back$`Selected marker panel`,
       scratch_markers = yaml_back$`Scratch marker panel`))
-      showNotification("Updating the current panel to the markers from the reuploaded yml.")
+      showNotification("Updating the current panel to the markers from the reuploaded yml.",
+                       type = "message", duration = 4)
       yaml_length <- sum(c(length(markers_reupload()$top_markers),
                            length(markers_reupload()$scratch_markers)))
       if (yaml_length != yaml_back$`Target panel size` & yaml_length > 0) {

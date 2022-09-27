@@ -281,4 +281,15 @@ reset_analysis_modal <- function() {
   actionButton("reset_marker_panel", "Confirm reset marker panel"))
 }
 
+#' Show an input modal if the current panel contains genes that are not found in the newest uploaded SCE
+#' @importFrom shiny modalDialog
+current_pan_not_valid_modal <- function(possible_dims) { # Marker removal suggestion
+  modalDialog(
+    title = "Warning: Invalid genes found",
+    helpText("The current panel contains genes that are not found in the SCE. Please reset the marker panel"),
+    flowLayout(actionButton("reset_after_invalid_genes", "Reset marker panel")
+    )
+  )
+}
+
 
