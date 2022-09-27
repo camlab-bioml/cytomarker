@@ -265,10 +265,10 @@ cytosel <- function(...) {
                        tabBox(width = NULL,
                   # Title can include an icon
                   tabPanel("Current Run Metrics",
-                           DTOutput("current_run_metrics", width = "80%")
+                           DTOutput("current_run_metrics", width = "100%")
                   ),
                   tabPanel("Previous Run Metrics",
-                           DTOutput("previous_run_metrics", width = "80%"))
+                           DTOutput("previous_run_metrics", width = "100%"))
                 )
           ))),
 
@@ -1454,7 +1454,7 @@ cytosel <- function(...) {
         # update previous metrics before current
         
         if (isTruthy(current_metrics())) {
-          previous_metrics(current_metrics() |> mutate(Run = "Previous"))
+          previous_metrics(current_metrics() |> mutate(Run = "Previous Run"))
         }
         
         if (isTruthy(current_distribution())) {
@@ -1473,46 +1473,58 @@ cytosel <- function(...) {
         ## Add in number of cells per condition
         cpt <- cells_per_type()
         cpt['Overall'] <- sum(cpt)
-        m$what_tally <- plyr::mapvalues(as.character(m$what),
-                                  from = names(cpt), 
-                                  to = paste0(names(cpt), " (n = ", cpt, ")"))
-        m$what_tally <- as.factor(m$what_tally)
-        
-        m$what_tally <- fct_reorder(m$what_tally, desc(m$score))
-        m$what_tally <- fct_relevel(m$what_tally, 
-                                    paste0("Overall (n = ", cpt['Overall'], ")"))
-        m$what_tally <- fct_rev(m$what_tally)
+        m$Counts <- plyr::mapvalues(as.character(m$what),
+                                    from = names(cpt), 
+                                    to = cpt)
+        # m$what_tally <- plyr::mapvalues(as.character(m$what),
+        #                           from = names(cpt), 
+        #                           to = paste0(names(cpt), " (n = ", cpt, ")"))
+        # m$what_tally <- as.factor(m$what_tally)
+        # 
+        # m$what_tally <- fct_reorder(m$what_tally, desc(m$score))
+        # m$what_tally <- fct_relevel(m$what_tally, 
+        #                             paste0("Overall (n = ", cpt['Overall'], ")"))
+        # m$what_tally <- fct_rev(m$what_tally)
         
         m[is.na(m)] <- 0
         
-        current_metrics(m |> mutate(Run = "Current",
-                                    label = factor(str_split_fixed(what_tally,
-                                                                             " \\(n = ",
-                                                                             2)[,1],
-                              levels = c(rev(unique(what[what != "Overall"])), "Overall"))))
+        current_metrics(m |> mutate(Run = "Current Run"))
+        
+        print(current_metrics())
         
         if (isTruthy(previous_metrics())) {
           all_metrics <- rbind(previous_metrics(), current_metrics()) |> 
-            mutate(label = factor(label,
+            mutate(what = factor(what,
                                   levels = c(rev(unique(what[what != "Overall"])), "Overall")))
         } else {
-          all_metrics <- current_metrics()
+          all_metrics <- current_metrics() |>  mutate(what = factor(what,
+                    levels = c(rev(unique(what[what != "Overall"])), "Overall")))
         }
         
-        plots$metric_plot <- suppressWarnings(plot_ly(all_metrics, x = ~score, y = ~label, 
+        plots$metric_plot <- suppressWarnings(plot_ly(all_metrics, x = ~score, y = ~what, 
                                      color = ~Run,
                                      type='box', hoverinfo = 'none') %>% 
           layout(boxmode = "group",
                  xaxis = list(title="Score"),
                  yaxis = list(title="Source")))
         
+        print(current_metrics())
+        
         output$current_run_metrics <- renderDT(current_metrics() |>
-                                      distinct(what_tally) |> mutate(`Category Counts` = what_tally) |> 
-                                        select(`Category Counts`))
+                                                 mutate(Counts = as.numeric(Counts)) |>
+                                                 group_by(what, Counts) |>
+                                                 summarize(mean_score = round(mean(score),
+                                                                              3)) |>
+                                                 arrange(desc(Counts)) |> rename(`Cell Type` = what,
+                                                                                 `Mean Score` = mean_score))
         if (isTruthy(previous_metrics())) {
           output$previous_run_metrics <- renderDT(previous_metrics() |>
-                                        distinct(what_tally) |> mutate(`Category Counts` = what_tally) |> 
-                                          select(`Category Counts`))
+                                                    mutate(Counts = as.numeric(Counts)) |>
+                                                    group_by(what, Counts) |>
+                                                    summarize(mean_score = round(mean(score),
+                                                                                 3)) |>
+                                                    arrange(desc(Counts)) |> rename(`Cell Type` = what,
+                                                                                    `Mean Score` = mean_score))
         }
         
         # Show help text popover
