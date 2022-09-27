@@ -374,6 +374,7 @@ test_that("Error modals throw errors", {
   expect_error(reupload_failed_modal())
   expect_error(reupload_before_sce_modal())
   expect_error(reupload_warning_modal("title","body"))
+  expect_error(current_pan_not_valid_modal("GENE"))
   
 })
 

@@ -141,7 +141,6 @@ threshold_too_low_modal <- function() { # Input marker is not in the dataset
 #' @param min_cat_count The curent value of minimum cell cutoff (minimum of 2).
 #' @param the vector of the names of cell types below the cutoff to be ignored.
 cell_type_ignored_modal <- function(min_cat_count, excluded_cells) {
-  
   shinyalert(title = "Warning",
              text = HTML(paste("Cell types with abundance below the set threshold of ",
                                min_cat_count,
@@ -247,31 +246,21 @@ high_cell_number_warning <- function(ncell_sce, num_cells) { # Uploaded marker i
   }
 }
 
-
-#' Show a shinyalert error if the reupload files with the selected sce
-#' @importFrom shinyalert shinyalert
-reupload_failed_modal <- function() {
-  shinyalert(
-    title = "Error",
-    text = paste("The provided yaml reupload file does not match the upload input file. Please double check that the
-                 number of cells, features, metadata and dimension assays (i.e. UMAP) in the input file match the yml fields."),
-    type = "error",
-    showConfirmButton = TRUE,
-    confirmButtonCol = "#337AB7"
-  )
-}
-
 #' Show a shinyalert warning if the dimensions of the current sce do not match the input yaml
 #' @importFrom shinyalert shinyalert
 #' @param title_message The type of warning message in the title
 #' @param body_message The type of warning message in the body
 reupload_warning_modal <- function(title_message, body_message) {
-  shinyalert(title = paste("Warning:", title_message, sep = ""), 
-             text = paste("The following fields in the uploaded yml are different from the current SCE. They will be disregarded:",
-                          body_message, sep = "\n"), 
+  shinyalert(title = paste("Warning: ", title_message, sep = ""), 
+             text = HTML(paste("The following parameters in the uploaded yml are different from the current SCE. They will be disregarded: ",
+                               '<br>',
+                               "<b>", 
+                          body_message,
+                          "</b>")), 
              type = "warning", 
              showConfirmButton = TRUE,
-             confirmButtonCol = "#337AB7")
+             confirmButtonCol = "#337AB7",
+             html = T)
 }
 
 #' Show an input modal to confirm resetting the analysis
@@ -282,14 +271,17 @@ reset_analysis_modal <- function() {
 }
 
 #' Show an input modal if the current panel contains genes that are not found in the newest uploaded SCE
-#' @importFrom shiny modalDialog
-current_pan_not_valid_modal <- function(possible_dims) { # Marker removal suggestion
-  modalDialog(
-    title = "Warning: Invalid genes found",
-    helpText("The current panel contains genes that are not found in the SCE. Please reset the marker panel"),
-    flowLayout(actionButton("reset_after_invalid_genes", "Reset marker panel")
-    )
-  )
+#' @importFrom shinyalert shinyalert
+#' @param missing_genes vector of genes that are not in the current SCE but in the current marker panel
+current_pan_not_valid_modal <- function(missing_genes) { # Marker removal suggestion
+  shinyalert(title = "Error",
+             text = HTML(paste("The current panel contains genes that are not found in the SCE:",
+                               '<br>',
+                               "<b>", toString(missing_genes), "</b>", '<br/>',
+                               "Please reset the marker panel.")),
+             type = "error",
+             showConfirmButton = TRUE,
+             confirmButtonCol = "#337AB7",
+             html = TRUE)
+  
 }
-
-

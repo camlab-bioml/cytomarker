@@ -374,6 +374,7 @@ cytosel <- function(...) {
     yaml <- reactiveVal()
     
     reset_panel <- reactiveVal(FALSE)
+    valid_existing_panel <- reactiveVal(TRUE)
     
     # addPopover(session, "q1", "Upload an Input scRNA-seq file", content = 'Input scRNA-seq file',
     #            trigger = 'click')
@@ -626,6 +627,14 @@ cytosel <- function(...) {
       req(input$panel_size)
       req(input$coldata_column)
       req(sce())
+      
+      if (!is_empty(input$bl_top)) {
+        current_panel_not_valid <- setdiff(input$bl_top, rownames(sce()))
+        if (length(current_panel_not_valid) > 0) {
+          valid_existing_panel(FALSE)
+          current_pan_not_valid_modal(current_panel_not_valid)
+        }
+      }
     
       if (!isTruthy(specific_cell_types_selected()) | length(specific_cell_types_selected()) < 1) {
           specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
@@ -647,6 +656,8 @@ cytosel <- function(...) {
       
       withProgress(message = 'Initializing analysis', value = 0, {
         incProgress(detail = "Checking data")
+        req(valid_existing_panel())
+        req(proceed_with_analysis())
         
         cell_cat_summary <- create_table_of_hetero_cat(sce(),
                                                        input$coldata_column)
@@ -688,7 +699,6 @@ cytosel <- function(...) {
         
       })
       
-      
       withProgress(message = 'Conducting analysis', value = 0, {
         incProgress(detail = "Acquiring data")
         req(proceed_with_analysis())
@@ -696,13 +706,6 @@ cytosel <- function(...) {
         
         # TODO
         ### find difference between sce genes and current panel
-        
-        if (!is_empty(input$bl_top)) {
-          current_panel_not_valid <- setdiff(input$bl_top, rownames(sce()))
-          if (length(current_panel_not_valid) > 0) {
-            current_pan_not_valid_modal()
-          }
-        }
         
           ## Set initial markers:
           scratch_markers_to_keep <- input$bl_scratch
@@ -1307,6 +1310,7 @@ cytosel <- function(...) {
                 names(fms()[[1]]))
       removeModal()
       updateTabsetPanel(session, "tabs", "marker_selection")
+      valid_existing_panel(TRUE)
     
       })
     

@@ -289,3 +289,24 @@ test_that("Download works on server", {
   })
 })
 
+context("Current panel with different genes throws error")
+
+#### download analysis ######
+test_that("Error from current panel with different genes", {
+  testServer(cytosel::cytosel(), expr = {
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      panel_size = 20,
+                      coldata_column = "seurat_annotations",
+                      min_category_count = 2)
+    
+    expect_true(valid_existing_panel())
+    
+    session$setInputs(bl_top = c("GENE_1", "GENE_2"),
+                      start_analysis = T)
+    
+    expect_false(valid_existing_panel())
+    
+  })
+})
+
