@@ -213,7 +213,8 @@ cytosel <- function(...) {
                  br(),
                  helpText(get_tooltip('umap')),
               br(),
-              br(),
+              fluidRow(column(6), column(6, selectInput("colour_umap", 
+                                "Color UMAP by panel:", NULL, multiple=FALSE))),
                  fluidRow(column(6, plotlyOutput("all_plot", width="500px", height="350px")),
                           column(6, plotlyOutput("top_plot", width="500px", height="350px")))
           ),
@@ -826,6 +827,11 @@ cytosel <- function(...) {
             
             update_analysis()
             
+            updateSelectInput(
+              session = session,
+              inputId = "colour_umap",
+              choices = c("None", current_markers()$top_markers),
+              selected = "None")
             
           } else {
             unique_element_modal(col)
