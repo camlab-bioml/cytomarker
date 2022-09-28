@@ -311,8 +311,6 @@ cytosel <- function(...) {
     metrics <- reactiveVal()
     previous_metrics <- reactiveVal()
     current_metrics <- reactiveVal()
-    previous_distribution <- reactiveVal()
-    current_distribution <- reactiveVal()
     
     sce <- reactiveVal()
     
@@ -749,18 +747,13 @@ cytosel <- function(...) {
               unique_element_modal(col)
             } 
             
+            incProgress(detail = "Defining gene lists and marker scores")
+            
             ## Compute set of allowed genes
             allowed_genes(
               get_allowed_genes(input$select_aa, applications_parsed, 
                                 sce()[,sce()$keep_for_analysis == "Yes"])
             )
-            
-            # Make metric table 
-            
-            current_distribution(create_table_of_hetero_cat(sce()[,sce()$keep_for_analysis == "Yes"],
-                                                              input$coldata_column) |>
-                               mutate(Run = "Current"))
-            
             
             ## Change selected column to character to avoid factor levels without data
             # sce <- sce()
@@ -1236,8 +1229,11 @@ cytosel <- function(...) {
       
       markers_reupload(list(top_markers = yaml_back$`Selected marker panel`,
       scratch_markers = yaml_back$`Scratch marker panel`))
-      showNotification("Updating the current panel to the markers from the reuploaded yml.",
-                       type = "message", duration = 4)
+      if (is_empty(input$bl_top)) {
+        showNotification("Updating the current panel to the markers from the reuploaded yml.",
+                         type = "message", duration = 4)
+      }
+      
       yaml_length <- sum(c(length(markers_reupload()$top_markers),
                            length(markers_reupload()$scratch_markers)))
       if (yaml_length != yaml_back$`Target panel size` & yaml_length > 0) {
@@ -1471,11 +1467,6 @@ cytosel <- function(...) {
         if (isTruthy(current_metrics())) {
           previous_metrics(current_metrics() |> mutate(Run = "Previous Run"))
         }
-        
-        if (isTruthy(current_distribution())) {
-          previous_distribution(current_distribution() |> mutate(Run = "Previous"))
-        }
-        
         mm <- metrics()
         if (is.null(mm)) {
           return(NULL)
