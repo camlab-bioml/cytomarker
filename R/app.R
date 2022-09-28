@@ -435,6 +435,10 @@ cytosel <- function(...) {
       req(input$input_scrnaseq)
       column(input$coldata_column)
       
+      if (!isTruthy(reupload_analysis())) {
+        specific_cell_types_selected(NULL)
+      }
+      
       len_possible_cats <- length(unique(sce()[[input$coldata_column]]))
       num_limit <- ifelse(len_possible_cats <= 3, len_possible_cats, 3)
       cats_to_show <- unique(sce()[[input$coldata_column]])[1:num_limit]
@@ -448,11 +452,14 @@ cytosel <- function(...) {
                                                    others_addition,
                                                    sep = " ")})
       
-      updateSelectInput(session, "user_selected_cells", unique(sce()[[input$coldata_column]]))
-      
-      if (!isTruthy(reupload_analysis()) | !isTruthy(input$user_selected_cells)) {
+      if (!isTruthy(specific_cell_types_selected())) {
+        updateSelectInput(session, "user_selected_cells",
+                          unique(sce()[[input$coldata_column]]))
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
+      
+      reupload_analysis(FALSE)
+      
       })
     
     observeEvent(input$add_selected_to_analysis, {
@@ -1245,7 +1252,10 @@ cytosel <- function(...) {
         if (yaml_back$`Heterogeneity source` %in% colnames(colData(sce()))) {
         updateSelectInput(session, "coldata_column", choices = colnames(colData(sce())),
         selected = yaml_back$`Heterogeneity source`)
+        updateSelectInput(session, "user_selected_cells", 
+                          yaml_back$`User selected cells`)
         specific_cell_types_selected(yaml_back$`User selected cells`)
+        
         } else {
           reupload_warning_modal("Cell type not found", yaml_back$`Heterogeneity source`)
         }
@@ -1284,6 +1294,7 @@ cytosel <- function(...) {
     }
     
     reupload_analysis(TRUE)
+    
     })
     
     
@@ -1330,12 +1341,16 @@ cytosel <- function(...) {
       
       cytosel_palette(palette_to_use)
       
+      markers$top_markers <- sort(markers$top_markers)
+      markers$scratch_markers <- sort(markers$scratch_markers)
+      
       # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
       
       labels_top <- lapply(markers$top_markers, 
                            function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
                                                                                                       set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
-                                                                                                      cytosel_palette()[ markers$associated_cell_types[x] ])))
+                                                                                                   cytosel_palette()[ markers$associated_cell_types[x] ])))
+      
       labels_scratch <- lapply(markers$scratch_markers, 
                                function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
                                                                                                           set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
@@ -1488,9 +1503,9 @@ cytosel <- function(...) {
         
         m[is.na(m)] <- 0
         
-        current_metrics(m |> mutate(Run = "Current Run"))
+        # m <- m |> drop_na()
         
-        print(current_metrics())
+        current_metrics(m |> mutate(Run = "Current Run"))
         
         if (isTruthy(previous_metrics())) {
           all_metrics <- rbind(previous_metrics(), current_metrics()) |> 
@@ -1507,8 +1522,6 @@ cytosel <- function(...) {
           layout(boxmode = "group",
                  xaxis = list(title="Score"),
                  yaxis = list(title="Source")))
-        
-        print(current_metrics())
         
         output$current_run_metrics <- renderDT(current_metrics() |>
                                                  mutate(Counts = as.numeric(Counts)) |>
@@ -1539,10 +1552,6 @@ cytosel <- function(...) {
     ### SAVE PANEL ###
     output$downloadData <- downloadHandler(
       filename <- paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
-      # reactive_vals <- c(current_markers(), heatmap(), pref_assay(),
-      #                    column(), sce())
-      # 
-      # truthiness <- sapply(reactive_vals, FUN = function(x) isTruthy(x))
       
       content = function(fname) {
         download_data(fname, current_markers(), plots, heatmap(),
@@ -1565,7 +1574,6 @@ cytosel <- function(...) {
     
   }
   
-
   
   shinyApp(ui, server, ...)
 }
