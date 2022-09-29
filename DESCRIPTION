@@ -57,7 +57,8 @@ Imports:
     shinyBS,
     heatmaply,
     stringr,
-    rlang
+    rlang,
+    clustifyr
 Suggests:
   stringr,
   yardstick,
