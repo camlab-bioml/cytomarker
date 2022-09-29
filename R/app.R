@@ -214,8 +214,14 @@ cytosel <- function(...) {
                  br(),
                  helpText(get_tooltip('umap')),
               br(),
-              fluidRow(column(6, selectInput("colour_umap", 
-                                "Color UMAP by panel:", NULL, multiple=FALSE))),
+              splitLayout(cellWidths = c(320, 280), selectInput("umap_options", 
+                                "Select UMAP colouring:", choices = c("Cell Type",
+                                                                    "Panel Marker"),
+                                selected = "Cell Type", multiple=FALSE),
+                              column(6, hidden(div(id = "umap_panel_cols",
+                                         selectInput("umap_panel_options", 
+                                                     "Color Heatmap by Panel Marker", 
+                                                     choices = NULL, width = "89%"))))),
                  fluidRow(column(6, plotlyOutput("all_plot", width="500px", height="350px")),
                           column(6, plotlyOutput("top_plot", width="500px", height="350px")))
           ),
@@ -310,6 +316,7 @@ cytosel <- function(...) {
     umap_top <- reactiveVal()
     umap_top_gene <- reactiveVal()
     umap_all_gene <- reactiveVal()
+    umap_colouring <- reactiveVal()
     umap_all <- reactiveVal()
     heatmap <- reactiveVal()
     metrics <- reactiveVal()
@@ -750,7 +757,7 @@ cytosel <- function(...) {
               unique_element_modal(col)
             } 
             
-            incProgress(detail = "Defining gene lists and marker scores")
+            incProgress(detail = "Quantifying gene expression")
             
             ## Compute set of allowed genes
             allowed_genes(
@@ -824,9 +831,9 @@ cytosel <- function(...) {
             
             updateSelectInput(
               session = session,
-              inputId = "colour_umap",
-              choices = c("Cell Type", current_markers()$top_markers),
-              selected = "Cell Type")
+              inputId = "umap_panel_options",
+              choices = current_markers()$top_markers,
+              selected = current_markers()$top_markers[1])
             
           } else {
             unique_element_modal(col)
@@ -1329,77 +1336,87 @@ cytosel <- function(...) {
     
       })
     
-    observeEvent(input$colour_umap, {
-      req(sce())
-      req(pref_assay())
-      req(umap_top())
-      req(fms())
-      req(input$coldata_column)
+    observeEvent(input$umap_options, {
+      # req(sce())
+      # req(pref_assay())
+      # req(umap_top())
+      # req(umap_all())
+      # req(fms())
+      # req(input$coldata_column)
       
-      if (input$colour_umap != "Cell Type") {
-        gene_plot_top <- plot_gene(assay(sce(), pref_assay()),
-                                umap_top() |> select(UMAP_1, UMAP_2) |> drop_na(),
-                               input$colour_umap,
-                               c_cols = c("grey", "red"))
+      umap_colouring(input$umap_options)
+      
+      toggle(id = "umap_panel_cols", condition = input$umap_options != "Cell Type")
+      
+      observeEvent(input$umap_panel_options, {
         
-        gene_plot_all <- plot_gene(assay(sce(), pref_assay()),
-                                   umap_all() |> select(UMAP_1, UMAP_2) |> drop_na(),
-                                   input$colour_umap,
-                                   c_cols = c("grey", "red"))
-        
-        umap_top_gene(as.data.frame(gene_plot_top[[1]]$data))
-        umap_all_gene(as.data.frame(gene_plot_all[[1]]$data))
-        
-        umap_top_gene(merge(umap_top_gene(), umap_top() |> select(input$coldata_column),
-                            by.x = "cell", by.y = "row.names") |> 
-                        mutate(lab = paste(get(input$coldata_column), ": ",
-                                           "\n",
-                                             get(input$colour_umap), sep = "")) |>
-                        rename(Expression = input$colour_umap))
-        
-        umap_all_gene(merge(umap_all_gene(), umap_all() |> select(input$coldata_column),
-                            by.x = "cell", by.y = "row.names") |> 
-                        mutate(lab = paste(get(input$coldata_column), ": ",
-                                           "\n",
-                                           get(input$colour_umap), sep = "")) |>
-                        rename(Expression = input$colour_umap))
-        
-        plots$top_plot <- plot_ly(umap_top_gene(),
-                                  x = ~UMAP_1, y = ~UMAP_2, 
-                                  color = ~Expression,
-                                  type='scatter',
-                                  text = ~lab,
-                                  hoverinfo = "text",
-                                  colors = c("grey", "red")) %>%
-          layout(title = "UMAP selected markers",
-                 yaxis = list(showticklabels = F),
-                 xaxis = list(showticklabels = F),
-                 legend = list(title=list(text='<b> Marker Expression </b>')))
-        
+        if (umap_colouring() == "Cell Type") {
+          plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
+                                                     text=~get(input$coldata_column), 
+                                                     type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                               layout(title = "UMAP all genes", showlegend = F))
+          
+          plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
+                                                     text=~get(input$coldata_column),
+                                                     type='scatter', hoverinfo="text", colors=cytosel_palette()) %>%
+                                               layout(title = "UMAP selected markers"))
+          umap_top_gene(FALSE)
+          umap_all_gene(FALSE)
+          
+        } else {
+          gene_plot_top <- plot_gene(assay(sce(), pref_assay()),
+                                     umap_top() |> select(UMAP_1, UMAP_2) |> drop_na(),
+                                     input$umap_panel_options,
+                                     c_cols = c("grey", "red"))
+          
+          gene_plot_all <- plot_gene(assay(sce(), pref_assay()),
+                                     umap_all() |> select(UMAP_1, UMAP_2) |> drop_na(),
+                                     input$umap_panel_options,
+                                     c_cols = c("grey", "red"))
+          
+          umap_top_gene(as.data.frame(gene_plot_top[[1]]$data))
+          umap_all_gene(as.data.frame(gene_plot_all[[1]]$data))
+          
+          umap_top_gene(merge(umap_top_gene(), umap_top() |> select(input$coldata_column),
+                              by.x = "cell", by.y = "row.names") |> 
+                          mutate(lab = paste(get(input$coldata_column), ": ",
+                                             "\n",
+                                             get(input$umap_panel_options), sep = "")) |>
+                          rename(Expression = input$umap_panel_options))
+          
+          umap_all_gene(merge(umap_all_gene(), umap_all() |> select(input$coldata_column),
+                              by.x = "cell", by.y = "row.names") |> 
+                          mutate(lab = paste(get(input$coldata_column), ": ",
+                                             "\n",
+                                             get(input$umap_panel_options), sep = "")) |>
+                          rename(Expression = input$umap_panel_options))
+          
+          plots$top_plot <- plot_ly(umap_top_gene(),
+                                    x = ~UMAP_1, y = ~UMAP_2, 
+                                    color = ~Expression,
+                                    type='scatter',
+                                    text = ~lab,
+                                    hoverinfo = "text",
+                                    colors = c("grey", "red")) %>%
+            layout(title = "UMAP selected markers",
+                   yaxis = list(showticklabels = F),
+                   xaxis = list(showticklabels = F),
+                   legend = list(title=list(text='<b> Marker Expression </b>')))
+          
           plots$all_plot <- plot_ly(umap_all_gene(),
-                                  x = ~UMAP_1, y = ~UMAP_2, 
-                                  color = ~Expression,
-                                  type='scatter',
-                                  text = ~lab,
-                                  hoverinfo = "text",
-                                  colors = c("grey", "red")) %>%
-          layout(title = "UMAP all genes",
-                 yaxis = list(showticklabels = F),
-                 xaxis = list(showticklabels = F),
-                 legend = list(title=list(text='<b> Marker Expression </b>')))
-        
-      } else {
-        
-        plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
-                                                   text=~get(input$coldata_column), 
-                                                   type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-                                             layout(title = "UMAP all genes", showlegend = F))
-        
-        plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
-                                                   text=~get(input$coldata_column),
-                                                   type='scatter', hoverinfo="text", colors=cytosel_palette()) %>%
-                                             layout(title = "UMAP selected markers"))
-      }
+                                    x = ~UMAP_1, y = ~UMAP_2, 
+                                    color = ~Expression,
+                                    type='scatter',
+                                    text = ~lab,
+                                    hoverinfo = "text",
+                                    colors = c("grey", "red")) %>%
+            layout(title = "UMAP all genes",
+                   yaxis = list(showticklabels = F),
+                   xaxis = list(showticklabels = F),
+                   legend = list(title=list(text='<b> Marker Expression </b>')))
+          
+        }
+      })
       
     })
     

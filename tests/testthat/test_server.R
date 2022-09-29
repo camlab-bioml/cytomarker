@@ -62,6 +62,8 @@ test_that("Server has basic functionality", {
                       min_category_count = 2,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
+                      umap_options = "Cell Type",
+                      umap_panel_options = NULL,
                       start_analysis = T)
     
     # resetting the min count to 2 allows to proceed with analysis
@@ -220,12 +222,9 @@ test_that("Server has basic functionality", {
     
     expect_false(is.null(current_markers()))
     expect_equal(copy_markers, current_markers())
-    
-    
+
   })
 })
-
-context("Test re-upload Shiny app server functionality")
 
 context("Test re-upload and reset Shiny app server functionality")
 
@@ -305,6 +304,43 @@ test_that("Error from current panel with different genes", {
                       start_analysis = T)
     
     expect_false(valid_existing_panel())
+    
+  })
+})
+
+context("Change the UMAP colouring from cell type to gene")
+
+test_that("Changing the UMAP colouring to genes works", {
+  testServer(cytosel::cytosel(), expr = {
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      user_selected_cells = c("CD8 T", "Memory CD4 T",
+                                              "Naive CD4 T",
+                                              "Platelet"),
+                      add_selected_to_analysis = T,
+                      assay_select = "counts", assay = "counts",
+                      coldata_column = "seurat_annotations",
+                      min_category_count = 2,
+                      subsample_sce = T,
+                      panel_size = 20,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm")
+    
+    
+    session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
+                      start_analysis = T)
+    
+    expect_false(umap_top_gene())
+    expect_false(umap_all_gene())
+    expect_equal(umap_colouring(), "Cell Type")
+    
+    session$setInputs(umap_options = "Panel Marker",
+    umap_panel_options = "S100A9", umap_panel_cols = T)
+    
+    expect_false(isFALSE(umap_top_gene()))
+    expect_false(isFALSE(umap_all_gene()))
+    expect_equal(umap_colouring(), "Panel Marker")
     
   })
 })
