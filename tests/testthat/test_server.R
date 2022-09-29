@@ -52,7 +52,6 @@ test_that("Server has basic functionality", {
                       start_analysis = T)
     expect_false(any_cells_present())
     
-    expect_null(previous_distribution())
     expect_null(previous_metrics())
     
     # Change to passable input parameters
