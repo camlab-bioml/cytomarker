@@ -1364,15 +1364,11 @@ cytosel <- function(...) {
           
           gene_plot_top <- plot_gene(assay(sce(), pref_assay()),
                                      umap_top() |> select(UMAP_1, UMAP_2) |> drop_na(),
-                                     input$umap_panel_options,
-                                     c_cols = c("dark grey", "grey", "red"))
-                                     # c_cols = c("grey", cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]]))
+                                     input$umap_panel_options)
           
           gene_plot_all <- plot_gene(assay(sce(), pref_assay()),
                                      umap_all() |> select(UMAP_1, UMAP_2) |> drop_na(),
-                                     input$umap_panel_options,
-                                     c_cols = c("dark grey", "grey", "red"))
-                                     # c_cols = c("grey", cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]]))
+                                     input$umap_panel_options)
           
           
           umap_top_gene(as.data.frame(gene_plot_top[[1]]$data))
@@ -1382,14 +1378,14 @@ cytosel <- function(...) {
                               by.x = "cell", by.y = "row.names") |> 
                           mutate(lab = paste(get(input$coldata_column), ": ",
                                              "\n",
-                                             get(input$umap_panel_options), sep = "")) |>
+                                             round(get(input$umap_panel_options), 3), sep = "")) |>
                           rename(Expression = input$umap_panel_options))
           
           umap_all_gene(merge(umap_all_gene(), umap_all() |> select(input$coldata_column),
                               by.x = "cell", by.y = "row.names") |> 
                           mutate(lab = paste(get(input$coldata_column), ": ",
                                              "\n",
-                                             get(input$umap_panel_options), sep = "")) |>
+                                             round(get(input$umap_panel_options), 3), sep = "")) |>
                           rename(Expression = input$umap_panel_options))
           
           plots$top_plot <- suppressWarnings(plot_ly(umap_top_gene(),
@@ -1398,7 +1394,9 @@ cytosel <- function(...) {
                                     type='scatter',
                                     text = ~lab,
                                     hoverinfo = "text",
-                                    colors = c("grey", "red")) %>%
+                                    colors = c("grey", 
+                                               "red")) %>%
+            # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
             layout(title = "UMAP selected markers"))
           
           plots$all_plot <- hide_guides(suppressWarnings(plot_ly(umap_all_gene(),
@@ -1407,7 +1405,9 @@ cytosel <- function(...) {
                                     type='scatter',
                                     text = ~lab,
                                     hoverinfo = "text",
-                                    colors = c("grey", "red")) %>%
+                                    colors = c("grey",
+                                               "red")) %>%
+                                                 # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
             layout(title = "UMAP all genes",
                    showlegend = F)))
           
@@ -1590,9 +1590,9 @@ cytosel <- function(...) {
         #                             paste0("Overall (n = ", cpt['Overall'], ")"))
         # m$what_tally <- fct_rev(m$what_tally)
         
-        m[is.na(m)] <- 0
+        # m[is.na(m)] <- 0
         
-        # m <- m |> drop_na()
+        m <- m |> drop_na()
         
         current_metrics(m |> mutate(Run = "Current Run"))
         

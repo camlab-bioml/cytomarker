@@ -136,9 +136,15 @@ test_that("Server has basic functionality", {
     session$setInputs(markers_to_remove = suggestions(),
                       remove_suggested = T)
     
-    # remove 3 from 11
+    # a gene that doesn't exist will not produce suggested replacements
     expect_equal(length(current_markers()$top_markers), 11)
     
+    # generate suggested alternative markers
+    session$setInputs(input_gene = "FAKE_GENE",
+                      number_correlations = 10,
+                      enter_gene = T)
+    
+    expect_null(replacements())
     
     # generate suggested alternative markers
     session$setInputs(input_gene = current_markers()$top_markers[3],
@@ -158,6 +164,13 @@ test_that("Server has basic functionality", {
                       send = T)
     
     expect_equal(length(current_markers()$top_markers), 17)
+    
+    # if you try to add a fake marker, the length will stay the same
+    session$setInputs(markers_change_modal = T,
+                      add_markers = "FAKE_GENE",
+                      enter_marker = T)
+    
+    expect_equal(num_markers_in_selected(), 17)
     
     
     # if you try to add a marker that's already there, the length will stay the same
@@ -204,6 +217,15 @@ test_that("Server has basic functionality", {
     # after adding 5 markers to 18, assert how many top markers there should be
     expect_equal(length(current_markers()$top_markers), 23)
     
+    # if you try to upload a gene that doesn't exist, the length will remain the same
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("fake_upload.txt")),
+                      add_to_selected = T)
+    
+    # after adding 5 markers to 18, assert how many top markers there should be
+    expect_equal(length(current_markers()$top_markers), 23)
+    
+    
     # Look for the uploaded markers in the top markers
     expect_true("EEF2" %in% current_markers()$top_markers)
     expect_true("MARCKS" %in% current_markers()$top_markers)
@@ -222,8 +244,31 @@ test_that("Server has basic functionality", {
     
     expect_false(is.null(current_markers()))
     expect_equal(copy_markers, current_markers())
+    
+    session$setInputs(start_analysis = T)
+    
 
   })
+})
+
+
+context("Test that Shiny app server can detect single assay")
+
+test_that("Server can detect sce with only one assay", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_equal(pref_assay(), "logcounts")
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_one_assay.rds")),
+                      min_category_count = 2,
+                      panel_size = 32)
+    
+    expect_equal(length(names(assays(sce()))), 1)
+    
+  })
+  
 })
 
 context("Test re-upload and reset Shiny app server functionality")
@@ -326,8 +371,7 @@ test_that("Changing the UMAP colouring to genes works", {
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
-    
-    
+
     session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
                       start_analysis = T)
     
