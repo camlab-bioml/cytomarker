@@ -380,6 +380,7 @@ cytosel <- function(...) {
     
     reupload_analysis <- reactiveVal(FALSE)
     markers_reupload <- reactiveVal()
+    reupload_cell_types <- reactiveVal(FALSE)
     yaml <- reactiveVal()
     
     reset_panel <- reactiveVal(FALSE)
@@ -444,9 +445,9 @@ cytosel <- function(...) {
       req(input$input_scrnaseq)
       column(input$coldata_column)
       
-      if (!isTruthy(reupload_analysis())) {
-        specific_cell_types_selected(NULL)
-      }
+      # if (!isTruthy(reupload_analysis())) {
+      #   specific_cell_types_selected(NULL)
+      # }
       
       len_possible_cats <- length(unique(sce()[[input$coldata_column]]))
       num_limit <- ifelse(len_possible_cats <= 3, len_possible_cats, 3)
@@ -461,13 +462,15 @@ cytosel <- function(...) {
                                                    others_addition,
                                                    sep = " ")})
       
-      if (!isTruthy(specific_cell_types_selected())) {
+      if (!isTruthy(reupload_cell_types())) {
         updateSelectInput(session, "user_selected_cells",
                           unique(sce()[[input$coldata_column]]))
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
-      
+
       reupload_analysis(FALSE)
+      reupload_cell_types(FALSE)
+      
       
       })
     
@@ -725,8 +728,6 @@ cytosel <- function(...) {
           ## Set initial markers:
           scratch_markers_to_keep <- input$bl_scratch
           
-          incProgress(detail = "Computing markers")
-          
           columns <- good_col(sce()[,sce()$keep_for_analysis == "Yes"], input$coldata_column)
           column(columns$good)
           col <- columns$bad
@@ -757,7 +758,7 @@ cytosel <- function(...) {
               unique_element_modal(col)
             } 
             
-            incProgress(detail = "Quantifying gene expression")
+            incProgress(detail = "Computing cell type markers")
             
             ## Compute set of allowed genes
             allowed_genes(
@@ -1266,6 +1267,7 @@ cytosel <- function(...) {
         updateSelectInput(session, "user_selected_cells", 
                           yaml_back$`User selected cells`)
         specific_cell_types_selected(yaml_back$`User selected cells`)
+        reupload_cell_types(TRUE)
         
         } else {
           reupload_warning_modal("Cell type not found", yaml_back$`Heterogeneity source`)
@@ -1337,12 +1339,7 @@ cytosel <- function(...) {
       })
     
     observeEvent(input$umap_options, {
-      # req(sce())
-      # req(pref_assay())
-      # req(umap_top())
-      # req(umap_all())
-      # req(fms())
-      # req(input$coldata_column)
+      req(sce())
       
       umap_colouring(input$umap_options)
       
@@ -1364,15 +1361,19 @@ cytosel <- function(...) {
           umap_all_gene(FALSE)
           
         } else {
+          
           gene_plot_top <- plot_gene(assay(sce(), pref_assay()),
                                      umap_top() |> select(UMAP_1, UMAP_2) |> drop_na(),
                                      input$umap_panel_options,
-                                     c_cols = c("grey", "red"))
+                                     c_cols = c("dark grey", "grey", "red"))
+                                     # c_cols = c("grey", cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]]))
           
           gene_plot_all <- plot_gene(assay(sce(), pref_assay()),
                                      umap_all() |> select(UMAP_1, UMAP_2) |> drop_na(),
                                      input$umap_panel_options,
-                                     c_cols = c("grey", "red"))
+                                     c_cols = c("dark grey", "grey", "red"))
+                                     # c_cols = c("grey", cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]]))
+          
           
           umap_top_gene(as.data.frame(gene_plot_top[[1]]$data))
           umap_all_gene(as.data.frame(gene_plot_all[[1]]$data))
@@ -1391,19 +1392,16 @@ cytosel <- function(...) {
                                              get(input$umap_panel_options), sep = "")) |>
                           rename(Expression = input$umap_panel_options))
           
-          plots$top_plot <- plot_ly(umap_top_gene(),
+          plots$top_plot <- suppressWarnings(plot_ly(umap_top_gene(),
                                     x = ~UMAP_1, y = ~UMAP_2, 
                                     color = ~Expression,
                                     type='scatter',
                                     text = ~lab,
                                     hoverinfo = "text",
                                     colors = c("grey", "red")) %>%
-            layout(title = "UMAP selected markers",
-                   yaxis = list(showticklabels = F),
-                   xaxis = list(showticklabels = F),
-                   legend = list(title=list(text='<b> Marker Expression </b>')))
+            layout(title = "UMAP selected markers"))
           
-          plots$all_plot <- plot_ly(umap_all_gene(),
+          plots$all_plot <- hide_guides(suppressWarnings(plot_ly(umap_all_gene(),
                                     x = ~UMAP_1, y = ~UMAP_2, 
                                     color = ~Expression,
                                     type='scatter',
@@ -1411,9 +1409,7 @@ cytosel <- function(...) {
                                     hoverinfo = "text",
                                     colors = c("grey", "red")) %>%
             layout(title = "UMAP all genes",
-                   yaxis = list(showticklabels = F),
-                   xaxis = list(showticklabels = F),
-                   legend = list(title=list(text='<b> Marker Expression </b>')))
+                   showlegend = F)))
           
         }
       })

@@ -202,8 +202,8 @@ get_umap <- function(sce, columns, pref_assay, precomputed_vals = NULL, dim_col 
   if (!isTruthy(precomputed_vals) | isTRUE(only_top_markers)) {
     sce <- runUMAP(sce, exprs_values = pref_assay,
                    n_threads = availableCores(),
-                   ncomponents = num_comp_use, 
-                   pca = num_comp_use,
+                   # ncomponents = num_comp_use, 
+                   # pca = num_comp_use,
                    BPPARAM = MulticoreParam(workers = availableCores()),
                    external_neighbors	= T)
     
