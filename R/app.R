@@ -85,7 +85,7 @@ cytosel <- function(...) {
         # width = 300,
         menuItem("Get Started", tabName = "inputs", icon = icon("gear")),
         sidebarMenuOutput(outputId = 'output_menu'),
-        br(),
+        menuItem("Documentation", tabName = "documentation", icon = icon("bookmark")),
         column(10, offset = 0, align = "center",
                         actionButton("start_analysis", "Run analysis!", icon=icon("play", style = "color:black;"))),
         column(10, offset = 0, align = "center",
@@ -302,7 +302,9 @@ cytosel <- function(...) {
                  # icon = icon("wpexplorer"),
                  br(),
                  reactableOutput("antibody_table")
-          )
+          ),
+      tabItem("documentation",
+              htmlOutput("cytosel_doc"))
       )
     )
   )
@@ -385,6 +387,12 @@ cytosel <- function(...) {
     
     reset_panel <- reactiveVal(FALSE)
     valid_existing_panel <- reactiveVal(TRUE)
+    
+    output$cytosel_doc <- renderUI({
+      url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
+      tagList("Cytosel Documentation", url)
+      tags$iframe(src="http://camlab-bioml.github.io/cytosel-doc/docs/intro", height=600, width=1100)
+    })
     
     # addPopover(session, "q1", "Upload an Input scRNA-seq file", content = 'Input scRNA-seq file',
     #            trigger = 'click')
@@ -1432,8 +1440,13 @@ cytosel <- function(...) {
       
       cytosel_palette(palette_to_use)
       
-      markers$top_markers <- sort(markers$top_markers)
-      markers$scratch_markers <- sort(markers$scratch_markers)
+      if (length(markers$top_markers) > 0) {
+        markers$top_markers <- sort(markers$top_markers)
+      }
+      
+      if (length(markers$scratch_markers) > 0) {
+        markers$scratch_markers <- sort(markers$scratch_markers)
+      }
       
       # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
       
@@ -1499,6 +1512,7 @@ cytosel <- function(...) {
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
                   names(fms()[[1]]))
+        
         
         # Update UMAP
         incProgress(detail = "Computing & creating UMAP plots")
