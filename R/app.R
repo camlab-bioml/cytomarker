@@ -1337,8 +1337,13 @@ cytosel <- function(...) {
       
       cytosel_palette(palette_to_use)
       
-      markers$top_markers <- sort(markers$top_markers)
-      markers$scratch_markers <- sort(markers$scratch_markers)
+      if (length(markers$top_markers) > 0) {
+        markers$top_markers <- sort(markers$top_markers)
+      }
+      
+      if (length(markers$scratch_markers) > 0) {
+        markers$scratch_markers <- sort(markers$scratch_markers)
+      }
       
       # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
       
