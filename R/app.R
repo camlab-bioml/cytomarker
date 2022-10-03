@@ -32,7 +32,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @importFrom zip zip
 #' @importFrom randomcoloR distinctColorPalette
 #' @importFrom SingleCellExperiment reducedDimNames reducedDims
-#' @importFrom plotly plot_ly plotlyOutput renderPlotly layout
+#' @importFrom plotly plot_ly plotlyOutput renderPlotly layout hide_guides
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel MulticoreParam
 #' @importFrom stringr str_split_fixed
@@ -391,7 +391,6 @@ cytosel <- function(...) {
     
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
-      #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
       
       updateCheckboxInput(inputId = "precomputed_dim", value = F)
       use_precomputed_umap(FALSE)
@@ -416,7 +415,7 @@ cytosel <- function(...) {
         }
 
         showModal(assay_modal(assays = input_assays))
-      }else{
+      } else{
         throw_error_or_warning(message = paste("Only one assay provided, thus using",
                                                input_assays),
                                duration = 5,
@@ -426,7 +425,7 @@ cytosel <- function(...) {
       updateSelectInput(
         session = session,
         inputId = "coldata_column",
-        choices = colnames(colData(sce()))
+        choices = colnames(colData(sce()))[!grepl("keep_for_analysis", colnames(colData(sce())))]
       )
       
       if (!isTruthy(input$coldata_column)) {
@@ -1592,7 +1591,7 @@ cytosel <- function(...) {
         
         # m[is.na(m)] <- 0
         
-        m <- m |> drop_na()
+        m <- m |> drop_na(score)
         
         current_metrics(m |> mutate(Run = "Current Run"))
         
