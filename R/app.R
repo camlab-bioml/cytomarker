@@ -304,6 +304,7 @@ cytosel <- function(...) {
                  reactableOutput("antibody_table")
           ),
       tabItem("documentation",
+              
               htmlOutput("cytosel_doc"))
       )
     )
