@@ -304,10 +304,12 @@ cytosel <- function(...) {
                  reactableOutput("antibody_table")
           ),
       tabItem("documentation",
-              
-              htmlOutput("cytosel_doc"))
+              htmlOutput("cytosel_hyperlink")
+              # h2("Documentation Preview:"),
+              # htmlOutput("cytosel_preview"))
       )
     )
+  )
   )
   )
   
@@ -389,9 +391,15 @@ cytosel <- function(...) {
     reset_panel <- reactiveVal(FALSE)
     valid_existing_panel <- reactiveVal(TRUE)
     
-    output$cytosel_doc <- renderUI({
-      url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
-      tagList("Cytosel Documentation", url)
+    output$cytosel_hyperlink <-  renderUI({
+      # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
+      # tagList("Cytosel Documentation", url)
+      tags$a(href="http://camlab-bioml.github.io/cytosel-doc/docs/intro",
+             "Click Here to access the cytosel documentation in a new tab",
+             target="_blank")
+    })
+    
+    output$cytosel_preview <- renderUI({
       tags$iframe(src="http://camlab-bioml.github.io/cytosel-doc/docs/intro", height=600, width=1100)
     })
     
@@ -1449,13 +1457,10 @@ cytosel <- function(...) {
         markers$scratch_markers <- sort(markers$scratch_markers)
       }
       
-      # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
-      
       labels_top <- lapply(markers$top_markers, 
                            function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
                                                                                                       set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
                                                                                                    cytosel_palette()[ markers$associated_cell_types[x] ])))
-      
       labels_scratch <- lapply(markers$scratch_markers, 
                                function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
                                                                                                           set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
