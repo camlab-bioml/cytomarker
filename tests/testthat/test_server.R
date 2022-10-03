@@ -52,7 +52,6 @@ test_that("Server has basic functionality", {
                       start_analysis = T)
     expect_false(any_cells_present())
     
-    expect_null(previous_distribution())
     expect_null(previous_metrics())
     
     # Change to passable input parameters
@@ -228,21 +227,6 @@ test_that("Server has basic functionality", {
 
 context("Test re-upload Shiny app server functionality")
 
-#### Re-upload analysis ######
-test_that("Re-upload fails with bad config", {
-  
-  testServer(cytosel::cytosel(), expr = {
-    
-    session$setInputs(input_scrnaseq = list(datapath =
-                                              test_path("pbmc_small.rds")),
-                      read_back_analysis = list(datapath =
-                                                  test_path("fake_config.yml")))
-    
-    expect_false(reupload_analysis())
-    
-  })
-})
-
 context("Test re-upload and reset Shiny app server functionality")
 
 #### Re-upload analysis ######
@@ -250,16 +234,12 @@ test_that("Re-upload and reset works on server", {
   
   testServer(cytosel::cytosel(), expr = {
     
-    session$setInputs(read_back_analysis = list(datapath =
-                      test_path("test_config.yml")))
-    
     expect_false(reupload_analysis())
   
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
                       read_back_analysis = list(datapath =
                                                   test_path("test_config.yml")))
-    
     expect_true(reupload_analysis())
     
     expect_equal(length(specific_cell_types_selected()), 6)
@@ -287,11 +267,6 @@ test_that("Download works on server", {
   
   testServer(cytosel::cytosel(), expr = {
     
-    session$setInputs(read_back_analysis = list(datapath =
-                                                  test_path("test_config.yml")))
-    
-    expect_false(reupload_analysis())
-    
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
                       read_back_analysis = list(datapath =
@@ -309,6 +284,27 @@ test_that("Download works on server", {
       session$setInputs(downloadData = T)
       expect_true(file.exists(output$downloadData))
     })
+    
+  })
+})
+
+context("Current panel with different genes throws error")
+
+#### download analysis ######
+test_that("Error from current panel with different genes", {
+  testServer(cytosel::cytosel(), expr = {
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      panel_size = 20,
+                      coldata_column = "seurat_annotations",
+                      min_category_count = 2)
+    
+    expect_true(valid_existing_panel())
+    
+    session$setInputs(bl_top = c("GENE_1", "GENE_2"),
+                      start_analysis = T)
+    
+    expect_false(valid_existing_panel())
     
   })
 })
