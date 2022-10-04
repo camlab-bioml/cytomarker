@@ -301,11 +301,11 @@ test_that("download works as expected", {
   
   plots <- list()
   
-  plots$all_plot <- plot_ly(umap_all, x=~UMAP1, y=~UMAP2,
+  plots$all_plot <- plot_ly(umap_all, x=~UMAP_1, y=~UMAP_2,
                             type='scatter', hoverinfo="text") %>% 
     layout(title = "UMAP all genes")
   
-  plots$top_plot <- plot_ly(umap_top, x=~UMAP1, y=~UMAP2, 
+  plots$top_plot <- plot_ly(umap_top, x=~UMAP_1, y=~UMAP_2, 
                             type='scatter', hoverinfo="text") %>% 
     layout(title = "UMAP selected markers")
   

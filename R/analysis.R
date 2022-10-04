@@ -202,22 +202,16 @@ get_umap <- function(sce, columns, pref_assay, precomputed_vals = NULL, dim_col 
   if (!isTruthy(precomputed_vals) | isTRUE(only_top_markers)) {
     sce <- runUMAP(sce, exprs_values = pref_assay,
                    n_threads = availableCores(),
-                   ncomponents = num_comp_use, 
-                   pca = num_comp_use,
+                   # ncomponents = num_comp_use, 
+                   # pca = num_comp_use,
                    BPPARAM = MulticoreParam(workers = availableCores()),
                    external_neighbors	= T)
     
-    df <- as.data.frame(tibble(
-      UMAP1 = as.numeric(reducedDim(sce, 'UMAP')[,1]),
-      UMAP2 = as.numeric(reducedDim(sce, 'UMAP')[,2])
-    ))
+    df <- as.data.frame(reducedDim(sce, 'UMAP')) |> `colnames<-`(c("UMAP_1", "UMAP_2"))
     
   } else {
     
-    df <- as.data.frame(tibble(
-      UMAP1 = as.numeric(as.data.frame(reducedDim(sce, dim_col))[,1]),
-      UMAP2 = as.numeric(as.data.frame(reducedDim(sce, dim_col))[,2])
-    ))
+    df <- as.data.frame(reducedDim(sce, dim_col)) |> `colnames<-`(c("UMAP_1", "UMAP_2"))
   }
     
   for(column in columns) {

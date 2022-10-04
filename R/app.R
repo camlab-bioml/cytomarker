@@ -23,6 +23,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @import sortable
 #' @import reactable
 #' @importFrom rlang is_empty
+#' @importFrom clustifyr plot_gene
 #' @importFrom readr write_lines read_tsv read_csv
 #' @importFrom dplyr desc mutate_if distinct
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_tooltip use_bs_tooltip
@@ -31,7 +32,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @importFrom zip zip
 #' @importFrom randomcoloR distinctColorPalette
 #' @importFrom SingleCellExperiment reducedDimNames reducedDims
-#' @importFrom plotly plot_ly plotlyOutput renderPlotly layout
+#' @importFrom plotly plot_ly plotlyOutput renderPlotly layout hide_guides
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel MulticoreParam
 #' @importFrom stringr str_split_fixed
@@ -84,7 +85,7 @@ cytosel <- function(...) {
         # width = 300,
         menuItem("Get Started", tabName = "inputs", icon = icon("gear")),
         sidebarMenuOutput(outputId = 'output_menu'),
-        br(),
+        menuItem("Documentation", tabName = "documentation", icon = icon("bookmark")),
         column(10, offset = 0, align = "center",
                         actionButton("start_analysis", "Run analysis!", icon=icon("play", style = "color:black;"))),
         column(10, offset = 0, align = "center",
@@ -213,7 +214,14 @@ cytosel <- function(...) {
                  br(),
                  helpText(get_tooltip('umap')),
               br(),
-              br(),
+              splitLayout(cellWidths = c(320, 280), selectInput("umap_options", 
+                                "Select UMAP colouring:", choices = c("Cell Type",
+                                                                    "Panel Marker"),
+                                selected = "Cell Type", multiple=FALSE),
+                              column(6, hidden(div(id = "umap_panel_cols",
+                                         selectInput("umap_panel_options", 
+                                                     "Color Heatmap by Panel Marker", 
+                                                     choices = NULL, width = "89%"))))),
                  fluidRow(column(6, plotlyOutput("all_plot", width="500px", height="350px")),
                           column(6, plotlyOutput("top_plot", width="500px", height="350px")))
           ),
@@ -294,9 +302,14 @@ cytosel <- function(...) {
                  # icon = icon("wpexplorer"),
                  br(),
                  reactableOutput("antibody_table")
-          )
+          ),
+      tabItem("documentation",
+              htmlOutput("cytosel_hyperlink")
+              # h2("Documentation Preview:"),
+              # htmlOutput("cytosel_preview"))
       )
     )
+  )
   )
   )
   
@@ -306,6 +319,9 @@ cytosel <- function(...) {
     plots <- reactiveValues() # Save plots for download
     
     umap_top <- reactiveVal()
+    umap_top_gene <- reactiveVal()
+    umap_all_gene <- reactiveVal()
+    umap_colouring <- reactiveVal()
     umap_all <- reactiveVal()
     heatmap <- reactiveVal()
     metrics <- reactiveVal()
@@ -369,17 +385,29 @@ cytosel <- function(...) {
     
     reupload_analysis <- reactiveVal(FALSE)
     markers_reupload <- reactiveVal()
+    reupload_cell_types <- reactiveVal(FALSE)
     yaml <- reactiveVal()
     
     reset_panel <- reactiveVal(FALSE)
     valid_existing_panel <- reactiveVal(TRUE)
+    
+    output$cytosel_hyperlink <-  renderUI({
+      # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
+      # tagList("Cytosel Documentation", url)
+      tags$a(href="http://camlab-bioml.github.io/cytosel-doc/docs/intro",
+             "Click Here to access the cytosel documentation in a new tab",
+             target="_blank")
+    })
+    
+    output$cytosel_preview <- renderUI({
+      tags$iframe(src="http://camlab-bioml.github.io/cytosel-doc/docs/intro", height=600, width=1100)
+    })
     
     # addPopover(session, "q1", "Upload an Input scRNA-seq file", content = 'Input scRNA-seq file',
     #            trigger = 'click')
     
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
-      #if(isTruthy(methods::is(obj, 'SingleCellExperiment')) || isTruthy(methods::is(obj, 'Seurat'))) {
       
       updateCheckboxInput(inputId = "precomputed_dim", value = F)
       use_precomputed_umap(FALSE)
@@ -404,7 +432,7 @@ cytosel <- function(...) {
         }
 
         showModal(assay_modal(assays = input_assays))
-      }else{
+      } else{
         throw_error_or_warning(message = paste("Only one assay provided, thus using",
                                                input_assays),
                                duration = 5,
@@ -414,7 +442,7 @@ cytosel <- function(...) {
       updateSelectInput(
         session = session,
         inputId = "coldata_column",
-        choices = colnames(colData(sce()))
+        choices = colnames(colData(sce()))[!grepl("keep_for_analysis", colnames(colData(sce())))]
       )
       
       if (!isTruthy(input$coldata_column)) {
@@ -433,9 +461,9 @@ cytosel <- function(...) {
       req(input$input_scrnaseq)
       column(input$coldata_column)
       
-      if (!isTruthy(reupload_analysis())) {
-        specific_cell_types_selected(NULL)
-      }
+      # if (!isTruthy(reupload_analysis())) {
+      #   specific_cell_types_selected(NULL)
+      # }
       
       len_possible_cats <- length(unique(sce()[[input$coldata_column]]))
       num_limit <- ifelse(len_possible_cats <= 3, len_possible_cats, 3)
@@ -450,13 +478,15 @@ cytosel <- function(...) {
                                                    others_addition,
                                                    sep = " ")})
       
-      if (!isTruthy(specific_cell_types_selected())) {
+      if (!isTruthy(reupload_cell_types())) {
         updateSelectInput(session, "user_selected_cells",
                           unique(sce()[[input$coldata_column]]))
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
-      
+
       reupload_analysis(FALSE)
+      reupload_cell_types(FALSE)
+      
       
       })
     
@@ -614,7 +644,6 @@ cytosel <- function(...) {
       if (is.null(heatmap())) {
         return(NULL)
       }
-      
       return(heatmap())
     })
     
@@ -715,8 +744,6 @@ cytosel <- function(...) {
           ## Set initial markers:
           scratch_markers_to_keep <- input$bl_scratch
           
-          incProgress(detail = "Computing markers")
-          
           columns <- good_col(sce()[,sce()$keep_for_analysis == "Yes"], input$coldata_column)
           column(columns$good)
           col <- columns$bad
@@ -747,7 +774,7 @@ cytosel <- function(...) {
               unique_element_modal(col)
             } 
             
-            incProgress(detail = "Defining gene lists and marker scores")
+            incProgress(detail = "Computing cell type markers")
             
             ## Compute set of allowed genes
             allowed_genes(
@@ -819,6 +846,11 @@ cytosel <- function(...) {
             
             update_analysis()
             
+            updateSelectInput(
+              session = session,
+              inputId = "umap_panel_options",
+              choices = current_markers()$top_markers,
+              selected = current_markers()$top_markers[1])
             
           } else {
             unique_element_modal(col)
@@ -1251,6 +1283,7 @@ cytosel <- function(...) {
         updateSelectInput(session, "user_selected_cells", 
                           yaml_back$`User selected cells`)
         specific_cell_types_selected(yaml_back$`User selected cells`)
+        reupload_cell_types(TRUE)
         
         } else {
           reupload_warning_modal("Cell type not found", yaml_back$`Heterogeneity source`)
@@ -1321,6 +1354,85 @@ cytosel <- function(...) {
     
       })
     
+    observeEvent(input$umap_options, {
+      req(sce())
+      
+      umap_colouring(input$umap_options)
+      
+      toggle(id = "umap_panel_cols", condition = input$umap_options != "Cell Type")
+      
+      observeEvent(input$umap_panel_options, {
+        
+        if (umap_colouring() == "Cell Type") {
+          plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
+                                                     text=~get(input$coldata_column), 
+                                                     type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                               layout(title = "UMAP all genes", showlegend = F))
+          
+          plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
+                                                     text=~get(input$coldata_column),
+                                                     type='scatter', hoverinfo="text", colors=cytosel_palette()) %>%
+                                               layout(title = "UMAP selected markers"))
+          umap_top_gene(FALSE)
+          umap_all_gene(FALSE)
+          
+        } else {
+          
+          gene_plot_top <- plot_gene(assay(sce(), pref_assay()),
+                                     umap_top() |> select(UMAP_1, UMAP_2) |> drop_na(),
+                                     input$umap_panel_options)
+          
+          gene_plot_all <- plot_gene(assay(sce(), pref_assay()),
+                                     umap_all() |> select(UMAP_1, UMAP_2) |> drop_na(),
+                                     input$umap_panel_options)
+          
+          
+          umap_top_gene(as.data.frame(gene_plot_top[[1]]$data))
+          umap_all_gene(as.data.frame(gene_plot_all[[1]]$data))
+          
+          umap_top_gene(merge(umap_top_gene(), umap_top() |> select(input$coldata_column),
+                              by.x = "cell", by.y = "row.names") |> 
+                          mutate(lab = paste(get(input$coldata_column), ": ",
+                                             "\n",
+                                             round(get(input$umap_panel_options), 3), sep = "")) |>
+                          rename(Expression = input$umap_panel_options))
+          
+          umap_all_gene(merge(umap_all_gene(), umap_all() |> select(input$coldata_column),
+                              by.x = "cell", by.y = "row.names") |> 
+                          mutate(lab = paste(get(input$coldata_column), ": ",
+                                             "\n",
+                                             round(get(input$umap_panel_options), 3), sep = "")) |>
+                          rename(Expression = input$umap_panel_options))
+          
+          plots$top_plot <- suppressWarnings(plot_ly(umap_top_gene(),
+                                    x = ~UMAP_1, y = ~UMAP_2, 
+                                    color = ~Expression,
+                                    type='scatter',
+                                    text = ~lab,
+                                    hoverinfo = "text",
+                                    colors = c("grey", 
+                                               "red")) %>%
+            # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
+            layout(title = "UMAP selected markers"))
+          
+          plots$all_plot <- hide_guides(suppressWarnings(plot_ly(umap_all_gene(),
+                                    x = ~UMAP_1, y = ~UMAP_2, 
+                                    color = ~Expression,
+                                    type='scatter',
+                                    text = ~lab,
+                                    hoverinfo = "text",
+                                    colors = c("grey",
+                                               "red")) %>%
+                                                 # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
+            layout(title = "UMAP all genes",
+                   showlegend = F)))
+          
+        }
+      })
+      
+    })
+    
+    
     ### UPDATE SELECTED MARKERS ###
     update_BL <- function(markers, top_size, scratch_size, unique_cell_types,
                           adding_alternative = F) {
@@ -1345,13 +1457,10 @@ cytosel <- function(...) {
         markers$scratch_markers <- sort(markers$scratch_markers)
       }
       
-      # markers$top_markers <- sapply(markers$top_markers, function(m) paste(icon("calendar"), m))
-      
       labels_top <- lapply(markers$top_markers, 
                            function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
                                                                                                       set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
                                                                                                    cytosel_palette()[ markers$associated_cell_types[x] ])))
-      
       labels_scratch <- lapply(markers$scratch_markers, 
                                function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
                                                                                                           set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
@@ -1410,8 +1519,11 @@ cytosel <- function(...) {
                   num_markers_in_scratch(),
                   names(fms()[[1]]))
         
+        
         # Update UMAP
         incProgress(detail = "Computing & creating UMAP plots")
+        
+        
         umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
                           column(), pref_assay(), 
                           use_precomputed_umap(),
@@ -1421,11 +1533,11 @@ cytosel <- function(...) {
                           umap_precomputed_col(),
                           T, num_markers_in_selected()))
         
-        plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
+        plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
           layout(title = "UMAP all genes", showlegend = F))
         
-        plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP1, y=~UMAP2, color=~get(columns[1]), text=~get(columns[1]), 
+        plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
           layout(title = "UMAP selected markers"))
         
@@ -1497,9 +1609,9 @@ cytosel <- function(...) {
         #                             paste0("Overall (n = ", cpt['Overall'], ")"))
         # m$what_tally <- fct_rev(m$what_tally)
         
-        m[is.na(m)] <- 0
+        # m[is.na(m)] <- 0
         
-        # m <- m |> drop_na()
+        m <- m |> drop_na(score)
         
         current_metrics(m |> mutate(Run = "Current Run"))
         

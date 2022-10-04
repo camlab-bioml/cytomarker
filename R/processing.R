@@ -27,7 +27,9 @@ read_input_scrnaseq <- function(sce_path) {
     } 
   }
   ## Remove cells with no reads - would cause issue with logNormCounts from scater
-  sce <- sce[, Matrix::colSums(logcounts(sce)) > 0]
+  if ("logcounts" %in% names(assays(sce))) {
+    sce <- sce[, Matrix::colSums(logcounts(sce)) > 0]
+  }
   sce
 } 
 
@@ -38,6 +40,7 @@ read_input_scrnaseq <- function(sce_path) {
 #' @importFrom SummarizedExperiment assays
 #' @importFrom scater logNormCounts
 detect_assay_and_create_logcounts <- function(sce){
+  if ("logcounts" %in% names(assays(sce))) {
   count_sums <- assays(sce)$logcounts |> 
     rowSums()
   ## calculate residuals after dividing by 1
@@ -50,6 +53,10 @@ detect_assay_and_create_logcounts <- function(sce){
     assays(sce)[['counts']] <- assays(sce)$logcounts
     assays(sce)[['logcounts']] <- NULL
     sce <- logNormCounts(sce)
+  }
+  
+  sce <- sce[, Matrix::colSums(logcounts(sce)) > 0]
+  
   }
   
   sce
