@@ -41,6 +41,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' valueBoxOutput renderMenu updateTabItems tabBox
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @importFrom yaml read_yaml
+#' @import rdrop2
 #' @export
 #' 
 #' @param ... Additional arguments
@@ -59,6 +60,9 @@ cytosel <- function(...) {
   grch38 <- cytosel_data$grch38
   
   full_palette <- create_global_colour_palette()
+  
+  rdrop2::drop_auth(rdstoken = "curated/token.rds")
+  cytosel_token <- readRDS("curated/token.rds")
   
   ui <- tagList(
     includeCSS(system.file(file.path("www", "cytosel.css"),
@@ -114,7 +118,7 @@ cytosel <- function(...) {
     # Tabs
     tabItems(
       tabItem("inputs",
-              fluidRow(column(5,
+              fluidRow(column(4,
         fileInput("input_scrnaseq",
                   label = p(
                     'Input scRNA-seq',
@@ -123,7 +127,7 @@ cytosel <- function(...) {
             icon("circle-info") %>%
               bs_embed_tooltip(title = get_tooltip('input_scrnaseq'),
                                placement = "right", html = "true")
-          ))),
+          )), column(5, actionButton("curated_dataset", "Select a curated dataset"))),
         selectInput("coldata_column", "Cell category to evaluate:", NULL, multiple=FALSE) %>%
           shinyInput_label_embed(
             icon("circle-info") %>%
@@ -406,6 +410,86 @@ cytosel <- function(...) {
     # addPopover(session, "q1", "Upload an Input scRNA-seq file", content = 'Input scRNA-seq file',
     #            trigger = 'click')
     
+    
+    ### user selects pre-curated dataset ####
+    
+    observeEvent(input$curated_dataset, {
+      showModal(curated_dataset_modal())
+    })
+    
+    observeEvent(input$pick_curated, {
+      req(input$curated_options)
+      
+      removeModal()
+      updateCheckboxInput(inputId = "precomputed_dim", value = F)
+      use_precomputed_umap(FALSE)
+      umap_precomputed_col(NULL)
+      
+      if (input$curated_options == "PBMC small") {
+        if (!file.exists("curated/pbmc_small.rds")) {
+          rdrop2::drop_download("cytosel/pbmc_small.rds",
+                                local_path = "curated",
+                                overwrite = T,
+                                dtoken = cytosel_token)
+        }
+        input_sce <- read_input_scrnaseq("curated/pbmc_small.rds")
+      }
+      
+      if (input$curated_options == "PBMC large") {
+        if (!file.exists("curated/scRNASeq-test.rds")) {
+          rdrop2::drop_download("cytosel/scRNASeq-test.rds",
+                                local_path = "curated",
+                                overwrite = T,
+                                dtoken = cytosel_token)
+        }
+        input_sce <- read_input_scrnaseq("curated/scRNASeq-test.rds")
+      }
+      
+      input_sce <- detect_assay_and_create_logcounts(input_sce)
+      input_sce <- parse_gene_names(input_sce, grch38)
+      sce(input_sce)
+      input_assays <- c(names(assays(sce())))
+      
+      if (!isTruthy(input$min_category_count)) {
+        updateNumericInput(session, "min_category_count", 2)
+        cell_min_threshold(2)
+      } else {
+        cell_min_threshold(input$min_category_count)
+      }
+      
+      # If there is more than 1 assay user to select appropriate assay
+      if(length(input_assays) > 1){
+        if("logcounts" %in% input_assays) {
+          input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
+        }
+        
+        showModal(assay_modal(assays = input_assays))
+      } else{
+        throw_error_or_warning(message = paste("Only one assay provided, thus using",
+                                               input_assays),
+                               duration = 5,
+                               notificationType = 'message')
+      }
+      
+      updateSelectInput(
+        session = session,
+        inputId = "coldata_column",
+        choices = colnames(colData(sce()))[!grepl("keep_for_analysis", 
+                                                  colnames(colData(sce())))]
+      )
+      
+      if (!isTruthy(input$coldata_column)) {
+        column(colnames(colData(sce()))[1])
+      } else {
+        column(input$coldata_column)
+      }
+      
+      possible_umap_dims(detect_umap_dims_in_sce(sce()))
+      
+      toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
+      
+    })
+    
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       
@@ -417,6 +501,42 @@ cytosel <- function(...) {
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
       input_assays <- c(names(assays(sce())))
+      if (!isTruthy(input$min_category_count)) {
+        updateNumericInput(session, "min_category_count", 2)
+        cell_min_threshold(2)
+      } else {
+        cell_min_threshold(input$min_category_count)
+      }
+      
+      # If there is more than 1 assay user to select appropriate assay
+      if(length(input_assays) > 1){
+        if("logcounts" %in% input_assays) {
+          input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
+        }
+        
+        showModal(assay_modal(assays = input_assays))
+      } else{
+        throw_error_or_warning(message = paste("Only one assay provided, thus using",
+                                               input_assays),
+                               duration = 5,
+                               notificationType = 'message')
+      }
+      
+      updateSelectInput(
+        session = session,
+        inputId = "coldata_column",
+        choices = colnames(colData(sce()))[!grepl("keep_for_analysis", colnames(colData(sce())))]
+      )
+      
+      if (!isTruthy(input$coldata_column)) {
+        column(colnames(colData(sce()))[1])
+      } else {
+        column(input$coldata_column)
+      }
+      
+      possible_umap_dims(detect_umap_dims_in_sce(sce()))
+      
+      toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
       
       if (!isTruthy(input$min_category_count)) {
         updateNumericInput(session, "min_category_count", 2)
