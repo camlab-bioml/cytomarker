@@ -208,7 +208,7 @@ cytosel <- function(...) {
                                  ),
                           column(4, align = "left", plotOutput("legend", width = "400px",
                                                height = "500px"),
-                                 style = " margin-top:-70px; margin-left: -60px;"))),
+                                 style = " margin-top:-70px; margin-left: -50px;"))),
         
       tabItem("UMAP",
                  # icon = icon("globe"),
@@ -1471,24 +1471,15 @@ cytosel <- function(...) {
       # output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
       
       output$legend <- renderPlot({
-        op <- par(family = "sans")
+        op <- par(family = "sans", mar = c(3, 2, 3, 3))
         plot(NULL ,xaxt='n',yaxt='n',bty='n',
                                        ylab='',xlab='', xlim=0:1, ylim=0:1)
-      legend("topleft", legend = names(cytosel_palette()), 
-             pch=16, pt.cex=1.6, cex=1.3, bty='n',
+      legend("top", legend = names(cytosel_palette()), 
+             pch=16, pt.cex=1.6, cex=1.2, bty='n',
              ncol = ceiling(length(cytosel_palette())/15),
              col = cytosel_palette())
-      mtext("Cell Type", cex=1.4)
-      par(op)})output$legend <- renderPlot({
-        op <- par(family = "sans")
-        plot(NULL ,xaxt='n',yaxt='n',bty='n',
-             ylab='',xlab='', xlim=0:1, ylim=0:1)
-        legend("topleft", legend = names(cytosel_palette()), 
-               pch=16, pt.cex=1.6, cex=1.3, bty='n',
-               ncol = ceiling(length(cytosel_palette())/15),
-               col = cytosel_palette())
-        mtext("Cell Type", cex=1.4)
-        par(op)})
+      mtext("Cell Type", cex=1.5)
+      par(op)})
      
       output$BL <- renderUI({
         bucket_list(
