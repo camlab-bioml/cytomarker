@@ -211,7 +211,10 @@ cytosel <- function(...) {
                                                height = "500px"),
                                  style = " margin-top:-70px; margin-left: -50px;"))),
       tabItem("gene_expression",
-              selectInput("genes_for_violin", "Select genes to view their expression:", NULL, multiple=T),
+              fluidRow(column(3,
+                selectInput("genes_for_violin", "Select genes to view their expression:", NULL, multiple=T)),
+                column(2, actionButton("add_violin_genes", "Add selected to panel", width = "100%"),
+                       style = "margin-top:25px")),
               br(),
               fluidRow(column(12, hidden(div(id = "viol_plot",
                     plotOutput("expression_violin", height="550px")))))
@@ -1016,6 +1019,45 @@ cytosel <- function(...) {
       } else if(!(input$add_markers %in% rownames(sce()))) {
         dne_modal(dne = input$add_markers)
       }
+    })
+    
+    
+    #### Add genes from expression tab #####
+    
+    
+    observeEvent(input$add_violin_genes, {
+      req(input$genes_for_violin)
+      
+      if(!is.null(input$genes_for_violin) && 
+         all(input$genes_for_violin %in% allowed_genes())) {
+         # (sum(!input$genes_for_violin %in% current_markers()$top_markers)==0) &&
+         # (sum(!input$genes_for_violin %in% current_markers()$scratch_markers)==0)) {
+        
+        cm <- current_markers()
+        markers <- list(recommended_markers = cm$recommended_markers,
+                        scratch_markers = input$bl_scratch,
+                        top_markers = unique(c(input$genes_for_violin,
+                        setdiff(cm$top_markers, input$bl_scratch))))
+        
+        # SMH
+        current_markers(
+          set_current_markers_safely(markers, fms())
+        )
+        
+        num_markers_in_selected(length(current_markers()$top_markers))
+        num_markers_in_scratch(length(current_markers()$scratch_markers))
+        
+        update_BL(current_markers(), num_markers_in_selected(),
+                  num_markers_in_scratch(),
+                  names(fms()[[1]]))
+        
+        updateTabsetPanel(session, "tabs", "marker_selection")
+        
+      } 
+      
+      # else if(!(input$add_markers %in% rownames(sce()))) {
+      #   dne_modal(dne = input$add_markers)
+      # }
     })
     
     observeEvent(input$add_to_selected, { # Add uploaded markers

@@ -332,7 +332,6 @@ test_that("Download works on server", {
 
 context("Current panel with different genes throws error")
 
-#### download analysis ######
 test_that("Error from current panel with different genes", {
   testServer(cytosel::cytosel(), expr = {
     session$setInputs(input_scrnaseq = list(datapath =
@@ -384,8 +383,12 @@ test_that("Changing the UMAP colouring to genes works", {
     expect_false(isFALSE(umap_all_gene()))
     expect_equal(umap_colouring(), "Panel Marker")
     
-    session$setInputs(genes_for_violin = allowed_genes()[1:3])
+    viol_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB")
+    
+    session$setInputs(genes_for_violin = viol_markers,
+                      add_violin_genes = T)
     expect_false(is.null(output$expression_violin))
+    expect_true(all(viol_markers %in% current_markers()$top_markers))
     
   })
 })
