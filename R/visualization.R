@@ -73,24 +73,24 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
 
 #' Return the legend of the cell type colours
 #' 
-#' @param palette A vector storing hex colours
+# #' @param palette A vector storing hex colours
 #' 
-#' @importFrom ggplot2 theme_bw geom_histogram scale_fill_manual guides
-get_legend <- function(palette) {
-  ## Draw the ggplot
-  df <- tibble(r = stats::runif(length(palette)),
-               `Cell type` = names(palette))
-  
-  # TODO: Maybe "Cell type" isn't the best name for this
-  plt <- ggplot(df, aes(x = r, fill = `Cell type`)) + 
-    geom_histogram() +
-    scale_fill_manual(values = palette) +
-    guides(fill = guide_legend(ncol = 1)) 
-  
-  legend <- cowplot::get_legend(plt)
-  
-  legend
-}
+# #' @importFrom ggplot2 theme_bw geom_histogram scale_fill_manual guides
+# get_legend <- function(palette) {
+#   ## Draw the ggplot
+#   df <- tibble(r = stats::runif(length(palette)),
+#                `Cell type` = names(palette))
+#   
+#   # TODO: Maybe "Cell type" isn't the best name for this
+#   plt <- ggplot(df, aes(x = r, fill = `Cell type`)) + 
+#     geom_histogram() +
+#     scale_fill_manual(values = palette) +
+#     guides(fill = guide_legend(ncol = 1)) 
+#   
+#   legend <- cowplot::get_legend(plt)
+#   
+#   legend
+# }
 
 #' Map gene symbols to antibody icons depending on
 #' whether the gene is initially suggested or selected by the user
@@ -105,4 +105,21 @@ map_gene_name_to_antibody_icon <- function(gene_id, markers) {
     return(NULL)
   }
   
+}
+
+#' Create a violin plot from a vector of genes, a cell type category in an SCE, and the assay desired
+#' @param sce the SingleCellExperiment object
+#' @param genes The vector of genes to visualize
+#' @param cell_type The cell type category to resolve using the gene vector
+#' @param assay The name of the assay to use. Common selections are logcounts or counts
+#' @importFrom scater plotExpression
+#' @importFrom ggplot2 ggplot
+make_violin_plot <- function(sce, genes, cell_type, assay) {
+  expression_plot <- plotExpression(
+    sce, genes, x = cell_type,
+    colour_by = cell_type,
+    exprs_values = assay)
+  
+  return(as.data.frame(expression_plot["data"]) |> drop_na() |> 
+           `colnames<-`(c("Gene", "Expression", "Cell Type", "Colour")))
 }

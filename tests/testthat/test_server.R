@@ -245,8 +245,6 @@ test_that("Server has basic functionality", {
     expect_false(is.null(current_markers()))
     expect_equal(copy_markers, current_markers())
     
-    session$setInputs(start_analysis = T)
-    
 
   })
 })
@@ -385,6 +383,9 @@ test_that("Changing the UMAP colouring to genes works", {
     expect_false(isFALSE(umap_top_gene()))
     expect_false(isFALSE(umap_all_gene()))
     expect_equal(umap_colouring(), "Panel Marker")
+    
+    session$setInputs(genes_for_violin = allowed_genes()[1:3])
+    expect_false(is.null(output$expression_violin))
     
   })
 })
