@@ -18,9 +18,10 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
 #' @importFrom DT DTOutput renderDT
 #' @importFrom tidyr drop_na
 #' @import SummarizedExperiment
-#' @import ggplot2
 #' @import forcats
+#' @import ggplot2
 #' @import sortable
+#' @import scater
 #' @import reactable
 #' @importFrom rlang is_empty
 #' @importFrom clustifyr plot_gene
@@ -209,7 +210,12 @@ cytosel <- function(...) {
                           column(4, align = "left", plotOutput("legend", width = "400px",
                                                height = "500px"),
                                  style = " margin-top:-70px; margin-left: -50px;"))),
-        
+      tabItem("gene_expression",
+              selectInput("genes_for_violin", "Select genes to view their expression:", NULL, multiple=T),
+              br(),
+              fluidRow(column(12, hidden(div(id = "viol_plot",
+                    plotOutput("expression_violin", height="550px")))))
+      ),
       tabItem("UMAP",
                  # icon = icon("globe"),
                  br(),
@@ -853,6 +859,13 @@ cytosel <- function(...) {
               choices = current_markers()$top_markers,
               selected = current_markers()$top_markers[1])
             
+            updateSelectInput(
+              session = session,
+              inputId = "genes_for_violin",
+              choices = allowed_genes(),
+              selected = NULL)
+            
+            
           } else {
             unique_element_modal(col)
           }
@@ -863,8 +876,10 @@ cytosel <- function(...) {
               sidebarMenu(
                 menuItem("Marker selection", tabName = "marker_selection", 
                          icon = icon("barcode")),
-                menuItem("UMAP", tabName = "UMAP", 
+                menuItem("Gene Expression", tabName = "gene_expression", 
                          icon = icon("arrows-alt")),
+                menuItem("UMAP", tabName = "UMAP", 
+                         icon = icon("circle-nodes")),
                 menuItem("Heatmap", tabName = "Heatmap", 
                          icon = icon("th-large")),
                 menuItem("Metrics", tabName = "Metrics", 
@@ -1431,6 +1446,31 @@ cytosel <- function(...) {
         }
       })
       
+    })
+    
+    observeEvent(input$genes_for_violin, {
+      req(sce())
+      # req(input$coldata_column)
+      # req(allowed_genes())
+      # req(cytosel_palette())
+      
+      toggle(id = "viol_plot", condition = isTruthy(input$genes_for_violin))
+      
+      if (length(input$genes_for_violin) < 1) {
+        genes_to_plot <- allowed_genes()[1]
+      } else {
+        genes_to_plot <- input$genes_for_violin
+      }
+    
+      if (isTruthy(input$genes_for_violin)) {
+        output$expression_violin <- renderPlot({
+          viol_frame <- make_violin_plot(sce()[,sce()$keep_for_analysis == "Yes"],
+              genes_to_plot, input$coldata_column, pref_assay())
+          ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, fill = `Cell Type`)) + geom_violin(alpha = 1) +
+            theme(axis.text.x = element_text(angle = 90)) +
+            facet_wrap(~Gene) + scale_fill_manual(values = cytosel_palette())
+        })
+      }
     })
     
     
