@@ -4,7 +4,7 @@
 \alias{curated_dataset_modal}
 \title{Show an input modal for the user to select a pre-curated cytosel dataset}
 \usage{
-curated_dataset_modal()
+curated_dataset_modal(failed = FALSE)
 }
 \description{
 Show an input modal for the user to select a pre-curated cytosel dataset

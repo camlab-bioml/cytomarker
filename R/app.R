@@ -578,7 +578,8 @@ cytosel <- function(...) {
     })
     
     observeEvent(input$coldata_column, {
-      req(input$input_scrnaseq)
+      req(sce())
+      
       column(input$coldata_column)
       
       # if (!isTruthy(reupload_analysis())) {
@@ -611,7 +612,7 @@ cytosel <- function(...) {
       })
     
     observeEvent(input$add_selected_to_analysis, {
-      req(input$input_scrnaseq)
+      req(sce())
       req(input$coldata_column)
       specific_cell_types_selected(input$user_selected_cells)
       
@@ -629,7 +630,7 @@ cytosel <- function(...) {
     })
     
     observeEvent(input$user_selected_cells, {
-      req(input$input_scrnaseq)
+      req(sce())
       req(input$coldata_column)
       specific_cell_types_selected(input$user_selected_cells)
     })
