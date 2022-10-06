@@ -1558,10 +1558,10 @@ cytosel <- function(...) {
         plot(NULL ,xaxt='n',yaxt='n',bty='n',
                                        ylab='',xlab='', xlim=0:1, ylim=0:1)
       legend("top", legend = names(cytosel_palette()), 
-             pch=16, pt.cex=1.6, cex=1.2, bty='n',
+             pch=15, pt.cex=2.2, cex=1.2, bty='n',
              ncol = ceiling(length(cytosel_palette())/15),
              col = cytosel_palette())
-      mtext("Cell Type", cex=1.5)
+      mtext("Cell Type", cex=1.4)
       par(op)})
      
       output$BL <- renderUI({
