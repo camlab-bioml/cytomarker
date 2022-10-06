@@ -263,6 +263,7 @@ test_that("Server can detect sce with only one assay", {
                       min_category_count = 2,
                       panel_size = 32)
     
+    # detect if only one assay is uploaded
     expect_equal(length(names(assays(sce()))), 1)
     
   })
@@ -282,8 +283,10 @@ test_that("Re-upload and reset works on server", {
                                               test_path("pbmc_small.rds")),
                       read_back_analysis = list(datapath =
                                                   test_path("test_config.yml")))
+    # verify reupload analysis reactive worked
     expect_true(reupload_analysis())
     
+    # verify that the reactive values were populated from the yml
     expect_equal(length(specific_cell_types_selected()), 6)
     expect_equal(cell_min_threshold(), 10)
     expect_equal(length(markers_reupload()$top_markers), 18)
@@ -294,6 +297,7 @@ test_that("Re-upload and reset works on server", {
     
     session$setInputs(create_reset = T, reset_marker_panel = T)
     
+    # resetting the panel sets current markers and input rank lists to 0
     expect_true(reset_panel())
     expect_null(current_markers()$top_markers)
     expect_equal(num_markers_in_selected(), 0)
@@ -322,6 +326,7 @@ test_that("Download works on server", {
     
     expect_false(is.null(output$downloadData))
     
+    # test that download feature works with temp dir
     withr::with_tempdir({
       session$setInputs(downloadData = T)
       expect_true(file.exists(output$downloadData))
@@ -332,7 +337,6 @@ test_that("Download works on server", {
 
 context("Current panel with different genes throws error")
 
-#### download analysis ######
 test_that("Error from current panel with different genes", {
   testServer(cytosel::cytosel(), expr = {
     session$setInputs(input_scrnaseq = list(datapath =
@@ -346,14 +350,15 @@ test_that("Error from current panel with different genes", {
     session$setInputs(bl_top = c("GENE_1", "GENE_2"),
                       start_analysis = T)
     
+    # check that genes that are not in the rownames of the sce invalidate the panel
     expect_false(valid_existing_panel())
     
   })
 })
 
-context("Change the UMAP colouring from cell type to gene")
+context("Test UMAP, violin, and heatmap colouring changes")
 
-test_that("Changing the UMAP colouring to genes works", {
+test_that("Changing the UMAP, violin, and heatmap colourings work", {
   testServer(cytosel::cytosel(), expr = {
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
@@ -373,6 +378,9 @@ test_that("Changing the UMAP colouring to genes works", {
     session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
                       start_analysis = T)
     
+    heatmap_1 <- heatmap()
+    
+    # check defaults for UMAP plots
     expect_false(umap_top_gene())
     expect_false(umap_all_gene())
     expect_equal(umap_colouring(), "Cell Type")
@@ -380,13 +388,31 @@ test_that("Changing the UMAP colouring to genes works", {
     session$setInputs(umap_options = "Panel Marker",
     umap_panel_options = "S100A9", umap_panel_cols = T)
     
+    # switching the UMAP to gene works
     expect_false(isFALSE(umap_top_gene()))
     expect_false(isFALSE(umap_all_gene()))
     expect_equal(umap_colouring(), "Panel Marker")
     
-    session$setInputs(genes_for_violin = allowed_genes()[1:3])
+    viol_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB")
+    
+    # setting the violin plots with genes works
+    session$setInputs(genes_for_violin = viol_markers,
+                      add_violin_genes = T)
     expect_false(is.null(output$expression_violin))
+    expect_true(all(viol_markers %in% current_markers()$top_markers))
+    
+    # if set to NULL, still renders an empty violin plot
+    session$setInputs(genes_for_violin = NULL)
+    expect_false(is.null(output$expression_violin))
+    
+    # switching the heatmap category makes a different heatmap
+    session$setInputs(display_options = "seurat_annotations",
+    heatmap_expression_norm = "Expression", start_analysis = T)
+    
+    expect_false(identical(heatmap_1, heatmap()))
     
   })
 })
+
+
 

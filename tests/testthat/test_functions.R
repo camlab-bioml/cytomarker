@@ -68,7 +68,7 @@ test_that("get_markers and compute_fm returns valid output", {
                          sce = sce,
                          allowed_genes = rownames(sce))
 
-
+  
   expect_is(markers, 'list')
   expect_equal(names(markers), c("recommended_markers", "scratch_markers", "top_markers"))
   expect_gt(length(markers$recommended_markers), 0)

@@ -6,7 +6,8 @@ utils::globalVariables(c("palette_to_use", "full_palette"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
 
-options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
+options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
+        show.error.messages = FALSE)
 
 #' Define main entrypoint of app
 #' 
@@ -215,7 +216,10 @@ cytosel <- function(...) {
                                                height = "500px"),
                                  style = " margin-top:-70px; margin-left: -50px;"))),
       tabItem("gene_expression",
-              selectInput("genes_for_violin", "Select genes to view their expression:", NULL, multiple=T),
+              fluidRow(column(3,
+                selectInput("genes_for_violin", "Select genes to view their expression:", NULL, multiple=T)),
+                column(2, actionButton("add_violin_genes", "Add selected to panel", width = "100%"),
+                       style = "margin-top:25px")),
               br(),
               fluidRow(column(12, hidden(div(id = "viol_plot",
                     plotOutput("expression_violin", height="550px")))))
@@ -1138,6 +1142,44 @@ cytosel <- function(...) {
       }
     })
     
+    
+    #### Add genes from expression tab #####
+    
+    observeEvent(input$add_violin_genes, {
+      req(input$genes_for_violin)
+      
+      if(!is.null(input$genes_for_violin) && 
+         all(input$genes_for_violin %in% allowed_genes())) {
+         # (sum(!input$genes_for_violin %in% current_markers()$top_markers)==0) &&
+         # (sum(!input$genes_for_violin %in% current_markers()$scratch_markers)==0)) {
+        
+        cm <- current_markers()
+        markers <- list(recommended_markers = cm$recommended_markers,
+                        scratch_markers = input$bl_scratch,
+                        top_markers = unique(c(input$genes_for_violin,
+                        setdiff(cm$top_markers, input$bl_scratch))))
+        
+        # SMH
+        current_markers(
+          set_current_markers_safely(markers, fms())
+        )
+        
+        num_markers_in_selected(length(current_markers()$top_markers))
+        num_markers_in_scratch(length(current_markers()$scratch_markers))
+        
+        update_BL(current_markers(), num_markers_in_selected(),
+                  num_markers_in_scratch(),
+                  names(fms()[[1]]))
+        
+        updateTabsetPanel(session, "tabs", "marker_selection")
+        
+      } 
+      
+      # else if(!(input$add_markers %in% rownames(sce()))) {
+      #   dne_modal(dne = input$add_markers)
+      # }
+    })
+    
     observeEvent(input$add_to_selected, { # Add uploaded markers
       req(input$uploadMarkers)
       
@@ -1574,24 +1616,25 @@ cytosel <- function(...) {
       # req(allowed_genes())
       # req(cytosel_palette())
       
-      toggle(id = "viol_plot", condition = isTruthy(input$genes_for_violin))
-      
-      if (length(input$genes_for_violin) < 1) {
-        genes_to_plot <- allowed_genes()[1]
-      } else {
-        genes_to_plot <- input$genes_for_violin
-      }
-    
+      observe(toggle(id = "viol_plot", condition = isTruthy(input$genes_for_violin)))
+
       if (isTruthy(input$genes_for_violin)) {
         output$expression_violin <- renderPlot({
-          viol_frame <- make_violin_plot(sce()[,sce()$keep_for_analysis == "Yes"],
-              genes_to_plot, input$coldata_column, pref_assay())
-          ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, fill = `Cell Type`)) + geom_violin(alpha = 1) +
+          viol_frame <- suppressWarnings(
+            make_violin_plot(sce()[,sce()$keep_for_analysis == "Yes"],
+                        input$genes_for_violin, input$coldata_column, pref_assay()))
+          suppressWarnings(ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
+                            fill = `Cell Type`)) + geom_violin(alpha = 1) +
             theme(axis.text.x = element_text(angle = 90)) +
-            facet_wrap(~Gene) + scale_fill_manual(values = cytosel_palette())
+            facet_wrap(~Gene) + scale_fill_manual(values = cytosel_palette()))
+        })
+        
+      } else {
+        output$expression_violin <- renderPlot({
+        ggplot() + theme_void()
         })
       }
-    })
+    }, ignoreNULL = FALSE)
     
     
     ### UPDATE SELECTED MARKERS ###
@@ -1635,10 +1678,10 @@ cytosel <- function(...) {
         plot(NULL ,xaxt='n',yaxt='n',bty='n',
                                        ylab='',xlab='', xlim=0:1, ylim=0:1)
       legend("top", legend = names(cytosel_palette()), 
-             pch=16, pt.cex=1.6, cex=1.2, bty='n',
+             pch=15, pt.cex=2.2, cex=1.2, bty='n',
              ncol = ceiling(length(cytosel_palette())/15),
              col = cytosel_palette())
-      mtext("Cell Type", cex=1.5)
+      mtext("Cell Type", cex=1.4)
       par(op)})
      
       output$BL <- renderUI({
