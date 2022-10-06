@@ -6,7 +6,8 @@ utils::globalVariables(c("palette_to_use", "full_palette"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
 
-options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1)
+options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
+        show.error.messages = FALSE)
 
 #' Define main entrypoint of app
 #' 
@@ -1024,7 +1025,6 @@ cytosel <- function(...) {
     
     #### Add genes from expression tab #####
     
-    
     observeEvent(input$add_violin_genes, {
       req(input$genes_for_violin)
       
@@ -1496,24 +1496,25 @@ cytosel <- function(...) {
       # req(allowed_genes())
       # req(cytosel_palette())
       
-      toggle(id = "viol_plot", condition = isTruthy(input$genes_for_violin))
-      
-      if (length(input$genes_for_violin) < 1) {
-        genes_to_plot <- allowed_genes()[1]
-      } else {
-        genes_to_plot <- input$genes_for_violin
-      }
-    
+      observe(toggle(id = "viol_plot", condition = isTruthy(input$genes_for_violin)))
+
       if (isTruthy(input$genes_for_violin)) {
         output$expression_violin <- renderPlot({
-          viol_frame <- make_violin_plot(sce()[,sce()$keep_for_analysis == "Yes"],
-              genes_to_plot, input$coldata_column, pref_assay())
-          ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, fill = `Cell Type`)) + geom_violin(alpha = 1) +
+          viol_frame <- suppressWarnings(
+            make_violin_plot(sce()[,sce()$keep_for_analysis == "Yes"],
+                        input$genes_for_violin, input$coldata_column, pref_assay()))
+          suppressWarnings(ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
+                            fill = `Cell Type`)) + geom_violin(alpha = 1) +
             theme(axis.text.x = element_text(angle = 90)) +
-            facet_wrap(~Gene) + scale_fill_manual(values = cytosel_palette())
+            facet_wrap(~Gene) + scale_fill_manual(values = cytosel_palette()))
+        })
+        
+      } else {
+        output$expression_violin <- renderPlot({
+        ggplot() + theme_void()
         })
       }
-    })
+    }, ignoreNULL = FALSE)
     
     
     ### UPDATE SELECTED MARKERS ###

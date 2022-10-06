@@ -350,9 +350,9 @@ test_that("Error from current panel with different genes", {
   })
 })
 
-context("Change the UMAP colouring from cell type to gene")
+context("Test UMAP, violin, and heatmap colouring changes")
 
-test_that("Changing the UMAP colouring to genes works", {
+test_that("Changing the UMAP, violin, and heatmap colourings work", {
   testServer(cytosel::cytosel(), expr = {
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
@@ -372,6 +372,8 @@ test_that("Changing the UMAP colouring to genes works", {
     session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
                       start_analysis = T)
     
+    heatmap_1 <- heatmap()
+    
     expect_false(umap_top_gene())
     expect_false(umap_all_gene())
     expect_equal(umap_colouring(), "Cell Type")
@@ -389,6 +391,14 @@ test_that("Changing the UMAP colouring to genes works", {
                       add_violin_genes = T)
     expect_false(is.null(output$expression_violin))
     expect_true(all(viol_markers %in% current_markers()$top_markers))
+    
+    session$setInputs(genes_for_violin = NULL)
+    expect_false(is.null(output$expression_violin))
+    
+    session$setInputs(display_options = "seurat_annotations",
+    heatmap_expression_norm = "Expression", start_analysis = T)
+    
+    expect_false(identical(heatmap_1, heatmap()))
     
   })
 })
