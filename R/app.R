@@ -215,7 +215,10 @@ cytosel <- function(...) {
               fluidRow(column(3,
                 selectInput("genes_for_violin", "Select genes to view their expression:", NULL, multiple=T)),
                 column(2, actionButton("add_violin_genes", "Add selected to panel", width = "100%"),
-                       style = "margin-top:25px")),
+                       style = "margin-top:25px"),
+                column(4, radioButtons("viol_viewer", label = "Select plot orientation",
+                                       choices = c("By Marker", "By Cell Type"),
+                                       selected="By Marker"))),
               br(),
               fluidRow(column(12, hidden(div(id = "viol_plot",
                     plotOutput("expression_violin", height="550px")))))
@@ -1490,7 +1493,11 @@ cytosel <- function(...) {
       
     })
     
-    observeEvent(input$genes_for_violin, {
+    to_listen_violin <- reactive({
+      list(input$genes_for_violin,input$viol_viewer)
+    })
+    
+    observeEvent(to_listen_violin(), {
       req(sce())
       # req(input$coldata_column)
       # req(allowed_genes())
@@ -1499,15 +1506,34 @@ cytosel <- function(...) {
       observe(toggle(id = "viol_plot", condition = isTruthy(input$genes_for_violin)))
 
       if (isTruthy(input$genes_for_violin)) {
-        output$expression_violin <- renderPlot({
-          viol_frame <- suppressWarnings(
-            make_violin_plot(sce()[,sce()$keep_for_analysis == "Yes"],
-                        input$genes_for_violin, input$coldata_column, pref_assay()))
-          suppressWarnings(ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
-                            fill = `Cell Type`)) + geom_violin(alpha = 1) +
-            theme(axis.text.x = element_text(angle = 90)) +
-            facet_wrap(~Gene) + scale_fill_manual(values = cytosel_palette()))
-        })
+        
+        if (input$viol_viewer == "By Marker") {
+          output$expression_violin <- renderPlot({
+            viol_frame <- suppressWarnings(
+              make_violin_plot(sce()[,sce()$keep_for_analysis == "Yes"],
+                               input$genes_for_violin, input$coldata_column, pref_assay()))
+            suppressWarnings(ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
+                                                    fill = `Cell Type`)) + geom_violin(alpha = 1) +
+                               theme(axis.text.x = element_text(angle = 90)) +
+                               facet_wrap(~Gene) + scale_fill_manual(values = cytosel_palette()))
+          })
+        } else {
+          
+          output$expression_violin <- renderPlot({
+            # TO DO: figure out palette if filling by gene and not cell type
+            viol_palette <- cytosel_palette()
+            names(viol_palette) <- NULL
+            viol_frame <- suppressWarnings(
+              make_violin_plot(sce()[,sce()$keep_for_analysis == "Yes"],
+                               input$genes_for_violin, input$coldata_column, pref_assay()))
+            suppressWarnings(ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
+                                                    fill = Gene)) + geom_violin(alpha = 1) +
+                               theme(axis.text.x = element_text(angle = 90)) +
+                               # facet_wrap(~Gene) + 
+                               scale_fill_manual(values = full_palette))
+          })
+          
+        }
         
       } else {
         output$expression_violin <- renderPlot({
