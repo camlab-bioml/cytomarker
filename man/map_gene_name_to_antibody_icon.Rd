@@ -2,8 +2,7 @@
 % Please edit documentation in R/visualization.R
 \name{map_gene_name_to_antibody_icon}
 \alias{map_gene_name_to_antibody_icon}
-\title{Map gene symbols to antibody icons depending on
-whether the gene is initially suggested or selected by the user}
+\title{Return the legend of the cell type colours}
 \usage{
 map_gene_name_to_antibody_icon(gene_id, markers)
 }

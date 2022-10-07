@@ -68,7 +68,7 @@ test_that("get_markers and compute_fm returns valid output", {
                          sce = sce,
                          allowed_genes = rownames(sce))
 
-
+  
   expect_is(markers, 'list')
   expect_equal(names(markers), c("recommended_markers", "scratch_markers", "top_markers"))
   expect_gt(length(markers$recommended_markers), 0)
@@ -165,6 +165,25 @@ test_that("create_heatmap works effectively with different normalizations", {
 
 #   
 # })
+
+context("violin plotting") 
+
+test_that("Violin plotting returns the appropriate data structure", {
+  obj <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(obj)
+  
+  markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB")
+  
+  viol <- make_violin_plot(sce, markers, "seurat_annotations", "logcounts")
+  expect_is(viol, 'data.frame')
+  expect_equal(ncol(viol), 4)
+  expect_equal(length(unique(viol$Gene)), 5)
+  expect_equal(colnames(viol), c("Gene", "Expression",
+                                 "Cell Type", "Colour"))
+  
+})
+
+
 
 context("Testing palette and colour conversions")
 
