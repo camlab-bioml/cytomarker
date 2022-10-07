@@ -9,6 +9,9 @@ ggplot2::theme_set(cowplot::theme_cowplot())
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
         show.error.messages = FALSE)
 
+cytosel_token <- readRDS(file.path("curated", "token.rds"))
+
+
 #' Define main entrypoint of app
 #' 
 #' @export
@@ -62,9 +65,6 @@ cytosel <- function(...) {
   grch38 <- cytosel_data$grch38
   
   full_palette <- create_global_colour_palette()
-  
-  rdrop2::drop_auth(rdstoken = "curated/token.rds")
-  cytosel_token <- readRDS("curated/token.rds")
   
   ui <- tagList(
     includeCSS(system.file(file.path("www", "cytosel.css"),
@@ -436,25 +436,31 @@ cytosel <- function(...) {
       use_precomputed_umap(FALSE)
       umap_precomputed_col(NULL)
       
+      withProgress(message = 'Initializing analysis', value = 0, {
+      
       if (input$curated_options == "PBMC small") {
         if (!file.exists("curated/pbmc_small.rds")) {
+          incProgress(detail = "Downloading curated dataset")
           rdrop2::drop_download("cytosel/pbmc_small.rds",
                                 local_path = "curated",
                                 overwrite = T,
-                                dtoken = cytosel_token)
+                                token = cytosel_token)
         }
         input_sce <- read_input_scrnaseq("curated/pbmc_small.rds")
       }
       
       if (input$curated_options == "PBMC large") {
         if (!file.exists("curated/scRNASeq-test.rds")) {
+          incProgress(detail = "Downloading cuirated dataset")
           rdrop2::drop_download("cytosel/scRNASeq-test.rds",
                                 local_path = "curated",
                                 overwrite = T,
                                 dtoken = cytosel_token)
+          
         }
         input_sce <- read_input_scrnaseq("curated/scRNASeq-test.rds")
       }
+      })
       
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
