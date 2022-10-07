@@ -9,8 +9,9 @@ ggplot2::theme_set(cowplot::theme_cowplot())
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
         show.error.messages = FALSE)
 
-cytosel_token <- readRDS(file.path("curated", "token.rds"))
 
+rdrop2::drop_auth(rdstoken = "curated/token.rds")
+cytosel_token <- readRDS("curated/token.rds")
 
 #' Define main entrypoint of app
 #' 
@@ -444,14 +445,14 @@ cytosel <- function(...) {
           rdrop2::drop_download("cytosel/pbmc_small.rds",
                                 local_path = "curated",
                                 overwrite = T,
-                                token = cytosel_token)
+                                dtoken = cytosel_token)
         }
         input_sce <- read_input_scrnaseq("curated/pbmc_small.rds")
       }
       
       if (input$curated_options == "PBMC large") {
         if (!file.exists("curated/scRNASeq-test.rds")) {
-          incProgress(detail = "Downloading cuirated dataset")
+          incProgress(detail = "Downloading curated dataset")
           rdrop2::drop_download("cytosel/scRNASeq-test.rds",
                                 local_path = "curated",
                                 overwrite = T,
