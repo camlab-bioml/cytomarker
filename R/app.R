@@ -441,20 +441,17 @@ cytosel <- function(...) {
         cell_min_threshold(input$min_category_count)
       }
     
-      # If there is more than 1 assay user to select appropriate assay
-      if(length(input_assays) > 1){
-        if("logcounts" %in% input_assays) {
+      if("logcounts" %in% input_assays) {
           input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
-          showNotification("Setting assay to logcounts. This can be changed under Advanced settings",
+          showNotification("Setting default assay to logcounts. Other assays can be selected in Advanced settings.",
                            type = 'message',
                            duration = 4)
         } else {
-          showNotification(paste("Setting assay to ", input_assays[1],
-          ". This can be changed under Advanced settings",sep = ""),
+          showNotification(paste("Setting default assay to ", input_assays[1],
+                                 ". Other assays can be selected in Advanced settings.",sep = ""),
                            type = 'message',
                            duration = 4)
         }
-      }
 
         updateSelectInput(
           session = session,
@@ -1035,9 +1032,9 @@ cytosel <- function(...) {
       req(input$genes_for_violin)
       
       if(!is.null(input$genes_for_violin) && 
-         all(input$genes_for_violin %in% allowed_genes())) {
-         # (sum(!input$genes_for_violin %in% current_markers()$top_markers)==0) &&
-         # (sum(!input$genes_for_violin %in% current_markers()$scratch_markers)==0)) {
+         all(input$genes_for_violin %in% allowed_genes()) &&
+         !all(input$genes_for_violin %in% input$bl_scratch) &&
+         !all(input$genes_for_violin %in% input$bl_top)) {
         
         cm <- current_markers()
         markers <- list(recommended_markers = cm$recommended_markers,
@@ -1057,13 +1054,8 @@ cytosel <- function(...) {
                   num_markers_in_scratch(),
                   names(fms()[[1]]))
         
-        updateTabsetPanel(session, "tabs", "marker_selection")
-        
       } 
-      
-      # else if(!(input$add_markers %in% rownames(sce()))) {
-      #   dne_modal(dne = input$add_markers)
-      # }
+      updateTabsetPanel(session, "tabs", "marker_selection")
     })
     
     observeEvent(input$add_to_selected, { # Add uploaded markers
@@ -1502,19 +1494,17 @@ cytosel <- function(...) {
     
     observeEvent(to_listen_violin(), {
       req(sce())
-      # req(input$coldata_column)
-      # req(allowed_genes())
-      # req(cytosel_palette())
       
       observe(toggle(id = "viol_plot", condition = isTruthy(input$genes_for_violin)))
 
       if (isTruthy(input$genes_for_violin)) {
         
+        viol_frame <- suppressWarnings(
+          make_violin_plot(sce()[,sce()$keep_for_analysis == "Yes"],
+                           input$genes_for_violin, input$coldata_column, pref_assay()))
+        
         if (input$viol_viewer == "By Marker") {
           output$expression_violin <- renderPlot({
-            viol_frame <- suppressWarnings(
-              make_violin_plot(sce()[,sce()$keep_for_analysis == "Yes"],
-                               input$genes_for_violin, input$coldata_column, pref_assay()))
             suppressWarnings(ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
                                                     fill = `Cell Type`)) + geom_violin(alpha = 1) +
                                theme(axis.text.x = element_text(angle = 90)) +
@@ -1522,13 +1512,7 @@ cytosel <- function(...) {
                                scale_fill_manual(values = cytosel_palette()))
           })
         } else {
-          
           output$expression_violin <- renderPlot({
-            viol_palette <- cytosel_palette()
-            names(viol_palette) <- NULL
-            viol_frame <- suppressWarnings(
-              make_violin_plot(sce()[,sce()$keep_for_analysis == "Yes"],
-                               input$genes_for_violin, input$coldata_column, pref_assay()))
             suppressWarnings(ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
                                                     fill = Gene)) + geom_violin(alpha = 1) +
                                theme(axis.text.x = element_text(angle = 90)) +
