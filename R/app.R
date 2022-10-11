@@ -140,7 +140,9 @@ cytosel <- function(...) {
                          "Advanced settings", tags$span(icon("sort-down",
                                                        style = "position:right; margin-left: 4px; margin-top: -4px;")))), style = "info",
                                    textOutput("selected_assay"),
-                                   br(),
+                                    selectInput("assay",
+                                     "Choose which assay to use",
+                                     NULL),
                                    actionButton("show_cat_table", "Category subsetting",
                                     align = "center",
                                     width = NULL),
@@ -443,16 +445,24 @@ cytosel <- function(...) {
       if(length(input_assays) > 1){
         if("logcounts" %in% input_assays) {
           input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
+          showNotification("Setting assay to logcounts. This can be changed under Advanced settings",
+                           type = 'message',
+                           duration = 4)
+        } else {
+          showNotification(paste("Setting assay to ", input_assays[1],
+          ". This can be changed under Advanced settings",sep = ""),
+                           type = 'message',
+                           duration = 4)
         }
-
-        showModal(assay_modal(assays = input_assays))
-      } else{
-        throw_error_or_warning(message = paste("Only one assay provided, thus using",
-                                               input_assays),
-                               duration = 5,
-                               notificationType = 'message')
       }
-      
+
+        updateSelectInput(
+          session = session,
+          inputId = "assay",
+          choices = input_assays,
+          selected = input_assays[1]
+        )
+        
       updateSelectInput(
         session = session,
         inputId = "coldata_column",
@@ -564,15 +574,8 @@ cytosel <- function(...) {
     }
     })
     
-    ### SELECT ASSAY TYPE ###
-    observeEvent(input$assay_select, {
-      if (!is.null(input$assay)) {
-        pref_assay(input$assay)
-        removeModal()
-        output$selected_assay <- renderText({paste("Selected assay: ", pref_assay())})
-      } else {
-        showModal(assay_modal(failed = TRUE, input_assays()))
-      }
+    observeEvent(input$assay, {
+      pref_assay(input$assay)
     })
     
     ### bring up modal to add markers ###
@@ -1515,12 +1518,12 @@ cytosel <- function(...) {
             suppressWarnings(ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
                                                     fill = `Cell Type`)) + geom_violin(alpha = 1) +
                                theme(axis.text.x = element_text(angle = 90)) +
-                               facet_wrap(~Gene) + scale_fill_manual(values = cytosel_palette()))
+                               facet_wrap(~Gene, scales="free_y") + 
+                               scale_fill_manual(values = cytosel_palette()))
           })
         } else {
           
           output$expression_violin <- renderPlot({
-            # TO DO: figure out palette if filling by gene and not cell type
             viol_palette <- cytosel_palette()
             names(viol_palette) <- NULL
             viol_frame <- suppressWarnings(

@@ -15,7 +15,6 @@ test_that("Server has basic functionality", {
     expect_equivalent(dim(sce()), c(13714, 100))
     session$setInputs(assay_select = "counts", assay = "counts")
     expect_equal(pref_assay(), "counts")
-    expect_equal(output$selected_assay, paste("Selected assay: ", "counts"))
     
     session$setInputs(precomputed_dim = T, select_precomputed_umap = "UMAP",
                       possible_precomputed_dims = reducedDimNames(sce()))
