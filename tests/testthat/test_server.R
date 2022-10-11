@@ -15,7 +15,6 @@ test_that("Server has basic functionality", {
     expect_equivalent(dim(sce()), c(13714, 100))
     session$setInputs(assay_select = "counts", assay = "counts")
     expect_equal(pref_assay(), "counts")
-    expect_equal(output$selected_assay, paste("Selected assay: ", "counts"))
     
     session$setInputs(precomputed_dim = T, select_precomputed_umap = "UMAP",
                       possible_precomputed_dims = reducedDimNames(sce()))
@@ -397,9 +396,16 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     
     # setting the violin plots with genes works
     session$setInputs(genes_for_violin = viol_markers,
-                      add_violin_genes = T)
+                      add_violin_genes = T, viol_viewer = "By Marker")
     expect_false(is.null(output$expression_violin))
     expect_true(all(viol_markers %in% current_markers()$top_markers))
+    
+    viol_1 <- output$expression_violin
+    
+    session$setInputs(genes_for_violin = viol_markers,
+                      add_violin_genes = T, viol_viewer = "By Cell Type")
+    
+    expect_false(identical(viol_1, output$expression_violin))
     
     # if set to NULL, still renders an empty violin plot
     session$setInputs(genes_for_violin = NULL)
