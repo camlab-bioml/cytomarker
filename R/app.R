@@ -144,7 +144,6 @@ cytosel <- function(...) {
                        bsCollapsePanel(title = HTML(paste0(
                          "Advanced settings", tags$span(icon("sort-down",
                                                        style = "position:right; margin-left: 4px; margin-top: -4px;")))), style = "info",
-                                   textOutput("selected_assay"),
                                     selectInput("assay",
                                      "Choose which assay to use",
                                      NULL),
@@ -484,15 +483,23 @@ cytosel <- function(...) {
       if(length(input_assays) > 1){
         if("logcounts" %in% input_assays) {
           input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
+          showNotification("Setting assay to logcounts. This can be changed under Advanced settings",
+                           type = 'message',
+                           duration = 4)
+        } else {
+          showNotification(paste("Setting assay to ", input_assays[1],
+                                 ". This can be changed under Advanced settings",sep = ""),
+                           type = 'message',
+                           duration = 4)
         }
-        
-        showModal(assay_modal(assays = input_assays))
-      } else{
-        throw_error_or_warning(message = paste("Only one assay provided, thus using",
-                                               input_assays),
-                               duration = 5,
-                               notificationType = 'message')
       }
+      
+      updateSelectInput(
+        session = session,
+        inputId = "assay",
+        choices = input_assays,
+        selected = input_assays[1]
+      )
       
       updateSelectInput(
         session = session,
@@ -524,42 +531,6 @@ cytosel <- function(...) {
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
       input_assays <- c(names(assays(sce())))
-      if (!isTruthy(input$min_category_count)) {
-        updateNumericInput(session, "min_category_count", 2)
-        cell_min_threshold(2)
-      } else {
-        cell_min_threshold(input$min_category_count)
-      }
-      
-      # If there is more than 1 assay user to select appropriate assay
-      if(length(input_assays) > 1){
-        if("logcounts" %in% input_assays) {
-          input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
-        }
-        
-        showModal(assay_modal(assays = input_assays))
-      } else{
-        throw_error_or_warning(message = paste("Only one assay provided, thus using",
-                                               input_assays),
-                               duration = 5,
-                               notificationType = 'message')
-      }
-      
-      updateSelectInput(
-        session = session,
-        inputId = "coldata_column",
-        choices = colnames(colData(sce()))[!grepl("keep_for_analysis", colnames(colData(sce())))]
-      )
-      
-      if (!isTruthy(input$coldata_column)) {
-        column(colnames(colData(sce()))[1])
-      } else {
-        column(input$coldata_column)
-      }
-      
-      possible_umap_dims(detect_umap_dims_in_sce(sce()))
-      
-      toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
       
       if (!isTruthy(input$min_category_count)) {
         updateNumericInput(session, "min_category_count", 2)
@@ -567,7 +538,7 @@ cytosel <- function(...) {
       } else {
         cell_min_threshold(input$min_category_count)
       }
-    
+      
       # If there is more than 1 assay user to select appropriate assay
       if(length(input_assays) > 1){
         if("logcounts" %in% input_assays) {
@@ -577,19 +548,19 @@ cytosel <- function(...) {
                            duration = 4)
         } else {
           showNotification(paste("Setting assay to ", input_assays[1],
-          ". This can be changed under Advanced settings",sep = ""),
+                                 ". This can be changed under Advanced settings",sep = ""),
                            type = 'message',
                            duration = 4)
         }
       }
-
-        updateSelectInput(
-          session = session,
-          inputId = "assay",
-          choices = input_assays,
-          selected = input_assays[1]
-        )
-        
+      
+      updateSelectInput(
+        session = session,
+        inputId = "assay",
+        choices = input_assays,
+        selected = input_assays[1]
+      )
+      
       updateSelectInput(
         session = session,
         inputId = "coldata_column",
@@ -611,10 +582,6 @@ cytosel <- function(...) {
     observeEvent(input$coldata_column, {
       req(sce())
       column(input$coldata_column)
-      
-      # if (!isTruthy(reupload_analysis())) {
-      #   specific_cell_types_selected(NULL)
-      # }
       
       len_possible_cats <- length(unique(sce()[[input$coldata_column]]))
       num_limit <- ifelse(len_possible_cats <= 3, len_possible_cats, 3)
