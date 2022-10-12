@@ -27,6 +27,9 @@ invalid_modal <- function() { # Input file is invalid
 #'     )
 #'   )
 #' }
+#' 
+#' 
+
 
 #' Show a shinyalert error if either 1. the selected column has only one type, or
 #' 2. the selected column has over 100 unique types
@@ -285,6 +288,7 @@ current_pan_not_valid_modal <- function(missing_genes) { # Marker removal sugges
              html = TRUE)
   
 }
+
 
 #' Show an input modal for the user to select a pre-curated cytosel dataset
 #' @importFrom shiny modalDialog

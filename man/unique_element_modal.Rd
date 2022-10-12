@@ -18,30 +18,11 @@ footer = tagList(
 actionButton("assay_select", "Select")
 )
 )
-}
-Show a shinyalert error if either 1. the selected column has only one type, or
-2. the selected column has over 100 unique types}
+}}
 \usage{
 unique_element_modal(col)
 }
 \description{
-#' Show an input modal to select the single cell assay to use for analysis
-#' @importFrom shiny modalDialog
-assay_modal <- function(assays, failed = FALSE) { # Assay selection
-modalDialog(
-selectInput("assay",
-"Choose which assay to load",
-assays),
-helpText("Recommended assay type is logcounts, as otherwise panel selection
-will be skewed towards high abundance transcripts rather than heterogeneously expressed transcripts."),
-if (failed) {
-div(tags$b("Error", style = "color: red;"))
-},
-footer = tagList(
-actionButton("assay_select", "Select")
-)
-)
-}
 Show a shinyalert error if either 1. the selected column has only one type, or
 2. the selected column has over 100 unique types
 }
