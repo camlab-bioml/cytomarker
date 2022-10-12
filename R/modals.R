@@ -296,7 +296,7 @@ curated_dataset_modal <- function(failed = FALSE) {
   modalDialog(
     selectInput("curated_options",
                 "Choose a pre-annotated dataset to analyze",
-                c("PBMC small", "PBMC large")),
+                c("Seurat PBMC")),
     if (failed) {
       div(tags$b("Error", style = "color: red;"))
     },

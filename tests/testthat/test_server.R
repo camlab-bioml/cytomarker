@@ -487,23 +487,20 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
   })
 })
 
+if (file.exists(file.path(tempdir(), "/seurat_pbmc.rds"))) {
+  command <- paste('rm ', tempdir(), "/seurat_pbmc.rds", sep = "")
+  system(command)
+}
+
 context("Test the loading of the curated datasets from dropbox")
 
 test_that("Picking the curated dataset works as intended", {
   testServer(cytosel::cytosel(), expr = {
     
-    session$setInputs(curated_dataset = T, curated_options = "PBMC small",
+    session$setInputs(curated_dataset = T, curated_options = "Seurat PBMC",
                       pick_curated = T)
-    expect_true(file.exists("curated/pbmc_small.rds"))
-    expect_equivalent(dim(sce()), c(13714, 100))
-    dim_1 <- dim(sce())
-    
-    session$setInputs(curated_dataset = T, curated_options = "PBMC large",
-                      pick_curated = T)
-    expect_true(file.exists("curated/scRNASeq-test.rds"))
-    expect_equivalent(dim(sce()), c(33658, 3220))
-    
-    expect_false(identical(dim(sce()), dim_1))
+    expect_true(file.exists(file.path(tempdir(), "/seurat_pbmc.rds")))
+    expect_equivalent(dim(sce()), c(13714, 2638))
     
   })
   

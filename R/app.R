@@ -9,9 +9,7 @@ ggplot2::theme_set(cowplot::theme_cowplot())
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
         show.error.messages = FALSE)
 
-
-rdrop2::drop_auth(rdstoken = "curated/token.rds")
-cytosel_token <- readRDS("curated/token.rds")
+cytosel_token <- readRDS(file.path("token.rds"))
 
 #' Define main entrypoint of app
 #' 
@@ -53,6 +51,11 @@ cytosel_token <- readRDS("curated/token.rds")
 #' @param ... Additional arguments
 cytosel <- function(...) {
   
+  if (file.exists(file.path(tempdir(), "/seurat_pbmc.rds"))) {
+    command <- paste('rm ', tempdir(), "/seurat_pbmc.rds", sep = "")
+    system(command)
+  }
+  
   antibody_info <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
                                                   `Gene Name (Upper)`) |>
                     tidyr::drop_na()
@@ -67,6 +70,11 @@ cytosel <- function(...) {
   
   full_palette <- create_global_colour_palette()
   
+  # rdrop2::drop_auth(rdstoken = system.file(file.path("token.rds"),
+  #                                          package = "cytosel"))
+  
+  # rdrop2::drop_auth(new_user = F)
+  
   ui <- tagList(
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
@@ -75,7 +83,7 @@ cytosel <- function(...) {
     ),
     tags$head(tags$style(".modal-dialog{ width:750px}")),
     tags$style("@import url(https://use.fontawesome.com/releases/v5.7.2/css/all.css);"),
-
+  
     # Use packages
     useShinyalert(force = TRUE),
     use_bs_tooltip(),
@@ -443,27 +451,15 @@ cytosel <- function(...) {
       
       withProgress(message = 'Initializing analysis', value = 0, {
       
-      if (input$curated_options == "PBMC small") {
-        if (!file.exists("curated/pbmc_small.rds")) {
+      if (input$curated_options == "Seurat PBMC") {
+        if (!file.exists(file.path(tempdir(), "seurat_pbmc.rds"))) {
           incProgress(detail = "Downloading curated dataset")
-          rdrop2::drop_download("cytosel/pbmc_small.rds",
-                                local_path = "curated",
+          rdrop2::drop_download("cytosel/seurat_pbmc.rds",
+                                local_path = tempdir(),
                                 overwrite = T,
                                 dtoken = cytosel_token)
         }
-        input_sce <- read_input_scrnaseq("curated/pbmc_small.rds")
-      }
-      
-      if (input$curated_options == "PBMC large") {
-        if (!file.exists("curated/scRNASeq-test.rds")) {
-          incProgress(detail = "Downloading curated dataset")
-          rdrop2::drop_download("cytosel/scRNASeq-test.rds",
-                                local_path = "curated",
-                                overwrite = T,
-                                dtoken = cytosel_token)
-          
-        }
-        input_sce <- read_input_scrnaseq("curated/scRNASeq-test.rds")
+        input_sce <- read_input_scrnaseq(file.path(tempdir(), "seurat_pbmc.rds"))
       }
       })
       
@@ -1561,7 +1557,7 @@ cytosel <- function(...) {
                                     type='scatter',
                                     text = ~lab,
                                     hoverinfo = "text",
-                                    colors = c("grey", 
+                                    colors = c("grey60",
                                                "red")) %>%
             # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
             layout(title = "UMAP selected markers"))
