@@ -9,8 +9,6 @@ ggplot2::theme_set(cowplot::theme_cowplot())
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
         show.error.messages = FALSE)
 
-cytosel_token <- readRDS(file.path("token.rds"))
-
 #' Define main entrypoint of app
 #' 
 #' @export
@@ -56,6 +54,7 @@ cytosel <- function(...) {
     system(command)
   }
   
+  
   antibody_info <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
                                                   `Gene Name (Upper)`) |>
                     tidyr::drop_na()
@@ -70,10 +69,9 @@ cytosel <- function(...) {
   
   full_palette <- create_global_colour_palette()
   
-  # rdrop2::drop_auth(rdstoken = system.file(file.path("token.rds"),
-  #                                          package = "cytosel"))
-  
-  # rdrop2::drop_auth(new_user = F)
+  # devtools will find the file in the inst directory (move to top level)
+  cytosel_token <- readRDS(system.file(file.path("token.rds"),
+                                       package = "cytosel"))
   
   ui <- tagList(
     includeCSS(system.file(file.path("www", "cytosel.css"),
@@ -138,7 +136,8 @@ cytosel <- function(...) {
             icon("circle-info") %>%
               bs_embed_tooltip(title = get_tooltip('input_scrnaseq'),
                                placement = "right", html = "true")
-          )), column(5, actionButton("curated_dataset", "Select a curated dataset"))),
+          )), column(5, actionButton("curated_dataset", "Select a curated dataset",
+                                     style = "margin-top:53px; margin-left:-15px;"))),
         selectInput("coldata_column", "Cell category to evaluate:", NULL, multiple=FALSE) %>%
           shinyInput_label_embed(
             icon("circle-info") %>%
@@ -227,7 +226,7 @@ cytosel <- function(...) {
                                  style = " margin-top:-70px; margin-left: -50px;"))),
       tabItem("gene_expression",
               fluidRow(column(3,
-                selectInput("genes_for_violin", "Select genes to view their expression:", NULL, multiple=T)),
+                selectizeInput("genes_for_violin", "Select genes to view their expression:", NULL, multiple=T)),
                 column(2, actionButton("add_violin_genes", "Add selected to panel", width = "100%"),
                        style = "margin-top:25px"),
                 column(4, radioButtons("viol_viewer", label = "Select plot orientation",
@@ -437,8 +436,18 @@ cytosel <- function(...) {
     
     ### user selects pre-curated dataset ####
     
+    preview_info <- c("PBMC tutorial dataset from Seurat: 2700 cells, 13,700 genes")
+    names(preview_info) <- c("Seurat PBMC")
+    
     observeEvent(input$curated_dataset, {
+      
       showModal(curated_dataset_modal())
+    })
+    
+    observeEvent(input$curated_options, {
+      
+      output$curated_set_preview <- renderText(preview_info[names(preview_info) ==
+                                                              input$curated_options])
     })
     
     observeEvent(input$pick_curated, {

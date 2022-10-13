@@ -297,6 +297,7 @@ curated_dataset_modal <- function(failed = FALSE) {
     selectInput("curated_options",
                 "Choose a pre-annotated dataset to analyze",
                 c("Seurat PBMC")),
+    textOutput("curated_set_preview"),
     if (failed) {
       div(tags$b("Error", style = "color: red;"))
     },

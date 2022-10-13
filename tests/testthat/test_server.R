@@ -502,6 +502,8 @@ test_that("Picking the curated dataset works as intended", {
     expect_true(file.exists(file.path(tempdir(), "/seurat_pbmc.rds")))
     expect_equivalent(dim(sce()), c(13714, 2638))
     
+    expect_false(is.null(output$curated_set_preview))
+    
   })
   
 })
