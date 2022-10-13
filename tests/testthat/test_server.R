@@ -15,7 +15,6 @@ test_that("Server has basic functionality", {
     expect_equivalent(dim(sce()), c(13714, 100))
     session$setInputs(assay_select = "counts", assay = "counts")
     expect_equal(pref_assay(), "counts")
-    expect_equal(output$selected_assay, paste("Selected assay: ", "counts"))
     
     session$setInputs(precomputed_dim = T, select_precomputed_umap = "UMAP",
                       possible_precomputed_dims = reducedDimNames(sce()))
@@ -249,6 +248,30 @@ test_that("Server has basic functionality", {
   })
 })
 
+test_that("Pre-setting the input rank lists persists in the current markers", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      assay = "counts", coldata_column = "seurat_annotations")
+    
+    session$setInputs(subsample_sce = T,
+                      panel_size = 20,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm",
+                      bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB"),
+                      bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB"),
+                      bl_scratch = c("GNLY", "FTL"),
+                      start_analysis = T)
+    
+    expect_equal(length(current_markers()$top_markers), length(input$bl_top))
+    expect_equal(length(current_markers()$scratch_markers), length(input$bl_scratch))
+    
+  })
+  
+})
+
 
 context("Test that Shiny app server can detect single assay")
 
@@ -273,12 +296,49 @@ test_that("Server can detect sce with only one assay", {
 context("Test re-upload and reset Shiny app server functionality")
 
 #### Re-upload analysis ######
-test_that("Re-upload and reset works on server", {
+test_that("Re-upload works on server", {
   
   testServer(cytosel::cytosel(), expr = {
     
     expect_false(reupload_analysis())
   
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_config.yml")))
+    # verify reupload analysis reactive worked
+    expect_true(reupload_analysis())
+    
+    # verify that the reactive values were populated from the yml
+    expect_equal(length(specific_cell_types_selected()), 6)
+    expect_equal(cell_min_threshold(), 10)
+    expect_equal(length(markers_reupload()$top_markers), 18)
+    expect_equal(length(markers_reupload()$scratch_markers), 6)
+    
+    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
+                      subsample_sce = T,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm")
+    
+    session$setInputs(start_analysis = T)
+    
+    expect_equal(length(current_markers()$top_markers),
+                 length(markers_reupload()$top_markers))
+    
+    expect_equal(length(current_markers()$scratch_markers),
+                 length(markers_reupload()$scratch_markers))
+    
+  })
+})
+
+#### Reset analysis ######
+test_that("Reset works on server", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_false(reupload_analysis())
+    
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
                       read_back_analysis = list(datapath =
@@ -360,23 +420,29 @@ context("Test UMAP, violin, and heatmap colouring changes")
 
 test_that("Changing the UMAP, violin, and heatmap colourings work", {
   testServer(cytosel::cytosel(), expr = {
+    
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
-                      user_selected_cells = c("CD8 T", "Memory CD4 T",
-                                              "Naive CD4 T",
-                                              "Platelet"),
-                      add_selected_to_analysis = T,
-                      assay_select = "counts", assay = "counts",
-                      coldata_column = "seurat_annotations",
-                      min_category_count = 2,
-                      subsample_sce = T,
+                      assay = "counts", coldata_column = "seurat_annotations")
+    
+    session$setInputs(show_cat_table = T)
+    expect_equal(cell_min_threshold(), 2)
+    expect_equal(length(specific_cell_types_selected()),
+                 length(unique(sce()[[input$coldata_column]])))
+    
+    session$setInputs(subsample_sce = T,
                       panel_size = 20,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
-
+  
     session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
                       start_analysis = T)
+    
+    expect_equal(cell_min_threshold(), 2)
+    expect_equal(length(specific_cell_types_selected()),
+                 length(unique(sce()[[input$coldata_column]])))
+    
     
     heatmap_1 <- heatmap()
     
@@ -397,9 +463,16 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     
     # setting the violin plots with genes works
     session$setInputs(genes_for_violin = viol_markers,
-                      add_violin_genes = T)
+                      add_violin_genes = T, viol_viewer = "By Marker")
     expect_false(is.null(output$expression_violin))
     expect_true(all(viol_markers %in% current_markers()$top_markers))
+    
+    viol_1 <- output$expression_violin
+    
+    session$setInputs(genes_for_violin = viol_markers,
+                      add_violin_genes = T, viol_viewer = "By Cell Type")
+    
+    expect_false(identical(viol_1, output$expression_violin))
     
     # if set to NULL, still renders an empty violin plot
     session$setInputs(genes_for_violin = NULL)
