@@ -292,11 +292,12 @@ current_pan_not_valid_modal <- function(missing_genes) { # Marker removal sugges
 
 #' Show an input modal for the user to select a pre-curated cytosel dataset
 #' @importFrom shiny modalDialog
-curated_dataset_modal <- function(failed = FALSE) {
+#' @param dataset_options a vector of the identifiers for the possible loadable datasets
+curated_dataset_modal <- function(dataset_options, failed = FALSE) {
   modalDialog(
     selectInput("curated_options",
                 "Choose a pre-annotated dataset to analyze",
-                c("Seurat PBMC")),
+                dataset_options),
     textOutput("curated_set_preview"),
     if (failed) {
       div(tags$b("Error", style = "color: red;"))

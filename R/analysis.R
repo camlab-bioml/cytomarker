@@ -171,9 +171,9 @@ set_current_markers_safely <- function(markers, fms, default_type = NULL) {
   
   markers$associated_cell_types <- get_associated_cell_types(markers, fms)
   
-  if (is.list(markers$associated_cell_types)) {
-    markers$associated_cell_types <- unlist(markers$associated_cell_types)
-  }
+  # if (is.list(markers$associated_cell_types)) {
+  #   markers$associated_cell_types <- unlist(markers$associated_cell_types)
+  # }
   
   markers
 }

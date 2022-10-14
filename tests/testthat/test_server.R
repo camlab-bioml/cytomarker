@@ -224,6 +224,14 @@ test_that("Server has basic functionality", {
     # after adding 5 markers to 18, assert how many top markers there should be
     expect_equal(length(current_markers()$top_markers), 23)
     
+    # if you try to replace with a gene that doesn't exist, the length will remain the same
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("fake_upload.txt")),
+                      replace_selected = T)
+    
+    # after adding 5 markers to 18, assert how many top markers there should be
+    expect_equal(length(current_markers()$top_markers), 23)
+    
     
     # Look for the uploaded markers in the top markers
     expect_true("EEF2" %in% current_markers()$top_markers)
@@ -243,6 +251,12 @@ test_that("Server has basic functionality", {
     
     expect_false(is.null(current_markers()))
     expect_equal(copy_markers, current_markers())
+    
+    session$setInputs(markers_to_remove = NULL,
+                      remove_suggested= T)
+    
+    expect_equal(length(current_markers()$top_markers), 5)
+    
     
 
   })

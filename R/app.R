@@ -38,6 +38,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel MulticoreParam
 #' @importFrom stringr str_split_fixed
+#' @importFrom magrittr set_names
 #' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar
 #' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
 #' valueBoxOutput renderMenu updateTabItems tabBox
@@ -49,11 +50,25 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' @param ... Additional arguments
 cytosel <- function(...) {
   
-  if (file.exists(file.path(tempdir(), "/seurat_pbmc.rds"))) {
-    command <- paste('rm ', tempdir(), "/seurat_pbmc.rds", sep = "")
-    system(command)
-  }
+  ### user selects pre-curated dataset ####
   
+  curated_dataset_names <- c("Seurat PBMC", "Baron et al. Pancreas")
+  
+  preview_info <- c("PBMC tutorial dataset from Seurat: 2700 cells, 13,700 genes",
+                    "Pancreas dataset from Baron et al. (2016)") |>
+    set_names(curated_dataset_names)
+  
+  dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds")
+  names(dataset_selections) <- curated_dataset_names
+  
+  # can use to remove any improperly downloaded datasets (shouldn't be necessary with refresh token)
+  # 
+  # for (i in dataset_selections) {
+  #   if (file.exists(file.path(tempdir(), "/", i))) {
+  #     command <- paste('rm ', tempdir(), "/", i, sep = "")
+  #     system(command)
+  #   }
+  # }
   
   antibody_info <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
                                                   `Gene Name (Upper)`) |>
@@ -433,19 +448,13 @@ cytosel <- function(...) {
     # addPopover(session, "q1", "Upload an Input scRNA-seq file", content = 'Input scRNA-seq file',
     #            trigger = 'click')
     
-    
-    ### user selects pre-curated dataset ####
-    
-    preview_info <- c("PBMC tutorial dataset from Seurat: 2700 cells, 13,700 genes")
-    names(preview_info) <- c("Seurat PBMC")
-    
     observeEvent(input$curated_dataset, {
       
-      showModal(curated_dataset_modal())
+      showModal(curated_dataset_modal(curated_dataset_names))
     })
     
     observeEvent(input$curated_options, {
-      
+    
       output$curated_set_preview <- renderText(preview_info[names(preview_info) ==
                                                               input$curated_options])
     })
@@ -460,16 +469,19 @@ cytosel <- function(...) {
       
       withProgress(message = 'Initializing analysis', value = 0, {
       
-      if (input$curated_options == "Seurat PBMC") {
-        if (!file.exists(file.path(tempdir(), "seurat_pbmc.rds"))) {
+      if (!file.exists(file.path(tempdir(), dataset_selections[names(dataset_selections) ==
+                                                        input$curated_options]))) {
           incProgress(detail = "Downloading curated dataset")
-          rdrop2::drop_download("cytosel/seurat_pbmc.rds",
+          rdrop2::drop_download(paste("cytosel/", dataset_selections[names(dataset_selections) ==
+                                                                       input$curated_options],
+                                sep = ""),
                                 local_path = tempdir(),
                                 overwrite = T,
                                 dtoken = cytosel_token)
         }
-        input_sce <- read_input_scrnaseq(file.path(tempdir(), "seurat_pbmc.rds"))
-      }
+        input_sce <- read_input_scrnaseq(file.path(tempdir(), 
+                                          dataset_selections[names(dataset_selections) ==
+                                          input$curated_options]))
       })
       
       input_sce <- detect_assay_and_create_logcounts(input_sce)
@@ -966,12 +978,11 @@ cytosel <- function(...) {
               choices = current_markers()$top_markers,
               selected = current_markers()$top_markers[1])
             
-            updateSelectInput(
+            updateSelectizeInput(
               session = session,
               inputId = "genes_for_violin",
               choices = allowed_genes(),
-              selected = NULL)
-            
+              server = T)
             
           } else {
             unique_element_modal(col)

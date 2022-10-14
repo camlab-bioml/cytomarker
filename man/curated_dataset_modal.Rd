@@ -4,7 +4,10 @@
 \alias{curated_dataset_modal}
 \title{Show an input modal for the user to select a pre-curated cytosel dataset}
 \usage{
-curated_dataset_modal(failed = FALSE)
+curated_dataset_modal(dataset_options, failed = FALSE)
+}
+\arguments{
+\item{dataset_options}{a vector of the identifiers for the possible loadable datasets}
 }
 \description{
 Show an input modal for the user to select a pre-curated cytosel dataset
