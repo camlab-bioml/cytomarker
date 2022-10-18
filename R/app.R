@@ -25,6 +25,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' @import scater
 #' @import reactable
 #' @importFrom rlang is_empty
+#' @importFrom DT datatable
 #' @importFrom clustifyr plot_gene
 #' @importFrom readr write_lines read_tsv read_csv
 #' @importFrom dplyr desc mutate_if distinct
@@ -58,8 +59,8 @@ cytosel <- function(...) {
                     "Pancreas dataset from Baron et al. (2016)") |>
     set_names(curated_dataset_names)
   
-  dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds")
-  names(dataset_selections) <- curated_dataset_names
+  dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds") |>
+    set_names(curated_dataset_names)
   
   # can use to remove any improperly downloaded datasets (shouldn't be necessary with refresh token)
   # 
@@ -342,8 +343,10 @@ cytosel <- function(...) {
 
       tabItem("antibody_explorer",
                  # icon = icon("wpexplorer"),
-                 br(),
-                 reactableOutput("antibody_table")
+                fluidRow(column(12,
+                                  br(),
+                 # reactableOutput("antibody_table"),
+                DT::dataTableOutput("antibody_table")))
           ),
       tabItem("documentation",
               htmlOutput("cytosel_hyperlink")
@@ -698,16 +701,22 @@ cytosel <- function(...) {
     })
     
     
-    ### ANTIBODY EXPLORER ###
-    output$antibody_table <- renderReactable({
-      req(current_markers())
-      req(df_antibody())
-  
-      reactable(df_antibody(),
-                searchable = TRUE,
-                filterable = TRUE,
-                sortable = TRUE)
-    })
+    # ### ANTIBODY EXPLORER ###
+    # output$antibody_table <- renderReactable({
+    #   req(current_markers())
+    #   req(df_antibody())
+    # 
+    #   reactable(df_antibody(),
+    #             searchable = TRUE,
+    #             filterable = TRUE,
+    #             sortable = TRUE)
+    # })
+    
+    output$antibody_table <- DT::renderDataTable({
+      datatable(df_antibody(), filter = "top", rownames= FALSE,
+                escape = F,
+                options = list(autoWidth = TRUE))
+      })
     
     ### PLOTS ###
     output$all_plot <- renderPlotly({
@@ -968,7 +977,14 @@ cytosel <- function(...) {
               sce()[,sce()$keep_for_analysis == "Yes"])[[column()]]))
             
             df_antibody(dplyr::filter(antibody_info, Symbol %in% 
-                                        current_markers()$top_markers))
+                                        current_markers()$top_markers) |>
+                          mutate(`Host Species` = factor(`Host Species`),
+                                 `Product Category Tier 3` = factor(`Product Category Tier 3`),
+                                 `KO Status` = factor(`KO Status`),
+                                 `Datasheet URL` = paste0('<a href="',`Datasheet URL`, '"',
+                                                          ' target="_blank" rel="noopener noreferrer"',
+                                                          '>',`Ab ID`,'</a>'))) |>
+              `rownames<-`(NULL)
             
             update_analysis()
             
