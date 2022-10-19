@@ -62,6 +62,9 @@ cytosel <- function(...) {
   dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds") |>
     set_names(curated_dataset_names)
   
+  default_celltype_curated <- c("ident", "label") |>
+    set_names(curated_dataset_names)
+  
   # can use to remove any improperly downloaded datasets (shouldn't be necessary with refresh token)
   # 
   # for (i in dataset_selections) {
@@ -115,12 +118,15 @@ cytosel <- function(...) {
         menuItem("Get Started", tabName = "inputs", icon = icon("gear")),
         sidebarMenuOutput(outputId = 'output_menu'),
         menuItem("Documentation", tabName = "documentation", icon = icon("bookmark")),
-        column(10, offset = 0, align = "center",
-                        actionButton("start_analysis", "Run analysis!", icon=icon("play", style = "color:black;"))),
-        column(10, offset = 0, align = "center",
-            downloadButton("downloadData", "Save panel", style = "color:black;
-                           margin-top: 15px;")))
-    ),
+        column(12, align = "center", offset = 0,
+               hidden(div(id = "analysis_button", actionButton("start_analysis", "Run analysis!",
+                           icon=icon("play", style = "color:black;"),
+                           style = "margin-left: -5px;")))),
+        column(12, align = "center", offset = 0,
+               hidden(div(id = "download_button", downloadButton("downloadData",
+               "Save panel", style = "color:black;
+                           margin-top: 15px; margin-left:-10px; width: 60%;"))))
+    )),
     dashboardBody(
       
       # https://stackoverflow.com/questions/52198452/how-to-change-the-background-color-of-the-shiny-dashboard-body
@@ -328,7 +334,10 @@ cytosel <- function(...) {
                  br(),
                  helpText(get_tooltip("alternative_markers")),
                  splitLayout(cellWidths = c(180, 240),
-                             div(autocomplete_input("input_gene", "Input gene", options=c(), width = "100%")),
+                             div(selectInput("input_gene", "Input gene", 
+                                             choices = NULL,
+                                             selected = NULL,
+                                             width = "100%")),
                              div(numericInput("number_correlations", "Number of alternative markers", 
                                               value = 10, min = 1, width = "35%")),
                              hidden(div(id = "send", actionButton("send_markers", 
@@ -345,9 +354,9 @@ cytosel <- function(...) {
                  # icon = icon("wpexplorer"),
                 fluidRow(column(12,
                                   br(),
-                 # reactableOutput("antibody_table"),
-                DT::dataTableOutput("antibody_table")))
-          ),
+                 reactableOutput("antibody_table"),
+                # DT::dataTableOutput("antibody_table")))
+          ))),
       tabItem("documentation",
               htmlOutput("cytosel_hyperlink")
               # h2("Documentation Preview:"),
@@ -435,6 +444,7 @@ cytosel <- function(...) {
     
     reset_panel <- reactiveVal(FALSE)
     valid_existing_panel <- reactiveVal(TRUE)
+    default_category_curated <- reactiveVal()
     
     output$cytosel_hyperlink <-  renderUI({
       # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
@@ -444,12 +454,9 @@ cytosel <- function(...) {
              target="_blank")
     })
     
-    output$cytosel_preview <- renderUI({
-      tags$iframe(src="http://camlab-bioml.github.io/cytosel-doc/docs/intro", height=600, width=1100)
-    })
-    
-    # addPopover(session, "q1", "Upload an Input scRNA-seq file", content = 'Input scRNA-seq file',
-    #            trigger = 'click')
+    # output$cytosel_preview <- renderUI({
+    #   tags$iframe(src="http://camlab-bioml.github.io/cytosel-doc/docs/intro", height=600, width=1100)
+    # })
     
     observeEvent(input$curated_dataset, {
       
@@ -487,9 +494,16 @@ cytosel <- function(...) {
                                           input$curated_options]))
       })
       
+      default_category_curated(default_celltype_curated[names(default_celltype_curated) ==
+                           input$curated_options])
+      
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
+      
+      toggle(id = "analysis_button", condition = isTruthy(sce()))
+      toggle(id = "download_button", condition = isTruthy(sce()))
+      
       input_assays <- c(names(assays(sce())))
       
       if (!isTruthy(input$min_category_count)) {
@@ -521,11 +535,13 @@ cytosel <- function(...) {
         selected = input_assays[1]
       )
       
+      
       updateSelectInput(
         session = session,
         inputId = "coldata_column",
         choices = colnames(colData(sce()))[!grepl("keep_for_analysis", 
-                                                  colnames(colData(sce())))]
+                                                  colnames(colData(sce())))],
+        selected = default_category_curated()
       )
       
       if (!isTruthy(input$coldata_column)) {
@@ -550,6 +566,10 @@ cytosel <- function(...) {
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
+      
+      toggle(id = "analysis_button", condition = isTruthy(sce()))
+      toggle(id = "download_button", condition = isTruthy(sce()))
+      
       input_assays <- c(names(assays(sce())))
       
       if (!isTruthy(input$min_category_count)) {
@@ -700,24 +720,46 @@ cytosel <- function(...) {
       showModal(markers_add_modal(allowed_genes(), names(fms()[[1]])))
     })
     
-    
     # ### ANTIBODY EXPLORER ###
-    # output$antibody_table <- renderReactable({
-    #   req(current_markers())
-    #   req(df_antibody())
-    # 
-    #   reactable(df_antibody(),
-    #             searchable = TRUE,
-    #             filterable = TRUE,
-    #             sortable = TRUE)
-    # })
-    
-    output$antibody_table <- DT::renderDataTable({
-      datatable(df_antibody(), filter = "top", rownames= FALSE,
-                escape = F,
-                options = list(autoWidth = TRUE))
-      })
-    
+    output$antibody_table <- renderReactable({
+      req(current_markers())
+      req(df_antibody())
+
+      reactable(df_antibody(),
+                searchable = TRUE,
+                filterable = TRUE,
+                columns = list(`Host Species` = colDef(
+                  filterInput = function(values, name) {
+                    tags$select(
+                      # Set to undefined to clear the filter
+                      onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
+                      # "All" has an empty value to clear the filter, and is the default option
+                      tags$option(value = "", "All"),
+                      lapply(unique(values), tags$option),
+                      "aria-label" = sprintf("Filter %s", name),
+                      style = "width: 100%; height: 28px;"
+                    )
+                  }
+                ),
+                `Product Category Tier 3` = colDef(
+                  filterInput = function(values, name) {
+                    tags$select(
+                      # Set to undefined to clear the filter
+                      onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
+                      # "All" has an empty value to clear the filter, and is the default option
+                      tags$option(value = "", "All"),
+                      lapply(unique(values), tags$option),
+                      "aria-label" = sprintf("Filter %s", name),
+                      style = "width: 100%; height: 28px;"
+                    )
+                  }
+                ),
+                `External Link` = colDef(html = T)
+                ),
+                sortable = TRUE,
+                elementId = "antibody-select")
+    })
+
     ### PLOTS ###
     output$all_plot <- renderPlotly({
       req(umap_all)
@@ -729,22 +771,9 @@ cytosel <- function(...) {
       if (is.null(umap_all())) {
         return(NULL)
       }
-      
-      # plts <- list()
-      # for(col in columns) {
-        # plts[[col]] <- ggplot(umap_all(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
-        #   geom_point() +
-        #   labs(subtitle = "UMAP all genes") +
-        #   scale_colour_manual(values=palette)
-      # }
-      # plots$all_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
-      # plots$all_plot <- 
 
       plots$all_plot
     })
-    # },
-    # width=350,
-    # height=300)
     
     output$top_plot <- renderPlotly({
       req(umap_top)
@@ -756,17 +785,6 @@ cytosel <- function(...) {
       if (is.null(umap_top())) {
         return(NULL)
       }
-      
-      # plts <- list()
-      # for(col in columns) {
-      #   plts[[col]] <- ggplot(umap_top(), aes_string(x = "UMAP1", y = "UMAP2", color = col)) +
-      #     geom_point() +
-      #     labs(subtitle = "UMAP selected markers") +
-      #     scale_colour_manual(values=palette)
-      # }
-      # plots$top_plot <- cowplot::plot_grid(plotlist = plts, ncol=1)
-      # 
-      # plots$top_plot
       
       plots$top_plot
       
@@ -981,10 +999,11 @@ cytosel <- function(...) {
                           mutate(`Host Species` = factor(`Host Species`),
                                  `Product Category Tier 3` = factor(`Product Category Tier 3`),
                                  `KO Status` = factor(`KO Status`),
-                                 `Datasheet URL` = paste0('<a href="',`Datasheet URL`, '"',
+                                 `Clone Number` = factor(`Clone Number`),
+                                 `External Link` = paste0('<a href="',`Datasheet URL`, '"',
                                                           ' target="_blank" rel="noopener noreferrer"',
-                                                          '>',`Ab ID`,'</a>'))) |>
-              `rownames<-`(NULL)
+                                                          '>',"View in Abcam website",'</a>')) |>
+                          dplyr::select(-c(`Datasheet URL`)))
             
             update_analysis()
             
@@ -1304,8 +1323,6 @@ cytosel <- function(...) {
       expression <- as.matrix(assay(sce()[,sce()$keep_for_analysis == "Yes"], pref_assay())[current_markers()$top_markers,])
       cmat <- cor(t(expression))
       
-      # suggestions <- suggest_genes_to_remove(cmat, input$n_genes)
-      
       suggestions(suggest_genes_to_remove(cmat, input$n_genes))
       
       showModal(suggestion_modal(suggestions = suggestions(),
@@ -1594,7 +1611,7 @@ cytosel <- function(...) {
                                     text = ~lab,
                                     hoverinfo = "text",
                                     colors = c("grey60",
-                                               "red")) %>%
+                                               "blue")) %>%
             # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
             layout(title = "UMAP selected markers"))
           
@@ -1604,8 +1621,8 @@ cytosel <- function(...) {
                                     type='scatter',
                                     text = ~lab,
                                     hoverinfo = "text",
-                                    colors = c("grey",
-                                               "red")) %>%
+                                    colors = c("grey60",
+                                               "blue")) %>%
                                                  # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
             layout(title = "UMAP all genes",
                    showlegend = F)))
@@ -1660,10 +1677,6 @@ cytosel <- function(...) {
     ### UPDATE SELECTED MARKERS ###
     update_BL <- function(markers, top_size, scratch_size, unique_cell_types,
                           adding_alternative = F) {
-      
-      # unique_cell_types <- sort(unique(markers$associated_cell_types))
-      # n_cell_types <- length(unique_cell_types)
-      # palette <<- sample(cell_type_colors)[seq_len(n_cell_types)]
       set.seed(12345L)
       
       unique_cell_types <- sort(unique_cell_types)
@@ -1742,9 +1755,10 @@ cytosel <- function(...) {
                             sce()[,sce()$keep_for_analysis == "Yes"])
         )
         
-        ## Set that these genes can be selected
-        update_autocomplete_input(session, "input_gene",
-                                  options = allowed_genes())
+        updateSelectInput(session = session,
+        inputId = "input_gene",
+        choices = current_markers()$top_markers,
+        selected = NULL)
         
         num_markers_in_selected(length(current_markers()$top_markers))
         num_markers_in_scratch(length(current_markers()$scratch_markers))
@@ -1915,7 +1929,6 @@ cytosel <- function(...) {
     )
     
   }
-  
   
   shinyApp(ui, server, ...)
 }
