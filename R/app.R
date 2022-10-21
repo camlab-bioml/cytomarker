@@ -2,7 +2,32 @@
 
 # palette <- NULL
 
-utils::globalVariables(c("palette_to_use", "full_palette"), "cytosel")
+### user selects pre-curated dataset ####
+
+curated_dataset_names <- c("Seurat PBMC", "Baron et al. Pancreas")
+
+preview_info <- c("PBMC tutorial dataset from Seurat: 2700 cells, 13,700 genes",
+                  "Pancreas dataset from Baron et al. (2016)") |>
+  set_names(curated_dataset_names)
+
+dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds") |>
+  set_names(curated_dataset_names)
+
+default_celltype_curated <- c("ident", "label") |>
+  set_names(curated_dataset_names)
+
+# can use to remove any improperly downloaded datasets (shouldn't be necessary with refresh token)
+# 
+for (i in dataset_selections) {
+  if (file.exists(file.path(tempdir(), "/", i))) {
+    command <- paste('rm ', tempdir(), "/", i, sep = "")
+    system(command)
+  }
+}
+
+utils::globalVariables(c("palette_to_use", "full_palette",
+                         "preview_info", "curated_dataset_names",
+                         "dataset_selections", "default_celltype_curated"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
 
@@ -50,29 +75,6 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' 
 #' @param ... Additional arguments
 cytosel <- function(...) {
-  
-  ### user selects pre-curated dataset ####
-  
-  curated_dataset_names <- c("Seurat PBMC", "Baron et al. Pancreas")
-  
-  preview_info <- c("PBMC tutorial dataset from Seurat: 2700 cells, 13,700 genes",
-                    "Pancreas dataset from Baron et al. (2016)") |>
-    set_names(curated_dataset_names)
-  
-  dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds") |>
-    set_names(curated_dataset_names)
-  
-  default_celltype_curated <- c("ident", "label") |>
-    set_names(curated_dataset_names)
-  
-  # can use to remove any improperly downloaded datasets (shouldn't be necessary with refresh token)
-  # 
-  # for (i in dataset_selections) {
-  #   if (file.exists(file.path(tempdir(), "/", i))) {
-  #     command <- paste('rm ', tempdir(), "/", i, sep = "")
-  #     system(command)
-  #   }
-  # }
   
   antibody_info <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
                                                   `Gene Name (Upper)`) |>
@@ -445,6 +447,8 @@ cytosel <- function(...) {
     reset_panel <- reactiveVal(FALSE)
     valid_existing_panel <- reactiveVal(TRUE)
     default_category_curated <- reactiveVal()
+    
+    cell_types_missing_markers <- reactiveVal(NULL)
     
     output$cytosel_hyperlink <-  renderUI({
       # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
@@ -966,7 +970,7 @@ cytosel <- function(...) {
                                 top_markers = markers_reupload()$top_markers,
                                 scratch_markers = markers_reupload()$scratch_markers)
               } else {
-                markers <- get_markers(fms(), 
+                markers_list <- get_markers(fms(), 
                                        # Adding 10 to make sure panel size is approximate 
                                        # since a) the same marker is selected multiple times and
                                        # b) excess markers are removed
@@ -974,6 +978,19 @@ cytosel <- function(...) {
                                        input$marker_strategy, 
                                        sce()[,sce()$keep_for_analysis == "Yes"],
                                        allowed_genes())
+                
+                if (isTruthy(markers_list$missing)) {
+                  throw_error_or_warning(type = 'notification',
+                                         message = paste("No markers were found for the following cell types: ",
+                                                         paste(markers_list$missing, 
+                                                               collapse = ", "), 
+                                                         ". This is likely because there are too few cells of these types."),
+                                         duration = 10)
+                  cell_types_missing_markers(markers_list$missing)
+                  
+                }
+                
+                markers <- markers_list$marker[!is.na(markers_list$marker)]
                 
                 if(length(markers$recommended_markers) < input$panel_size){
                   showNotification("Cytosel found genes that are good markers for multiple cell types. This will result in a smaller panel size than requested.

@@ -87,6 +87,10 @@ test_that("Server has basic functionality", {
                              seurat_annotations == "Platelet")$keep_for_analysis,
                       "No")
     
+    # expect that all cell types have markers for them
+    
+    expect_null(cell_types_missing_markers())
+    
     # Verify proper format of the findmarkers output and marker lists
     expect_equal("seurat_annotations", column())
     expect_equal(length(names(fms()[[1]])), 3)
@@ -521,6 +525,32 @@ test_that("Picking the curated dataset works as intended", {
   })
   
 })
+
+
+context("Test that finding markers with very few genes produces an error")
+
+test_that("datasets with few genes produce errors on marker finding", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_few_genes.rds")),
+                      assay = "counts", coldata_column = "seurat_annotations")
+    
+    session$setInputs(show_cat_table = T)
+    
+    session$setInputs(subsample_sce = T,
+                      panel_size = 100,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm")
+    
+    session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
+                      start_analysis = T)
+    
+    expect_false(is.null(cell_types_missing_markers()))
+  })
+})
+
 
 
 

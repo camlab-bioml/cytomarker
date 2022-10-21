@@ -64,11 +64,12 @@ test_that("get_markers and compute_fm returns valid output", {
   expect_equal(length(fms), 1)
   expect_equal(nrow(fms[[1]][[1]]), nrow(sce))
 
-  markers <- get_markers(fms, panel_size = 32, marker_strategy = 'standard',
+  markers <- get_markers(fms, panel_size = 100, marker_strategy = 'standard',
                          sce = sce,
                          allowed_genes = rownames(sce))
-
   
+  markers <- markers$marker
+
   expect_is(markers, 'list')
   expect_equal(names(markers), c("recommended_markers", "scratch_markers", "top_markers"))
   expect_gt(length(markers$recommended_markers), 0)
@@ -79,7 +80,9 @@ test_that("get_markers and compute_fm returns valid output", {
                                    sce = sce,
                                    allowed_genes = rownames(sce))
   
-  expect_is(markers, 'list')
+  markers_geneBasis <- markers_geneBasis$marker
+  
+  expect_is(markers_geneBasis, 'list')
   expect_equal(names(markers_geneBasis), 
                c("recommended_markers", "scratch_markers", "top_markers"))
   expect_null(markers_geneBasis$scratch_markers)
