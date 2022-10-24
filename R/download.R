@@ -52,14 +52,15 @@ download_data <- function(zip_filename,
       `Pre-computed UMAP` = precomputed_umap_used
     )
     
+    config <- lapply(config, FUN = function(X) replace_na_null_empty(X))
+    
     config_df <- tibble(
       p = names(config),
       v = lapply(config, function(x) if(length(x) > 1) paste(x, collapse = ", ") else x) |> unlist(use.names = FALSE)
     )
-
+    
     write_yaml(config, paths_zip$config)
     write_tsv(config_df, paths_quarto$config)
-    
     
     paths_quarto$marker_selection <- file.path(tmpdir, paste0("markers-", Sys.Date(), ".txt"))
     
