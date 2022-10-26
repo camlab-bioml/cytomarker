@@ -141,7 +141,7 @@ threshold_too_low_modal <- function() { # Input marker is not in the dataset
 #' Show a shinyalert warning if cell types retained for analysis are below the minimum cell cutoff. 
 #' cytosel will ignore these for analysis and print their names during analysis.
 #' @importFrom shinyalert shinyalert
-#' @param min_cat_count The curent value of minimum cell cutoff (minimum of 2).
+#' @param min_cat_count The current value of minimum cell cutoff (minimum of 2).
 #' @param the vector of the names of cell types below the cutoff to be ignored.
 cell_type_ignored_modal <- function(min_cat_count, excluded_cells) {
   shinyalert(title = "Warning",
@@ -307,4 +307,19 @@ curated_dataset_modal <- function(dataset_options, failed = FALSE) {
       modalButton("Dismiss")
     )
   )
+}
+
+#' Show an error modal if, after subsampling, certain cell types do not meet the minimum count threshold
+#' @importFrom shinyalert shinyalert
+#' @param cell_types A vector of the cell types that do not pass the count threshold
+subsampling_error_modal <- function(cell_types) {
+  shinyalert(title = "Error", 
+             HTML(paste("After subsampling, the following cell types have either counts below 2 or proportions that are less than 0.5% of the dataset",
+                        ":", '<br/>',
+                        "<b>", toString(cell_types), "</b>", '<br/>',
+                        "Please filter these cell types from the analysis and re-run.")),
+             type = "error", 
+             showConfirmButton = TRUE,
+             confirmButtonCol = "#337AB7",
+             html = TRUE)
 }

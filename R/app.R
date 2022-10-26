@@ -915,8 +915,20 @@ cytosel <- function(...) {
             
             sce(create_keep_vector_during_subsetting(sce(), to_subsample))
             
+            cell_dist_subsample <- create_table_of_hetero_cat(sce()[,sce()$keep_for_analysis == "Yes"],
+                                                              input$coldata_column) |>
+              filter(Freq > 0 & (Freq < 2 | `Proportion Percentage` < 0.5))
+            
+            if (nrow(cell_dist_subsample) > 0) {
+              subsampling_error_modal(unique(cell_dist_subsample[,1]))
+              proceed_with_analysis(FALSE)
+            }
+            
           } 
           
+          withProgress(message = 'Starting computations', value = 0, {
+            req(proceed_with_analysis())
+            
           high_cell_number_warning(ncol(sce()[,sce()$keep_for_analysis == "Yes"]), 10000)
           
           if(isTruthy(!is.null(column()))) {
@@ -1063,6 +1075,8 @@ cytosel <- function(...) {
             
             first_render_outputs(TRUE)
           }
+          
+      })
       })
       
       reupload_analysis(FALSE)
