@@ -481,7 +481,8 @@ cytosel <- function(...) {
       use_precomputed_umap(FALSE)
       umap_precomputed_col(NULL)
       
-      withProgress(message = 'Initializing analysis', value = 0, {
+      withProgress(message = 'Configuring curated selection', value = 0, {
+        setProgress(value = 0)
       
       if (!file.exists(file.path(tempdir(), dataset_selections[names(dataset_selections) ==
                                                         input$curated_options]))) {
@@ -492,10 +493,18 @@ cytosel <- function(...) {
                                 local_path = tempdir(),
                                 overwrite = T,
                                 dtoken = cytosel_token)
-        }
+      }
+        
+        setProgress(value = 0.5)
+        incProgress(detail = "Reading input dataset")
+        
         input_sce <- read_input_scrnaseq(file.path(tempdir(), 
                                           dataset_selections[names(dataset_selections) ==
                                           input$curated_options]))
+        
+        incProgress(detail = "Parsing gene names and assays")
+        
+        setProgress(value = 1)
       })
       
       default_category_curated(default_celltype_curated[names(default_celltype_curated) ==
@@ -563,13 +572,22 @@ cytosel <- function(...) {
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       
+      withProgress(message = 'Configuring input selection', value = 0, {
+      setProgress(value = 0)
       updateCheckboxInput(inputId = "precomputed_dim", value = F)
       use_precomputed_umap(FALSE)
       umap_precomputed_col(NULL)
+      setProgress(value = 0.25)
+      incProgress(detail = "Reading input dataset")
       input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
+      incProgress(detail = "Parsing gene names and assays")
+      setProgress(value = 0.85)
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
+      setProgress(value = 1)
+      
+      })
       
       toggle(id = "analysis_button", condition = isTruthy(sce()))
       toggle(id = "download_button", condition = isTruthy(sce()))
@@ -845,8 +863,6 @@ cytosel <- function(...) {
       # if the user never opened up the tally table, automatically set all cell types
       # for analysis
       
-      withProgress(message = 'Initializing analysis', value = 0, {
-        incProgress(detail = "Checking data")
         req(valid_existing_panel())
         req(proceed_with_analysis())
         
@@ -887,10 +903,9 @@ cytosel <- function(...) {
           cell_type_ignored_modal(cell_min_threshold(),
                                   cell_types_excluded())
         }
-        
-      })
       
-      withProgress(message = 'Conducting analysis', value = 0, {
+      
+      withProgress(message = 'Configuring analysis', value = 0, {
         incProgress(detail = "Acquiring data")
         req(proceed_with_analysis())
         req(any_cells_present())
@@ -917,7 +932,8 @@ cytosel <- function(...) {
             
             cell_dist_subsample <- create_table_of_hetero_cat(sce()[,sce()$keep_for_analysis == "Yes"],
                                                               input$coldata_column) |>
-              filter(Freq > 0 & (Freq < 2 | `Proportion Percentage` < 0.5))
+              # filter(Freq > 0 & (Freq < 2 | `Proportion Percentage` < 0.5))
+              filter(Freq > 0 & Freq < 2)
             
             if (nrow(cell_dist_subsample) > 0) {
               subsampling_error_modal(unique(cell_dist_subsample[,1]))
@@ -925,6 +941,8 @@ cytosel <- function(...) {
             }
             
           } 
+          
+          setProgress(value = 1)
           
           withProgress(message = 'Starting computations', value = 0, {
             req(proceed_with_analysis())
@@ -942,6 +960,8 @@ cytosel <- function(...) {
             if(!is.null(col)) {
               unique_element_modal(col)
             } 
+            
+            setProgress(value = 0.5)
             
             incProgress(detail = "Computing cell type markers")
             
@@ -965,6 +985,8 @@ cytosel <- function(...) {
                          allowed_genes()
               )
             )
+            
+            setProgress(value = 0.75)
             
             if(!is_empty(input$bl_top)) {
               ## We get here if input$bl_top exists, ie if this
@@ -1004,6 +1026,8 @@ cytosel <- function(...) {
                 
                 markers <- markers_list$marker[!is.na(markers_list$marker)]
                 
+                setProgress(value = 1)
+                
                 if(length(markers$recommended_markers) < input$panel_size){
                   showNotification("Cytosel found genes that are good markers for multiple cell types. This will result in a smaller panel size than requested.
                                  You may manually add additional markers.",
@@ -1033,6 +1057,8 @@ cytosel <- function(...) {
                                                           ' target="_blank" rel="noopener noreferrer"',
                                                           '>',"View in Abcam website",'</a>')) |>
                           dplyr::select(-c(`Datasheet URL`)))
+            
+            setProgress(value = 1)
             
             update_analysis()
             
@@ -1076,8 +1102,11 @@ cytosel <- function(...) {
             first_render_outputs(TRUE)
           }
           
+          })
+          
       })
-      })
+          
+      setProgress(value = 1)
       
       reupload_analysis(FALSE)
       
@@ -1405,7 +1434,7 @@ cytosel <- function(...) {
                                     rownames(sce()[,sce()$keep_for_analysis == "Yes"])) &&
          (input$input_gene %in% allowed_genes())) {
         
-        withProgress(message = 'Updating analysis', value = 0, {
+        withProgress(message = 'Updating panel', value = 0, {
           incProgress(6, detail = "Computing alternatives")
           
           # Make this sampling dependent on the input sample argument
@@ -1776,7 +1805,7 @@ cytosel <- function(...) {
     ### UPDATE ANALYSIS ###
     update_analysis <- function() {
       
-      withProgress(message = 'Updating analysis', value = 0, {
+      withProgress(message = 'Updating visualizations', value = 0, {
 
         
         ## Re-set the set of allowed genes (these may have changed if a different
@@ -1798,10 +1827,11 @@ cytosel <- function(...) {
                   num_markers_in_scratch(),
                   names(fms()[[1]]))
         
+        setProgress(value = 0.25)
+        
         
         # Update UMAP
         incProgress(detail = "Computing & creating UMAP plots")
-        
         
         umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
                           column(), pref_assay(), 
@@ -1819,6 +1849,8 @@ cytosel <- function(...) {
         plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
           layout(title = "UMAP selected markers"))
+        
+        setProgress(value = 0.5)
         
         # Update heatmap
         incProgress(detail = "Drawing heatmap")
@@ -1851,6 +1883,8 @@ cytosel <- function(...) {
         }
         cells_per_type(table(colData(sce()[,
                             sce()$keep_for_analysis == "Yes"])[[column()]]))
+        
+        setProgress(value = 0.75)
         
         # Update metrics
         incProgress(detail = "Computing panel score")
@@ -1930,6 +1964,8 @@ cytosel <- function(...) {
         # Show help text popover
         shinyjs::show(id = "marker_visualization")
         shinyjs::show(id = "marker_display")
+        
+        setProgress(value = 1)
         
         
       })
