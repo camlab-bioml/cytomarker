@@ -89,3 +89,14 @@ convert_column_to_character_or_factor <- function(sce, input_column) {
   sce
 }
 
+#' replace a null, NA, or empty value with a string representation "None
+#' @param val the list element to convert
+replace_na_null_empty <- function(val) {
+  if (is_empty(val)) {
+    return ("None")
+  } else if (is.na(val)) {
+    return ("None")
+  } else {
+    return(val)
+  }
+}

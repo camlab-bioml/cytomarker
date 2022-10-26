@@ -1,4 +1,50 @@
 
+#' create a list of the run parameters for download or run logging
+#' @importFrom yaml write_yaml
+#' @importFrom zip zip
+#' @importFrom htmlwidgets saveWidget
+#' @importFrom plotly subplot
+create_run_param_list <- function(
+                          current_markers,
+                          plots,
+                          heatmap,
+                          input_file,
+                          assay_used,
+                          het_source,
+                          panel_size,
+                          cell_cutoff_value,
+                          subsample,
+                          antibody_table,
+                          marker_strat,
+                          antibody_apps,
+                          selected_cell_types,
+                          precomputed_umap_used,
+                          num_cells,
+                          num_genes) {
+  
+  ## Write a config list:
+  config <- list(
+    Time = as.character(Sys.time()),
+    `Input file` = input_file,
+    `Number of columns (cells)` = num_cells,
+    `Number of rows (features)` = num_genes,
+    `Assay used` = assay_used,
+    `Heterogeneity source` = het_source,
+    `Target panel size` = panel_size,
+    `Min Cell Category cutoff` = cell_cutoff_value,
+    `Subsampling Used` = subsample,
+    `Selected marker panel` = current_markers$top_markers,
+    `Scratch marker panel` = current_markers$scratch_markers,
+    `Marker strategy` = marker_strat,
+    `Antibody applications` = antibody_apps,
+    `User selected cells` = selected_cell_types,
+    `Pre-computed UMAP` = precomputed_umap_used
+  )
+  
+  return(config)
+}
+
+
 #' Download all marker data to a zip file
 #' 
 #' @importFrom yaml write_yaml

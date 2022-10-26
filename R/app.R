@@ -1,3 +1,4 @@
+
 # utils::globalVariables(c("Cell type", "Symbol", "r", "score", "what"), "cytosel")
 
 # palette <- NULL
@@ -359,6 +360,14 @@ cytosel <- function(...) {
                  reactableOutput("antibody_table"),
                 # DT::dataTableOutput("antibody_table")))
           ))),
+      tabItem("runs",
+              tabsetPanel(type = "tabs",
+                          tabPanel(uiOutput("current_run_name"), DTOutput("summary_run_current")),
+                          tabPanel(uiOutput("previous_run_1"), DTOutput("summary_prev_1")),
+                          tabPanel(uiOutput("previous_run_2"), DTOutput("summary_prev_2")),
+                          tabPanel(uiOutput("previous_run_3"), DTOutput("summary_prev_3")),
+                          tabPanel(uiOutput("previous_run_4"), DTOutput("summary_prev_4"))
+              )),
       tabItem("documentation",
               htmlOutput("cytosel_hyperlink")
               # h2("Documentation Preview:"),
@@ -449,6 +458,10 @@ cytosel <- function(...) {
     default_category_curated <- reactiveVal()
     
     cell_types_missing_markers <- reactiveVal(NULL)
+    
+    # run log variables #
+    current_run_log <- reactiveVal()
+    previous_run_log <- reactiveVal()
     
     output$cytosel_hyperlink <-  renderUI({
       # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
@@ -1077,7 +1090,46 @@ cytosel <- function(...) {
           } else {
             unique_element_modal(col)
           }
-        
+          
+          run_config <- create_run_param_list(current_markers(), plots, heatmap(),
+                                              input_file = input$input_scrnaseq$datapath,
+                                              assay_used = pref_assay(),
+                                              het_source = column(),
+                                              panel_size = input$panel_size,
+                                              cell_cutoff_value = as.integer(cell_min_threshold()),
+                                              subsample = input$subsample_sce,
+                                              antibody_table = df_antibody(),
+                                              marker_strat = input$marker_strategy,
+                                              antibody_apps = input$select_aa,
+                                              selected_cell_types = input$user_selected_cells,
+                                              precomputed_umap_used = input$precomputed_dim,
+                                              num_cells = ncol(sce()),
+                                              num_genes = nrow(sce()))
+          
+          run_config <- lapply(run_config, FUN = function(X) replace_na_null_empty(X))
+          
+          config_df <- data.frame(
+            `Run Parameter` = names(run_config),
+            `Run Value` = lapply(run_config, function(x) if(length(x) > 1) paste(x, collapse = ", ") else x) |> unlist(use.names = FALSE)
+          )
+          
+          previous_run_log(current_run_log())
+          
+          current_run_log(list(map = run_config, frame = config_df))
+          
+          
+          output$current_run_name <- renderText({
+            as.character(current_run_log()$map$`Time`)
+          })
+          
+          output$summary_run_current <- renderDT(current_run_log()$frame, server = TRUE)
+          
+          output$previous_run_1 <- renderText({
+            as.character(previous_run_log()$map$`Time`)
+          })
+          
+          output$summary_prev_1 <- renderDT(previous_run_log()$frame, server = TRUE)
+          
           if (!isTruthy(first_render_outputs()) & isTruthy(current_markers())) {
             
             output$output_menu <- renderMenu(expr = {
@@ -1095,7 +1147,9 @@ cytosel <- function(...) {
                 menuItem("Alternative Markers", tabName = "alternative_markers", 
                          icon = icon("arrows-h")),
                 menuItem("Antibody Explorer", tabName = "antibody_explorer", 
-                         icon = icon("list-alt"))
+                         icon = icon("list-alt")),
+                menuItem("Run Log", tabName = "runs", 
+                         icon = icon("magnifying-glass"))
                 )
             })
             
