@@ -261,8 +261,6 @@ test_that("Server has basic functionality", {
     
     expect_equal(length(current_markers()$top_markers), 5)
     
-    
-
   })
 })
 
@@ -461,6 +459,14 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_equal(length(specific_cell_types_selected()),
                  length(unique(sce()[[input$coldata_column]])))
     
+    # expect only the first run outputs to be rendered 
+    
+    expect_false(is.null(output$current_run_name))
+    expect_false(is.null(output$summary_run_current))
+    expect_false(is.null(output$metrics_run_current))
+    
+    expect_null(previous_run_log())
+    
     
     heatmap_1 <- heatmap()
     
@@ -501,6 +507,14 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     heatmap_expression_norm = "Expression", start_analysis = T)
     
     expect_false(identical(heatmap_1, heatmap()))
+    
+    
+    session$setInputs(start_analysis = T)
+    
+    expect_true(isTruthy(previous_run_log()))
+    expect_false(is.null(output$previous_run_1))
+    expect_false(is.null(output$summary_prev_1))
+    expect_false(is.null(output$metrics_run_prev_1))
     
   })
 })
@@ -548,6 +562,7 @@ test_that("datasets with few genes produce errors on marker finding", {
                       start_analysis = T)
     
     expect_false(is.null(cell_types_missing_markers()))
+    
   })
 })
 

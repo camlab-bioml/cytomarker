@@ -67,7 +67,8 @@ download_data <- function(zip_filename,
                           selected_cell_types,
                           precomputed_umap_used,
                           num_cells,
-                          num_genes) {
+                          num_genes,
+                          metrics) {
 
     tmpdir <- tempdir()
   
@@ -91,7 +92,8 @@ download_data <- function(zip_filename,
       `Marker strategy` = marker_strat,
       `Antibody applications` = antibody_apps,
       `User selected cells` = selected_cell_types,
-      `Pre-computed UMAP` = precomputed_umap_used
+      `Pre-computed UMAP` = precomputed_umap_used,
+      `Run Metrics` = metrics
     )
     write_yaml(config, paths_zip$config)
     

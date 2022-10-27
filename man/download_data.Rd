@@ -21,7 +21,8 @@ download_data(
   selected_cell_types,
   precomputed_umap_used,
   num_cells,
-  num_genes
+  num_genes,
+  metrics
 )
 }
 \description{

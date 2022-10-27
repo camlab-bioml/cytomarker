@@ -362,8 +362,16 @@ cytosel <- function(...) {
           ))),
       tabItem("runs",
               tabsetPanel(type = "tabs",
-                          tabPanel(uiOutput("current_run_name"), DTOutput("summary_run_current")),
-                          tabPanel(uiOutput("previous_run_1"), DTOutput("summary_prev_1")),
+                          tabPanel(uiOutput("current_run_name"), 
+                                   fluidRow(column(6, h4("Run Parameters"),
+                                                   DTOutput("summary_run_current")),
+                                            column(6, h4("Run Metrics"),
+                                                   DTOutput("metrics_run_current")))),
+                          tabPanel(uiOutput("previous_run_1"),
+                                   fluidRow(column(6, h4("Run Parameters"),
+                                    DTOutput("summary_prev_1")),
+                                      column(6, h4("Run Metrics"),
+                                        DTOutput("metrics_run_prev_1")))),
                           tabPanel(uiOutput("previous_run_2"), DTOutput("summary_prev_2")),
                           tabPanel(uiOutput("previous_run_3"), DTOutput("summary_prev_3")),
                           tabPanel(uiOutput("previous_run_4"), DTOutput("summary_prev_4"))
@@ -461,7 +469,7 @@ cytosel <- function(...) {
     
     # run log variables #
     current_run_log <- reactiveVal()
-    previous_run_log <- reactiveVal()
+    previous_run_log <- reactiveVal(NULL)
     
     output$cytosel_hyperlink <-  renderUI({
       # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
@@ -1109,26 +1117,34 @@ cytosel <- function(...) {
           run_config <- lapply(run_config, FUN = function(X) replace_na_null_empty(X))
           
           config_df <- data.frame(
-            `Run Parameter` = names(run_config),
-            `Run Value` = lapply(run_config, function(x) if(length(x) > 1) paste(x, collapse = ", ") else x) |> unlist(use.names = FALSE)
+            `Parameter` = names(run_config),
+            `Value` = lapply(run_config, function(x) if(length(x) > 1) paste(x, collapse = ", ") else x) |> unlist(use.names = FALSE)
           )
           
           previous_run_log(current_run_log())
           
-          current_run_log(list(map = run_config, frame = config_df))
+          current_run_log(list(map = run_config, frame = config_df,
+                               metrics = current_metrics()$summary))
           
           
+          # Current run log
           output$current_run_name <- renderText({
             as.character(current_run_log()$map$`Time`)
           })
           
           output$summary_run_current <- renderDT(current_run_log()$frame, server = TRUE)
+          output$metrics_run_current <- renderDT(current_run_log()$metrics, server = TRUE)
           
-          output$previous_run_1 <- renderText({
-            as.character(previous_run_log()$map$`Time`)
-          })
+          # Previous run logs
           
-          output$summary_prev_1 <- renderDT(previous_run_log()$frame, server = TRUE)
+          if (isTruthy(previous_run_log())) {
+            output$previous_run_1 <- renderText({
+              as.character(previous_run_log()$map$`Time`)
+            })
+            
+            output$summary_prev_1 <- renderDT(previous_run_log()$frame, server = TRUE)
+            output$metrics_run_prev_1 <- renderDT(previous_run_log()$metrics, server = TRUE)
+          }
           
           if (!isTruthy(first_render_outputs()) & isTruthy(current_markers())) {
             
@@ -1949,7 +1965,8 @@ cytosel <- function(...) {
         # update previous metrics before current
         
         if (isTruthy(current_metrics())) {
-          previous_metrics(current_metrics() |> mutate(Run = "Previous Run"))
+          previous_metrics(list(all = current_metrics()$all |> mutate(Run = "Previous Run"),
+                                summary = current_metrics()$summary))
         }
         mm <- metrics()
         if (is.null(mm)) {
@@ -1981,13 +1998,21 @@ cytosel <- function(...) {
         m <- m |> drop_na(score)
         
         current_metrics(m |> mutate(Run = "Current Run"))
+        current_metrics(list(all = current_metrics(),
+                             summary = current_metrics() |>
+                               mutate(Counts = as.numeric(Counts)) |>
+                               group_by(what, Counts) |>
+                               summarize(mean_score = round(mean(score),
+                                                            3)) |>
+                               arrange(desc(Counts)) |> rename(`Cell Type` = what,
+                                                               `Mean Score` = mean_score)))
         
-        if (isTruthy(previous_metrics())) {
-          all_metrics <- rbind(previous_metrics(), current_metrics()) |> 
+        if (isTruthy(previous_metrics()$all)) {
+          all_metrics <- rbind(previous_metrics()$all, current_metrics()$all) |> 
             mutate(what = factor(what,
                                   levels = c(rev(unique(what[what != "Overall"])), "Overall")))
         } else {
-          all_metrics <- current_metrics() |>  mutate(what = factor(what,
+          all_metrics <- current_metrics()$all |>  mutate(what = factor(what,
                     levels = c(rev(unique(what[what != "Overall"])), "Overall")))
         }
         
@@ -1998,21 +2023,9 @@ cytosel <- function(...) {
                  xaxis = list(title="Score"),
                  yaxis = list(title="Source")))
         
-        output$current_run_metrics <- renderDT(current_metrics() |>
-                                                 mutate(Counts = as.numeric(Counts)) |>
-                                                 group_by(what, Counts) |>
-                                                 summarize(mean_score = round(mean(score),
-                                                                              3)) |>
-                                                 arrange(desc(Counts)) |> rename(`Cell Type` = what,
-                                                                                 `Mean Score` = mean_score))
-        if (isTruthy(previous_metrics())) {
-          output$previous_run_metrics <- renderDT(previous_metrics() |>
-                                                    mutate(Counts = as.numeric(Counts)) |>
-                                                    group_by(what, Counts) |>
-                                                    summarize(mean_score = round(mean(score),
-                                                                                 3)) |>
-                                                    arrange(desc(Counts)) |> rename(`Cell Type` = what,
-                                                                                    `Mean Score` = mean_score))
+        output$current_run_metrics <- renderDT(current_metrics()$summary)
+        if (isTruthy(previous_metrics()$summary)) {
+          output$previous_run_metrics <- renderDT(previous_metrics()$summary)
         }
         
         # Show help text popover
@@ -2044,7 +2057,8 @@ cytosel <- function(...) {
                       selected_cell_types = input$user_selected_cells,
                       precomputed_umap_used = input$precomputed_dim,
                       num_cells = ncol(sce()),
-                      num_genes = nrow(sce()))
+                      num_genes = nrow(sce()),
+                      metrics = current_metrics()$summary)
       },
       contentType = "application/zip"
     )

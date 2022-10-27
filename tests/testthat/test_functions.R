@@ -347,11 +347,14 @@ test_that("download works as expected", {
       drop_na() |>
       filter(Symbol %in% rownames(sce)[1:17])
     
+    fake_metrics <- data.frame(`Cell Type` = c("Fake_1", "Fake_2", "Fake_3"),
+                               Score = c(0.99, 1, 0.8))
+    
     download_data(filepath,
                   list(top_markers = rownames(sce)[1:100]), 
                   plots, heatmap, "fake_path_to_sce", "logcounts",
                   "seurat_annotations", 24, 2, "no", fake_table,
-                  "fm", NULL, NULL, FALSE, 100, 13714)
+                  "fm", NULL, NULL, FALSE, 100, 13714, fake_metrics)
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)
