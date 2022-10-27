@@ -6,21 +6,19 @@
 \usage{
 create_run_param_list(
   current_markers,
-  plots,
-  heatmap,
   input_file,
   assay_used,
   het_source,
   panel_size,
   cell_cutoff_value,
   subsample,
-  antibody_table,
   marker_strat,
   antibody_apps,
   selected_cell_types,
   precomputed_umap_used,
   num_cells,
-  num_genes
+  num_genes,
+  metrics
 )
 }
 \description{

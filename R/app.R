@@ -1099,27 +1099,27 @@ cytosel <- function(...) {
             unique_element_modal(col)
           }
           
-          run_config <- create_run_param_list(current_markers(), plots, heatmap(),
-                                              input_file = input$input_scrnaseq$datapath,
+          run_config <- create_run_param_list(current_markers(),
+            input_file = input$input_scrnaseq$datapath,
                                               assay_used = pref_assay(),
                                               het_source = column(),
                                               panel_size = input$panel_size,
                                               cell_cutoff_value = as.integer(cell_min_threshold()),
                                               subsample = input$subsample_sce,
-                                              antibody_table = df_antibody(),
                                               marker_strat = input$marker_strategy,
                                               antibody_apps = input$select_aa,
-                                              selected_cell_types = input$user_selected_cells,
+                                              selected_cell_types = cell_types_to_keep(),
                                               precomputed_umap_used = input$precomputed_dim,
                                               num_cells = ncol(sce()),
-                                              num_genes = nrow(sce()))
+                                              num_genes = nrow(sce()),
+                                              metrics = current_metrics()$summary)
           
           run_config <- lapply(run_config, FUN = function(X) replace_na_null_empty(X))
           
           config_df <- data.frame(
             `Parameter` = names(run_config),
             `Value` = lapply(run_config, function(x) if(length(x) > 1) paste(x, collapse = ", ") else x) |> unlist(use.names = FALSE)
-          )
+          ) |> filter(Parameter != "Run Metrics")
           
           previous_run_log(current_run_log())
           
@@ -1398,7 +1398,7 @@ cytosel <- function(...) {
       if(length(not_sce) > 0) {
         warning_modal(not_sce)
       }
-      
+      s
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
       
@@ -2044,21 +2044,22 @@ cytosel <- function(...) {
       filename <- paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
       
       content = function(fname) {
-        download_data(fname, current_markers(), plots, heatmap(),
-                      input_file = input$input_scrnaseq$datapath,
-                      assay_used = pref_assay(),
-                      het_source = column(),
-                      panel_size = input$panel_size,
-                      cell_cutoff_value = as.integer(cell_min_threshold()),
-                      subsample = input$subsample_sce,
-                      antibody_table = df_antibody(),
-                      marker_strat = input$marker_strategy,
-                      antibody_apps = input$select_aa,
-                      selected_cell_types = input$user_selected_cells,
-                      precomputed_umap_used = input$precomputed_dim,
-                      num_cells = ncol(sce()),
-                      num_genes = nrow(sce()),
-                      metrics = current_metrics()$summary)
+        download_data(fname, create_run_param_list(current_markers(),
+                                                   input_file = input$input_scrnaseq$datapath,
+                                                   assay_used = pref_assay(),
+                                                   het_source = column(),
+                                                   panel_size = input$panel_size,
+                                                   cell_cutoff_value = as.integer(cell_min_threshold()),
+                                                   subsample = input$subsample_sce,
+                                                   marker_strat = input$marker_strategy,
+                                                   antibody_apps = input$select_aa,
+                                                   selected_cell_types = cell_types_to_keep(),
+                                                   precomputed_umap_used = input$precomputed_dim,
+                                                   num_cells = ncol(sce()),
+                                                   num_genes = nrow(sce()),
+                                                   metrics = current_metrics()$summary),
+                      plots, heatmap(),
+                      df_antibody())
       },
       contentType = "application/zip"
     )

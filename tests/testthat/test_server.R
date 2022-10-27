@@ -467,7 +467,6 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     
     expect_null(previous_run_log())
     
-    
     heatmap_1 <- heatmap()
     
     # check defaults for UMAP plots

@@ -4,26 +4,7 @@
 \alias{download_data}
 \title{Download all marker data to a zip file}
 \usage{
-download_data(
-  zip_filename,
-  current_markers,
-  plots,
-  heatmap,
-  input_file,
-  assay_used,
-  het_source,
-  panel_size,
-  cell_cutoff_value,
-  subsample,
-  antibody_table,
-  marker_strat,
-  antibody_apps,
-  selected_cell_types,
-  precomputed_umap_used,
-  num_cells,
-  num_genes,
-  metrics
-)
+download_data(zip_filename, config, plots, heatmap, antibody_table)
 }
 \description{
 Download all marker data to a zip file
