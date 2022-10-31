@@ -5,7 +5,7 @@
 \title{create a list of the run parameters for download or run logging}
 \usage{
 create_run_param_list(
-  current_markers,
+  marker_list,
   input_file,
   assay_used,
   het_source,

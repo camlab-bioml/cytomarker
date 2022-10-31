@@ -464,7 +464,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_false(is.null(output$current_run_name))
     expect_false(is.null(output$summary_run_current))
     expect_false(is.null(output$metrics_run_current))
-    
+
     expect_null(previous_run_log())
     
     heatmap_1 <- heatmap()
@@ -509,7 +509,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     
     
     session$setInputs(start_analysis = T)
-    
+
     expect_true(isTruthy(previous_run_log()))
     expect_false(is.null(output$previous_run_1))
     expect_false(is.null(output$summary_prev_1))

@@ -1,12 +1,16 @@
 library(yaml)
 context("Test basic functions")
 
-test_that("round3 function is effective", {
+test_that("conversion functions are effective", {
   expect_equal(round3(0.3456), "0.300")
   obj <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(obj)
   expect_is(convert_column_to_character_or_factor(sce, "num_col")$num_col,
             "character")
+  
+  # expect_equal(replace_na_null_empty(character(0)), "None")
+  # expect_equal(replace_na_null_empty(NULL), "None")
+  # expect_equal(replace_na_null_empty("test_string"), "test_string")
   
 })
 
@@ -350,7 +354,7 @@ test_that("download works as expected", {
     fake_metrics <- data.frame(`Cell Type` = c("Fake_1", "Fake_2", "Fake_3"),
                                Score = c(0.99, 1, 0.8))
     
-    base_config <- create_run_param_list(current_markers = list(top_markers = rownames(sce)[1:100]), 
+    base_config <- create_run_param_list(marker_list = list(top_markers = rownames(sce)[1:100]), 
                                          "fake_path_to_sce", "logcounts",
                                          "seurat_annotations", 24, 2, "no",
                                          "fm", NULL, NULL, FALSE, 100, 13714, fake_metrics)

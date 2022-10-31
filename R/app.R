@@ -805,52 +805,79 @@ cytosel <- function(...) {
 
     ### PLOTS ###
     output$all_plot <- renderPlotly({
-      req(umap_all)
-      req(column)
+      req(umap_all())
+      req(column())
       req(plots$all_plot)
       
       columns <- column()
-      
-      if (is.null(umap_all())) {
-        return(NULL)
-      }
 
       plots$all_plot
     })
     
     output$top_plot <- renderPlotly({
-      req(umap_top)
-      req(column)
+      req(umap_top())
+      req(column())
       req(plots$top_plot)
-      
-      columns <- column()
-      
-      if (is.null(umap_top())) {
-        return(NULL)
-      }
       
       plots$top_plot
       
     })
     
     output$heatmap <- renderPlotly({
-      req(heatmap)
-      req(column)
+      req(heatmap())
+      req(column())
       
-      if (is.null(heatmap())) {
-        return(NULL)
-      }
-      return(heatmap())
+     heatmap()
     })
     
     output$metric_plot <- renderPlotly({
-      req(metrics)
-      req(cells_per_type)
+      req(metrics())
+      req(cells_per_type())
       req(plots$metric_plot)
      
       plots$metric_plot
       
     })
+    
+    output$current_run_metrics <- renderDT({
+      req(current_metrics())
+      current_metrics()$summary
+      })
+
+    output$previous_run_metrics <- renderDT({
+        req(previous_metrics())
+        previous_metrics()$summary})
+    
+    
+    output$current_run_name <- renderText({
+      req(current_markers())
+      req(current_run_log())
+      as.character(current_run_log()$map$`Time`)
+    })
+
+
+    output$summary_run_current <- renderDT({
+      req(current_metrics())
+      req(current_run_log())
+      current_run_log()$frame}, server = TRUE)
+
+    output$metrics_run_current <- renderDT({
+      req(current_metrics())
+      req(current_run_log())
+      current_run_log()$metrics}, server = TRUE)
+
+    output$previous_run_1 <- renderText({
+        req(previous_run_log())
+        as.character(previous_run_log()$map$`Time`)
+      })
+
+    output$summary_prev_1 <- renderDT({
+      req(previous_run_log())
+      previous_run_log()$frame},  server = TRUE)
+
+    output$metrics_run_prev_1 <- renderDT({
+      req(previous_run_log())
+      previous_run_log()$metrics}, server = TRUE)
     
     ### ANALYSIS ###
     observeEvent(input$start_analysis, {
@@ -930,9 +957,6 @@ cytosel <- function(...) {
         incProgress(detail = "Acquiring data")
         req(proceed_with_analysis())
         req(any_cells_present())
-        
-        # TODO
-        ### find difference between sce genes and current panel
         
           ## Set initial markers:
           scratch_markers_to_keep <- input$bl_scratch
@@ -1079,8 +1103,6 @@ cytosel <- function(...) {
                                                           '>',"View in Abcam website",'</a>')) |>
                           dplyr::select(-c(`Datasheet URL`)))
             
-            setProgress(value = 1)
-            
             update_analysis()
             
             updateSelectInput(
@@ -1094,93 +1116,45 @@ cytosel <- function(...) {
               inputId = "genes_for_violin",
               choices = allowed_genes(),
               server = T)
+
+            if (!isTruthy(first_render_outputs()) & isTruthy(current_markers())) {
+              
+              output$output_menu <- renderMenu(expr = {
+                sidebarMenu(
+                  menuItem("Marker selection", tabName = "marker_selection", 
+                           icon = icon("barcode")),
+                  menuItem("Gene Expression", tabName = "gene_expression", 
+                           icon = icon("arrows-alt")),
+                  menuItem("UMAP", tabName = "UMAP", 
+                           icon = icon("circle-nodes")),
+                  menuItem("Heatmap", tabName = "Heatmap", 
+                           icon = icon("th-large")),
+                  menuItem("Metrics", tabName = "Metrics", 
+                           icon = icon("line-chart")),
+                  menuItem("Alternative Markers", tabName = "alternative_markers", 
+                           icon = icon("arrows-h")),
+                  menuItem("Antibody Explorer", tabName = "antibody_explorer", 
+                           icon = icon("list-alt")),
+                  menuItem("Run Log", tabName = "runs", 
+                           icon = icon("magnifying-glass"))
+                )
+              })
+              
+              first_render_outputs(TRUE)
+              setProgress(value = 1)
+            }
+            reupload_analysis(FALSE)
+            updateTabsetPanel(session, "tabs", "marker_selection")
             
           } else {
             unique_element_modal(col)
           }
           
-          run_config <- create_run_param_list(current_markers(),
-            input_file = input$input_scrnaseq$datapath,
-                                              assay_used = pref_assay(),
-                                              het_source = column(),
-                                              panel_size = input$panel_size,
-                                              cell_cutoff_value = as.integer(cell_min_threshold()),
-                                              subsample = input$subsample_sce,
-                                              marker_strat = input$marker_strategy,
-                                              antibody_apps = input$select_aa,
-                                              selected_cell_types = cell_types_to_keep(),
-                                              precomputed_umap_used = input$precomputed_dim,
-                                              num_cells = ncol(sce()),
-                                              num_genes = nrow(sce()),
-                                              metrics = current_metrics()$summary)
           
-          run_config <- lapply(run_config, FUN = function(X) replace_na_null_empty(X))
-          
-          config_df <- data.frame(
-            `Parameter` = names(run_config),
-            `Value` = lapply(run_config, function(x) if(length(x) > 1) paste(x, collapse = ", ") else x) |> unlist(use.names = FALSE)
-          ) |> filter(Parameter != "Run Metrics")
-          
-          previous_run_log(current_run_log())
-          
-          current_run_log(list(map = run_config, frame = config_df,
-                               metrics = current_metrics()$summary))
-          
-          
-          # Current run log
-          output$current_run_name <- renderText({
-            as.character(current_run_log()$map$`Time`)
-          })
-          
-          output$summary_run_current <- renderDT(current_run_log()$frame, server = TRUE)
-          output$metrics_run_current <- renderDT(current_run_log()$metrics, server = TRUE)
-          
-          # Previous run logs
-          
-          if (isTruthy(previous_run_log())) {
-            output$previous_run_1 <- renderText({
-              as.character(previous_run_log()$map$`Time`)
-            })
-            
-            output$summary_prev_1 <- renderDT(previous_run_log()$frame, server = TRUE)
-            output$metrics_run_prev_1 <- renderDT(previous_run_log()$metrics, server = TRUE)
-          }
-          
-          if (!isTruthy(first_render_outputs()) & isTruthy(current_markers())) {
-            
-            output$output_menu <- renderMenu(expr = {
-              sidebarMenu(
-                menuItem("Marker selection", tabName = "marker_selection", 
-                         icon = icon("barcode")),
-                menuItem("Gene Expression", tabName = "gene_expression", 
-                         icon = icon("arrows-alt")),
-                menuItem("UMAP", tabName = "UMAP", 
-                         icon = icon("circle-nodes")),
-                menuItem("Heatmap", tabName = "Heatmap", 
-                         icon = icon("th-large")),
-                menuItem("Metrics", tabName = "Metrics", 
-                         icon = icon("line-chart")),
-                menuItem("Alternative Markers", tabName = "alternative_markers", 
-                         icon = icon("arrows-h")),
-                menuItem("Antibody Explorer", tabName = "antibody_explorer", 
-                         icon = icon("list-alt")),
-                menuItem("Run Log", tabName = "runs", 
-                         icon = icon("magnifying-glass"))
-                )
-            })
-            
-            first_render_outputs(TRUE)
-          }
           
           })
           
       })
-          
-      setProgress(value = 1)
-      
-      reupload_analysis(FALSE)
-      
-      updateTabsetPanel(session, "tabs", "marker_selection")
       
     })
     
@@ -1197,7 +1171,7 @@ cytosel <- function(...) {
       # current_markers(set_current_markers_safely(markers, fms()))
       num_markers_in_selected(length(current_markers()$top_markers))
       
-      output$selected_marker_counts<- renderText({paste("<B>",
+      output$selected_marker_counts <- renderText({paste("<B>",
                                       "Selected Markers:", num_markers_in_selected(), "</B>")})
       
     })
@@ -1398,7 +1372,7 @@ cytosel <- function(...) {
       if(length(not_sce) > 0) {
         warning_modal(not_sce)
       }
-      s
+      
       num_markers_in_selected(length(current_markers()$top_markers))
       num_markers_in_scratch(length(current_markers()$scratch_markers))
       
@@ -1465,8 +1439,8 @@ cytosel <- function(...) {
       
       if (!is.null(input$markers_to_remove)) {
         remove_marker <- c(input$markers_to_remove)
-        num_markers_in_selected(length(current_markers()$top_markers))
-        num_markers_in_scratch(length(current_markers()$scratch_markers))
+        # num_markers_in_selected(length(current_markers()$top_markers))
+        # num_markers_in_scratch(length(current_markers()$scratch_markers))
 
         markers <- list(recommended_markers = cm$recommended_markers,
                    scratch_markers = unique(c(remove_marker, input$bl_scratch)),
@@ -2023,10 +1997,34 @@ cytosel <- function(...) {
                  xaxis = list(title="Score"),
                  yaxis = list(title="Source")))
         
-        output$current_run_metrics <- renderDT(current_metrics()$summary)
-        if (isTruthy(previous_metrics()$summary)) {
-          output$previous_run_metrics <- renderDT(previous_metrics()$summary)
-        }
+        previous_run_log(current_run_log())
+
+        run_config <- create_run_param_list(marker_list = current_markers(),
+                                            input_file = input$input_scrnaseq$datapath,
+                                            assay_used = pref_assay(),
+                                            het_source = column(),
+                                            panel_size = input$panel_size,
+                                            cell_cutoff_value = as.integer(cell_min_threshold()),
+                                            subsample = input$subsample_sce,
+                                            marker_strat = input$marker_strategy,
+                                            antibody_apps = input$select_aa,
+                                            selected_cell_types = cell_types_to_keep(),
+                                            precomputed_umap_used = input$precomputed_dim,
+                                            num_cells = ncol(sce()),
+                                            num_genes = nrow(sce()),
+                                            metrics = current_metrics()$summary)
+
+        config_df <- tibble::enframe(run_config) %>%
+          dplyr::mutate(value = purrr::map_chr(value, toString)) |>
+          `colnames<-`(c("Parameter", "Value")) |>
+          filter(! Parameter %in% c("Run Metrics", "Input file"))
+        
+        # print(config_df)
+        # 
+        current_run_log(list(map = run_config,
+                             frame = config_df,
+                             metrics = current_metrics()$summary))
+        # 
         
         # Show help text popover
         shinyjs::show(id = "marker_visualization")

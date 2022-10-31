@@ -5,7 +5,7 @@
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom plotly subplot
 create_run_param_list <- function(
-                          current_markers,
+                          marker_list,
                           input_file,
                           assay_used,
                           het_source,
@@ -31,10 +31,12 @@ create_run_param_list <- function(
     `Target panel size` = panel_size,
     `Min Cell Category cutoff` = cell_cutoff_value,
     `Subsampling Used` = subsample,
-    `Selected marker panel` = current_markers$top_markers,
-    `Scratch marker panel` = current_markers$scratch_markers,
+    `Selected marker panel` = marker_list$top_markers,
+    `Scratch marker panel` = ifelse(is_empty(marker_list$scratch_markers),
+                                    "None", marker_list$scratch_markers),
     `Marker strategy` = marker_strat,
-    `Antibody applications` = antibody_apps,
+    `Antibody applications` = ifelse(is_empty(antibody_apps),
+                                     "None", antibody_apps),
     `Cell Types Analyzed` = selected_cell_types,
     `Pre-computed UMAP` = precomputed_umap_used,
     `Run Metrics` = metrics
