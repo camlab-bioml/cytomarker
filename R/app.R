@@ -6,8 +6,17 @@
 
 curated_dataset_names <- c("Seurat PBMC", "Baron et al. Pancreas")
 
-preview_info <- c("PBMC tutorial dataset from Seurat: 2700 cells, 13,700 genes",
-                  "Pancreas dataset from Baron et al. (2016)") |>
+preview_info <- c(paste("<b>", "<a href='https://satijalab.org/seurat/articles/pbmc3k_tutorial.html' target='_blank' >Seurat PBMC tutorial dataset</a>",
+                        "</b>", "<br/>", "<b>", "Cells:", "</b>", "2638", 
+                         "<br/>", "<b>", "Genes:", "</b>", "13,714", "<br/>", 
+                        "<b>", "Cell category of interest:", "</b>", "ident",
+                        "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "Memory CD4 T, B, CD14+ Mono and 6 others"),
+                  paste("<b>", "<a href='https://www.sciencedirect.com/science/article/pii/S2405471216302666' target='_blank' >Human pancreas, Baron et al. (2016)</a>",
+                  "</b>",
+                        "<br/>", "<b>", "Cells:", "</b>", "2069", 
+                       "<br/>", "<b>", "Genes:", "</b>", "20,125", "<br/>", 
+                       "<b>", "Cell category of interest:", "</b>", "label",
+                       "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "acinar, delta, beta and 5 others")) |>
   set_names(curated_dataset_names)
 
 dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds") |>
@@ -469,8 +478,8 @@ cytosel <- function(...) {
     
     observeEvent(input$curated_options, {
     
-      output$curated_set_preview <- renderText(preview_info[names(preview_info) ==
-                                                              input$curated_options])
+      output$curated_set_preview <- renderPrint({HTML(preview_info[names(preview_info) ==
+                                                              input$curated_options])})
     })
     
     observeEvent(input$pick_curated, {
