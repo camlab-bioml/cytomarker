@@ -330,6 +330,7 @@ test_that("Re-upload works on server", {
     expect_equal(cell_min_threshold(), 10)
     expect_equal(length(markers_reupload()$top_markers), 18)
     expect_equal(length(markers_reupload()$scratch_markers), 6)
+    expect_equal(length(specific_cell_types_selected()), 6)
     
     session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
                       subsample_sce = T,
@@ -565,6 +566,43 @@ test_that("datasets with few genes produce errors on marker finding", {
   })
 })
 
+context("test that setting the user time zone works as intended")
+
+test_that("The user is able to change the time zone properly", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    # expect that the session info is rendered without reactive trigger
+    expect_false(is.null(output$current_session_info))
+    expect_true(!isTruthy(time_zone_set()))
+    
+    startup_zone <- Sys.timezone()
+    
+    # this assumes that the default timezone in the server will never be Kwajalein
+    session$setInputs(time_zone_options = "Kwajalein",
+                      time_zone = T, pick_time_zone = T)
+    
+    expect_equal(time_zone_set(), "Kwajalein")
+    expect_false(is.null(output$current_time))
+    
+  })
+})
+
+context("test that detection of lowercase genes names registers mouse")
+
+test_that("cytosel is able to find lowercase genes as non-human", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_true(proper_organism())
+    
+    # read in all lowercase genes for inferorg (should detect as mouse)
+    session$setInputs(input_scrnaseq = list(datapath =
+                            test_path("pbmc_lowercase.rds")))
+    
+    expect_false(proper_organism())
+    
+    
+  })
+})
 
 
 

@@ -7,8 +7,17 @@
 
 curated_dataset_names <- c("Seurat PBMC", "Baron et al. Pancreas")
 
-preview_info <- c("PBMC tutorial dataset from Seurat: 2700 cells, 13,700 genes",
-                  "Pancreas dataset from Baron et al. (2016)") |>
+preview_info <- c(paste("<b>", "<a href='https://satijalab.org/seurat/articles/pbmc3k_tutorial.html' target='_blank' >Seurat PBMC tutorial dataset</a>",
+                        "</b>", "<br/>", "<b>", "Cells:", "</b>", "2638", 
+                         "<br/>", "<b>", "Genes:", "</b>", "13,714", "<br/>", 
+                        "<b>", "Cell category of interest:", "</b>", "ident",
+                        "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "Memory CD4 T, B, CD14+ Mono and 6 others"),
+                  paste("<b>", "<a href='https://www.sciencedirect.com/science/article/pii/S2405471216302666' target='_blank' >Human pancreas, Baron et al. (2016)</a>",
+                  "</b>",
+                        "<br/>", "<b>", "Cells:", "</b>", "2069", 
+                       "<br/>", "<b>", "Genes:", "</b>", "20,125", "<br/>", 
+                       "<b>", "Cell category of interest:", "</b>", "label",
+                       "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "acinar, delta, beta and 5 others")) |>
   set_names(curated_dataset_names)
 
 dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds") |>
@@ -17,7 +26,7 @@ dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds") |>
 default_celltype_curated <- c("ident", "label") |>
   set_names(curated_dataset_names)
 
-# can use to remove any improperly downloaded datasets (shouldn't be necessary with refresh token)
+# can use to remove any improperly downloaded data sets (shouldn't be necessary with refresh token)
 # 
 for (i in dataset_selections) {
   if (file.exists(file.path(tempdir(), "/", i))) {
@@ -28,7 +37,8 @@ for (i in dataset_selections) {
 
 utils::globalVariables(c("palette_to_use", "full_palette",
                          "preview_info", "curated_dataset_names",
-                         "dataset_selections", "default_celltype_curated"), "cytosel")
+                         "dataset_selections", "default_celltype_curated",
+                         "all_zones"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
 
@@ -72,6 +82,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @importFrom yaml read_yaml
 #' @import rdrop2
+#' @importFrom lubridate with_tz
 #' @export
 #' 
 #' @param ... Additional arguments
@@ -95,6 +106,8 @@ cytosel <- function(...) {
   cytosel_token <- readRDS(system.file(file.path("token.rds"),
                                        package = "cytosel"))
   
+  all_zones <- cytosel_data$time_zones
+  
   ui <- tagList(
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
@@ -112,8 +125,14 @@ cytosel <- function(...) {
     dashboardPage(
     
     # Title
-    dashboardHeader(title = "cytosel"
-                    ),
+    dashboardHeader(title = "cytosel", tags$li(class = "dropdown", 
+                                               htmlOutput("current_session_info",
+                                    style = "width:100%; color:white; height:70%; margin-right:12px; margin-top:6.5px;
+                                    margin-bottom:-2px;")),
+                    tags$li(class = "dropdown", 
+                                        actionLink("time_zone", "Set Time Zone",
+                                        width = "90%", style = "margin-top:-0.5px;
+                                        margin-right: 15px; margin-bottom:-2px;"))),
     
     dashboardSidebar(
       sidebarMenu(id = "tabs",
@@ -372,9 +391,11 @@ cytosel <- function(...) {
                                     DTOutput("summary_prev_1")),
                                       column(6, h4("Run Metrics"),
                                         DTOutput("metrics_run_prev_1")))),
-                          tabPanel(uiOutput("previous_run_2"), DTOutput("summary_prev_2")),
-                          tabPanel(uiOutput("previous_run_3"), DTOutput("summary_prev_3")),
-                          tabPanel(uiOutput("previous_run_4"), DTOutput("summary_prev_4"))
+                          tabPanel(uiOutput("previous_run_2"),
+                                   fluidRow(column(6, h4("Run Parameters"),
+                                                   DTOutput("summary_prev_2")),
+                                            column(6, h4("Run Metrics"),
+                                                   DTOutput("metrics_run_prev_2"))))
               )),
       tabItem("documentation",
               htmlOutput("cytosel_hyperlink")
@@ -466,10 +487,14 @@ cytosel <- function(...) {
     default_category_curated <- reactiveVal()
     
     cell_types_missing_markers <- reactiveVal(NULL)
+    time_zone_set <- reactiveVal()
     
     # run log variables #
     current_run_log <- reactiveVal()
     previous_run_log <- reactiveVal(NULL)
+    previous_run_log_2 <- reactiveVal(NULL)
+    
+    proper_organism <- reactiveVal(TRUE)
     
     output$cytosel_hyperlink <-  renderUI({
       # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
@@ -478,6 +503,36 @@ cytosel <- function(...) {
              "Click Here to access the cytosel documentation in a new tab",
              target="_blank")
     })
+    
+    output$current_session_info <- renderUI({
+      if (isTruthy(time_zone_set())) {
+        time_zone <- time_zone_set()
+      } else {
+        time_zone <- Sys.timezone()
+      }
+      
+      HTML(paste("session Id:", Sys.info()[["nodename"]],
+            "<br/>", "server time zone:", time_zone))
+    })
+    
+    observeEvent(input$time_zone, {
+      output$current_time <- renderUI({
+        HTML(paste("Approximate date and time in: ", input$time_zone_options,
+                   "<br/>", "<b>",
+                   as.character(with_tz(Sys.time(), 
+                  tzone = input$time_zone_options)),
+                  "<br>"))})
+      showModal(time_zone_modal(all_zones, time_zone_set()))
+    })
+    
+    observeEvent(input$pick_time_zone, {
+      req(input$time_zone_options)
+      
+      Sys.setenv(TZ=input$time_zone_options)
+      time_zone_set(input$time_zone_options)
+      removeModal()
+    })
+    
     
     # output$cytosel_preview <- renderUI({
     #   tags$iframe(src="http://camlab-bioml.github.io/cytosel-doc/docs/intro", height=600, width=1100)
@@ -490,8 +545,8 @@ cytosel <- function(...) {
     
     observeEvent(input$curated_options, {
     
-      output$curated_set_preview <- renderText(preview_info[names(preview_info) ==
-                                                              input$curated_options])
+      output$curated_set_preview <- renderPrint({HTML(preview_info[names(preview_info) ==
+                                                              input$curated_options])})
     })
     
     observeEvent(input$pick_curated, {
@@ -603,11 +658,17 @@ cytosel <- function(...) {
       input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
       incProgress(detail = "Parsing gene names and assays")
       setProgress(value = 0.85)
+      found_human <- check_for_human_genes(input_sce)
+      if (!isTruthy(found_human)) {
+        throw_error_or_warning(type = "error", message = "cytosel has detected that the gene names 
+                               provided are not human. Currently, only human datasets are supported.")
+        proper_organism(found_human)
+      }
+      req(proper_organism())
       input_sce <- detect_assay_and_create_logcounts(input_sce)
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
       setProgress(value = 1)
-      
       })
       
       toggle(id = "analysis_button", condition = isTruthy(sce()))
@@ -682,6 +743,8 @@ cytosel <- function(...) {
                           unique(sce()[[input$coldata_column]]))
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
+      
+      cell_types_to_keep(NULL)
 
       reupload_analysis(FALSE)
       reupload_cell_types(FALSE)
@@ -849,6 +912,8 @@ cytosel <- function(...) {
         previous_metrics()$summary})
     
     
+    ##### Current run logs #####
+    
     output$current_run_name <- renderText({
       req(current_markers())
       req(current_run_log())
@@ -865,6 +930,8 @@ cytosel <- function(...) {
       req(current_metrics())
       req(current_run_log())
       current_run_log()$metrics}, server = TRUE)
+    
+    ##### Previous run logs #####
 
     output$previous_run_1 <- renderText({
         req(previous_run_log())
@@ -878,6 +945,19 @@ cytosel <- function(...) {
     output$metrics_run_prev_1 <- renderDT({
       req(previous_run_log())
       previous_run_log()$metrics}, server = TRUE)
+    
+    output$previous_run_2 <- renderText({
+      req(previous_run_log_2())
+      as.character(previous_run_log_2()$map$`Time`)
+    })
+    
+    output$summary_prev_2 <- renderDT({
+      req(previous_run_log_2())
+      previous_run_log_2()$frame},  server = TRUE)
+    
+    output$metrics_run_prev_2 <- renderDT({
+      req(previous_run_log_2())
+      previous_run_log_2()$metrics}, server = TRUE)
     
     ### ANALYSIS ###
     observeEvent(input$start_analysis, {
@@ -923,7 +1003,10 @@ cytosel <- function(...) {
                                                                cell_min_threshold()))
         
         cell_types_to_keep(intersect(specific_cell_types_selected(),
-                                     cell_types_high_enough()))
+                                       cell_types_high_enough()))
+        
+        
+        
         
         sce(remove_null_and_va_from_cell_cat(sce(), input$coldata_column))
         
@@ -1482,11 +1565,13 @@ cytosel <- function(...) {
           incProgress(6, detail = "Computing alternatives")
           
           # Make this sampling dependent on the input sample argument
+          # exclude genes that are already in the marker panel
           replacements(
             compute_alternatives(input$input_gene, 
                                  sce()[,sce()$keep_for_analysis == "Yes"], 
                                  pref_assay(), input$number_correlations,
-                                 allowed_genes()) |>
+                                 allowed_genes()[!allowed_genes() %in% current_markers()$top_markers &
+                                                   !allowed_genes() %in% current_markers()$scratch_markers]) |>
               drop_na()
           )
           
@@ -1585,8 +1670,9 @@ cytosel <- function(...) {
         updateSelectInput(session, "coldata_column", choices = colnames(colData(sce())),
         selected = yaml_back$`Heterogeneity source`)
         updateSelectInput(session, "user_selected_cells", 
-                          yaml_back$`User selected cells`)
-        specific_cell_types_selected(yaml_back$`User selected cells`)
+                          yaml_back$`Cell Types Analyzed`)
+        specific_cell_types_selected(yaml_back$`Cell Types Analyzed`)
+        # cell_types_to_keep(yaml_back$`User selected cells`)
         reupload_cell_types(TRUE)
         
         } else {
@@ -1682,11 +1768,11 @@ cytosel <- function(...) {
           
         } else {
           
-          gene_plot_top <- plot_gene(assay(sce(), pref_assay()),
+          gene_plot_top <- plot_gene(assay(sce()[,sce()$keep_for_analysis == "Yes"], pref_assay()),
                                      umap_top() |> select(UMAP_1, UMAP_2) |> drop_na(),
                                      input$umap_panel_options)
           
-          gene_plot_all <- plot_gene(assay(sce(), pref_assay()),
+          gene_plot_all <- plot_gene(assay(sce()[,sce()$keep_for_analysis == "Yes"], pref_assay()),
                                      umap_all() |> select(UMAP_1, UMAP_2) |> drop_na(),
                                      input$umap_panel_options)
           
@@ -1997,6 +2083,7 @@ cytosel <- function(...) {
                  xaxis = list(title="Score"),
                  yaxis = list(title="Source")))
         
+        previous_run_log_2(previous_run_log())
         previous_run_log(current_run_log())
 
         run_config <- create_run_param_list(marker_list = current_markers(),
@@ -2019,12 +2106,9 @@ cytosel <- function(...) {
           `colnames<-`(c("Parameter", "Value")) |>
           filter(! Parameter %in% c("Run Metrics", "Input file"))
         
-        # print(config_df)
-        # 
         current_run_log(list(map = run_config,
                              frame = config_df,
                              metrics = current_metrics()$summary))
-        # 
         
         # Show help text popover
         shinyjs::show(id = "marker_visualization")

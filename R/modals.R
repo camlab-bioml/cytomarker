@@ -295,10 +295,14 @@ current_pan_not_valid_modal <- function(missing_genes) { # Marker removal sugges
 #' @param dataset_options a vector of the identifiers for the possible loadable datasets
 curated_dataset_modal <- function(dataset_options, failed = FALSE) {
   modalDialog(
-    selectInput("curated_options",
+    flowLayout(cellArgs = list(
+      style = "margin-top:10x;
+                         margin-right: 15px;
+                         margin-bottom: 0px; 
+          margin-left: 15px; "), selectInput("curated_options",
                 "Choose a pre-annotated dataset to analyze",
                 dataset_options),
-    textOutput("curated_set_preview"),
+    htmlOutput("curated_set_preview")),
     if (failed) {
       div(tags$b("Error", style = "color: red;"))
     },
@@ -322,4 +326,26 @@ subsampling_error_modal <- function(cell_types) {
              showConfirmButton = TRUE,
              confirmButtonCol = "#337AB7",
              html = TRUE)
+}
+
+#' Allow the user to change the time zone in the modal
+#' @importFrom shiny modalDialog
+time_zone_modal <- function(possible_time_zones, current_input) {
+  
+  time_zone <- ifelse(isTruthy(current_input), current_input, "EST")
+  modalDialog(
+    flowLayout(cellArgs = list(
+      style = "margin-top:10x;
+                         margin-right: 15px;
+                         margin-bottom: 0px; 
+          margin-left: 15px; "), selectInput("time_zone_options",
+                                             "Select a time zone to set",
+                                             possible_time_zones,
+                                             selected = time_zone),
+      htmlOutput("current_time", style = "width: 140%; margin-top: 20px; margin-left:15px;")
+  ),
+  footer = tagList(
+    actionButton("pick_time_zone", "Set time zone"),
+    modalButton("Dismiss")
+  ))
 }
