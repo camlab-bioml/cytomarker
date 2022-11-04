@@ -87,6 +87,10 @@ test_that("Server has basic functionality", {
                              seurat_annotations == "Platelet")$keep_for_analysis,
                       "No")
     
+    # expect that all cell types have markers for them
+    
+    expect_null(cell_types_missing_markers())
+    
     # Verify proper format of the findmarkers output and marker lists
     expect_equal("seurat_annotations", column())
     expect_equal(length(names(fms()[[1]])), 3)
@@ -224,6 +228,14 @@ test_that("Server has basic functionality", {
     # after adding 5 markers to 18, assert how many top markers there should be
     expect_equal(length(current_markers()$top_markers), 23)
     
+    # if you try to replace with a gene that doesn't exist, the length will remain the same
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("fake_upload.txt")),
+                      replace_selected = T)
+    
+    # after adding 5 markers to 18, assert how many top markers there should be
+    expect_equal(length(current_markers()$top_markers), 23)
+    
     
     # Look for the uploaded markers in the top markers
     expect_true("EEF2" %in% current_markers()$top_markers)
@@ -243,6 +255,12 @@ test_that("Server has basic functionality", {
     
     expect_false(is.null(current_markers()))
     expect_equal(copy_markers, current_markers())
+    
+    session$setInputs(markers_to_remove = NULL,
+                      remove_suggested= T)
+    
+    expect_equal(length(current_markers()$top_markers), 5)
+    
     
 
   })
@@ -486,6 +504,53 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     
   })
 })
+
+if (file.exists(file.path(tempdir(), "/seurat_pbmc.rds"))) {
+  command <- paste('rm ', tempdir(), "/seurat_pbmc.rds", sep = "")
+  system(command)
+}
+
+context("Test the loading of the curated datasets from dropbox")
+
+test_that("Picking the curated dataset works as intended", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(curated_dataset = T, curated_options = "Seurat PBMC",
+                      pick_curated = T)
+    expect_true(file.exists(file.path(tempdir(), "/seurat_pbmc.rds")))
+    expect_equivalent(dim(sce()), c(13714, 2638))
+    
+    expect_false(is.null(output$curated_set_preview))
+    
+  })
+  
+})
+
+
+context("Test that finding markers with very few genes produces an error")
+
+test_that("datasets with few genes produce errors on marker finding", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_few_genes.rds")),
+                      assay = "counts", coldata_column = "seurat_annotations")
+    
+    session$setInputs(show_cat_table = T)
+    
+    session$setInputs(subsample_sce = T,
+                      panel_size = 100,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm")
+    
+    session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
+                      start_analysis = T)
+    
+    expect_false(is.null(cell_types_missing_markers()))
+  })
+})
+
 
 
 

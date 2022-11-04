@@ -36,10 +36,13 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
 #' cell type based or geneBasis
 #' @param sce SingleCellExperiment object
 #' @param allowed_genes Set of allowed genes
+#' @param in_session whether the function is being called in a shiny session or not
 #' @import geneBasisR
 #' @importFrom dplyr mutate tally group_by filter pull slice_head arrange summarize
-get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
+get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
+                        in_session = T) {
   
+  cell_types_wout_markers <- c()
   columns <- names(fms)
   
   marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
@@ -47,9 +50,9 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
     sce2 <- retain_informative_genes(sce[allowed_genes,])
     genes <- gene_search(sce2, n_genes=panel_size)
     marker <- list(
-      recommended_markers = genes$gene,
+      recommended_markers = genes$gene[!is.na(genes$gene)],
       scratch_markers = c(),
-      top_markers = genes$gene
+      top_markers = genes$gene[!is.na(genes$gene)]
     )
   } else {
     for(col in columns) {
@@ -81,20 +84,30 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
                                              summary.logFC = f[selected_markers,]$summary.logFC))
         }else{
           cell_types_wout_markers <- c(cell_types_wout_markers, names(fm)[i])
+          # message(paste("No markers were found for the following cell types: ",
+          #               names(fm)[i], sep = ""))
         }
+        
+        
         #recommended <- c(top, rownames(f)[seq_len(top_select)])
         #top <- c(top, rownames(f)[seq_len(top_select)])
       }
       
-      if(!is.null(cell_types_wout_markers)){
-        throw_error_or_warning(type = 'notification',
-                               message = paste("No markers were found for the following cell types: ",
-                                               paste(cell_types_wout_markers, 
-                                                     collapse = ", "), 
-                                               ". This is likely because there are too few cells of these types."),
-                               duration = 10)
-      }
-      
+      # if(!is.null(cell_types_wout_markers)){
+      #   if (isTruthy(in_session)) {
+      #   throw_error_or_warning(type = 'notification',
+      #                          message = paste("No markers were found for the following cell types: ",
+      #                                          paste(cell_types_wout_markers, 
+      #                                                collapse = ", "), 
+      #                                          ". This is likely because there are too few cells of these types."),
+      #                          duration = 10)
+      #   } else {
+      #     message(paste("No markers were found for the following cell types: ",
+      #                   paste(cell_types_wout_markers,
+      #                         collapse = ", ")))
+      #   }
+      # }
+
       #recommended_df <- group_by(recommended_df, marker, cell_type)
       
       # Iteratively remove markers until number of markers equals panel size
@@ -127,12 +140,11 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes) {
       scratch <- unique(scratch)
       top <- recommended #unique(top)
     }
-    marker <- list(recommended_markers = recommended,
-                   scratch_markers = scratch,
-                   top_markers = top)
+    marker <- list(recommended_markers = recommended[!is.na(recommended)],
+                   scratch_markers = scratch[!is.na(scratch)],
+                   top_markers = top[!is.na(top)])
   }
-  
-  marker
+  return(list(marker = marker, missing = cell_types_wout_markers))
 }
 
 #' Given a list of top markers and the fms, get the associated
@@ -171,9 +183,9 @@ set_current_markers_safely <- function(markers, fms, default_type = NULL) {
   
   markers$associated_cell_types <- get_associated_cell_types(markers, fms)
   
-  if (is.list(markers$associated_cell_types)) {
-    markers$associated_cell_types <- unlist(markers$associated_cell_types)
-  }
+  # if (is.list(markers$associated_cell_types)) {
+  #   markers$associated_cell_types <- unlist(markers$associated_cell_types)
+  # }
   
   markers
 }

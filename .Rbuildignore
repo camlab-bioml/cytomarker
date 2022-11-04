@@ -3,6 +3,6 @@
 ^cytosel\.Rproj$
 ^\.Rproj\.user$
 ^data/
-
 cytosel.Rcheck/
 ^data-raw$
+^\.httr-oauth$

@@ -4,7 +4,14 @@
 \alias{get_markers}
 \title{Compute markers}
 \usage{
-get_markers(fms, panel_size, marker_strategy, sce, allowed_genes)
+get_markers(
+  fms,
+  panel_size,
+  marker_strategy,
+  sce,
+  allowed_genes,
+  in_session = T
+)
 }
 \arguments{
 \item{fms}{Stored findMarkers outputs}
@@ -17,6 +24,8 @@ cell type based or geneBasis}
 \item{sce}{SingleCellExperiment object}
 
 \item{allowed_genes}{Set of allowed genes}
+
+\item{in_session}{whether the function is being called in a shiny session or not}
 }
 \description{
 Compute markers

@@ -8,7 +8,7 @@ cytosel will ignore these for analysis and print their names during analysis.}
 cell_type_ignored_modal(min_cat_count, excluded_cells)
 }
 \arguments{
-\item{min_cat_count}{The curent value of minimum cell cutoff (minimum of 2).}
+\item{min_cat_count}{The current value of minimum cell cutoff (minimum of 2).}
 
 \item{the}{vector of the names of cell types below the cutoff to be ignored.}
 }

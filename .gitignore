@@ -6,18 +6,15 @@
 data/*
 data-raw/*
 Rplots.pdf
-
 *.pdf
 *.txt
-
 *.Rcheck/
-
-
 tests/testthat/*.html
 tests/testthat/*.zip
 tests/testthat/*.yml
-
 rsconnect/*
+.httr-oauth
 
 curated/
 
+tests/testthat/curated/
