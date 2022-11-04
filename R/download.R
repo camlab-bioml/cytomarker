@@ -55,8 +55,8 @@ download_data <- function(zip_filename,
     config <- lapply(config, FUN = function(X) replace_na_null_empty(X))
     
     config_df <- tibble(
-      p = names(config),
-      v = lapply(config, function(x) if(length(x) > 1) paste(x, collapse = ", ") else x) |> unlist(use.names = FALSE)
+      Parameter = names(config),
+      Value = lapply(config, function(x) if(length(x) > 1) paste(x, collapse = ", ") else x) |> unlist(use.names = FALSE)
     )
     
     write_yaml(config, paths_zip$config)
@@ -80,7 +80,7 @@ download_data <- function(zip_filename,
     if (isTruthy(plots$all_plot) & isTruthy(plots$top_plot)) {
         # paths_zip$umap <- file.path(tmpdir, paste0("UMAP-", Sys.Date(), ".pdf"))
         paths_quarto$umap <- file.path(tmpdir, paste0("UMAP-", Sys.Date(), ".rds"))
-        umap_plt <- subplot(plots$all_plot, plots$top_plot) %>% 
+        umap_plt <- subplot(plots$all_plot, plots$top_plot) %>%
           layout(title = 'Cytosel UMAP, all markers & top markers')
         saveRDS(umap_plt, paths_quarto$umap)
       }
@@ -91,8 +91,18 @@ download_data <- function(zip_filename,
         saveRDS(plots$metric_plot, paths_quarto$metric)
       }
     
+    paths_quarto$tmpdir <- paste0(tmpdir, "/")
     quarto::quarto_render("report/testing-quarto.qmd", output_format = "html",
+                          execute_dir = paths_quarto$tmpdir,
+                          output_file =  paste0(paths_quarto$tmpdir, "t-cytosel-report.html"), 
                           execute_params = paths_quarto)
+    
+    paths_quarto$tmpdir <- "~/CampbellLab/cytosel/report/"
+    quarto::quarto_render("report/testing-quarto.qmd", output_format = "html",
+                          execute_dir = paths_quarto$tmpdir,
+                          output_file =  "t-cytosel-report.html",
+                          execute_params = paths_quarto)
+    
     zip(zipfile = zip_filename, files = unlist(paths_zip), mode = "cherry-pick") 
     if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), zip_filename)}
 }
