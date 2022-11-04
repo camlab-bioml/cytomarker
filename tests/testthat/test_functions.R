@@ -8,10 +8,11 @@ test_that("conversion functions are effective", {
   expect_is(convert_column_to_character_or_factor(sce, "num_col")$num_col,
             "character")
   
-  # expect_equal(replace_na_null_empty(character(0)), "None")
-  # expect_equal(replace_na_null_empty(NULL), "None")
-  # expect_equal(replace_na_null_empty("test_string"), "test_string")
+  expect_true(check_for_human_genes(sce))
+  obj <- test_path("pbmc_lowercase.rds")
+  sce <- read_input_scrnaseq(obj)
   
+  expect_false(check_for_human_genes(sce))
 })
 
 context("Data reading")
@@ -407,13 +408,16 @@ test_that("Error modals throw errors", {
   expect_error(reupload_before_sce_modal())
   expect_error(reupload_warning_modal("title","body"))
   expect_error(current_pan_not_valid_modal("GENE"))
+  
   # expected class from a modal dialog box
   expect_is(reset_analysis_modal(), 'shiny.tag')
   expect_is(suggestion_modal(failed = T, c("Sug_1", "Sug_2"), "Sug_1"), 'shiny.tag')
   expect_is(curated_dataset_modal(c("cur_1", "cur_2"), failed = T), 'shiny.tag')
   expect_error(subsampling_error_modal(c("Type_1", "Type_2")))
   expect_is(time_zone_modal(cytosel_data$time_zones, NULL), 'shiny.tag')
+  expect_is(reset_option_on_upload_modal(), 'shiny.tag')
 })
+
 
 
 

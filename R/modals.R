@@ -349,3 +349,12 @@ time_zone_modal <- function(possible_time_zones, current_input) {
     modalButton("Dismiss")
   ))
 }
+
+#' Show an input modal to give the user the option to reset the panel on 
+#' @importFrom shiny modalDialog
+reset_option_on_upload_modal <- function() {
+  modalDialog(helpText("You have uploaded a new dataset. The current panel may be invalid with these data. Would you like to reset the current panel?"),
+              actionButton("reset_marker_panel_reupload", "Reset the marker panel"))
+}
+
+

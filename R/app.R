@@ -553,9 +553,7 @@ cytosel <- function(...) {
       req(input$curated_options)
       
       removeModal()
-      updateCheckboxInput(inputId = "precomputed_dim", value = F)
-      use_precomputed_umap(FALSE)
-      umap_precomputed_col(NULL)
+      pre_upload_configuration()
       
       withProgress(message = 'Configuring curated selection', value = 0, {
         setProgress(value = 0)
@@ -586,73 +584,16 @@ cytosel <- function(...) {
       default_category_curated(default_celltype_curated[names(default_celltype_curated) ==
                            input$curated_options])
       
-      input_sce <- detect_assay_and_create_logcounts(input_sce)
-      input_sce <- parse_gene_names(input_sce, grch38)
-      sce(input_sce)
-      
-      toggle(id = "analysis_button", condition = isTruthy(sce()))
-      toggle(id = "download_button", condition = isTruthy(sce()))
-      
-      input_assays <- c(names(assays(sce())))
-      
-      if (!isTruthy(input$min_category_count)) {
-        updateNumericInput(session, "min_category_count", 2)
-        cell_min_threshold(2)
-      } else {
-        cell_min_threshold(input$min_category_count)
-      }
-      
-      # If there is more than 1 assay user to select appropriate assay
-      if(length(input_assays) > 1){
-        if("logcounts" %in% input_assays) {
-          input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
-          showNotification("Setting assay to logcounts. This can be changed under Advanced settings",
-                           type = 'message',
-                           duration = 4)
-        } else {
-          showNotification(paste("Setting assay to ", input_assays[1],
-                                 ". This can be changed under Advanced settings",sep = ""),
-                           type = 'message',
-                           duration = 4)
-        }
-      }
-      
-      updateSelectInput(
-        session = session,
-        inputId = "assay",
-        choices = input_assays,
-        selected = input_assays[1]
-      )
-      
-      
-      updateSelectInput(
-        session = session,
-        inputId = "coldata_column",
-        choices = colnames(colData(sce()))[!grepl("keep_for_analysis", 
-                                                  colnames(colData(sce())))],
-        selected = default_category_curated()
-      )
-      
-      if (!isTruthy(input$coldata_column)) {
-        column(colnames(colData(sce()))[1])
-      } else {
-        column(input$coldata_column)
-      }
-      
-      possible_umap_dims(detect_umap_dims_in_sce(sce()))
-      
-      toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
-      
+      post_upload_configuration(input_sce)
     })
+    
     
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       
       withProgress(message = 'Configuring input selection', value = 0, {
       setProgress(value = 0)
-      updateCheckboxInput(inputId = "precomputed_dim", value = F)
-      use_precomputed_umap(FALSE)
-      umap_precomputed_col(NULL)
+      pre_upload_configuration()
       setProgress(value = 0.25)
       incProgress(detail = "Reading input dataset")
       input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
@@ -664,61 +605,11 @@ cytosel <- function(...) {
                                provided are not human. Currently, only human datasets are supported.")
         proper_organism(found_human)
       }
-      req(proper_organism())
-      input_sce <- detect_assay_and_create_logcounts(input_sce)
-      input_sce <- parse_gene_names(input_sce, grch38)
-      sce(input_sce)
       setProgress(value = 1)
       })
       
-      toggle(id = "analysis_button", condition = isTruthy(sce()))
-      toggle(id = "download_button", condition = isTruthy(sce()))
-      
-      input_assays <- c(names(assays(sce())))
-      
-      if (!isTruthy(input$min_category_count)) {
-        updateNumericInput(session, "min_category_count", 2)
-        cell_min_threshold(2)
-      } else {
-        cell_min_threshold(input$min_category_count)
-      }
-      
-      
-      if("logcounts" %in% input_assays) {
-          input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
-          showNotification("Setting default assay to logcounts. Other assays can be selected in Advanced settings.",
-                           type = 'message',
-                           duration = 4)
-        } else {
-          showNotification(paste("Setting assay to ", input_assays[1],
-                                 ". This can be changed under Advanced settings",sep = ""),
-                           type = 'message',
-                           duration = 4)
-        }
-
-        updateSelectInput(
-          session = session,
-          inputId = "assay",
-          choices = input_assays,
-          selected = input_assays[1]
-        )
-
-      updateSelectInput(
-        session = session,
-        inputId = "coldata_column",
-        choices = colnames(colData(sce()))[!grepl("keep_for_analysis", colnames(colData(sce())))]
-      )
-      
-      if (!isTruthy(input$coldata_column)) {
-        column(colnames(colData(sce()))[1])
-      } else {
-        column(input$coldata_column)
-      }
-      
-      possible_umap_dims(detect_umap_dims_in_sce(sce()))
-      
-      toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
-
+      req(proper_organism())
+      post_upload_configuration(input_sce)
     })
     
     observeEvent(input$coldata_column, {
@@ -1744,6 +1635,11 @@ cytosel <- function(...) {
     
       })
     
+    observeEvent(input$reset_marker_panel_reupload, {
+      showModal(reset_analysis_modal())
+      
+    })
+    
     observeEvent(input$umap_options, {
       req(sce())
       
@@ -1931,6 +1827,7 @@ cytosel <- function(...) {
       
     }
     
+    #### Nested app functions ####
     
     ### UPDATE ANALYSIS ###
     update_analysis <- function() {
@@ -2118,6 +2015,75 @@ cytosel <- function(...) {
         
         
       })
+    }
+    
+    pre_upload_configuration <- function() {
+      updateCheckboxInput(inputId = "precomputed_dim", value = F)
+      use_precomputed_umap(FALSE)
+      umap_precomputed_col(NULL)
+    }
+    
+    post_upload_configuration <- function(input_sce) {
+      input_sce <- detect_assay_and_create_logcounts(input_sce)
+      input_sce <- parse_gene_names(input_sce, grch38)
+      sce(input_sce)
+      
+      toggle(id = "analysis_button", condition = isTruthy(sce()))
+      toggle(id = "download_button", condition = isTruthy(sce()))
+      
+      input_assays <- c(names(assays(sce())))
+      
+      if (!isTruthy(input$min_category_count)) {
+        updateNumericInput(session, "min_category_count", 2)
+        cell_min_threshold(2)
+      } else {
+        cell_min_threshold(input$min_category_count)
+      }
+      
+      # If there is more than 1 assay user to select appropriate assay
+      if(length(input_assays) > 1){
+        if("logcounts" %in% input_assays) {
+          input_assays <- c("logcounts", input_assays[input_assays != "logcounts"])
+          showNotification("Setting assay to logcounts. This can be changed under Advanced settings",
+                           type = 'message',
+                           duration = 4)
+        } else {
+          showNotification(paste("Setting assay to ", input_assays[1],
+                                 ". This can be changed under Advanced settings",sep = ""),
+                           type = 'message',
+                           duration = 4)
+        }
+      }
+      
+      updateSelectInput(
+        session = session,
+        inputId = "assay",
+        choices = input_assays,
+        selected = input_assays[1]
+      )
+      
+      
+      updateSelectInput(
+        session = session,
+        inputId = "coldata_column",
+        choices = colnames(colData(sce()))[!grepl("keep_for_analysis", 
+                                                  colnames(colData(sce())))],
+        selected = default_category_curated()
+      )
+      
+      if (!isTruthy(input$coldata_column)) {
+        column(colnames(colData(sce()))[1])
+      } else {
+        column(input$coldata_column)
+      }
+      
+      possible_umap_dims(detect_umap_dims_in_sce(sce()))
+      
+      toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
+      
+      if (isTruthy(input$bl_top) | isTruthy(current_markers())) {
+        showModal(reset_option_on_upload_modal())
+      }
     }
     
     
