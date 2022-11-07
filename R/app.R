@@ -165,29 +165,54 @@ cytosel <- function(...) {
                                 .fa {
                                  font-size: 15px;
                                 }
+                          
+                                #base_inputs {
+                                border: 2.5px dashed black;
+                                }
                                 
                                 '))),
       
     # Tabs
     tabItems(
       tabItem("inputs",
-              fluidRow(column(4,
+              # fluidRow(column(3), tags$h3("Quickstart",
+              #                             style = 'padding-left: 16px; padding-top: 0px')
+              #          ),
+              fluidRow(column(3, tags$h4(HTML("<em>Step 1. Select dataset.</em>"),
+                                          style = 'padding-left: 16px; padding-top: 0px; 
+                                          padding-bottom: 15px')),
+                       column(1,
+                              icon("circle-info", style = "margin-left: -11px; margin-top: 13px") %>%
+                             bs_embed_tooltip(title = get_tooltip('input_scrnaseq'),
+                                              placement = "right", html = "true")
+              )),
+              fluidRow(column(4, box(title = "Upload scRNA-seq data", status = "primary",
+                                     width = 12,
+                                     div(style = "margin-top: -30px"),
         fileInput("input_scrnaseq",
-                  label = p(
-                    'Input scRNA-seq',
-                  ), accept = c(".rds")) %>%
-          shinyInput_label_embed(
-            icon("circle-info") %>%
-              bs_embed_tooltip(title = get_tooltip('input_scrnaseq'),
-                               placement = "right", html = "true")
-          )), column(5, actionButton("curated_dataset", "Select a curated dataset",
-                                     style = "margin-top:53px; margin-left:-15px;"))),
-        selectInput("coldata_column", "Cell category to evaluate:", NULL, multiple=FALSE) %>%
-          shinyInput_label_embed(
-            icon("circle-info") %>%
-              bs_embed_tooltip(title = get_tooltip('coldata_column'),
-                      placement = "right", html = "true")
-          ),
+                  label = "", accept = c(".rds"))
+        # %>%
+        #   shinyInput_label_embed(
+        #     icon("circle-info") %>%
+        #       bs_embed_tooltip(title = get_tooltip('input_scrnaseq'),
+        #                        placement = "right", html = "true"))
+        )), column(1, tags$h3("or", style = "width = 80%; padding-left: 20px")),
+        column(3, box(title = "Select a curated dataset", status = "primary",
+                      width = 12, actionButton("curated_dataset", "Browse datasets") 
+                                     ))),
+        fluidRow(column(3, tags$h4(HTML("<em> Step 2. Select a cell category to analyze.</em>"),
+                          style = 'padding-left: 16px; padding-top: 
+                          0px; padding-bottom: 15px;')),
+                 column(1,
+                        icon("circle-info", style = "margin-left: -10px; margin-top: 17px") %>%
+                          bs_embed_tooltip(title = get_tooltip('coldata_column'),
+                                           placement = "right", html = "true")
+                 )
+        ),
+        fluidRow(column(4, box(title = "Browse dataset metadata",
+                               div(style = "margin-top: -30px"),
+                               selectInput("coldata_column", "", NULL, multiple=FALSE),
+                               width = 12, status = "primary"))),
         textOutput("cell_cat_preview"),
         br(),
         # add padding space between elements
