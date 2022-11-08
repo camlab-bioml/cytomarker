@@ -175,8 +175,10 @@ cytosel <- function(...) {
     # Tabs
     tabItems(
       tabItem("inputs",
+              div(style = "margin-top: -10px;"),
               # fluidRow(column(3), tags$h3("Quickstart",
-              #                             style = 'padding-left: 16px; padding-top: 0px')
+              #                             style = 'padding-left: 20px; padding-top: -27px;
+              #                             pading-bottom: 20px')
               #          ),
               fluidRow(column(3, tags$h4(HTML("<em>Step 1. Select dataset.</em>"),
                                           style = 'padding-left: 16px; padding-top: 0px; 
@@ -187,18 +189,18 @@ cytosel <- function(...) {
                                               placement = "right", html = "true")
               )),
               fluidRow(column(4, box(title = "Upload scRNA-seq data", status = "primary",
-                                     width = 12,
-                                     div(style = "margin-top: -30px"),
+                                     width = 12, style = "padding-bottom: -15px",
+                                     div(style = "margin-top: -30px; margin-bottom: -25px"),
         fileInput("input_scrnaseq",
-                  label = "", accept = c(".rds"))
-        # %>%
-        #   shinyInput_label_embed(
-        #     icon("circle-info") %>%
-        #       bs_embed_tooltip(title = get_tooltip('input_scrnaseq'),
-        #                        placement = "right", html = "true"))
-        )), column(1, tags$h3("or", style = "width = 80%; padding-left: 20px")),
-        column(3, box(title = "Select a curated dataset", status = "primary",
-                      width = 12, actionButton("curated_dataset", "Browse datasets") 
+                  label = "", accept = c(".rds")),
+        div(style = "margin-top: -30px")
+        )),
+        tags$h4("or", style = "width = 80%; padding-left: -10px; padding-top: -40px"),
+        div(style = "margin-top: -56px"),
+        column(3, align = "center", style = "margin-left: 15px", box(title = "Select a curated dataset", status = "primary",
+                      width = 12, actionButton("curated_dataset", "Browse datasets",
+                                               style = "margin-top: -10px; margin-bottom: 10px;"
+                                               ) 
                                      ))),
         fluidRow(column(3, tags$h4(HTML("<em> Step 2. Select a cell category to analyze.</em>"),
                           style = 'padding-left: 16px; padding-top: 
