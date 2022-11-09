@@ -25,6 +25,7 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
   names(fms) <- columns
   
   fms
+  
 }
 
 
@@ -483,14 +484,15 @@ get_allowed_genes <- function(selected_applications, applications_parsed, sce) {
 #' Get the reactable for the modal dialogue when add
 #' markers for a given cell type
 #' @importFrom tibble rownames_to_column
-#' @importFrom dplyr mutate_if
+#' @importFrom dplyr mutate_if mutate_at
 get_cell_type_add_markers_reactable <- function(fm, current_markers) {
   fm <- fm[!rownames(fm) %in% current_markers,]
   fm <- fm[fm$summary.logFC > 0,]
   fm <- as.data.frame(head(fm, 50))
   fm <- rownames_to_column(fm, 'Gene')
   fm <- fm[,c("Gene", "FDR", "summary.logFC")]
-  fm <- fm %>% mutate_if(is.numeric, round, digits = 3)
+  fm$FDR <- signif(fm$FDR, 3)
+  fm$summary.logFC <- round(fm$summary.logFC, digits = 3)
   list(fm = fm,
        reactable = 
          reactable(

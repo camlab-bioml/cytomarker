@@ -180,7 +180,7 @@ cytosel <- function(...) {
               #                             style = 'padding-left: 20px; padding-top: -27px;
               #                             pading-bottom: 20px')
               #          ),
-              fluidRow(column(3, tags$h4(HTML("<em>Step 1. Select dataset.</em>"),
+              fluidRow(column(3, tags$h4(HTML("<em>Step 1: Select dataset.</em>"),
                                           style = 'padding-left: 16px; padding-top: 0px; 
                                           padding-bottom: 15px')),
                        column(1,
@@ -202,7 +202,7 @@ cytosel <- function(...) {
                                                style = "margin-top: -10px; margin-bottom: 10px;"
                                                ) 
                                      ))),
-        fluidRow(column(3, tags$h4(HTML("<em> Step 2. Select a cell category to analyze.</em>"),
+        fluidRow(column(3, tags$h4(HTML("<em> Step 2: Select a cell category to analyze.</em>"),
                           style = 'padding-left: 16px; padding-top: 
                           0px; padding-bottom: 15px;')),
                  column(1,
@@ -250,7 +250,7 @@ cytosel <- function(...) {
                               applications_parsed$unique_applications, multiple=TRUE) %>%
                                shinyInput_label_embed(
                                icon("circle-info") %>%
-                               bs_embed_tooltip(title = "Placeholder",
+                               bs_embed_tooltip(title = get_tooltip('applications'),
                                placement = "right", html = "true"))
                    ),
                    bsCollapsePanel(title = HTML(paste0(
@@ -317,9 +317,11 @@ cytosel <- function(...) {
                                                                     "Panel Marker"),
                                 selected = "Cell Type", multiple=FALSE),
                               column(6, hidden(div(id = "umap_panel_cols",
-                                         selectInput("umap_panel_options", 
+                                         selectizeInput("umap_panel_options", 
                                                      "Color Heatmap by Panel Marker", 
-                                                     choices = NULL, width = "89%"))))),
+                                                     choices = NULL, multiple = F,
+                                                     width = "89%",
+                                                     ))))),
                  fluidRow(column(6, plotlyOutput("all_plot", width="500px", height="350px")),
                           column(6, plotlyOutput("top_plot", width="500px", height="350px")))
           ),
@@ -1106,10 +1108,12 @@ cytosel <- function(...) {
             
             update_analysis()
             
-            updateSelectInput(
+            updateSelectizeInput(
               session = session,
               inputId = "umap_panel_options",
-              choices = current_markers()$top_markers,
+              # choices = current_markers()$top_markers,
+              # selected = current_markers()$top_markers[1])
+              choices = allowed_genes(),
               selected = current_markers()$top_markers[1])
             
             updateSelectizeInput(
@@ -1136,7 +1140,7 @@ cytosel <- function(...) {
                            icon = icon("arrows-h")),
                   menuItem("Antibody Explorer", tabName = "antibody_explorer", 
                            icon = icon("list-alt")),
-                  menuItem("Run Log", tabName = "runs", 
+                  menuItem("Run Logs", tabName = "runs", 
                            icon = icon("magnifying-glass"))
                 )
               })
@@ -1675,6 +1679,7 @@ cytosel <- function(...) {
       toggle(id = "umap_panel_cols", condition = input$umap_options != "Cell Type")
       
       observeEvent(input$umap_panel_options, {
+        req(input$umap_panel_options)
         
         if (umap_colouring() == "Cell Type") {
           plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
@@ -1746,7 +1751,7 @@ cytosel <- function(...) {
     })
     
     to_listen_violin <- reactive({
-      list(input$genes_for_violin,input$viol_viewer)
+      list(input$genes_for_violin, input$viol_viewer)
     })
     
     observeEvent(to_listen_violin(), {
