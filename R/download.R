@@ -7,6 +7,7 @@
 #' @importFrom plotly subplot
 #' @importFrom readr write_tsv
 #' @importFrom tibble tibble
+#' @importFrom rmarkdown render
 download_data <- function(zip_filename,
                           current_markers,
                           plots,
@@ -24,14 +25,14 @@ download_data <- function(zip_filename,
                           precomputed_umap_used,
                           num_cells,
                           num_genes) {
-    browser()
     tmpdir <- tempdir()
+    current_date <- Sys.Date()
   
-    paths_zip <- list()
-    paths_quarto <- list()
+    paths_zip <- list() # contains the filenames to save
+    paths_report <- list() # contains the file names to be read in by report
     
-    paths_zip$config <- file.path(tmpdir, paste0("config-", Sys.Date(), ".yml"))
-    paths_quarto$config <- file.path(tmpdir, paste0("config-", Sys.Date(), ".tsv"))
+    paths_zip$config <- file.path(tmpdir, paste0("config-", current_date, ".yml"))
+    paths_report$config <- file.path(tmpdir, paste0("config-", current_date, ".tsv"))
     
     ## Write a config list:
     config <- list(
@@ -56,53 +57,47 @@ download_data <- function(zip_filename,
     
     config_df <- tibble(
       Parameter = names(config),
-      Value = lapply(config, function(x) if(length(x) > 1) paste(x, collapse = ", ") else x) |> unlist(use.names = FALSE)
+      Value = lapply(config, function(x) if(length(x) > 1) paste(x, collapse = ", ") else x) |> 
+        unlist(use.names = FALSE)
     )
     
     write_yaml(config, paths_zip$config)
-    write_tsv(config_df, paths_quarto$config)
+    write_tsv(config_df, paths_report$config)
     
-    paths_quarto$marker_selection <- file.path(tmpdir, paste0("markers-", Sys.Date(), ".txt"))
+    paths_report$marker_selection <- file.path(tmpdir, paste0("markers-", current_date, ".txt"))
     
     selected_markers <- current_markers$top_markers
-    write_lines(selected_markers, paths_quarto$marker_selection)
+    write_lines(selected_markers, paths_report$marker_selection)
     
     if (isTruthy(antibody_table)) {
-      paths_quarto$df <- file.path(tmpdir, paste0("Antibody-info-", Sys.Date(), ".tsv"))
-      write.table(antibody_table, paths_quarto$df, quote = F, row.names = F, sep = "\t")
+      paths_report$df <- file.path(tmpdir, paste0("Antibody-info-", current_date, ".tsv"))
+      write.table(antibody_table, paths_report$df, quote = F, row.names = F, sep = "\t")
     }    
     
     if (isTruthy(heatmap)) {
-      paths_quarto$heatmap <- file.path(tmpdir, paste0("Heatmap-", Sys.Date(), ".rds"))
-      saveRDS(heatmap, paths_quarto$heatmap)
+      paths_report$heatmap <- file.path(tmpdir, paste0("Heatmap-", current_date, ".rds"))
+      saveRDS(heatmap, paths_report$heatmap)
     }    
       
     if (isTruthy(plots$all_plot) & isTruthy(plots$top_plot)) {
-        # paths_zip$umap <- file.path(tmpdir, paste0("UMAP-", Sys.Date(), ".pdf"))
-        paths_quarto$umap <- file.path(tmpdir, paste0("UMAP-", Sys.Date(), ".rds"))
+        paths_report$umap <- file.path(tmpdir, paste0("UMAP-", current_date, ".rds"))
         umap_plt <- subplot(plots$all_plot, plots$top_plot) %>%
           layout(title = 'Cytosel UMAP, all markers & top markers')
-        saveRDS(umap_plt, paths_quarto$umap)
+        saveRDS(umap_plt, paths_report$umap)
       }
       
       if (isTruthy(plots$metric_plot)) {
-        # paths_zip$metric <- file.path(tmpdir, paste0("metric-", Sys.Date(), ".pdf"))
-        paths_quarto$metric <- file.path(tmpdir, paste0("metrics-", Sys.Date(), ".rds"))
-        saveRDS(plots$metric_plot, paths_quarto$metric)
+        paths_report$metric <- file.path(tmpdir, paste0("metrics-", current_date, ".rds"))
+        saveRDS(plots$metric_plot, paths_report$metric)
       }
     
-    paths_quarto$tmpdir <- paste0(tmpdir, "/")
-    quarto::quarto_render("report/testing-quarto.qmd", output_format = "html",
-                          execute_dir = paths_quarto$tmpdir,
-                          output_file =  paste0(paths_quarto$tmpdir, "t-cytosel-report.html"), 
-                          execute_params = paths_quarto)
+    paths_report$tmpdir <- paste0(tmpdir, "/")
+    render("report/rmarkdown-report.Rmd", 
+           output_file = paste0(paths_report$tmpdir, "report-", current_date, ".html"),
+           output_dir = paths_report$tmpdir,
+           params = paths_report)
     
-    paths_quarto$tmpdir <- "~/CampbellLab/cytosel/report/"
-    quarto::quarto_render("report/testing-quarto.qmd", output_format = "html",
-                          execute_dir = paths_quarto$tmpdir,
-                          output_file =  "t-cytosel-report.html",
-                          execute_params = paths_quarto)
-    
+    paths_zip$report <- paste0(paths_report$tmpdir, "report-", current_date, ".html")
     zip(zipfile = zip_filename, files = unlist(paths_zip), mode = "cherry-pick") 
     if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), zip_filename)}
 }

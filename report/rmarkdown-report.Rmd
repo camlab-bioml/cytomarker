@@ -1,0 +1,83 @@
+---
+title: "Cytosel report"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+date: "2022-10-26"
+params:
+  df: "Antibody-info-2022-11-12.tsv"
+  marker_selection: "markers-2022-11-12.txt"
+  heatmap: "Heatmap-2022-11-12.rds"
+  umap: "UMAP-2022-11-12.rds"
+  metric: "metrics-2022-11-12.rds"
+  config: "config-2022-11-12.tsv"
+  tmpdir: "/var/folders/49/28wdpj9j1t9gc3594rgs_m6h0000gq/T//Rtmpet4IPG"
+---
+
+<style>
+.main-container {
+    max-width: 940px;
+    margin-right: auto;
+}
+</style>
+
+Below are the results of your Cytosel antibody panel design run.
+
+```{r message=FALSE, echo=F}
+knitr::opts_knit$set(root.dir = params$tmpdir)
+library(tidyverse)
+library(DT)
+library(yaml)
+library(shiny)
+library(printr)
+```
+
+## Antibody panel
+
+```{r message=F, echo=F}
+ab <- read_tsv(params$df)
+datatable(ab, options = list(pageLength = 5, scrollX = TRUE),
+          width = '100%')
+```
+
+## Selected markers
+
+You selected the following markers to be included in your antibody panel.
+
+```{r message=FALSE, echo=F, results = 'asis'}
+markers <- readLines(params$marker_selection)
+cat(paste0("- `", markers, "`"), sep = "\n")
+```
+
+## Heatmaps
+
+```{r echo=F, warning=F}
+heatmap <- readRDS(params$heatmap)
+heatmap
+```
+
+## UMAPs
+
+```{r echo = F, fig.width=8, fig.height=5}
+umaps <- readRDS(params$umap)
+umaps
+```
+
+## Metrics
+
+```{r echo=F, warning=F, fig.width=10}
+metrics <- readRDS(params$metric)
+metrics
+```
+
+## Config
+
+Below is the configuration used during your run:
+
+```{r echo = F,message=F}
+config <- read_tsv(params$config)
+
+config |> 
+  datatable(options = list(autoWidth = FALSE))
+```

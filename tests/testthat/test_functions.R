@@ -353,18 +353,18 @@ test_that("download works as expected", {
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)
     
-    marks_back <- read.table(file.path(td, paste0("markers-", Sys.Date(), ".txt")))
-    expect_equal(marks_back$V1, rownames(sce)[1:100])
+    # marks_back <- read.table(file.path(td, paste0("markers-", Sys.Date(), ".txt")))
+    # expect_equal(marks_back$V1, rownames(sce)[1:100])
     
     yaml_back <- read_yaml(file.path(td, paste0("config-", Sys.Date(), ".yml")))
     expect_equal(yaml_back$`Input file`, "fake_path_to_sce")
     expect_equal(yaml_back$`Heterogeneity source`, "seurat_annotations")
     
-    table_back <- read.table(file.path(td, paste0("Antibody-info-", Sys.Date(), ".tsv")),
-                             sep = "\t", header = T)
-
-    expect_equal(unique(table_back$Symbol %in% rownames(sce)[1:17]),
-                 TRUE)
+    # table_back <- read.table(file.path(td, paste0("Antibody-info-", Sys.Date(), ".tsv")),
+    #                          sep = "\t", header = T)
+    # 
+    # expect_equal(unique(table_back$Symbol %in% rownames(sce)[1:17]),
+    #              TRUE)
     
   })
   

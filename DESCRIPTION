@@ -58,7 +58,8 @@ Imports:
     heatmaply,
     stringr,
     rlang,
-    clustifyr
+    clustifyr,
+    rmarkdown
 Suggests:
   stringr,
   yardstick,
