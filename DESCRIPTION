@@ -60,6 +60,7 @@ Imports:
     rlang,
     clustifyr,
     rmarkdown
+    rdrop2
 Suggests:
   stringr,
   yardstick,

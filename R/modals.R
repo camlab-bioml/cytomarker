@@ -141,7 +141,7 @@ threshold_too_low_modal <- function() { # Input marker is not in the dataset
 #' Show a shinyalert warning if cell types retained for analysis are below the minimum cell cutoff. 
 #' cytosel will ignore these for analysis and print their names during analysis.
 #' @importFrom shinyalert shinyalert
-#' @param min_cat_count The curent value of minimum cell cutoff (minimum of 2).
+#' @param min_cat_count The current value of minimum cell cutoff (minimum of 2).
 #' @param the vector of the names of cell types below the cutoff to be ignored.
 cell_type_ignored_modal <- function(min_cat_count, excluded_cells) {
   shinyalert(title = "Warning",
@@ -290,4 +290,40 @@ current_pan_not_valid_modal <- function(missing_genes) { # Marker removal sugges
 }
 
 
+#' Show an input modal for the user to select a pre-curated cytosel dataset
+#' @importFrom shiny modalDialog
+#' @param dataset_options a vector of the identifiers for the possible loadable datasets
+curated_dataset_modal <- function(dataset_options, failed = FALSE) {
+  modalDialog(
+    flowLayout(cellArgs = list(
+      style = "margin-top:10x;
+                         margin-right: 15px;
+                         margin-bottom: 0px; 
+          margin-left: 15px; "), selectInput("curated_options",
+                "Choose a pre-annotated dataset to analyze",
+                dataset_options),
+    htmlOutput("curated_set_preview")),
+    if (failed) {
+      div(tags$b("Error", style = "color: red;"))
+    },
+    footer = tagList(
+      actionButton("pick_curated", "Select"),
+      modalButton("Dismiss")
+    )
+  )
+}
 
+#' Show an error modal if, after subsampling, certain cell types do not meet the minimum count threshold
+#' @importFrom shinyalert shinyalert
+#' @param cell_types A vector of the cell types that do not pass the count threshold
+subsampling_error_modal <- function(cell_types) {
+  shinyalert(title = "Error", 
+             HTML(paste("After subsampling, the following cell types have either counts below 2 or proportions that are less than 0.5% of the dataset",
+                        ":", '<br/>',
+                        "<b>", toString(cell_types), "</b>", '<br/>',
+                        "Please filter these cell types from the analysis and re-run.")),
+             type = "error", 
+             showConfirmButton = TRUE,
+             confirmButtonCol = "#337AB7",
+             html = TRUE)
+}
