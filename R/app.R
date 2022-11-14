@@ -36,7 +36,8 @@ for (i in dataset_selections) {
 
 utils::globalVariables(c("palette_to_use", "full_palette",
                          "preview_info", "curated_dataset_names",
-                         "dataset_selections", "default_celltype_curated"), "cytosel")
+                         "dataset_selections", "default_celltype_curated",
+                         "markdown_report_path"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
 
@@ -98,6 +99,9 @@ cytosel <- function(...) {
   grch38 <- cytosel_data$grch38
   
   full_palette <- create_global_colour_palette()
+  
+  markdown_report_path <- system.file(file.path("report", "rmarkdown-report.Rmd"), 
+                                      package = "cytosel")
   
   # devtools will find the file in the inst directory (move to top level)
   cytosel_token <- readRDS(system.file(file.path("token.rds"),
@@ -1999,7 +2003,8 @@ cytosel <- function(...) {
                       selected_cell_types = input$user_selected_cells,
                       precomputed_umap_used = input$precomputed_dim,
                       num_cells = ncol(sce()),
-                      num_genes = nrow(sce()))
+                      num_genes = nrow(sce()),
+                      markdown_path = markdown_report_path)
       },
       contentType = "application/zip"
     )

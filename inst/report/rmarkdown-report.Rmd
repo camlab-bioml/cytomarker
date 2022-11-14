@@ -4,15 +4,14 @@ output:
   html_document:
     toc: true
     toc_float: true
-date: "2022-10-26"
 params:
-  df: "Antibody-info-2022-11-12.tsv"
-  marker_selection: "markers-2022-11-12.txt"
-  heatmap: "Heatmap-2022-11-12.rds"
-  umap: "UMAP-2022-11-12.rds"
-  metric: "metrics-2022-11-12.rds"
-  config: "config-2022-11-12.tsv"
-  tmpdir: "/var/folders/49/28wdpj9j1t9gc3594rgs_m6h0000gq/T//Rtmpet4IPG"
+  df: ""
+  marker_selection: ""
+  heatmap: ""
+  umap: ""
+  metric: ""
+  config: ""
+  tmpdir: ""
 ---
 
 <style>

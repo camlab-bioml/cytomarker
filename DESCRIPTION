@@ -59,7 +59,7 @@ Imports:
     stringr,
     rlang,
     clustifyr,
-    rmarkdown
+    rmarkdown,
     rdrop2
 Suggests:
   stringr,

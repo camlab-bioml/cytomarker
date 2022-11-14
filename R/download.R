@@ -24,7 +24,8 @@ download_data <- function(zip_filename,
                           selected_cell_types,
                           precomputed_umap_used,
                           num_cells,
-                          num_genes) {
+                          num_genes,
+                          markdown_path) {
     tmpdir <- tempdir()
     current_date <- Sys.Date()
   
@@ -92,7 +93,7 @@ download_data <- function(zip_filename,
       }
     
     paths_report$tmpdir <- paste0(tmpdir, "/")
-    render("report/rmarkdown-report.Rmd", 
+    render(markdown_path, 
            output_file = paste0(paths_report$tmpdir, "report-", current_date, ".html"),
            output_dir = paths_report$tmpdir,
            params = paths_report)

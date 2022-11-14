@@ -347,11 +347,15 @@ test_that("download works as expected", {
       drop_na() |>
       filter(Symbol %in% rownames(sce)[1:17])
     
+    markdown_report_path <- system.file(file.path("report", "rmarkdown-report.Rmd"), 
+                                        package = "cytosel")
+    
     download_data(filepath,
                   list(top_markers = rownames(sce)[1:100]), 
                   plots, heatmap, "fake_path_to_sce", "logcounts",
                   "seurat_annotations", 24, 2, "no", fake_table,
-                  "fm", NULL, NULL, FALSE, 100, 13714)
+                  "fm", NULL, NULL, FALSE, 100, 13714,
+                  markdown_report_path)
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)
