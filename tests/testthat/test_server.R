@@ -261,8 +261,6 @@ test_that("Server has basic functionality", {
     
     expect_equal(length(current_markers()$top_markers), 5)
     
-    
-
   })
 })
 
@@ -332,6 +330,7 @@ test_that("Re-upload works on server", {
     expect_equal(cell_min_threshold(), 10)
     expect_equal(length(markers_reupload()$top_markers), 18)
     expect_equal(length(markers_reupload()$scratch_markers), 6)
+    expect_equal(length(specific_cell_types_selected()), 6)
     
     session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
                       subsample_sce = T,
@@ -405,13 +404,10 @@ test_that("Download works on server", {
     # expect_false(is.null(output$downloadData))
     
     # test that download feature works with temp dir
-    # withr::with_tempdir({
-    #   session$setInputs(downloadData = T)
-    #   # print(output$downloadData)
-    #   # expect_true(file.exists(output$downloadData))
-    #   expect_true(file.exists(file.path(tmpdir, "report-", Sys.Date(), ".html")))
-    # })
-    
+    withr::with_tempdir({
+      session$setInputs(downloadData = T)
+      expect_true(file.exists(file.path(tempdir(), paste0("config-", Sys.Date(), ".yml"))))
+    })
   })
 })
 
@@ -463,6 +459,13 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_equal(length(specific_cell_types_selected()),
                  length(unique(sce()[[input$coldata_column]])))
     
+    # expect only the first run outputs to be rendered 
+    
+    expect_false(is.null(output$current_run_name))
+    expect_false(is.null(output$summary_run_current))
+    expect_false(is.null(output$metrics_run_current))
+
+    expect_null(previous_run_log())
     
     heatmap_1 <- heatmap()
     
@@ -503,6 +506,14 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     heatmap_expression_norm = "Expression", start_analysis = T)
     
     expect_false(identical(heatmap_1, heatmap()))
+    
+    
+    session$setInputs(start_analysis = T)
+
+    expect_true(isTruthy(previous_run_log()))
+    expect_false(is.null(output$previous_run_1))
+    expect_false(is.null(output$summary_prev_1))
+    expect_false(is.null(output$metrics_run_prev_1))
     
   })
 })
@@ -550,9 +561,46 @@ test_that("datasets with few genes produce errors on marker finding", {
                       start_analysis = T)
     
     expect_false(is.null(cell_types_missing_markers()))
+    
   })
 })
 
+context("test that setting the user time zone works as intended")
+
+test_that("The user is able to change the time zone properly", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    # expect that the session info is rendered without reactive trigger
+    expect_false(is.null(output$current_session_info))
+    expect_true(!isTruthy(time_zone_set()))
+    
+    startup_zone <- Sys.timezone()
+    
+    # this assumes that the default timezone in the server will never be Kwajalein
+    session$setInputs(time_zone_options = "Kwajalein",
+                      time_zone = T, pick_time_zone = T)
+    
+    expect_equal(time_zone_set(), "Kwajalein")
+    expect_false(is.null(output$current_time))
+    
+  })
+})
+
+context("test that detection of lowercase genes names registers mouse")
+
+test_that("cytosel is able to find lowercase genes as non-human", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_true(proper_organism())
+    
+    # read in all lowercase genes for inferorg (should detect as mouse)
+    session$setInputs(input_scrnaseq = list(datapath =
+                            test_path("pbmc_lowercase.rds")))
+    
+    expect_false(proper_organism())
+    
+  })
+})
 
 
 

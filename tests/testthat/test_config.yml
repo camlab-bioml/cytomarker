@@ -1,5 +1,4 @@
 Time: 2022-09-19 14:06:41
-Input file: /var/folders/b0/t5xcnhp13831xdy00jfm2j400000gn/T//RtmpTXrsT3/3fcfa522c529cda54a836617/0.rds
 Number of columns (cells): 101
 Number of rows (features): 13715
 Assay used: logcounts
@@ -38,7 +37,7 @@ Antibody applications:
 - Flow Cyt (Intra)
 - ICC/IF
 - Flow Cyt
-User selected cells:
+Cell Types Analyzed:
 - B
 - CD14+ Mono
 - Memory CD4 T

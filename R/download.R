@@ -1,4 +1,53 @@
 
+#' create a list of the run parameters for download or run logging
+#' @importFrom yaml write_yaml
+#' @importFrom zip zip
+#' @importFrom htmlwidgets saveWidget
+#' @importFrom plotly subplot
+create_run_param_list <- function(
+                          marker_list,
+                          input_file,
+                          assay_used,
+                          het_source,
+                          panel_size,
+                          cell_cutoff_value,
+                          subsample,
+                          marker_strat,
+                          antibody_apps,
+                          selected_cell_types,
+                          precomputed_umap_used,
+                          num_cells,
+                          num_genes,
+                          metrics) {
+  
+  ## Write a config list:
+  config <- list(
+    Time = as.character(Sys.time()),
+    `Input file` = input_file,
+    `Number of columns (cells)` = num_cells,
+    `Number of rows (features)` = num_genes,
+    `Assay used` = assay_used,
+    `Heterogeneity source` = het_source,
+    `Target panel size` = panel_size,
+    `Min Cell Category cutoff` = cell_cutoff_value,
+    `Subsampling Used` = subsample,
+    `Selected marker panel` = marker_list$top_markers,
+    # `Scratch marker panel` = ifelse(is_empty(marker_list$scratch_markers),
+    #                                 "None", marker_list$scratch_markers),
+    `Scratch marker panel` = marker_list$scratch_markers,
+    `Marker strategy` = marker_strat,
+    # `Antibody applications` = ifelse(is_empty(antibody_apps),
+    #                                  "None", antibody_apps),
+    `Antibody applications` = antibody_apps,
+    `Cell Types Analyzed` = selected_cell_types,
+    `Pre-computed UMAP` = precomputed_umap_used,
+    `Run Metrics` = metrics
+  )
+  
+  return(config)
+}
+
+
 #' Download all marker data to a zip file
 #' 
 #' @importFrom yaml write_yaml
@@ -9,23 +58,14 @@
 #' @importFrom tibble tibble
 #' @importFrom rmarkdown render
 download_data <- function(zip_filename,
-                          current_markers,
+                          config,
                           plots,
                           heatmap,
-                          input_file,
-                          assay_used,
-                          het_source,
-                          panel_size,
-                          cell_cutoff_value,
-                          subsample,
                           antibody_table,
-                          marker_strat,
-                          antibody_apps,
-                          selected_cell_types,
-                          precomputed_umap_used,
-                          num_cells,
-                          num_genes,
                           markdown_path) {
+  
+    print(config)
+
     tmpdir <- tempdir()
     current_date <- Sys.Date()
   
@@ -35,39 +75,11 @@ download_data <- function(zip_filename,
     paths_zip$config <- file.path(tmpdir, paste0("config-", current_date, ".yml"))
     paths_report$config <- file.path(tmpdir, paste0("config-", current_date, ".tsv"))
     
-    ## Write a config list:
-    config <- list(
-      Time = as.character(Sys.time()),
-      `Input file` = input_file,
-      `Number of columns (cells)` = num_cells,
-      `Number of rows (features)` = num_genes,
-      `Assay used` = assay_used,
-      `Heterogeneity source` = het_source,
-      `Target panel size` = panel_size,
-      `Min Cell Category cutoff` = cell_cutoff_value,
-      `Subsampling Used` = subsample,
-      `Selected marker panel` = current_markers$top_markers,
-      `Scratch marker panel` = current_markers$scratch_markers,
-      `Marker strategy` = marker_strat,
-      `Antibody applications` = antibody_apps,
-      `User selected cells` = selected_cell_types,
-      `Pre-computed UMAP` = precomputed_umap_used
-    )
-    
-    config <- lapply(config, FUN = function(X) replace_na_null_empty(X))
-    
-    config_df <- tibble(
-      Parameter = names(config),
-      Value = lapply(config, function(x) if(length(x) > 1) paste(x, collapse = ", ") else x) |> 
-        unlist(use.names = FALSE)
-    )
-    
     write_yaml(config, paths_zip$config)
-    write_tsv(config_df, paths_report$config)
     
     paths_report$marker_selection <- file.path(tmpdir, paste0("markers-", current_date, ".txt"))
-    
-    selected_markers <- current_markers$top_markers
+  
+    selected_markers <- config$`Selected marker panel`
     write_lines(selected_markers, paths_report$marker_selection)
     
     if (isTruthy(antibody_table)) {
@@ -92,6 +104,15 @@ download_data <- function(zip_filename,
         saveRDS(plots$metric_plot, paths_report$metric)
       }
     
+    config_df <- tibble::enframe(config) %>%
+      dplyr::mutate(value = purrr::map_chr(value, toString)) |>
+      `colnames<-`(c("Parameter", "Value")) |>
+      filter(! Parameter %in% c("Input file"))
+
+    print(config_df)
+    
+    write_tsv(config_df, paths_report$config)
+    
     paths_report$tmpdir <- paste0(tmpdir, "/")
     render(markdown_path, 
            output_file = paste0(paths_report$tmpdir, "report-", current_date, ".html"),
@@ -100,7 +121,8 @@ download_data <- function(zip_filename,
     
     paths_zip$report <- paste0(paths_report$tmpdir, "report-", current_date, ".html")
     zip(zipfile = zip_filename, files = unlist(paths_zip), mode = "cherry-pick") 
-    if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), zip_filename)}
+    if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), 
+                                                               zip_filename)}
 }
 
 
