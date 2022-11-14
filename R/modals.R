@@ -270,7 +270,9 @@ reupload_warning_modal <- function(title_message, body_message) {
 #' @importFrom shiny modalDialog
 reset_analysis_modal <- function() {
   modalDialog(helpText("Resetting the marker panel will erase the current top marker and scratch marker lists, and allow a new set to be generated. Please confirm that you would like to override the current panel."),
-  actionButton("reset_marker_panel", "Confirm reset marker panel"))
+  actionButton("reset_marker_panel", "Confirm reset marker panel"),
+  footer = tagList(
+    modalButton("Cancel")))
 }
 
 #' Show an input modal if the current panel contains genes that are not found in the newest uploaded SCE
@@ -308,7 +310,7 @@ curated_dataset_modal <- function(dataset_options, failed = FALSE) {
     },
     footer = tagList(
       actionButton("pick_curated", "Select"),
-      modalButton("Dismiss")
+      modalButton("Cancel")
     )
   )
 }
@@ -327,3 +329,36 @@ subsampling_error_modal <- function(cell_types) {
              confirmButtonCol = "#337AB7",
              html = TRUE)
 }
+
+#' Allow the user to change the time zone in the modal
+#' @importFrom shiny modalDialog
+time_zone_modal <- function(possible_time_zones, current_input) {
+  
+  time_zone <- ifelse(isTruthy(current_input), current_input, "EST")
+  modalDialog(
+    flowLayout(cellArgs = list(
+      style = "margin-top:10x;
+                         margin-right: 15px;
+                         margin-bottom: 0px; 
+          margin-left: 15px; "), selectInput("time_zone_options",
+                                             "Select a time zone to set",
+                                             possible_time_zones,
+                                             selected = time_zone),
+      htmlOutput("current_time", style = "width: 140%; margin-top: 20px; margin-left:15px;")
+  ),
+  footer = tagList(
+    actionButton("pick_time_zone", "Set time zone"),
+    modalButton("Cancel")
+  ))
+}
+
+#' Show an input modal to give the user the option to reset the panel on 
+#' @importFrom shiny modalDialog
+reset_option_on_upload_modal <- function() {
+  modalDialog(helpText("You have uploaded a new dataset. The current panel may be invalid with these data. Would you like to reset the current panel?"),
+              actionButton("reset_marker_panel_reupload", "Reset the marker panel"),
+              footer = tagList(
+                modalButton("Cancel")))
+}
+
+

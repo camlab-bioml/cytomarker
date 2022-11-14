@@ -64,8 +64,10 @@ alternative_markers: "Input a marker that you want to replace. The top markers m
                           These markers can be sent to the selected markers panel."
 
 cell_subsetting: "View the frequency and proportion distribution of the 
-                  selected cel category, as well as options to remove certain cell types from analysis or set a minimum category cutoff."
+                  selected cell category, as well as options to remove certain cell types from analysis or set a minimum category cutoff."
 
-reupload: "A yml config file from previous analysis run can be reuploaded, along with the matching scRNA-seq file, to resume previous analysis."
+reupload: "A .yml config file from previous analysis run can be reuploaded, along with the matching scRNA-seq file, to resume a previous analysis."
 
-reset_panel: "Be default, repeated runs of cytosel will retain the first marker panel suggested. The panel can be fully reset to commence a new set of analyses."                      
+reset_panel: "Be default, repeated runs of cytosel will retain the first marker panel suggested. The panel can be fully reset to commence a new set of analyses."
+
+applications: "Marker panels can be generated for combinations of experimental protocols and laboratory assays. By default, all protocols listed here will be considered."

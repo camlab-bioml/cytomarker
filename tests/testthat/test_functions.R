@@ -1,13 +1,18 @@
 library(yaml)
 context("Test basic functions")
 
-test_that("round3 function is effective", {
+test_that("conversion functions are effective", {
   expect_equal(round3(0.3456), "0.300")
   obj <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(obj)
   expect_is(convert_column_to_character_or_factor(sce, "num_col")$num_col,
             "character")
   
+  expect_true(check_for_human_genes(sce))
+  obj <- test_path("pbmc_lowercase.rds")
+  sce <- read_input_scrnaseq(obj)
+  
+  expect_false(check_for_human_genes(sce))
 })
 
 context("Data reading")
@@ -347,11 +352,17 @@ test_that("download works as expected", {
       drop_na() |>
       filter(Symbol %in% rownames(sce)[1:17])
     
-    download_data(filepath,
-                  list(top_markers = rownames(sce)[1:100]), 
-                  plots, heatmap, "fake_path_to_sce", "logcounts",
-                  "seurat_annotations", 24, 2, "no", fake_table,
-                  "fm", NULL, NULL, FALSE, 100, 13714)
+    fake_metrics <- data.frame(`Cell Type` = c("Fake_1", "Fake_2", "Fake_3"),
+                               Score = c(0.99, 1, 0.8))
+    
+    base_config <- create_run_param_list(marker_list = list(top_markers = rownames(sce)[1:100]), 
+                                         "fake_path_to_sce", "logcounts",
+                                         "seurat_annotations", 24, 2, "no",
+                                         "fm", NULL, NULL, FALSE, 100, 13714, fake_metrics)
+    
+    expect_is(base_config, 'list')
+    
+    download_data(filepath, base_config, plots, heatmap, fake_table)
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)
@@ -397,12 +408,16 @@ test_that("Error modals throw errors", {
   expect_error(reupload_before_sce_modal())
   expect_error(reupload_warning_modal("title","body"))
   expect_error(current_pan_not_valid_modal("GENE"))
+  
   # expected class from a modal dialog box
   expect_is(reset_analysis_modal(), 'shiny.tag')
   expect_is(suggestion_modal(failed = T, c("Sug_1", "Sug_2"), "Sug_1"), 'shiny.tag')
   expect_is(curated_dataset_modal(c("cur_1", "cur_2"), failed = T), 'shiny.tag')
   expect_error(subsampling_error_modal(c("Type_1", "Type_2")))
+  expect_is(time_zone_modal(cytosel_data$time_zones, NULL), 'shiny.tag')
+  expect_is(reset_option_on_upload_modal(), 'shiny.tag')
 })
+
 
 
 

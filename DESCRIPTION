@@ -59,7 +59,8 @@ Imports:
     stringr,
     rlang,
     clustifyr,
-    rdrop2
+    rdrop2,
+    lubridate
 Suggests:
   stringr,
   yardstick,

@@ -26,6 +26,7 @@ read_input_scrnaseq <- function(sce_path) {
       sce <- Seurat::as.SingleCellExperiment(sce)
     } 
   }
+  
   ## Remove cells with no reads - would cause issue with logNormCounts from scater
   if ("logcounts" %in% names(assays(sce))) {
     sce <- sce[, Matrix::colSums(logcounts(sce)) > 0]
@@ -418,4 +419,16 @@ remove_null_and_va_from_cell_cat <- function(sce, input_column) {
 detect_umap_dims_in_sce <- function(sce) {
   return(reducedDimNames(sce)[grepl("UMAP|umap|Umap|uMap|uMAP",
                           reducedDimNames(sce))])
+}
+
+#' Check if the majority of genes are not human in an SCE
+#' @param sce The SingleCellExperiment object
+#' @importFrom inferorg inferorg
+check_for_human_genes <- function(sce) {
+  inferorg_results <- inferorg(rownames(sce))
+  if (inferorg_results$organism != "human") {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
 }
