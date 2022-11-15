@@ -2135,25 +2135,8 @@ cytosel <- function(...) {
       
       content = function(fname) {
         download_data(fname,
-                      # create_run_param_list(current_markers(),
-                      #                              input_file = input$input_scrnaseq$datapath,
-                      #                              assay_used = pref_assay(),
-                      #                              het_source = column(),
-                      #                              panel_size = input$panel_size,
-                      #                              cell_cutoff_value = as.integer(cell_min_threshold()),
-                      #                              subsample = input$subsample_sce,
-                      #                              marker_strat = input$marker_strategy,
-                      #                              antibody_apps = input$select_aa,
-                      #                              selected_cell_types = cell_types_to_keep(),
-                      #                              precomputed_umap_used = input$precomputed_dim,
-                      #                              num_cells = ncol(sce()),
-                      #                              num_genes = nrow(sce()),
-                      #                              metrics = current_metrics()$summary),
-                      current_run_log()$map,
-                      plots, heatmap(),
-                      df_antibody(),
-                      markdown_report_path
-                      )
+                      current_run_log()$map, plots, heatmap(), 
+                      df_antibody(), markdown_report_path)
       },
       contentType = "application/zip"
     )

@@ -63,8 +63,6 @@ download_data <- function(zip_filename,
                           heatmap,
                           antibody_table,
                           markdown_path) {
-  
-    print(config)
 
     tmpdir <- tempdir()
     current_date <- Sys.Date()
@@ -109,7 +107,6 @@ download_data <- function(zip_filename,
       `colnames<-`(c("Parameter", "Value")) |>
       filter(! Parameter %in% c("Input file"))
 
-    print(config_df)
     
     write_tsv(config_df, paths_report$config)
     
@@ -121,8 +118,8 @@ download_data <- function(zip_filename,
     
     paths_zip$report <- paste0(paths_report$tmpdir, "report-", current_date, ".html")
     zip(zipfile = zip_filename, files = unlist(paths_zip), mode = "cherry-pick") 
-    if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), 
-                                                               zip_filename)}
+    # if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), 
+                                                               # zip_filename)}
 }
 
 

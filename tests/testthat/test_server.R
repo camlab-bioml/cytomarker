@@ -407,6 +407,7 @@ test_that("Download works on server", {
     withr::with_tempdir({
       session$setInputs(downloadData = T)
       expect_true(file.exists(file.path(tempdir(), paste0("config-", Sys.Date(), ".yml"))))
+      # expect_false(is.null(output$downloadData))
     })
   })
 })
