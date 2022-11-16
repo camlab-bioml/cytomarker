@@ -627,6 +627,7 @@ cytosel <- function(...) {
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       
+      default_category_curated(NULL)
       withProgress(message = 'Configuring input selection', value = 0, {
       setProgress(value = 0)
       pre_upload_configuration()
@@ -2106,13 +2107,18 @@ cytosel <- function(...) {
         selected = input_assays[1]
       )
       
+      selection <- ifelse(isTruthy(default_category_curated()),
+                          default_category_curated(),
+                          colnames(colData(sce()))[!grepl("keep_for_analysis", 
+                                                          colnames(colData(sce())))][1])
+      
       
       updateSelectInput(
         session = session,
         inputId = "coldata_column",
         choices = colnames(colData(sce()))[!grepl("keep_for_analysis", 
                                                   colnames(colData(sce())))],
-        selected = default_category_curated()
+        selected = selection
       )
       
       if (!isTruthy(input$coldata_column)) {
