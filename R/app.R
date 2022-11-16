@@ -2071,6 +2071,8 @@ cytosel <- function(...) {
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
       
+      shinyjs::hide(id = "download_button")
+      
       toggle(id = "analysis_button", condition = isTruthy(sce()))
       
       input_assays <- c(names(assays(sce())))

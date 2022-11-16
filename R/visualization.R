@@ -121,5 +121,6 @@ make_violin_plot <- function(sce, genes, cell_type, assay) {
     exprs_values = assay)
   
   return(as.data.frame(expression_plot["data"]) |> drop_na() |> 
-           `colnames<-`(c("Gene", "Expression", "Cell Type", "Colour")))
+           `colnames<-`(c("Gene", "Expression", "Cell Type", "Colour")) |>
+           select(c(Gene, Expression, `Cell Type`, Colour)))
 }
