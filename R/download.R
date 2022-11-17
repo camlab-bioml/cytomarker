@@ -62,7 +62,8 @@ download_data <- function(zip_filename,
                           plots,
                           heatmap,
                           antibody_table,
-                          markdown_path) {
+                          markdown_path,
+                          run_metrics) {
 
     tmpdir <- tempdir()
     current_date <- Sys.Date()
@@ -99,14 +100,16 @@ download_data <- function(zip_filename,
       
       if (isTruthy(plots$metric_plot)) {
         paths_report$metric <- file.path(tmpdir, paste0("metrics-", current_date, ".rds"))
-        saveRDS(plots$metric_plot, paths_report$metric)
+        saveRDS(list(plot = plots$metric_plot,
+                     table = run_metrics), paths_report$metric)
       }
     
     config_df <- tibble::enframe(config) %>%
       dplyr::mutate(value = purrr::map_chr(value, toString)) |>
       `colnames<-`(c("Parameter", "Value")) |>
-      filter(! Parameter %in% c("Input file"))
+      filter(! Parameter %in% c("Input file", "Run Metrics"))
 
+    print(config_df)
     
     write_tsv(config_df, paths_report$config)
     
@@ -118,8 +121,8 @@ download_data <- function(zip_filename,
     
     paths_zip$report <- paste0(paths_report$tmpdir, "report-", current_date, ".html")
     zip(zipfile = zip_filename, files = unlist(paths_zip), mode = "cherry-pick") 
-    # if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), 
-                                                               # zip_filename)}
+    if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), 
+                                                               zip_filename)}
 }
 
 

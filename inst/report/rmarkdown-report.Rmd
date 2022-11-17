@@ -30,14 +30,46 @@ library(DT)
 library(yaml)
 library(shiny)
 library(printr)
+library(reactable)
 ```
 
 ## Antibody panel
 
 ```{r message=F, echo=F}
 ab <- read_tsv(params$df)
-datatable(ab, options = list(pageLength = 5, scrollX = TRUE),
-          width = '100%')
+reactable(ab,
+                searchable = TRUE,
+                filterable = TRUE,
+                columns = list(`Host Species` = colDef(
+                  filterInput = function(values, name) {
+                    tags$select(
+                      # Set to undefined to clear the filter
+                      onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
+                      # "All" has an empty value to clear the filter, and is the default option
+                      tags$option(value = "", "All"),
+                      lapply(unique(values), tags$option),
+                      "aria-label" = sprintf("Filter %s", name),
+                      style = "width: 100%; height: 28px;"
+                    )
+                  }
+                ),
+                `Product Category Tier 3` = colDef(
+                  filterInput = function(values, name) {
+                    tags$select(
+                      # Set to undefined to clear the filter
+                      onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
+                      # "All" has an empty value to clear the filter, and is the default option
+                      tags$option(value = "", "All"),
+                      lapply(unique(values), tags$option),
+                      "aria-label" = sprintf("Filter %s", name),
+                      style = "width: 100%; height: 28px;"
+                    )
+                  }
+                ),
+                `External Link` = colDef(html = T)
+                ),
+                sortable = TRUE,
+                elementId = "antibody-select")
 ```
 
 ## Selected markers
@@ -63,12 +95,23 @@ umaps <- readRDS(params$umap)
 umaps
 ```
 
-## Metrics
+## Metrics {.tabset}
+
+### Distribution
 
 ```{r echo=F, warning=F, fig.width=10}
 metrics <- readRDS(params$metric)
-metrics
+metrics$plot
 ```
+
+
+### Summary table
+
+```{r echo=F, warning=F, fig.width=10}
+metrics$table |> 
+  datatable(options = list(autoWidth = FALSE))
+```
+
 
 ## Config
 
