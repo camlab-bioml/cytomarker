@@ -54,53 +54,75 @@ create_run_param_list <- function(
 #' @importFrom zip zip
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom plotly subplot
+#' @importFrom readr write_tsv
+#' @importFrom tibble tibble
+#' @importFrom rmarkdown render
 download_data <- function(zip_filename,
                           config,
                           plots,
                           heatmap,
-                          antibody_table) {
+                          antibody_table,
+                          markdown_path) {
+  
+    print(config)
 
     tmpdir <- tempdir()
+    current_date <- Sys.Date()
   
-    paths_zip <- list()
+    paths_zip <- list() # contains the filenames to save
+    paths_report <- list() # contains the file names to be read in by report
     
-    paths_zip$config <- file.path(tmpdir, paste0("config-", Sys.Date(), ".yml"))
+    paths_zip$config <- file.path(tmpdir, paste0("config-", current_date, ".yml"))
+    paths_report$config <- file.path(tmpdir, paste0("config-", current_date, ".tsv"))
     
     write_yaml(config, paths_zip$config)
     
-    
-    paths_zip$marker_selection <- file.path(tmpdir, paste0("markers-", Sys.Date(), ".txt"))
-    
+    paths_report$marker_selection <- file.path(tmpdir, paste0("markers-", current_date, ".txt"))
+  
     selected_markers <- config$`Selected marker panel`
-    write_lines(selected_markers, paths_zip$marker_selection)
+    write_lines(selected_markers, paths_report$marker_selection)
     
     if (isTruthy(antibody_table)) {
-      paths_zip$df <- file.path(tmpdir, paste0("Antibody-info-", Sys.Date(), ".tsv"))
-      write.table(antibody_table, paths_zip$df, quote = F, row.names = F, sep = "\t")
+      paths_report$df <- file.path(tmpdir, paste0("Antibody-info-", current_date, ".tsv"))
+      write.table(antibody_table, paths_report$df, quote = F, row.names = F, sep = "\t")
     }    
     
     if (isTruthy(heatmap)) {
-      paths_zip$heatmap <- file.path(tmpdir, paste0("Heatmap-", Sys.Date(), ".html"))
-      saveWidget(heatmap, paths_zip$heatmap)
+      paths_report$heatmap <- file.path(tmpdir, paste0("Heatmap-", current_date, ".rds"))
+      saveRDS(heatmap, paths_report$heatmap)
     }    
       
     if (isTruthy(plots$all_plot) & isTruthy(plots$top_plot)) {
-        # paths_zip$umap <- file.path(tmpdir, paste0("UMAP-", Sys.Date(), ".pdf"))
-        paths_zip$umap <- file.path(tmpdir, paste0("UMAP-", Sys.Date(), ".html"))
-        umap_plt <- subplot(plots$all_plot, plots$top_plot) %>% 
+        paths_report$umap <- file.path(tmpdir, paste0("UMAP-", current_date, ".rds"))
+        umap_plt <- subplot(plots$all_plot, plots$top_plot) %>%
           layout(title = 'Cytosel UMAP, all markers & top markers')
-        saveWidget(umap_plt, paths_zip$umap)
-        
+        saveRDS(umap_plt, paths_report$umap)
       }
       
       if (isTruthy(plots$metric_plot)) {
-        # paths_zip$metric <- file.path(tmpdir, paste0("metric-", Sys.Date(), ".pdf"))
-        paths_zip$metric <- file.path(tmpdir, paste0("metrics-", Sys.Date(), ".html"))
-        saveWidget(plots$metric_plot, paths_zip$metric)
+        paths_report$metric <- file.path(tmpdir, paste0("metrics-", current_date, ".rds"))
+        saveRDS(plots$metric_plot, paths_report$metric)
       }
     
+    config_df <- tibble::enframe(config) %>%
+      dplyr::mutate(value = purrr::map_chr(value, toString)) |>
+      `colnames<-`(c("Parameter", "Value")) |>
+      filter(! Parameter %in% c("Input file"))
+
+    print(config_df)
+    
+    write_tsv(config_df, paths_report$config)
+    
+    paths_report$tmpdir <- paste0(tmpdir, "/")
+    render(markdown_path, 
+           output_file = paste0(paths_report$tmpdir, "report-", current_date, ".html"),
+           output_dir = paths_report$tmpdir,
+           params = paths_report)
+    
+    paths_zip$report <- paste0(paths_report$tmpdir, "report-", current_date, ".html")
     zip(zipfile = zip_filename, files = unlist(paths_zip), mode = "cherry-pick") 
-    if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), zip_filename)}
+    if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), 
+                                                               zip_filename)}
 }
 
 

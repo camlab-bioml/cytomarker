@@ -38,7 +38,7 @@ for (i in dataset_selections) {
 utils::globalVariables(c("palette_to_use", "full_palette",
                          "preview_info", "curated_dataset_names",
                          "dataset_selections", "default_celltype_curated",
-                         "all_zones"), "cytosel")
+                         "markdown_report_path", "all_zones"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
 
@@ -60,6 +60,8 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' @import sortable
 #' @import scater
 #' @import reactable
+#' @import tidyverse
+#' @import printr
 #' @importFrom rlang is_empty
 #' @importFrom DT datatable
 #' @importFrom clustifyr plot_gene
@@ -101,6 +103,9 @@ cytosel <- function(...) {
   grch38 <- cytosel_data$grch38
   
   full_palette <- create_global_colour_palette()
+  
+  markdown_report_path <- system.file(file.path("report", "rmarkdown-report.Rmd"), 
+                                      package = "cytosel")
   
   # devtools will find the file in the inst directory (move to top level)
   cytosel_token <- readRDS(system.file(file.path("token.rds"),
@@ -525,6 +530,8 @@ cytosel <- function(...) {
     
     proper_organism <- reactiveVal(TRUE)
     
+    downloaded_content <- reactiveVal(FALSE)
+    
     output$cytosel_hyperlink <-  renderUI({
       # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
       # tagList("Cytosel Documentation", url)
@@ -620,6 +627,7 @@ cytosel <- function(...) {
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       
+      default_category_curated(NULL)
       withProgress(message = 'Configuring input selection', value = 0, {
       setProgress(value = 0)
       pre_upload_configuration()
@@ -1160,6 +1168,10 @@ cytosel <- function(...) {
           })
           
       })
+      
+      # reset downloaded status when analysis is rerun
+      downloaded_content(FALSE)
+      toggle(id = "download_button", condition = isTruthy(current_markers()))
       
     })
     
@@ -2060,8 +2072,9 @@ cytosel <- function(...) {
       input_sce <- parse_gene_names(input_sce, grch38)
       sce(input_sce)
       
+      shinyjs::hide(id = "download_button")
+      
       toggle(id = "analysis_button", condition = isTruthy(sce()))
-      toggle(id = "download_button", condition = isTruthy(sce()))
       
       input_assays <- c(names(assays(sce())))
       
@@ -2094,13 +2107,18 @@ cytosel <- function(...) {
         selected = input_assays[1]
       )
       
+      selection <- ifelse(isTruthy(default_category_curated()),
+                          default_category_curated(),
+                          colnames(colData(sce()))[!grepl("keep_for_analysis", 
+                                                          colnames(colData(sce())))][1])
+      
       
       updateSelectInput(
         session = session,
         inputId = "coldata_column",
         choices = colnames(colData(sce()))[!grepl("keep_for_analysis", 
                                                   colnames(colData(sce())))],
-        selected = default_category_curated()
+        selected = selection
       )
       
       if (!isTruthy(input$coldata_column)) {
@@ -2124,22 +2142,26 @@ cytosel <- function(...) {
       filename <- paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
       
       content = function(fname) {
-        download_data(fname, create_run_param_list(current_markers(),
-                                                   input_file = input$input_scrnaseq$datapath,
-                                                   assay_used = pref_assay(),
-                                                   het_source = column(),
-                                                   panel_size = input$panel_size,
-                                                   cell_cutoff_value = as.integer(cell_min_threshold()),
-                                                   subsample = input$subsample_sce,
-                                                   marker_strat = input$marker_strategy,
-                                                   antibody_apps = input$select_aa,
-                                                   selected_cell_types = cell_types_to_keep(),
-                                                   precomputed_umap_used = input$precomputed_dim,
-                                                   num_cells = ncol(sce()),
-                                                   num_genes = nrow(sce()),
-                                                   metrics = current_metrics()$summary),
+        download_data(fname,
+                      # create_run_param_list(current_markers(),
+                      #                              input_file = input$input_scrnaseq$datapath,
+                      #                              assay_used = pref_assay(),
+                      #                              het_source = column(),
+                      #                              panel_size = input$panel_size,
+                      #                              cell_cutoff_value = as.integer(cell_min_threshold()),
+                      #                              subsample = input$subsample_sce,
+                      #                              marker_strat = input$marker_strategy,
+                      #                              antibody_apps = input$select_aa,
+                      #                              selected_cell_types = cell_types_to_keep(),
+                      #                              precomputed_umap_used = input$precomputed_dim,
+                      #                              num_cells = ncol(sce()),
+                      #                              num_genes = nrow(sce()),
+                      #                              metrics = current_metrics()$summary),
+                      current_run_log()$map,
                       plots, heatmap(),
-                      df_antibody())
+                      df_antibody(),
+                      markdown_report_path
+                      )
       },
       contentType = "application/zip"
     )

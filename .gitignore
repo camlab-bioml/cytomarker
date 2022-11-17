@@ -13,8 +13,7 @@ tests/testthat/*.html
 tests/testthat/*.zip
 tests/testthat/*.yml
 rsconnect/*
-.httr-oauth
-
 curated/
-
+.httr-oauth
 tests/testthat/curated/
+

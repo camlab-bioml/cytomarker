@@ -4,7 +4,14 @@
 \alias{download_data}
 \title{Download all marker data to a zip file}
 \usage{
-download_data(zip_filename, config, plots, heatmap, antibody_table)
+download_data(
+  zip_filename,
+  config,
+  plots,
+  heatmap,
+  antibody_table,
+  markdown_path
+)
 }
 \description{
 Download all marker data to a zip file
