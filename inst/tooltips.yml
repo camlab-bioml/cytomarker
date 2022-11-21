@@ -1,5 +1,5 @@
 
-input_scrnaseq: "Upload SingleCellExperiment/Seurat data as an .rds file. Gene names should be in Gene Symbol format. 
+input_scrnaseq: "Upload SingleCellExperiment or Seurat data as an .rds file. Gene names should be in Gene Symbol format. 
                                If a dataset is too large (>1Gb), subsampling of cells is recommended. For some applications, 
                                filtering for protein coding-only genes may also increase the relevance of the markers suggested by Cytosel."
 

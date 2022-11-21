@@ -121,6 +121,15 @@ cytosel <- function(...) {
     ),
     tags$head(tags$style(".modal-dialog{ width:750px}")),
     tags$style("@import url(https://use.fontawesome.com/releases/v5.7.2/css/all.css);"),
+    # styling the hover tooltips
+    #  https://stackoverflow.com/questions/62360730/change-color-of-bstooltip-boxes-in-shiny
+    tags$style(HTML("
+                .tooltip > .tooltip-inner {
+                width: 450px;
+                color: white;
+                background-color: black;
+                }
+                ")),
   
     # Use packages
     useShinyalert(force = TRUE),
@@ -1946,7 +1955,6 @@ cytosel <- function(...) {
                                display(), input$heatmap_expression_norm, 
                                pref_assay())
               )
-              
               
               break
             }
