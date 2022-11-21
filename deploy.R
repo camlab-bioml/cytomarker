@@ -2,7 +2,7 @@
 
 library(rsconnect)
 devtools::load_all()
-options(repos=c(BiocManager::repositories()))
-rsconnect::deployApp(account = 'camlab')
+options(repos=c(BiocManager::repositories(version = "3.16")))
+rsconnect::deployApp(account = 'mwatson-ltri')
 
 

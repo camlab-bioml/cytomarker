@@ -12,9 +12,9 @@ coldata_column: "Categories of interest must be created before using Cytosel.
                       <li>Condition, if aiming to separate experimental conditions.</li>
                       <li>Timepoint, if aiming to separate distinct timepoints.</li>"
 
-panel_size: "Number of markers permitted while optimizing category separation."
+panel_size: "Set the mumber of markers permitted while optimizing category separation. The default recommended panel size is 32 and a range of 30-40 markers is suggested as a starting point for analysis."
 
-subsample_sce: "Subsampling the single cell data will speed up all aspects of analysis. Especially recommended for larger datasets."
+subsample_sce: "Subsampling the single cell data will speed up all aspects of analysis. Especially recommended for larger datasets (i.e. > 2000 cells)."
 
 marker_display: "Markers are currently selected based on differential expression from one cluster against all other clusters.
                 <br></br>
@@ -66,7 +66,8 @@ alternative_markers: "Input a marker that you want to replace. The top markers m
 cell_subsetting: "View the frequency and proportion distribution of the 
                   selected cell category, as well as options to remove certain cell types from analysis or set a minimum category cutoff."
 
-reupload: "A .yml config file from previous analysis run can be reuploaded, along with the matching scRNA-seq file, to resume a previous analysis."
+reupload: "A .yml config file from previous analysis run can be reuploaded to resume a previous analysis. NOTE: it is highly recommended to reupload the matching scRNA-seq data file along with the .yml file, but files generated 
+from different datasets are also compatible with each other."
 
 reset_panel: "Be default, repeated runs of cytosel will retain the first marker panel suggested. The panel can be fully reset to commence a new set of analyses."
 

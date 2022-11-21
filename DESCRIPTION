@@ -63,7 +63,8 @@ Imports:
     rdrop2,
     lubridate,
     tidyverse,
-    printr
+    printr,
+    promises
 Suggests:
   stringr,
   yardstick,
