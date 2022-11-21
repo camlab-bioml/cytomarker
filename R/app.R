@@ -63,6 +63,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' @import tidyverse
 #' @import printr
 #' @import promises
+#' @import future
 #' @importFrom rlang is_empty
 #' @importFrom DT datatable
 #' @importFrom clustifyr plot_gene
@@ -90,6 +91,8 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' 
 #' @param ... Additional arguments
 cytosel <- function(...) {
+  
+  # plan(multisession)
   
   antibody_info <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
                                                   `Gene Name (Upper)`) |>
@@ -598,7 +601,7 @@ cytosel <- function(...) {
     observeEvent(input$pick_curated, {
       req(input$curated_options)
       
-      future_promise({
+      # future_promise({
       removeModal()
       pre_upload_configuration()
       
@@ -633,13 +636,13 @@ cytosel <- function(...) {
       
       post_upload_configuration(input_sce)
     })
-    })
+    # })
     
     
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       
-      future_promise({
+      # future_promise({
       default_category_curated(NULL)
       withProgress(message = 'Configuring input selection', value = 0, {
       setProgress(value = 0)
@@ -661,7 +664,7 @@ cytosel <- function(...) {
       req(proper_organism())
       post_upload_configuration(input_sce)
     })
-    })
+    # })
     
     observeEvent(input$coldata_column, {
       req(sce())
@@ -2156,10 +2159,12 @@ cytosel <- function(...) {
   
       content = function(fname) {
         showNotification("Rendering output report and config file, this may take a few moments..",
-                         duration = 7)
-        future_promise({download_data(fname,
+                         duration = 4)
+        # future_promise({
+        download_data(fname,
                       current_run_log()$map, plots, heatmap(), 
-                      df_antibody(), markdown_report_path, current_metrics()$summary)})
+                      df_antibody(), markdown_report_path, current_metrics()$summary)
+    # })
       },
       contentType = "application/zip"
     )

@@ -3,6 +3,7 @@
 export(cytosel)
 import(SummarizedExperiment)
 import(forcats)
+import(future)
 import(geneBasisR)
 import(ggplot2)
 import(printr)

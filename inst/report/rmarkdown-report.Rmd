@@ -36,7 +36,8 @@ library(reactable)
 ## Antibody panel
 
 ```{r message=F, echo=F}
-ab <- read_tsv(params$df)
+# ab <- read_tsv(params$df)
+ab <- params$df
 reactable(ab,
                 searchable = TRUE,
                 filterable = TRUE,
@@ -77,21 +78,23 @@ reactable(ab,
 You selected the following markers to be included in your antibody panel.
 
 ```{r message=FALSE, echo=F, results = 'asis'}
-markers <- readLines(params$marker_selection)
+# markers <- readLines(params$marker_selection)
+markers <- params$marker_selection
 cat(paste0("- `", markers, "`"), sep = "\n")
 ```
 
 ## Heatmaps
 
 ```{r echo=F, warning=F}
-heatmap <- readRDS(params$heatmap)
+# heatmap <- readRDS(params$heatmap)
 heatmap
 ```
 
 ## UMAPs
 
 ```{r echo = F, fig.width=8, fig.height=5}
-umaps <- readRDS(params$umap)
+# umaps <- readRDS(params$umap)
+umaps <- params$umap
 umaps
 ```
 
@@ -100,7 +103,8 @@ umaps
 ### Distribution
 
 ```{r echo=F, warning=F, fig.width=10}
-metrics <- readRDS(params$metric)
+# metrics <- readRDS(params$metric)
+metrics <- params$metric
 metrics$plot
 ```
 
@@ -118,8 +122,8 @@ metrics$table |>
 Below is the configuration used during your run:
 
 ```{r echo = F,message=F}
-config <- read_tsv(params$config)
-
+# config <- read_tsv(params$config)
+config <- params$config
 config |> 
   datatable(options = list(autoWidth = FALSE))
 ```
