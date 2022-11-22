@@ -5,25 +5,31 @@
 
 ### user selects pre-curated dataset ####
 
-curated_dataset_names <- c("Seurat PBMC", "Baron et al. Pancreas")
+curated_dataset_names <- c("PBMC (Blood/Immune)", "Pancreas", "Glioblastoma")
 
 preview_info <- c(paste("<b>", "<a href='https://satijalab.org/seurat/articles/pbmc3k_tutorial.html' target='_blank' >Seurat PBMC tutorial dataset</a>",
                         "</b>", "<br/>", "<b>", "Cells:", "</b>", "2638", 
                          "<br/>", "<b>", "Genes:", "</b>", "13,714", "<br/>", 
                         "<b>", "Cell category of interest:", "</b>", "ident",
                         "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "Memory CD4 T, B, CD14+ Mono and 6 others"),
-                  paste("<b>", "<a href='https://www.sciencedirect.com/science/article/pii/S2405471216302666' target='_blank' >Human pancreas, Baron et al. (2016)</a>",
+                  paste("<b>", "<a href='https://www.sciencedirect.com/science/article/pii/S2405471216302666' target='_blank' >Pancreas, Baron et al. (2016)</a>",
                   "</b>",
                         "<br/>", "<b>", "Cells:", "</b>", "2069", 
                        "<br/>", "<b>", "Genes:", "</b>", "20,125", "<br/>", 
                        "<b>", "Cell category of interest:", "</b>", "label",
-                       "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "acinar, delta, beta and 5 others")) |>
+                       "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "acinar, delta, beta and 5 others"),
+                  paste("<b>", "<a href='https://www.sciencedirect.com/science/article/pii/S2211124717314626' target='_blank' >Glioblastoma, Darmanis et al. (2017)</a>",
+                        "</b>",
+                        "<br/>", "<b>", "Cells:", "</b>", "3589", 
+                        "<br/>", "<b>", "Genes:", "</b>", "22,139", "<br/>", 
+                        "<b>", "Cell category of interest:", "</b>", "cell_type",
+                        "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "astrocyte, oligodendrocyte, neuron, and 4 others")) |>
   set_names(curated_dataset_names)
 
-dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds") |>
+dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds", "glioblastoma_sce.rds") |>
   set_names(curated_dataset_names)
 
-default_celltype_curated <- c("ident", "label") |>
+default_celltype_curated <- c("ident", "label", "cell_type") |>
   set_names(curated_dataset_names)
 
 # can use to remove any improperly downloaded data sets (shouldn't be necessary with refresh token)
@@ -214,7 +220,7 @@ cytosel <- function(...) {
         tags$h4("or", style = "width = 80%; padding-left: -10px; padding-top: -40px"),
         div(style = "margin-top: -56px"),
         column(3, align = "center", style = "margin-left: 15px", box(title = "Select a curated dataset", status = "primary",
-                      width = 12, actionButton("curated_dataset", "Browse datasets",
+                      width = 12, actionButton("curated_dataset", "Browse human datasets",
                                                style = "margin-top: -10px; margin-bottom: 10px;"
                                                ) 
                                      ))),
@@ -661,6 +667,7 @@ cytosel <- function(...) {
       
       req(proper_organism())
       post_upload_configuration(input_sce)
+      
     })
     # })
     
