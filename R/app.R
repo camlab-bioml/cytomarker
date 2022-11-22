@@ -62,8 +62,6 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' @import reactable
 #' @import tidyverse
 #' @import printr
-#' @import promises
-#' @import future
 #' @importFrom rlang is_empty
 #' @importFrom DT datatable
 #' @importFrom clustifyr plot_gene
