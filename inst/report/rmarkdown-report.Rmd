@@ -31,6 +31,7 @@ library(yaml)
 library(shiny)
 library(printr)
 library(reactable)
+library(plotly)
 ```
 
 ## Antibody panel
@@ -86,12 +87,22 @@ cat(paste0("- `", params$marker_selection, "`"), sep = "\n")
 params$heatmap
 ```
 
-## UMAPs
+## UMAPs {.tabset}
 
-```{r echo = F, fig.width=8, fig.height=5}
-# umaps <- readRDS(params$umap)
-params$umap
+### All Markers
+
+```{r echo = F, fig.width=8, fig.height=5, warning=F, message=F}
+params$umap$all
+
 ```
+
+### Selected Marker Panel
+
+```{r echo = F, fig.width=8, fig.height=5, warning=F, message=F}
+params$umap$top
+
+```
+
 
 ## Metrics {.tabset}
 
@@ -102,7 +113,7 @@ params$metric$plot
 ```
 
 
-### Summary table
+### Summary Table
 
 ```{r echo=F, warning=F, fig.width=10}
 params$metric$table |> 

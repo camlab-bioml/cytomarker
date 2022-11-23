@@ -548,6 +548,7 @@ cytosel <- function(...) {
     proper_organism <- reactiveVal(TRUE)
     
     downloaded_content <- reactiveVal(FALSE)
+    plots_for_markdown <- reactiveVal()
     
     output$cytosel_hyperlink <-  renderUI({
       # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
@@ -1779,6 +1780,7 @@ cytosel <- function(...) {
             layout(title = "UMAP all genes",
                    showlegend = F)))
           
+          
         }
       })
       
@@ -1943,6 +1945,11 @@ cytosel <- function(...) {
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
           layout(title = "UMAP selected markers"))
         
+        plots_for_markdown(list(top = suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
+                                                               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                         layout(title = "UMAP all genes")),
+                                all = plots$top_plot))
+        
         setProgress(value = 0.5)
         
         # Update heatmap
@@ -2044,6 +2051,10 @@ cytosel <- function(...) {
           layout(boxmode = "group",
                  xaxis = list(title="Score"),
                  yaxis = list(title="Source")))
+        
+        plots_for_markdown(list(top = plots_for_markdown()$top,
+                                all = plots_for_markdown()$all,
+                                metric = plots$metric_plot))
         
         previous_run_log_2(previous_run_log())
         previous_run_log(current_run_log())
@@ -2167,7 +2178,7 @@ cytosel <- function(...) {
                          duration = 4)
         # future_promise({
         download_data(fname,
-                      current_run_log()$map, plots, heatmap(), 
+                      current_run_log()$map, plots_for_markdown(), heatmap(), 
                       df_antibody(), markdown_report_path, current_metrics()$summary)
     # })
       },

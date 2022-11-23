@@ -87,13 +87,13 @@ download_data <- function(zip_filename,
                        df = antibody_table,
                        marker_selection = config$`Selected marker panel`,
                        heatmap = heatmap,
-                       umap = subplot(plots$all_plot, plots$top_plot) %>%
-                         layout(title = 'Cytosel UMAP, all markers & top markers'),
-                       metric = list(plot = plots$metric_plot,
+                       umap = list(all = plots$all, top = plots$top),
+                       metric = list(plot = plots$metric,
                                      table = run_metrics),
                        config = config_df)
     
     paths_report$tmpdir <- paste0(tmpdir, "/")
+    
     render(markdown_path, 
            output_file = paste0(paths_report$tmpdir, "report-", current_date, ".html"),
            output_dir = paths_report$tmpdir,
