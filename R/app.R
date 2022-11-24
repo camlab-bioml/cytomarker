@@ -517,6 +517,7 @@ cytosel <- function(...) {
     
     marker_suggestions <- reactiveVal()
     alternative_marks <- reactiveVal()
+    original_panel <- reactiveVal(NULL)
     
     cell_min_threshold <- reactiveVal()
     
@@ -915,6 +916,7 @@ cytosel <- function(...) {
       req(input$panel_size)
       req(input$coldata_column)
       req(sce())
+
       
       if (!is_empty(input$bl_top)) {
         current_panel_not_valid <- setdiff(input$bl_top, rownames(sce()))
@@ -1120,7 +1122,11 @@ cytosel <- function(...) {
             
             # SMH
             current_markers(set_current_markers_safely(markers, fms()))
-          
+            
+            if (!isTruthy(original_panel())) {
+              original_panel(current_markers()$recommended_markers)
+            }
+        
             num_markers_in_selected(length(current_markers()$top_markers))
             num_markers_in_scratch(length(current_markers()$scratch_markers))
             cells_per_type(table(colData(
@@ -1849,14 +1855,17 @@ cytosel <- function(...) {
       }
       
       labels_top <- lapply(markers$top_markers, 
-                           function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
-                                                                                                      set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
-                                                                                                   cytosel_palette()[ markers$associated_cell_types[x] ])))
+                           function(x) div(x, map_gene_name_to_antibody_icon(x, original_panel()), 
+                                           style=paste('padding: 3px; color:', 
+                                            set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), 
+                                            '; background-color:', 
+                                          cytosel_palette()[ markers$associated_cell_types[x] ])))
       labels_scratch <- lapply(markers$scratch_markers, 
-                               function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
-                                                                                                          set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
-     
-                                                                                   cytosel_palette()[ markers$associated_cell_types[x] ])))
+                               function(x) div(x, map_gene_name_to_antibody_icon(x, original_panel()), 
+                                               style=paste('padding: 3px; color:', 
+                                            set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), 
+                                            '; background-color:', 
+                                      cytosel_palette()[ markers$associated_cell_types[x] ])))
  
       # output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
       
@@ -1945,10 +1954,10 @@ cytosel <- function(...) {
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
           layout(title = "UMAP selected markers"))
         
-        plots_for_markdown(list(top = suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
+        plots_for_markdown(list(all = suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
                                                                type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
                                                          layout(title = "UMAP all genes")),
-                                all = plots$top_plot))
+                                top = plots$top_plot))
         
         setProgress(value = 0.5)
         
@@ -2097,6 +2106,7 @@ cytosel <- function(...) {
       updateCheckboxInput(inputId = "precomputed_dim", value = F)
       use_precomputed_umap(FALSE)
       umap_precomputed_col(NULL)
+      original_panel(NULL)
     }
     
     post_upload_configuration <- function(input_sce) {
