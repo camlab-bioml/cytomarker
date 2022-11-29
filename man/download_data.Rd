@@ -10,7 +10,8 @@ download_data(
   plots,
   heatmap,
   antibody_table,
-  markdown_path
+  markdown_path,
+  run_metrics
 )
 }
 \description{

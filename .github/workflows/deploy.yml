@@ -30,6 +30,7 @@ jobs:
         run: |
           install.packages("rsconnect")
           install.packages("BiocManager", version = '1.30.19')
+          BiocManager::install("BiocGenerics", version = "0.44.0")
         shell: Rscript {0}
 
       - name: Authorize and deploy app
@@ -37,7 +38,7 @@ jobs:
           APPNAME: cytosel
           SERVER: shinyapps.io
         run: |
-          options(repos=c(BiocManager::repositories()))
+          options(repos=c(BiocManager::repositories(version = "3.16")))
           rsconnect::setAccountInfo("${{ secrets.SHINYAPPS_ACC }}", "${{ secrets.SHINYAPPS_TOKEN }}", "${{ secrets.SHINYAPPS_SEC }}")
           rsconnect::deployApp(appName = "${{ env.APPNAME }}", account = "${{ secrets.SHINYAPPS_ACC }}", server = "${{ env.SERVER }}")
         shell: Rscript {0}

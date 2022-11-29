@@ -407,6 +407,7 @@ test_that("Download works on server", {
     withr::with_tempdir({
       session$setInputs(downloadData = T)
       expect_true(file.exists(file.path(tempdir(), paste0("config-", Sys.Date(), ".yml"))))
+      # expect_false(is.null(output$downloadData))
     })
   })
 })
@@ -528,7 +529,7 @@ context("Test the loading of the curated datasets from dropbox")
 test_that("Picking the curated dataset works as intended", {
   testServer(cytosel::cytosel(), expr = {
     
-    session$setInputs(curated_dataset = T, curated_options = "Seurat PBMC",
+    session$setInputs(curated_dataset = T, curated_options = "PBMC (Blood/Immune)",
                       pick_curated = T)
     expect_true(file.exists(file.path(tempdir(), "/seurat_pbmc.rds")))
     expect_equivalent(dim(sce()), c(13714, 2638))

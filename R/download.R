@@ -62,9 +62,8 @@ download_data <- function(zip_filename,
                           plots,
                           heatmap,
                           antibody_table,
-                          markdown_path) {
-  
-    print(config)
+                          markdown_path,
+                          run_metrics) {
 
     tmpdir <- tempdir()
     current_date <- Sys.Date()
@@ -76,53 +75,32 @@ download_data <- function(zip_filename,
     paths_report$config <- file.path(tmpdir, paste0("config-", current_date, ".tsv"))
     
     write_yaml(config, paths_zip$config)
-    
-    paths_report$marker_selection <- file.path(tmpdir, paste0("markers-", current_date, ".txt"))
   
     selected_markers <- config$`Selected marker panel`
-    write_lines(selected_markers, paths_report$marker_selection)
-    
-    if (isTruthy(antibody_table)) {
-      paths_report$df <- file.path(tmpdir, paste0("Antibody-info-", current_date, ".tsv"))
-      write.table(antibody_table, paths_report$df, quote = F, row.names = F, sep = "\t")
-    }    
-    
-    if (isTruthy(heatmap)) {
-      paths_report$heatmap <- file.path(tmpdir, paste0("Heatmap-", current_date, ".rds"))
-      saveRDS(heatmap, paths_report$heatmap)
-    }    
-      
-    if (isTruthy(plots$all_plot) & isTruthy(plots$top_plot)) {
-        paths_report$umap <- file.path(tmpdir, paste0("UMAP-", current_date, ".rds"))
-        umap_plt <- subplot(plots$all_plot, plots$top_plot) %>%
-          layout(title = 'Cytosel UMAP, all markers & top markers')
-        saveRDS(umap_plt, paths_report$umap)
-      }
-      
-      if (isTruthy(plots$metric_plot)) {
-        paths_report$metric <- file.path(tmpdir, paste0("metrics-", current_date, ".rds"))
-        saveRDS(plots$metric_plot, paths_report$metric)
-      }
     
     config_df <- tibble::enframe(config) %>%
       dplyr::mutate(value = purrr::map_chr(value, toString)) |>
       `colnames<-`(c("Parameter", "Value")) |>
-      filter(! Parameter %in% c("Input file"))
-
-    print(config_df)
+      filter(! Parameter %in% c("Input file", "Run Metrics"))
     
-    write_tsv(config_df, paths_report$config)
+    param_list <- list(tmpdir = tmpdir,
+                       df = antibody_table,
+                       marker_selection = config$`Selected marker panel`,
+                       heatmap = heatmap,
+                       umap = list(all = plots$all, top = plots$top),
+                       metric = list(plot = plots$metric,
+                                     table = run_metrics),
+                       config = config_df)
     
     paths_report$tmpdir <- paste0(tmpdir, "/")
+    
     render(markdown_path, 
            output_file = paste0(paths_report$tmpdir, "report-", current_date, ".html"),
            output_dir = paths_report$tmpdir,
-           params = paths_report)
+           params = param_list)
     
     paths_zip$report <- paste0(paths_report$tmpdir, "report-", current_date, ".html")
     zip(zipfile = zip_filename, files = unlist(paths_zip), mode = "cherry-pick") 
-    if(file.exists(paste0(zip_filename, ".zip"))) {file.rename(paste0(zip_filename, ".zip"), 
-                                                               zip_filename)}
 }
 
 

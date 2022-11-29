@@ -30,14 +30,46 @@ library(DT)
 library(yaml)
 library(shiny)
 library(printr)
+library(reactable)
+library(plotly)
 ```
 
 ## Antibody panel
 
 ```{r message=F, echo=F}
-ab <- read_tsv(params$df)
-datatable(ab, options = list(pageLength = 5, scrollX = TRUE),
-          width = '100%')
+reactable(params$df,
+                searchable = TRUE,
+                filterable = TRUE,
+                columns = list(`Host Species` = colDef(
+                  filterInput = function(values, name) {
+                    tags$select(
+                      # Set to undefined to clear the filter
+                      onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
+                      # "All" has an empty value to clear the filter, and is the default option
+                      tags$option(value = "", "All"),
+                      lapply(unique(values), tags$option),
+                      "aria-label" = sprintf("Filter %s", name),
+                      style = "width: 100%; height: 28px;"
+                    )
+                  }
+                ),
+                `Product Category Tier 3` = colDef(
+                  filterInput = function(values, name) {
+                    tags$select(
+                      # Set to undefined to clear the filter
+                      onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
+                      # "All" has an empty value to clear the filter, and is the default option
+                      tags$option(value = "", "All"),
+                      lapply(unique(values), tags$option),
+                      "aria-label" = sprintf("Filter %s", name),
+                      style = "width: 100%; height: 28px;"
+                    )
+                  }
+                ),
+                `External Link` = colDef(html = T)
+                ),
+                sortable = TRUE,
+                elementId = "antibody-select")
 ```
 
 ## Selected markers
@@ -45,38 +77,55 @@ datatable(ab, options = list(pageLength = 5, scrollX = TRUE),
 You selected the following markers to be included in your antibody panel.
 
 ```{r message=FALSE, echo=F, results = 'asis'}
-markers <- readLines(params$marker_selection)
-cat(paste0("- `", markers, "`"), sep = "\n")
+
+cat(paste0("- `", params$marker_selection, "`"), sep = "\n")
 ```
 
 ## Heatmaps
 
 ```{r echo=F, warning=F}
-heatmap <- readRDS(params$heatmap)
-heatmap
+params$heatmap
 ```
 
-## UMAPs
+## UMAPs {.tabset}
 
-```{r echo = F, fig.width=8, fig.height=5}
-umaps <- readRDS(params$umap)
-umaps
+### All Markers
+
+```{r echo = F, fig.width=8, fig.height=5, warning=F, message=F}
+params$umap$all
+
 ```
 
-## Metrics
+### Selected Marker Panel
+
+```{r echo = F, fig.width=8, fig.height=5, warning=F, message=F}
+params$umap$top
+
+```
+
+
+## Metrics {.tabset}
+
+### Distribution
 
 ```{r echo=F, warning=F, fig.width=10}
-metrics <- readRDS(params$metric)
-metrics
+params$metric$plot
 ```
+
+
+### Summary Table
+
+```{r echo=F, warning=F, fig.width=10}
+params$metric$table |> 
+  datatable(options = list(autoWidth = FALSE))
+```
+
 
 ## Config
 
 Below is the configuration used during your run:
 
 ```{r echo = F,message=F}
-config <- read_tsv(params$config)
-
-config |> 
+params$config |> 
   datatable(options = list(autoWidth = FALSE))
 ```

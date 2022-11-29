@@ -5,25 +5,31 @@
 
 ### user selects pre-curated dataset ####
 
-curated_dataset_names <- c("Seurat PBMC", "Baron et al. Pancreas")
+curated_dataset_names <- c("PBMC (Blood/Immune)", "Pancreas", "Glioblastoma")
 
 preview_info <- c(paste("<b>", "<a href='https://satijalab.org/seurat/articles/pbmc3k_tutorial.html' target='_blank' >Seurat PBMC tutorial dataset</a>",
                         "</b>", "<br/>", "<b>", "Cells:", "</b>", "2638", 
                          "<br/>", "<b>", "Genes:", "</b>", "13,714", "<br/>", 
                         "<b>", "Cell category of interest:", "</b>", "ident",
                         "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "Memory CD4 T, B, CD14+ Mono and 6 others"),
-                  paste("<b>", "<a href='https://www.sciencedirect.com/science/article/pii/S2405471216302666' target='_blank' >Human pancreas, Baron et al. (2016)</a>",
+                  paste("<b>", "<a href='https://www.sciencedirect.com/science/article/pii/S2405471216302666' target='_blank' >Pancreas, Baron et al. (2016)</a>",
                   "</b>",
                         "<br/>", "<b>", "Cells:", "</b>", "2069", 
                        "<br/>", "<b>", "Genes:", "</b>", "20,125", "<br/>", 
                        "<b>", "Cell category of interest:", "</b>", "label",
-                       "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "acinar, delta, beta and 5 others")) |>
+                       "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "acinar, delta, beta and 5 others"),
+                  paste("<b>", "<a href='https://www.sciencedirect.com/science/article/pii/S2211124717314626' target='_blank' >Glioblastoma, Darmanis et al. (2017)</a>",
+                        "</b>",
+                        "<br/>", "<b>", "Cells:", "</b>", "3589", 
+                        "<br/>", "<b>", "Genes:", "</b>", "22,139", "<br/>", 
+                        "<b>", "Cell category of interest:", "</b>", "cell_type",
+                        "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "astrocyte, oligodendrocyte, neuron, and 4 others")) |>
   set_names(curated_dataset_names)
 
-dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds") |>
+dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds", "glioblastoma_sce.rds") |>
   set_names(curated_dataset_names)
 
-default_celltype_curated <- c("ident", "label") |>
+default_celltype_curated <- c("ident", "label", "cell_type") |>
   set_names(curated_dataset_names)
 
 # can use to remove any improperly downloaded data sets (shouldn't be necessary with refresh token)
@@ -90,6 +96,8 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' @param ... Additional arguments
 cytosel <- function(...) {
   
+  # plan(multisession)
+  
   antibody_info <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
                                                   `Gene Name (Upper)`) |>
                     tidyr::drop_na()
@@ -121,6 +129,15 @@ cytosel <- function(...) {
     ),
     tags$head(tags$style(".modal-dialog{ width:750px}")),
     tags$style("@import url(https://use.fontawesome.com/releases/v5.7.2/css/all.css);"),
+    # styling the hover tooltips
+    #  https://stackoverflow.com/questions/62360730/change-color-of-bstooltip-boxes-in-shiny
+    tags$style(HTML("
+                .tooltip > .tooltip-inner {
+                width: 450px;
+                color: white;
+                background-color: black;
+                }
+                ")),
   
     # Use packages
     useShinyalert(force = TRUE),
@@ -144,11 +161,16 @@ cytosel <- function(...) {
         # width = 300,
         menuItem("Get Started", tabName = "inputs", icon = icon("gear")),
         sidebarMenuOutput(outputId = 'output_menu'),
-        menuItem("Documentation", tabName = "documentation", icon = icon("bookmark")),
+        # menuItem("Documentation", tabName = "documentation", icon = icon("bookmark")),
+        column(1, column(11, align = "left", style = "margin-top: 10px", offset = 0, icon("bookmark", style = "margin-left: -10px;"),
+               tags$a(href="http://camlab-bioml.github.io/cytosel-doc/docs/intro",
+                      " Documentation",
+                      target="_blank", style = "margin-left: 2px;"))),
+        br(),
         column(12, align = "center", offset = 0,
                hidden(div(id = "analysis_button", actionButton("start_analysis", "Run analysis!",
                            icon=icon("play", style = "color:black;"),
-                           style = "margin-left: -5px;")))),
+                           style = "margin-left: -5px; margin-top: 20px;")))),
         column(12, align = "center", offset = 0,
                hidden(div(id = "download_button", downloadButton("downloadData",
                "Save panel", style = "color:black;
@@ -203,7 +225,7 @@ cytosel <- function(...) {
         tags$h4("or", style = "width = 80%; padding-left: -10px; padding-top: -40px"),
         div(style = "margin-top: -56px"),
         column(3, align = "center", style = "margin-left: 15px", box(title = "Select a curated dataset", status = "primary",
-                      width = 12, actionButton("curated_dataset", "Browse datasets",
+                      width = 12, actionButton("curated_dataset", "Browse human datasets",
                                                style = "margin-top: -10px; margin-bottom: 10px;"
                                                ) 
                                      ))),
@@ -500,6 +522,7 @@ cytosel <- function(...) {
     
     marker_suggestions <- reactiveVal()
     alternative_marks <- reactiveVal()
+    original_panel <- reactiveVal(NULL)
     
     cell_min_threshold <- reactiveVal()
     
@@ -531,6 +554,7 @@ cytosel <- function(...) {
     proper_organism <- reactiveVal(TRUE)
     
     downloaded_content <- reactiveVal(FALSE)
+    plots_for_markdown <- reactiveVal()
     
     output$cytosel_hyperlink <-  renderUI({
       # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
@@ -588,6 +612,7 @@ cytosel <- function(...) {
     observeEvent(input$pick_curated, {
       req(input$curated_options)
       
+      # future_promise({
       removeModal()
       pre_upload_configuration()
       
@@ -622,11 +647,13 @@ cytosel <- function(...) {
       
       post_upload_configuration(input_sce)
     })
+    # })
     
     
     ### UPLOAD FILE ###
     observeEvent(input$input_scrnaseq, {
       
+      # future_promise({
       default_category_curated(NULL)
       withProgress(message = 'Configuring input selection', value = 0, {
       setProgress(value = 0)
@@ -647,7 +674,9 @@ cytosel <- function(...) {
       
       req(proper_organism())
       post_upload_configuration(input_sce)
+      
     })
+    # })
     
     observeEvent(input$coldata_column, {
       req(sce())
@@ -892,6 +921,7 @@ cytosel <- function(...) {
       req(input$panel_size)
       req(input$coldata_column)
       req(sce())
+
       
       if (!is_empty(input$bl_top)) {
         current_panel_not_valid <- setdiff(input$bl_top, rownames(sce()))
@@ -1097,7 +1127,11 @@ cytosel <- function(...) {
             
             # SMH
             current_markers(set_current_markers_safely(markers, fms()))
-          
+            
+            if (!isTruthy(original_panel())) {
+              original_panel(current_markers()$recommended_markers)
+            }
+        
             num_markers_in_selected(length(current_markers()$top_markers))
             num_markers_in_scratch(length(current_markers()$scratch_markers))
             cells_per_type(table(colData(
@@ -1757,6 +1791,7 @@ cytosel <- function(...) {
             layout(title = "UMAP all genes",
                    showlegend = F)))
           
+          
         }
       })
       
@@ -1825,14 +1860,17 @@ cytosel <- function(...) {
       }
       
       labels_top <- lapply(markers$top_markers, 
-                           function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
-                                                                                                      set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
-                                                                                                   cytosel_palette()[ markers$associated_cell_types[x] ])))
+                           function(x) div(x, map_gene_name_to_antibody_icon(x, original_panel()), 
+                                           style=paste('padding: 3px; color:', 
+                                            set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), 
+                                            '; background-color:', 
+                                          cytosel_palette()[ markers$associated_cell_types[x] ])))
       labels_scratch <- lapply(markers$scratch_markers, 
-                               function(x) div(x, map_gene_name_to_antibody_icon(x, markers), style=paste('padding: 3px; color:', 
-                                                                                                          set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), '; background-color:', 
-     
-                                                                                   cytosel_palette()[ markers$associated_cell_types[x] ])))
+                               function(x) div(x, map_gene_name_to_antibody_icon(x, original_panel()), 
+                                               style=paste('padding: 3px; color:', 
+                                            set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), 
+                                            '; background-color:', 
+                                      cytosel_palette()[ markers$associated_cell_types[x] ])))
  
       # output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
       
@@ -1921,6 +1959,11 @@ cytosel <- function(...) {
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
           layout(title = "UMAP selected markers"))
         
+        plots_for_markdown(list(all = suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
+                                                               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                         layout(title = "UMAP all genes")),
+                                top = plots$top_plot))
+        
         setProgress(value = 0.5)
         
         # Update heatmap
@@ -1946,7 +1989,6 @@ cytosel <- function(...) {
                                display(), input$heatmap_expression_norm, 
                                pref_assay())
               )
-              
               
               break
             }
@@ -2024,6 +2066,10 @@ cytosel <- function(...) {
                  xaxis = list(title="Score"),
                  yaxis = list(title="Source")))
         
+        plots_for_markdown(list(top = plots_for_markdown()$top,
+                                all = plots_for_markdown()$all,
+                                metric = plots$metric_plot))
+        
         previous_run_log_2(previous_run_log())
         previous_run_log(current_run_log())
 
@@ -2065,6 +2111,7 @@ cytosel <- function(...) {
       updateCheckboxInput(inputId = "precomputed_dim", value = F)
       use_precomputed_umap(FALSE)
       umap_precomputed_col(NULL)
+      original_panel(NULL)
     }
     
     post_upload_configuration <- function(input_sce) {
@@ -2140,28 +2187,15 @@ cytosel <- function(...) {
     ### SAVE PANEL ###
     output$downloadData <- downloadHandler(
       filename <- paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
-      
+  
       content = function(fname) {
+        showNotification("Rendering output report and config file, this may take a few moments..",
+                         duration = 4)
+        # future_promise({
         download_data(fname,
-                      # create_run_param_list(current_markers(),
-                      #                              input_file = input$input_scrnaseq$datapath,
-                      #                              assay_used = pref_assay(),
-                      #                              het_source = column(),
-                      #                              panel_size = input$panel_size,
-                      #                              cell_cutoff_value = as.integer(cell_min_threshold()),
-                      #                              subsample = input$subsample_sce,
-                      #                              marker_strat = input$marker_strategy,
-                      #                              antibody_apps = input$select_aa,
-                      #                              selected_cell_types = cell_types_to_keep(),
-                      #                              precomputed_umap_used = input$precomputed_dim,
-                      #                              num_cells = ncol(sce()),
-                      #                              num_genes = nrow(sce()),
-                      #                              metrics = current_metrics()$summary),
-                      current_run_log()$map,
-                      plots, heatmap(),
-                      df_antibody(),
-                      markdown_report_path
-                      )
+                      current_run_log()$map, plots_for_markdown(), heatmap(), 
+                      df_antibody(), markdown_report_path, current_metrics()$summary)
+    # })
       },
       contentType = "application/zip"
     )

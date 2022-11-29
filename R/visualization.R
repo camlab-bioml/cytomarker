@@ -99,7 +99,9 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
 #' @param markers the list of markers
 map_gene_name_to_antibody_icon <- function(gene_id, markers) {
   
-  if(gene_id %in% markers$recommended_markers){
+  # Option 1: if the gene is in the first run, label with a star
+  # if(gene_id %in% markers$recommended_markers){
+  if (gene_id %in% markers) {
     return(icon("star"))
   }else{
     return(NULL)

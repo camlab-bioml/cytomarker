@@ -347,10 +347,20 @@ test_that("download works as expected", {
   withr::with_tempdir({
     filepath <- file.path(paste0("Cytosel-Panel-", Sys.Date(), ".zip"))
     
-    fake_table <- cytosel_data$antibody_info |>
-      rename(Symbol = `Gene Name (Upper)`) |>
-      drop_na() |>
-      filter(Symbol %in% rownames(sce)[1:17])
+    placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB")
+    
+    fake_table <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
+                                  `Gene Name (Upper)`) |>
+      tidyr::drop_na() |> dplyr::filter(Symbol %in% 
+                              placeholder_markers) |>
+      mutate(`Host Species` = factor(`Host Species`),
+             `Product Category Tier 3` = factor(`Product Category Tier 3`),
+             `KO Status` = factor(`KO Status`),
+             `Clone Number` = factor(`Clone Number`),
+             `External Link` = paste0('<a href="',`Datasheet URL`, '"',
+                                      ' target="_blank" rel="noopener noreferrer"',
+                                      '>',"View in Abcam website",'</a>')) |>
+      dplyr::select(-c(`Datasheet URL`))
 
     markdown_report_path <- system.file(file.path("report", "rmarkdown-report.Rmd"), 
                                         package = "cytosel")
@@ -365,7 +375,8 @@ test_that("download works as expected", {
     
     expect_is(base_config, 'list')
     
-    download_data(filepath, base_config, plots, heatmap, fake_table, markdown_report_path)
+    download_data(filepath, base_config, plots, heatmap, fake_table, markdown_report_path,
+                  fake_metrics)
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)
