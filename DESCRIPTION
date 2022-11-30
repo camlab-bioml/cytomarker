@@ -14,8 +14,6 @@ Imports:
     scran,
     SingleCellExperiment,
     tibble,
-    BiocManager (>= 1.30.18),
-    BiocGenerics (>= 0.42.0),
     caret,
     nnet,
     dplyr,
@@ -87,4 +85,6 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.2
 Depends: 
-    R (>= 4.2.1)
+    R (>= 4.2.2),
+    BiocManager (>= 1.30.19),
+    BiocGenerics (>= 0.44.0)
