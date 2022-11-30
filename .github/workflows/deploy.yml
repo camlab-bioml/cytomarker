@@ -28,8 +28,9 @@ jobs:
 
       - name: Install required install packages and remote repos
         run: |
-          install.packages("rsconnect")
-          BiocManager::install(c('BiocGenerics', 'GenomeInfoDbData'))
+          install.packages(c("rsconnect", "BiocManager"))
+          BiocManager::install(version = "3.16")
+          BiocManager::install(c('BiocGenerics', 'GenomeInfoDbData', 'limma'))
         shell: Rscript {0}
 
       - name: Authorize and deploy app    
