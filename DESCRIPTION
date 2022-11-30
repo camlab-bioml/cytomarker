@@ -20,6 +20,7 @@ Imports:
     shiny,
     sortable,
     ggplot2,
+    BiocGenerics (>= 0.44.0),
     scater,
     forcats,
     cowplot,
@@ -86,5 +87,4 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.2
 Depends: 
     R (>= 4.2.2),
-    BiocManager (>= 1.30.19),
-    BiocGenerics (>= 0.44.0)
+    BiocManager (>= 1.30.19)
