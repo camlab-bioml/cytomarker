@@ -15,12 +15,12 @@ Imports:
     SingleCellExperiment,
     tibble,
     caret,
+    BiocManager (>= 1.30.19),
     nnet,
     dplyr,
     shiny,
     sortable,
     ggplot2,
-    BiocGenerics (>= 0.44.0),
     scater,
     forcats,
     cowplot,
@@ -86,5 +86,4 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.2
 Depends: 
-    R (>= 4.2.2),
-    BiocManager (>= 1.30.19)
+    R (>= 4.2.2)

@@ -29,6 +29,7 @@ jobs:
       - name: Install required install packages and remote repos
         run: |
           install.packages("rsconnect")
+          BiocManager::install('BiocGenerics')
         shell: Rscript {0}
 
       - name: Authorize and deploy app    
