@@ -31,7 +31,6 @@ jobs:
           install.packages("rsconnect")
           install.packages("BiocManager")
           BiocManager::install(version = "3.16")
-          BiocManager::install("BiocGenerics", version = "0.44.0")
         shell: Rscript {0}
 
       - name: Authorize and deploy app
