@@ -15,6 +15,7 @@ Imports:
     SingleCellExperiment,
     tibble,
     BiocManager (>= 1.30.18),
+    BiocGenerics (>= 0.42.0),
     caret,
     nnet,
     dplyr,
