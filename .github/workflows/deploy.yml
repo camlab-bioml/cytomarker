@@ -30,7 +30,8 @@ jobs:
         run: |
           install.packages(c("rsconnect", "BiocManager"))
           BiocManager::install(version = "3.16")
-          BiocManager::install(c('BiocGenerics', 'GenomeInfoDbData', 'limma'))
+          BiocManager::install(c('BiocGenerics', 'GenomeInfoDbData', 'limma', 'zlibbioc'))
+          BiocManager::install(ask = F)
         shell: Rscript {0}
 
       - name: Authorize and deploy app    
