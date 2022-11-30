@@ -23,6 +23,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          cache-version: 2
           extra-packages: any::rcmdcheck
           needs: check
 
@@ -32,7 +33,7 @@ jobs:
           install.packages("BiocManager", version = "1.30.18")
         shell: Rscript {0}
 
-      - name: Authorize and deploy app
+      - name: Authorize and deploy app    
         env: 
           APPNAME: cytosel
           SERVER: shinyapps.io
