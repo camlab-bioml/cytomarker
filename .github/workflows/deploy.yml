@@ -20,7 +20,7 @@ jobs:
         with:
           use-public-rspm: true
           r-version: '4.2.2'
-
+      
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
@@ -28,13 +28,13 @@ jobs:
 
       - name: Install required install packages and remote repos
         run: |
-          install.packages("rsconnect")
-          install.packages("BiocManager", version = '1.30.19')
+          install.packages(c("rsconnect", "BiocManager"))
           BiocManager::install(version = "3.16")
-          BiocManager::install("BiocGenerics")
+          BiocManager::install(c('BiocGenerics', 'GenomeInfoDbData', 'limma', 'zlibbioc'))
+          BiocManager::install(ask = F)
         shell: Rscript {0}
 
-      - name: Authorize and deploy app
+      - name: Authorize and deploy app    
         env: 
           APPNAME: cytosel
           SERVER: shinyapps.io
