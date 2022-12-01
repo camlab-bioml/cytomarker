@@ -144,10 +144,13 @@ cytosel <- function(...) {
     use_bs_tooltip(),
     useShinyjs(),
     
-    dashboardPage(
+    dashboardPage(title="cytosel",
     
     # Title
-    dashboardHeader(title =  imageOutput("cytosel_logo"), tags$li(class = "dropdown", 
+    dashboardHeader(
+                    title = imageOutput("cytosel_logo"),
+                    # span(style = "padding-bottom: 50px;", ), 
+                    tags$li(class = "dropdown", 
                                                htmlOutput("current_session_info",
                                     style = "width:100%; color:white; height:70%; margin-right:12px; margin-top:6.5px;
                                     margin-bottom:-2px; color: black;")),
@@ -177,7 +180,6 @@ cytosel <- function(...) {
                            margin-top: 15px; margin-left:-10px; width: 60%;"))))
     )),
     dashboardBody(
-      
       # https://stackoverflow.com/questions/52198452/how-to-change-the-background-color-of-the-shiny-dashboard-body
       tags$head(tags$style(HTML('
                                 /* body */
@@ -186,7 +188,7 @@ cytosel <- function(...) {
                                 }
                                 
                                 .skin-blue .main-header .logo {
-                                background-color: #FFFFFF;
+                                background-color: #FFFFFF; padding-bottom: 10px;
                                 }
                                 
                                 .skin-blue .main-header .logo:hover {
@@ -571,8 +573,9 @@ cytosel <- function(...) {
     
     output$cytosel_logo <- renderImage({
       list(src=system.file(file.path("www", "cytosel-logo.png"), package = "cytosel"),
-           width = "85%",
-           height = "12%",
+           width = "77%",
+           height = "10%",
+           class = "topimg",
            alt = "cytosel")
     }, deleteFile = F)
     
