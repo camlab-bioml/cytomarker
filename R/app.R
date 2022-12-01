@@ -147,14 +147,14 @@ cytosel <- function(...) {
     dashboardPage(
     
     # Title
-    dashboardHeader(title = "cytosel", tags$li(class = "dropdown", 
+    dashboardHeader(title =  imageOutput("cytosel_logo"), tags$li(class = "dropdown", 
                                                htmlOutput("current_session_info",
                                     style = "width:100%; color:white; height:70%; margin-right:12px; margin-top:6.5px;
-                                    margin-bottom:-2px;")),
+                                    margin-bottom:-2px; color: black;")),
                     tags$li(class = "dropdown", 
                                         actionLink("time_zone", "Set Time Zone",
                                         width = "90%", style = "margin-top:-0.5px;
-                                        margin-right: 15px; margin-bottom:-2px;"))),
+                                        margin-right: 15px; margin-bottom:-2px; color: black;"))),
     
     dashboardSidebar(
       sidebarMenu(id = "tabs",
@@ -182,6 +182,19 @@ cytosel <- function(...) {
       tags$head(tags$style(HTML('
                                 /* body */
                                 .content-wrapper, .right-side {
+                                background-color: #FFFFFF;
+                                }
+                                
+                                .skin-blue .main-header .logo {
+                                background-color: #FFFFFF;
+                                }
+                                
+                                .skin-blue .main-header .logo:hover {
+                                background-color: #FFFFFF;
+                                }
+                                
+                                /* navbar (rest of the header) */
+                                .skin-blue .main-header .navbar {
                                 background-color: #FFFFFF;
                                 }
                                 
@@ -555,6 +568,13 @@ cytosel <- function(...) {
     
     downloaded_content <- reactiveVal(FALSE)
     plots_for_markdown <- reactiveVal()
+    
+    output$cytosel_logo <- renderImage({
+      list(src=system.file(file.path("www", "cytosel-logo.png"), package = "cytosel"),
+           width = "85%",
+           height = "12%",
+           alt = "cytosel")
+    }, deleteFile = F)
     
     output$cytosel_hyperlink <-  renderUI({
       # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
