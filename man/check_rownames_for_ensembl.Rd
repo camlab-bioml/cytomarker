@@ -6,6 +6,14 @@
 \usage{
 check_rownames_for_ensembl(sce, grch38)
 }
+\arguments{
+\item{sce}{SingleCellExperiment object}
+
+\item{grch38}{a human reference genome that is compatible with annotables}
+}
+\value{
+a list with the first element being the status of the search, and the second being the genes found
+}
 \description{
 Checks if the rownames of the sce contain human ensembl ID's
 }

@@ -153,11 +153,11 @@ cytosel <- function(...) {
                     tags$li(class = "dropdown", 
                                                htmlOutput("current_session_info",
                                     style = "width:100%; color:white; height:70%; margin-right:12px; margin-top:6.5px;
-                                    margin-bottom:-2px; color: black;")),
+                                    margin-bottom:-2px; color: white;")),
                     tags$li(class = "dropdown", 
                                         actionLink("time_zone", "Set Time Zone",
                                         width = "90%", style = "margin-top:-0.5px;
-                                        margin-right: 15px; margin-bottom:-2px; color: black;"))),
+                                        margin-right: 15px; margin-bottom:-2px; color: white;"))),
     
     dashboardSidebar(
       sidebarMenu(id = "tabs",
@@ -195,10 +195,6 @@ cytosel <- function(...) {
                                 background-color: #FFFFFF;
                                 }
                                 
-                                /* navbar (rest of the header) */
-                                .skin-blue .main-header .navbar {
-                                background-color: #FFFFFF;
-                                }
                                 
                                 #cell_cat_preview {
                                 max-width: 30%;
@@ -573,8 +569,8 @@ cytosel <- function(...) {
     
     output$cytosel_logo <- renderImage({
       list(src=system.file(file.path("www", "cytosel-logo.png"), package = "cytosel"),
-           width = "77%",
-           height = "10%",
+           width = "75%",
+           height = "9.5%",
            class = "topimg",
            alt = "cytosel")
     }, deleteFile = F)
@@ -2139,7 +2135,7 @@ cytosel <- function(...) {
     
     post_upload_configuration <- function(input_sce) {
       input_sce <- detect_assay_and_create_logcounts(input_sce)
-      input_sce <- parse_gene_names(input_sce, grch38)
+      input_sce <- parse_gene_names(input_sce, grch38, remove_confounding_genes = F)
       sce(input_sce)
       
       shinyjs::hide(id = "download_button")

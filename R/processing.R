@@ -175,17 +175,21 @@ check_rowData_for_hugo <- function(sce, grch38){
 #' @importFrom dplyr select
 #' @importFrom scuttle sumCountsAcrossFeatures
 #' @importFrom SingleCellExperiment SingleCellExperiment
+#' @importFrom SummarizedExperiment colData
+#' @param grch38 a human reference genome that is compatible with annotables
+#' @param sce SingleCellExperiment object
+#' @return a list with the first element being the status of the search, and the second being the genes found
 check_rownames_for_ensembl<- function(sce, grch38){
   ensemble_genes <- grepl("ENSG[0-9]*", rownames(sce))
   if(any(ensemble_genes)){
-    sce <- sce[ensemble_genes]
-    rownames(sce) <- gsub("\\.[0-9]", "", rownames(sce))
+    sub_sce <- sce[ensemble_genes]
+    rownames(sub_sce) <- gsub("\\.[0-9]", "", rownames(sub_sce))
     
-    gene_map <- select(grch38, ensgene, symbol) %>% 
-      filter(symbol != "") %>% 
+    gene_map <- select(grch38, ensgene, symbol) |>
+      filter(symbol != "") |>
       deframe()
     
-    filtered_sce <- sce[rownames(sce) %in% names(gene_map)]
+    filtered_sce <- sub_sce[rownames(sub_sce) %in% names(gene_map)]
     
     rownames(filtered_sce) <- gene_map[rownames(filtered_sce)]
     
@@ -194,10 +198,13 @@ check_rownames_for_ensembl<- function(sce, grch38){
                                             average = TRUE,
                                             assay.type = 'logcounts')
     
-    filtered_sce <- SingleCellExperiment(list(logcounts = filtered_mat))
-    colData(filtered_sce) <- colData(sce)
+    filtered_sce <- SingleCellExperiment(list(logcounts = filtered_mat),
+                                         colData = colData(sce))
     
     genes_found <- calculate_proportion_in_annotables(rownames(filtered_sce), grch38)
+    # calculate the proportion as the number of retained ensembl vs. original gene identifiers
+    genes_found$proportion <- nrow(filtered_sce) / nrow(sce)
+    
     
     if(genes_found$proportion > 0.5){
       output <- list(status = "use_ensembl_names",
@@ -220,23 +227,27 @@ check_rownames_for_ensembl<- function(sce, grch38){
 #' Parses the gene names in a sce object
 #' This function tries to find gene symbols by going through several steps:
 #' 1. Count the number and proportion of rownames that are listed in the
-#'    symbol column of the annotables grch38 object. 
+#'    symbol column of the annotables grch38 object.
 #'    If the proportion is more than 50% and the symbols are human they are used
-#'    If the proportion is less than 50%, more than 100 genes are found and 
+#'    If the proportion is less than 50%, more than 100 genes are found and
 #'    the symbols are human they are still used
 #' 2. Check if there are any human gene names in `rowData(sce)` and if more
 #'    than 50%/100 genes are in the symbol column of the annotables grch38 object
 #' 3. If rownames are not NULL, check if they are ensembl ID's and convert to symbol
-#' 
+#'
 #' @param sce SingleCellExperiment object
-#' 
-#' @return genes A vector of gene names, or should it return an sce?
-#' 
+#' @param grch38 Dataframe with two columns: \code{ensgene} and \code{symbol}, (originally from the annotables package)
+#' @param remove_confounding_genes If true (default) genes that frequently confound single cell
+#' analyses are removed. The following genes are removed: ribosobal proteins, mitochondrial ribosomal
+#' and other mitochondrial proteins, heat shock proteins, Jun, Fos and Malat1
+#'
+#' @return genes A vector of gene names
+#'
 #' @importFrom inferorg inferorg
 #' @importFrom dplyr mutate filter pull bind_rows
 #' @importFrom tibble tibble deframe
-#' @importFrom magrittr %>% 
-parse_gene_names <- function(sce, grch38){
+#' @importFrom magrittr %>%
+parse_gene_names <- function(sce, grch38, remove_confounding_genes = TRUE){
   ## STEP 1: Check if rownames can be used
   step1 <- check_rownames_for_hugo(sce, grch38)
   
@@ -244,10 +255,8 @@ parse_gene_names <- function(sce, grch38){
     clean_sce <- sce
   }else if(step1 == "low_number_of_gene_matches"){
     clean_sce <- sce
-    throw_error_or_warning(type = 'notification',
-                           message = "Less than 50% of the genes in your dataset
-                           match the database.",
-                           notificationType = 'warning')
+    warning("Less than 50% of the genes in your dataset
+                           match the database.")
   }else{
     ## STEP 2: Check if gene names are in rowData
     step2 <- check_rowData_for_hugo(sce, grch38)
@@ -257,10 +266,8 @@ parse_gene_names <- function(sce, grch38){
     }else if(step2$status == "low_number_of_gene_matches"){
       clean_sce <- sce
       rownames(clean_sce) <- step2$genes
-      throw_error_or_warning(type = 'notification',
-                             message = "Less than 50% of the genes in your dataset
-                             match the database.",
-                             notificationType = 'warning')
+      warning("Less than 50% of the genes in your dataset
+                             match the database.")
     }else if(step1 != "rownames_are_null"){
       ## STEP 3: check if rownames are ensembl
       step3 <- check_rownames_for_ensembl(sce, grch38)
@@ -269,38 +276,37 @@ parse_gene_names <- function(sce, grch38){
         clean_sce <- step3$sce
       }else if(step3$status == "low_number_of_gene_matches"){
         clean_sce <- step3$sce
-        throw_error_or_warning(type = 'notification',
-                               message = "Less than 50% of the genes in your dataset
-                               match the database.",
-                               notificationType = 'warning')
+        warning("Less than 50% of the genes in your dataset
+                               match the database.")
       }else if(step3$status == "no_human_ensID"){
-        throw_error_or_warning(type = 'error',
-                               message = "Detected ensembl ID's. However, these do not appear to be human.
-                               Only human gene names are supported at the moment. 
+        stop("Detected ensembl ID's. However, these do not appear to be human.
+                               Only human gene names are supported at the moment.
                                Please check the documentation for details.")
-      }else if(step3$status == "ensembl_does_not_match_criteria"){
-        throw_error_or_warning(type = 'error',
-                               message = "No human gene names were found in your dataset.
+      }else if(step3$status == "did_not_find_ensembl"){
+        stop("No human gene names were found in your dataset.
                                This could be because your genes are from a different species or
                                there are other mismatches. Please check the documentation for details.")
       }else{
-        throw_error_or_warning(type = 'error',
-                               message = "No human gene names were found in your dataset.
+        stop("No human gene names were found in your dataset.
                                This could be because your genes are from a different species or
                                there are other mismatches. Please check the documentation for details.")
       }
       
     }
-    if(exists("clean_sce")){
+  }
+  if(exists("clean_sce")){
+    if(remove_confounding_genes){
       # Remove RPL/S Mitochondrial, HSP, FOS, JUN and MALAT1 genes
-      genes_to_remove <- grepl("^RP[L|S]|^MT-|^HSP|^FOS$|^JUN|MALAT1", rownames(clean_sce))
-      clean_sce[!genes_to_remove,]
+      genes_to_remove <- grepl("^RP[L|S]|^MRP[L|S]|^MT-|^HSP|^FOS|^JUN|^MALAT1", rownames(clean_sce))
+      clean_sce <- clean_sce[!genes_to_remove,]
+      clean_sce
     }else{
-      throw_error_or_warning(type = 'error',
-                             message = "No human gene names were found in your dataset.
-                           This could be because your genes are from a different species or
-                           there are other mismatches. Please check the documentation for details.")
+      clean_sce
     }
+  }else{
+    stop("No human gene names were found in your dataset.
+          This could be because your genes are from a different species or
+          there are other mismatches. Please check the documentation for details.")
   }
 }
 
