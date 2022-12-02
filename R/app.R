@@ -124,9 +124,19 @@ cytosel <- function(...) {
   ui <- tagList(
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
+    tags$head(includeHTML("google_analytics.html")),
     tags$head(
       tags$script(HTML("window.onbeforeunload = function() {return 'Your changes will be lost!';};"))
     ),
+    # shiny::tags$head(
+    #   shiny::tags$script(
+    #     src = "https://www.googletagmanager.com/gtag/js?id=G-B26X9YQQGT",
+    #     async = ""
+    #   ),
+    #   shiny::tags$script(
+    #     src = system.file(file.path("analytics.js"), package = "cytosel")
+    #   )
+    # ),
     tags$head(tags$style(".modal-dialog{ width:750px}")),
     tags$style("@import url(https://use.fontawesome.com/releases/v5.7.2/css/all.css);"),
     # styling the hover tooltips
