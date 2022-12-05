@@ -124,10 +124,17 @@ cytosel <- function(...) {
   ui <- tagList(
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
-    tags$head(includeHTML("google_analytics.html")),
+    # tags$head(includeHTML("google_analytics.html")),
     tags$head(
       tags$script(HTML("window.onbeforeunload = function() {return 'Your changes will be lost!';};"))
     ),
+    tags$head(HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=G-B26X9YQQGT'></script>
+            <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-B26X9YQQGT');
+</script>")),
     # shiny::tags$head(
     #   shiny::tags$script(
     #     src = "https://www.googletagmanager.com/gtag/js?id=G-B26X9YQQGT",
