@@ -68,6 +68,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' @import reactable
 #' @import tidyverse
 #' @import printr
+#' @import htmltools
 #' @importFrom rlang is_empty
 #' @importFrom DT datatable
 #' @importFrom clustifyr plot_gene
@@ -125,25 +126,14 @@ cytosel <- function(...) {
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
     # tags$head(includeHTML("google_analytics.html")),
-    tags$head(
-      tags$script(HTML("window.onbeforeunload = function() {return 'Your changes will be lost!';};"))
-    ),
     tags$head(HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=G-B26X9YQQGT'></script>
             <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', 'G-B26X9YQQGT');
-</script>")),
-    # shiny::tags$head(
-    #   shiny::tags$script(
-    #     src = "https://www.googletagmanager.com/gtag/js?id=G-B26X9YQQGT",
-    #     async = ""
-    #   ),
-    #   shiny::tags$script(
-    #     src = system.file(file.path("analytics.js"), package = "cytosel")
-    #   )
-    # ),
+</script>"),
+  tags$script(HTML("window.onbeforeunload = function() {return 'Please visit https://www.surveymonkey.com/ before you leave!';};"))),
     tags$head(tags$style(".modal-dialog{ width:750px}")),
     tags$style("@import url(https://use.fontawesome.com/releases/v5.7.2/css/all.css);"),
     # styling the hover tooltips
@@ -194,7 +184,13 @@ cytosel <- function(...) {
         column(12, align = "center", offset = 0,
                hidden(div(id = "download_button", downloadButton("downloadData",
                "Save panel", style = "color:black;
-                           margin-top: 15px; margin-left:-10px; width: 60%;"))))
+                           margin-top: 15px; margin-left:-10px; width: 60%; margin-bottom: 15px;")))),
+        br(),
+        column(1, column(11, align = "left", style = "margin-top: 10px", offset = 0, icon("comments", style = "margin-left: -12px;"),
+                         tags$a(href="https://www.surveymonkey.com/r/M9X6KPT",
+                                " Leave Feedback",
+                                target="_blank", style = "margin-left: 2px;")))
+        
     )),
     dashboardBody(
       # https://stackoverflow.com/questions/52198452/how-to-change-the-background-color-of-the-shiny-dashboard-body
@@ -585,7 +581,7 @@ cytosel <- function(...) {
     plots_for_markdown <- reactiveVal()
     
     output$cytosel_logo <- renderImage({
-      list(src=system.file(file.path("www", "cytosel-logo.png"), package = "cytosel"),
+      list(src=system.file(file.path("report", "cytosel-logo.png"), package = "cytosel"),
            width = "75%",
            height = "9.5%",
            class = "topimg",
@@ -1181,7 +1177,10 @@ cytosel <- function(...) {
                                  `Clone Number` = factor(`Clone Number`),
                                  `External Link` = paste0('<a href="',`Datasheet URL`, '"',
                                                           ' target="_blank" rel="noopener noreferrer"',
-                                                          '>',"View in Abcam website",'</a>')) |>
+                                                          '>', "View on ",
+                                                          as.character(icon("external-link-alt")), 
+                                                          "abcam.com",
+                                                          '</a>')) |>
                           dplyr::select(-c(`Datasheet URL`)))
             
             update_analysis()
