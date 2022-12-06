@@ -1166,7 +1166,7 @@ cytosel <- function(...) {
                                  `External Link` = paste0('<a href="',`Datasheet URL`, '"',
                                                           ' target="_blank" rel="noopener noreferrer"',
                                                           '>', "View on ",
-                                                          as.character(icon("share")), 
+                                                          as.character(icon("external-link-alt")), 
                                                           "abcam.com",
                                                           '</a>')) |>
                           dplyr::select(-c(`Datasheet URL`)))

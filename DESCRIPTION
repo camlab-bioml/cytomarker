@@ -65,7 +65,8 @@ Imports:
     lubridate,
     tidyverse,
     printr,
-    promises
+    promises,
+    htmltools
 Suggests:
   stringr,
   yardstick,
