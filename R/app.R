@@ -1165,7 +1165,10 @@ cytosel <- function(...) {
                                  `Clone Number` = factor(`Clone Number`),
                                  `External Link` = paste0('<a href="',`Datasheet URL`, '"',
                                                           ' target="_blank" rel="noopener noreferrer"',
-                                                          '>',"View in Abcam website",'</a>')) |>
+                                                          '>', "View on ",
+                                                          as.character(icon("share")), 
+                                                          "abcam.com",
+                                                          '</a>')) |>
                           dplyr::select(-c(`Datasheet URL`)))
             
             update_analysis()
