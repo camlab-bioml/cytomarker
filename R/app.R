@@ -68,6 +68,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' @import reactable
 #' @import tidyverse
 #' @import printr
+#' @import htmltools
 #' @importFrom rlang is_empty
 #' @importFrom DT datatable
 #' @importFrom clustifyr plot_gene
@@ -568,7 +569,7 @@ cytosel <- function(...) {
     plots_for_markdown <- reactiveVal()
     
     output$cytosel_logo <- renderImage({
-      list(src=system.file(file.path("www", "cytosel-logo.png"), package = "cytosel"),
+      list(src=system.file(file.path("report", "cytosel-logo.png"), package = "cytosel"),
            width = "75%",
            height = "9.5%",
            class = "topimg",

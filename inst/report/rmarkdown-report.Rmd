@@ -1,5 +1,5 @@
 ---
-title: "Cytosel report"
+title: "cytosel Run Report"
 output: 
   html_document:
     toc: true
@@ -21,7 +21,7 @@ params:
 }
 </style>
 
-Below are the results of your Cytosel antibody panel design run.
+Below are the results of your cytosel antibody panel design run.
 
 ```{r message=FALSE, echo=F}
 knitr::opts_knit$set(root.dir = params$tmpdir)
@@ -32,11 +32,18 @@ library(shiny)
 library(printr)
 library(reactable)
 library(plotly)
+library(htmltools)
 ```
 
+
+```{r, echo=FALSE}
+htmltools::img(src = "cytosel-logo.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding-top: 20px; padding-right:40px; width: 185px;')
+```
 ## Antibody panel
 
-```{r message=F, echo=F}
+```{r message=F, echo=F, width = 13}
 reactable(params$df,
                 searchable = TRUE,
                 filterable = TRUE,
