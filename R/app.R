@@ -55,7 +55,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 #' 
 #' @export
 #' 
-#' @import shiny shinytest
+#' @import shiny shinytest2
 #' @importFrom shinyalert useShinyalert shinyalert
 #' @importFrom dqshiny autocomplete_input update_autocomplete_input
 #' @importFrom DT DTOutput renderDT
@@ -133,7 +133,8 @@ cytosel <- function(...) {
   gtag('js', new Date());
   gtag('config', 'G-B26X9YQQGT');
 </script>"),
-  tags$script(HTML("window.onbeforeunload = function() {return 'Please visit https://www.surveymonkey.com/ before you leave!';};"))),
+  # tags$script(HTML("window.onbeforeunload = function() {return 'Please visit https://www.surveymonkey.com/ before you leave!';};"))
+  ),
     tags$head(tags$style(".modal-dialog{ width:750px}")),
     tags$style("@import url(https://use.fontawesome.com/releases/v5.7.2/css/all.css);"),
     # styling the hover tooltips
@@ -157,10 +158,10 @@ cytosel <- function(...) {
     dashboardHeader(
                     title = imageOutput("cytosel_logo"),
                     # span(style = "padding-bottom: 50px;", ), 
-                    tags$li(class = "dropdown", 
-                                               htmlOutput("current_session_info",
-                                    style = "width:100%; color:white; height:70%; margin-right:12px; margin-top:6.5px;
-                                    margin-bottom:-2px; color: white;")),
+                    # tags$li(class = "dropdown", 
+                    #                            htmlOutput("current_session_info",
+                    #                 style = "width:100%; color:white; height:70%; margin-right:12px; margin-top:6.5px;
+                    #                 margin-bottom:-2px; color: white;")),
                     tags$li(class = "dropdown", 
                                         actionLink("time_zone", "Set Time Zone",
                                         width = "90%", style = "margin-top:-0.5px;
@@ -568,7 +569,7 @@ cytosel <- function(...) {
     default_category_curated <- reactiveVal()
     
     cell_types_missing_markers <- reactiveVal(NULL)
-    time_zone_set <- reactiveVal()
+    time_zone_set <- reactiveVal(NULL)
     
     # run log variables #
     current_run_log <- reactiveVal()

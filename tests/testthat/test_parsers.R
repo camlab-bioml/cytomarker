@@ -200,6 +200,8 @@ test_that("Ids that have ENS but not ENSG are treated as non-genes", {
   diff_organism <- readRDS(test_path(
     "genes_from_rnor6.rds"))
   
+  expect_equal(check_rowData_for_hugo(diff_organism)$status, "no_symbols_found_in_rowdata")
+  
   non_ensembl <- check_rownames_for_ensembl(diff_organism, annotables::grch38)
   expect_equal(non_ensembl$status, "no_human_ensID")
   expect_null(non_ensembl$sce)

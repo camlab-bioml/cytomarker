@@ -3,8 +3,10 @@ if (!interactive()) {
 }
 
 library(testthat)
-library(shinytest)
+library(shinytest2)
 library(cytosel)
 library(yaml)
 
 test_check("cytosel")
+
+shinytest2::test_app()
