@@ -581,6 +581,8 @@ cytosel <- function(...) {
     downloaded_content <- reactiveVal(FALSE)
     plots_for_markdown <- reactiveVal()
     
+    addResourcePath('report', system.file('report', package='cytosel'))
+    
     output$cytosel_logo <- renderImage({
       list(src=system.file(file.path("report", "cytosel-logo.png"), package = "cytosel"),
            width = "75%",

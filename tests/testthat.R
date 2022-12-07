@@ -8,5 +8,3 @@ library(cytosel)
 library(yaml)
 
 test_check("cytosel")
-
-shinytest2::test_app()

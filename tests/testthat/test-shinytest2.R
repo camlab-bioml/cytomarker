@@ -1,8 +1,9 @@
 library(shinytest2)
 library(cytosel)
 
+cytosel_app <- cytosel::cytosel()
 test_that("{shinytest2} recording: cytosel", {
-  app <- AppDriver$new(app_dir = test_path("../../"),
+  app <- AppDriver$new(cytosel_app,
                        variant = platform_variant(), name = "cytosel", height = 732, 
       width = 1161, load_timeout = 1e+05
       # shinyOptions = list(test.mode = TRUE)
@@ -11,7 +12,7 @@ test_that("{shinytest2} recording: cytosel", {
 })
 
 test_that("{shinytest2} recording: cytosel-select-curated-1", {
-  app <- AppDriver$new(app_dir = test_path("../../"),
+  app <- AppDriver$new(cytosel_app,
                        variant = platform_variant(), name = "cytosel-select-curated-1", 
       height = 732, width = 1161, load_timeout = 1e+05)
   app$click("curated_dataset")
