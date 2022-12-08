@@ -121,17 +121,19 @@ cytosel <- function(...) {
                                        package = "cytosel"))
   
   all_zones <- cytosel_data$time_zones
-  
+  # google analytics event tracking: 
+  # https://www.gravitatedesign.com/blog/event-tracking-google-analytics/
+  # https://absentdata.com/track-external-links/
   ui <- tagList(
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
-    # tags$head(includeHTML("google_analytics.html")),
     tags$head(HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=G-B26X9YQQGT'></script>
             <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', 'G-B26X9YQQGT');
+  
 </script>"),
   # tags$script(HTML("window.onbeforeunload = function() {return 'Please visit https://www.surveymonkey.com/ before you leave!';};"))
   ),
@@ -366,11 +368,11 @@ cytosel <- function(...) {
               br(),
               splitLayout(cellWidths = c(320, 280), selectInput("umap_options", 
                                 "Select UMAP colouring:", choices = c("Cell Type",
-                                                                    "Panel Marker"),
+                                                                    "Gene Marker"),
                                 selected = "Cell Type", multiple=FALSE),
                               column(6, hidden(div(id = "umap_panel_cols",
                                          selectizeInput("umap_panel_options", 
-                                                     "Color Heatmap by Panel Marker", 
+                                                     "Color Heatmap by Gene Marker", 
                                                      choices = NULL, multiple = F,
                                                      width = "89%",
                                                      ))))),
@@ -1178,7 +1180,8 @@ cytosel <- function(...) {
                                  `Product Category Tier 3` = factor(`Product Category Tier 3`),
                                  `KO Status` = factor(`KO Status`),
                                  `Clone Number` = factor(`Clone Number`),
-                                 `External Link` = paste0('<a href="',`Datasheet URL`, '"',
+                                 `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"', Symbol, '"',
+                                                          'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
                                                           ' target="_blank" rel="noopener noreferrer"',
                                                           '>', "View on ",
                                                           as.character(icon("external-link-alt")), 
