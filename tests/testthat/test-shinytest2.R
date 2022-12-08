@@ -1,22 +1,15 @@
 library(shinytest2)
 library(cytosel)
 
-cytosel_app <- cytosel::cytosel()
 test_that("{shinytest2} recording: cytosel", {
-  app <- AppDriver$new(cytosel_app,
+  testthat::local_edition(3)
+  app <- AppDriver$new(cytosel::cytosel(),
                        variant = platform_variant(), name = "cytosel", height = 732, 
       width = 1161, load_timeout = 1e+05
       # shinyOptions = list(test.mode = TRUE)
       )
-  app$expect_screenshot()
-})
-
-test_that("{shinytest2} recording: cytosel-select-curated-1", {
-  app <- AppDriver$new(cytosel_app,
-                       variant = platform_variant(), name = "cytosel-select-curated-1", 
-      height = 732, width = 1161, load_timeout = 1e+05)
-  app$click("curated_dataset")
-  app$click("pick_curated")
-  app$set_inputs(curated_options = "PBMC (Blood/Immune)")
-  app$expect_screenshot()
+    announce_snapshot_file("cytosel-001.png")
+    skip_if(interactive())
+    app$expect_screenshot()
+  
 })
