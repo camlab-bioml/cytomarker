@@ -1,3 +1,17 @@
+context("Test that the correct file type is identified")
+
+test_that("passing a path that is not a SCE or Seurat object raises an error", {
+  fake_sce <- c(NULL)
+  expect_error(read_input_scrnaseq(fake_sce))
+})
+
+test_that("cytosel can read in an H%ad file", {
+  h5ad_file <- test_path("test_sce.h5ad")
+  sce <- read_input_scrnaseq(h5ad_file)
+  expect_is(sce, 'SingleCellExperiment')
+  expect_equivalent(dim(sce), c(100, 500))
+})
+
 context("Testing sce object with Ensembl gene rownames and no rowData")
 
 test_that("Testing sce object with Ensembl gene rownames and no rowData", {
@@ -130,6 +144,8 @@ test_that("Testing sce object gene symbols in rownames", {
   proper_genes <- rowdata_check$genes[!grepl("Gene", rowdata_check$genes)]
   expect_equal(length(proper_genes), 150)
   
+  expect_warning(parse_gene_names(hugo_rowData_low_proportion, annotables::grch38))
+  
   rownames(hugo_rowData_low_proportion) <- rowData(hugo_rowData_low_proportion)[,1]
   expect_equal(check_rownames_for_hugo(hugo_rowData_low_proportion, annotables::grch38),
                "low_number_of_gene_matches")
@@ -138,6 +154,10 @@ test_that("Testing sce object gene symbols in rownames", {
   expect_equal(dim(parse_gene_names(hugo_rowData_low_proportion, annotables::grch38)),
                c(33657, 200))
   
+  rownames(hugo_rowData_low_proportion) <- NULL
+  expect_equal(check_rownames_for_hugo(hugo_rowData_low_proportion, annotables::grch38),
+               "rownames_are_null")
+  expect_warning(parse_gene_names(hugo_rowData_low_proportion, annotables::grch38))
 })
 
 
@@ -190,7 +210,7 @@ test_that("Genes from a non-human or mouse organism throws error", {
   
   non_ensembl <- check_rownames_for_ensembl(diff_organism, annotables::grch38)
   expect_equal(non_ensembl$status, "did_not_find_ensembl")
-  expect_error(parse_gene_names(non_ensembl, annotables::grch38))
+  expect_error(parse_gene_names(diff_organism, annotables::grch38))
   
 })
 
@@ -205,7 +225,7 @@ test_that("Ids that have ENS but not ENSG are treated as non-genes", {
   non_ensembl <- check_rownames_for_ensembl(diff_organism, annotables::grch38)
   expect_equal(non_ensembl$status, "no_human_ensID")
   expect_null(non_ensembl$sce)
-  expect_error(parse_gene_names(non_ensembl, annotables::grch38))
+  expect_error(parse_gene_names(diff_organism, annotables::grch38))
   
 })
 
