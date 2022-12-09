@@ -160,10 +160,11 @@ cytosel <- function(...) {
     dashboardHeader(
                     title = imageOutput("cytosel_logo"),
                     # span(style = "padding-bottom: 50px;", ), 
-                    # tags$li(class = "dropdown", 
-                    #                            htmlOutput("current_session_info",
-                    #                 style = "width:100%; color:white; height:70%; margin-right:12px; margin-top:6.5px;
-                    #                 margin-bottom:-2px; color: white;")),
+                    tags$li(class = "dropdown",
+                                               hidden(div(id = "session_info",
+                                                          htmlOutput("current_session_info",
+                                    style = "width:100%; color:white; height:70%; margin-right:12px; margin-top:6.5px;
+                                    margin-bottom:-2px; color: white;")))),
                     tags$li(class = "dropdown", 
                                         actionLink("time_zone", "Set Time Zone",
                                         width = "90%", style = "margin-top:-0.5px;
@@ -630,6 +631,7 @@ cytosel <- function(...) {
       removeModal()
     })
     
+    observe(toggle(id = "session_info", condition = isTruthy(time_zone_set())))
     
     # output$cytosel_preview <- renderUI({
     #   tags$iframe(src="http://camlab-bioml.github.io/cytosel-doc/docs/intro", height=600, width=1100)
