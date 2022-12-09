@@ -148,7 +148,7 @@ cytosel <- function(...) {
                 background-color: black;
                 }
                 ")),
-  
+    
     # Use packages
     useShinyalert(force = TRUE),
     use_bs_tooltip(),
@@ -1199,7 +1199,8 @@ cytosel <- function(...) {
               # choices = current_markers()$top_markers,
               # selected = current_markers()$top_markers[1])
               choices = allowed_genes(),
-              selected = current_markers()$top_markers[1])
+              selected = current_markers()$top_markers[1],
+              server = T)
             
             updateSelectizeInput(
               session = session,
