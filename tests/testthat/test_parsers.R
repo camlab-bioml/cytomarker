@@ -1,11 +1,6 @@
 context("Test that the correct file type is identified")
 
-test_that("passing a path that is not a SCE or Seurat object raises an error", {
-  fake_sce <- c(NULL)
-  expect_error(read_input_scrnaseq(fake_sce))
-})
-
-test_that("cytosel can read in an H%ad file", {
+test_that("cytosel can read in an H5ad file", {
   h5ad_file <- test_path("test_sce.h5ad")
   sce <- read_input_scrnaseq(h5ad_file)
   expect_is(sce, 'SingleCellExperiment')
@@ -229,6 +224,39 @@ test_that("Ids that have ENS but not ENSG are treated as non-genes", {
   
 })
 
+context("Test that partial rowData raises not matched criteria or an error")
+
+test_that("rowData with fewer than 100 human genes and a low proportion does not match criteria", {
+  
+  pbmc_small <- readRDS(test_path(
+    "pbmc_small.rds"))
+  
+  remaining <- length(rownames(pbmc_small)) - 50
+  
+  new_genes <- c(rownames(pbmc_small)[1:50], 
+                 paste0("Fake_Gene_", 1:remaining))
+  
+  rowData(pbmc_small) <- S4Vectors::DataFrame(gene_symbol = new_genes)
+  
+  expect_equal(check_rowData_for_hugo(pbmc_small, annotables::grch38)$status,
+               "rowdata_does_not_match_criteria")
+})
+
+test_that("rowData with matches to non-human identify an error", {
+  
+  pbmc_small <- readRDS(test_path(
+    "pbmc_small.rds"))
+  
+  remaining <- length(rownames(pbmc_small)) - 50
+  
+  new_genes <- c(annotables::rnor6$symbol[1:50], 
+                 paste0("Fake_Gene_", 1:remaining))
+  
+  rowData(pbmc_small) <- S4Vectors::DataFrame(gene_symbol = new_genes)
+  
+  expect_equal(check_rowData_for_hugo(pbmc_small, annotables::grch38)$status,
+               "no_symbols_found_in_rowdata")
+})
 
   
   

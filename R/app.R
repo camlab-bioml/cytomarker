@@ -700,6 +700,12 @@ cytosel <- function(...) {
       setProgress(value = 0.25)
       incProgress(detail = "Reading input dataset")
       input_sce <- read_input_scrnaseq(input$input_scrnaseq$datapath)
+      if (!isTruthy(input_sce)) {
+        invalid_modal()
+        proceed_with_analysis(FALSE)
+      }
+      
+      req(isTruthy(input_sce))
       incProgress(detail = "Parsing gene names and assays")
       setProgress(value = 0.85)
       found_human <- check_for_human_genes(input_sce)
@@ -1207,7 +1213,6 @@ cytosel <- function(...) {
               inputId = "genes_for_violin",
               choices = allowed_genes(),
               server = T)
-
             if (!isTruthy(first_render_outputs()) & isTruthy(current_markers())) {
               
               output$output_menu <- renderMenu(expr = {

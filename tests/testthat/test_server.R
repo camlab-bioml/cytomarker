@@ -603,5 +603,17 @@ test_that("cytosel is able to find lowercase genes as non-human", {
   })
 })
 
+context("test that uploading an RDS in the wrong format generates an error")
+
+test_that("cytosel is able to identify an RDS that is not of the proper SCE format", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("fake_rds.rds")))
+    expect_false(proceed_with_analysis())
+    
+  })
+})
+
 
 

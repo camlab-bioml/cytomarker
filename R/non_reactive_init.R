@@ -45,3 +45,6 @@ Counts <- NULL
 `Mean Score` <- NULL
 mean_score <- NULL
 Parameter <- NULL
+par <- NULL
+legend <- NULL
+mtext <- NULL

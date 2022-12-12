@@ -18,7 +18,7 @@ read_input_scrnaseq <- function(sce_path) {
     ## We'll assume this is an rds
     sce <- readRDS(sce_path)
     if(!(isTruthy(methods::is(sce, 'SingleCellExperiment')) || isTruthy(methods::is(sce, 'Seurat')))) {
-      invalid_modal()
+      sce <- NULL
     }
     
     if(methods::is(sce, 'Seurat')) {
@@ -26,11 +26,13 @@ read_input_scrnaseq <- function(sce_path) {
       sce <- Seurat::as.SingleCellExperiment(sce)
     } 
   }
-  
-  ## Remove cells with no reads - would cause issue with logNormCounts from scater
-  if ("logcounts" %in% names(assays(sce))) {
-    sce <- sce[, Matrix::colSums(logcounts(sce)) > 0]
+
+  if (isTruthy(sce)) {
+    if ("logcounts" %in% names(assays(sce))) {
+      sce <- sce[, Matrix::colSums(logcounts(sce)) > 0]
+    }
   }
+  ## Remove cells with no reads - would cause issue with logNormCounts from scater
   sce
 } 
 

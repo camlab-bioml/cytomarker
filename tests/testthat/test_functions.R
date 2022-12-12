@@ -24,6 +24,9 @@ test_that("SingleCellExperiment object reading", {
   expect_is(sce, 'SingleCellExperiment')
   expect_equivalent(dim(sce), c(100, 500))
   expect_equivalent(rownames(sce), paste("feature-", seq(1, 100, 1), sep=""))
+  
+  expect_null(read_input_scrnaseq(test_path("fake_rds.rds")))
+  
 })
 
 test_that("Seurat object reading", {
@@ -430,6 +433,7 @@ test_that("Error modals throw errors", {
   expect_error(subsampling_error_modal(c("Type_1", "Type_2")))
   expect_is(time_zone_modal(cytosel_data$time_zones, NULL), 'shiny.tag')
   expect_is(reset_option_on_upload_modal(), 'shiny.tag')
+  expect_error(invalid_modal())
 })
 
 
