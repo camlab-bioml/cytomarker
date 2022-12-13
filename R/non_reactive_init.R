@@ -1,3 +1,8 @@
+# Declare variables for using shinytest2 snapshot test: required when declaring the Appdriver
+# app_dir as a function
+# IMPORTANT: these variables are not overwitten in the shiny code. They are, for some reason,
+# exposed as global variables when calling the app through shinytest2
+
 pre_upload_configuration <- function() {
 }
 
@@ -48,3 +53,4 @@ Parameter <- NULL
 par <- NULL
 legend <- NULL
 mtext <- NULL
+`Product Name` <- NULL
