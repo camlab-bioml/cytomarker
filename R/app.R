@@ -51,6 +51,11 @@ ggplot2::theme_set(cowplot::theme_cowplot())
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
         show.error.messages = FALSE)
 
+yaml <- read_yaml(system.file("config.yml", package = "cytosel"))
+USE_ANALYTICS <- yaml$use_google_analytics
+SUBSET_TO_ABCAM <- yaml$subset_only_abcam_catalog
+STAR_FOR_ABCAM <- yaml$star_for_abcam_product
+
 #' Define main entrypoint of app
 #' 
 #' @export
@@ -127,7 +132,8 @@ cytosel <- function(...) {
   ui <- tagList(
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
-    tags$head(HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=G-B26X9YQQGT'></script>
+    if (isTruthy(USE_ANALYTICS)) {
+      tags$head(HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=G-B26X9YQQGT'></script>
             <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -135,8 +141,10 @@ cytosel <- function(...) {
   gtag('config', 'G-B26X9YQQGT');
   
 </script>"),
+                # tags$script(HTML("window.onbeforeunload = function() {return 'Please visit https://www.surveymonkey.com/ before you leave!';};"))
+      )
+    },
   # tags$script(HTML("window.onbeforeunload = function() {return 'Please visit https://www.surveymonkey.com/ before you leave!';};"))
-  ),
     tags$head(tags$style(".modal-dialog{ width:750px}")),
     tags$style("@import url(https://use.fontawesome.com/releases/v5.7.2/css/all.css);"),
     # styling the hover tooltips
@@ -302,13 +310,14 @@ cytosel <- function(...) {
                      placement = "right")),
                    hidden(div(id = "precomputed",
                    checkboxInput("precomputed_dim", "Use precomputed UMAP", value = F))),
-                   selectInput("select_aa", "Antibody applications:", 
+                   hidden(div(id = "apps",
+                              selectInput("select_aa", "Antibody applications:", 
                               applications_parsed$unique_applications, multiple=TRUE) %>%
                                shinyInput_label_embed(
                                icon("circle-info") %>%
                                bs_embed_tooltip(title = get_tooltip('applications'),
                                placement = "right", html = "true"))
-                   ),
+                   ))),
                    bsCollapsePanel(title = HTML(paste0(
                      "Upload previous analysis", tags$span(icon("sort-down",
                                                 style = "position:right; margin-left: 4px; margin-top: -4px;")))), style = "info",
@@ -686,6 +695,7 @@ cytosel <- function(...) {
                            input$curated_options])
       
       post_upload_configuration(input_sce)
+      
     })
     # })
     
@@ -837,6 +847,7 @@ cytosel <- function(...) {
       reactable(df_antibody(),
                 searchable = TRUE,
                 filterable = TRUE,
+                groupBy = "Symbol",
                 columns = list(`Host Species` = colDef(
                   filterInput = function(values, name) {
                     tags$select(
@@ -967,7 +978,6 @@ cytosel <- function(...) {
       req(input$panel_size)
       req(input$coldata_column)
       req(sce())
-
       
       if (!is_empty(input$bl_top)) {
         current_panel_not_valid <- setdiff(input$bl_top, rownames(sce()))
@@ -1098,10 +1108,8 @@ cytosel <- function(...) {
             incProgress(detail = "Computing cell type markers")
             
             ## Compute set of allowed genes
-            allowed_genes(
-              get_allowed_genes(input$select_aa, applications_parsed, 
-                                sce()[,sce()$keep_for_analysis == "Yes"])
-            )
+            
+            set_allowed_genes()
             
             ## Change selected column to character to avoid factor levels without data
             # sce <- sce()
@@ -1966,13 +1974,7 @@ cytosel <- function(...) {
       
       withProgress(message = 'Updating visualizations', value = 0, {
 
-        
-        ## Re-set the set of allowed genes (these may have changed if a different
-        ## antibody application is selected)
-        allowed_genes(
-          get_allowed_genes(input$select_aa, applications_parsed, 
-                            sce()[,sce()$keep_for_analysis == "Yes"])
-        )
+        set_allowed_genes()
         
         updateSelectInput(session = session,
         inputId = "input_gene",
@@ -2166,12 +2168,14 @@ cytosel <- function(...) {
     
     post_upload_configuration <- function(input_sce) {
       input_sce <- detect_assay_and_create_logcounts(input_sce)
-      input_sce <- parse_gene_names(input_sce, grch38, remove_confounding_genes = F)
+      input_sce <- parse_gene_names(input_sce, grch38)
+      # input_sce <- remove_confounding_genes(input_sce)
       sce(input_sce)
       
       shinyjs::hide(id = "download_button")
       
       toggle(id = "analysis_button", condition = isTruthy(sce()))
+      toggle(id = "apps", condition = isTruthy(SUBSET_TO_ABCAM))
       
       input_assays <- c(names(assays(sce())))
       
@@ -2233,6 +2237,17 @@ cytosel <- function(...) {
       }
     }
     
+    set_allowed_genes <- function() {
+      if (isTruthy(SUBSET_TO_ABCAM)) {
+        allowed_genes(
+          get_allowed_genes(input$select_aa, applications_parsed,
+                            sce()[,sce()$keep_for_analysis == "Yes"])
+        )
+      } else {
+        allowed_genes(rownames(sce()[,sce()$keep_for_analysis == "Yes"]))
+      }
+      allowed_genes(remove_confounding_genes(allowed_genes()))
+    }
     
     ### SAVE PANEL ###
     output$downloadData <- downloadHandler(

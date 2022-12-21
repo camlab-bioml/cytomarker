@@ -48,7 +48,9 @@ htmltools::img(src = "cytosel-logo.png",
 reactable(params$df,
                 searchable = TRUE,
                 filterable = TRUE,
-                columns = list(`Host Species` = colDef(
+                groupBy = "Symbol",
+                columns = list(
+                  `Host Species` = colDef(
                   filterInput = function(values, name) {
                     tags$select(
                       # Set to undefined to clear the filter

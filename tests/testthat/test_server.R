@@ -483,7 +483,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_false(isFALSE(umap_all_gene()))
     expect_equal(umap_colouring(), "Panel Marker")
     
-    viol_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB")
+    viol_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
     
     # setting the violin plots with genes works
     session$setInputs(genes_for_violin = viol_markers,
@@ -507,7 +507,6 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     heatmap_expression_norm = "Expression", start_analysis = T)
     
     expect_false(identical(heatmap_1, heatmap()))
-    
     
     session$setInputs(start_analysis = T)
 

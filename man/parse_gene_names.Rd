@@ -15,7 +15,7 @@ than 50\%/100 genes are in the symbol column of the annotables grch38 object
 \item If rownames are not NULL, check if they are ensembl ID's and convert to symbol
 }}
 \usage{
-parse_gene_names(sce, grch38, remove_confounding_genes = TRUE)
+parse_gene_names(sce, grch38)
 }
 \arguments{
 \item{sce}{SingleCellExperiment object}

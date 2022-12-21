@@ -249,7 +249,7 @@ check_rownames_for_ensembl<- function(sce, grch38){
 #' @importFrom dplyr mutate filter pull bind_rows
 #' @importFrom tibble tibble deframe
 #' @importFrom magrittr %>%
-parse_gene_names <- function(sce, grch38, remove_confounding_genes = TRUE){
+parse_gene_names <- function(sce, grch38){
   ## STEP 1: Check if rownames can be used
   step1 <- check_rownames_for_hugo(sce, grch38)
   
@@ -297,14 +297,7 @@ parse_gene_names <- function(sce, grch38, remove_confounding_genes = TRUE){
     }
   }
   if(exists("clean_sce")){
-    if(remove_confounding_genes){
-      # Remove RPL/S Mitochondrial, HSP, FOS, JUN and MALAT1 genes
-      genes_to_remove <- grepl("^RP[L|S]|^MRP[L|S]|^MT-|^HSP|^FOS|^JUN|^MALAT1", rownames(clean_sce))
-      clean_sce <- clean_sce[!genes_to_remove,]
-      clean_sce
-    }else{
-      clean_sce
-    }
+    clean_sce
   }else{
     stop("No human gene names were found in your dataset.
           This could be because your genes are from a different species or
@@ -439,4 +432,12 @@ check_for_human_genes <- function(sce) {
   } else {
     return(TRUE)
   }
+}
+
+#' Remove confounding genes in the dataset 
+#' @param gene_vector A vector of genes to clean
+remove_confounding_genes <- function(gene_vector) {
+  genes_to_remove <- grepl("^RP[L|S]|^MRP[L|S]|^MT-|^HSP|^FOS|^JUN|^MALAT1", gene_vector)
+  clean_genes <- gene_vector[!genes_to_remove]
+  return(clean_genes)
 }

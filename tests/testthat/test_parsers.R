@@ -27,7 +27,7 @@ test_that("Testing sce object with Ensembl gene rownames and no rowData", {
   
   gene_parser <- parse_gene_names(wtc_ensgene_rownames, annotables::grch38)
   expect_is(gene_parser, 'SingleCellExperiment')
-  expect_equal(dim(rowData(gene_parser)), c(20935, 0))
+  expect_equal(dim(rowData(gene_parser)), c(21169, 0))
   
 })
 
@@ -57,7 +57,7 @@ test_that("Testing sce object with null rownames but gene symbols in rowData", {
   
   gene_parser <- parse_gene_names(wtc_hugo_rowData_genes, annotables::grch38)
   expect_is(gene_parser, 'SingleCellExperiment')
-  expect_equal(dim(rowData(gene_parser)), c(33423, 1))
+  expect_equal(dim(rowData(gene_parser)), c(33658, 1))
   
 })
 
@@ -139,7 +139,7 @@ test_that("Testing sce object gene symbols in rownames", {
   
   expect_warning(parse_gene_names(hugo_rowData_low_proportion, annotables::grch38))
   expect_equal(dim(parse_gene_names(hugo_rowData_low_proportion, annotables::grch38)),
-               c(33657, 200))
+               c(33658, 200))
   
   rownames(hugo_rowData_low_proportion) <- NULL
   expect_equal(check_rownames_for_hugo(hugo_rowData_low_proportion, annotables::grch38),
@@ -168,10 +168,10 @@ test_that("Testing sce object Ensembl in rownames", {
   gene_parsing <- parse_gene_names(ensembl_rownames_low_proportion, annotables::grch38)
   expect_warning(parse_gene_names(ensembl_rownames_low_proportion, annotables::grch38))
   expect_equal(dim(gene_parsing),
-               c(100, 200))
+               c(101, 200))
   
   expect_equal(dim(parse_gene_names(ensembl_rownames_low_proportion,
-                                    annotables::grch38, remove_confounding_genes = F)),
+                                    annotables::grch38)),
                c(101, 200))
   
 })

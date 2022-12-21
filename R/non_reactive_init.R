@@ -54,3 +54,6 @@ par <- NULL
 legend <- NULL
 mtext <- NULL
 `Product Name` <- NULL
+
+set_allowed_genes <- function() {
+}
