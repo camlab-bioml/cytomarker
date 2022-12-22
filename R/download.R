@@ -12,6 +12,7 @@ create_run_param_list <- function(
                           panel_size,
                           cell_cutoff_value,
                           subsample,
+                          subsample_number,
                           marker_strat,
                           antibody_apps,
                           selected_cell_types,
@@ -31,6 +32,7 @@ create_run_param_list <- function(
     `Target panel size` = panel_size,
     `Min Cell Category cutoff` = cell_cutoff_value,
     `Subsampling Used` = subsample,
+    `Subsampling number` = subsample_number,
     `Selected marker panel` = marker_list$top_markers,
     # `Scratch marker panel` = ifelse(is_empty(marker_list$scratch_markers),
     #                                 "None", marker_list$scratch_markers),
@@ -63,7 +65,8 @@ download_data <- function(zip_filename,
                           heatmap,
                           antibody_table,
                           markdown_path,
-                          run_metrics) {
+                          run_metrics,
+                          markers_with_cell_type) {
 
     tmpdir <- tempdir()
     current_date <- Sys.Date()
@@ -76,7 +79,7 @@ download_data <- function(zip_filename,
     
     write_yaml(config, paths_zip$config)
   
-    selected_markers <- config$`Selected marker panel`
+    # selected_markers <- config$`Selected marker panel`
     
     config_df <- tibble::enframe(config) %>%
       dplyr::mutate(value = purrr::map_chr(value, toString)) |>
@@ -85,7 +88,7 @@ download_data <- function(zip_filename,
     
     param_list <- list(tmpdir = tmpdir,
                        df = antibody_table,
-                       marker_selection = config$`Selected marker panel`,
+                       marker_selection = markers_with_cell_type,
                        heatmap = heatmap,
                        umap = list(all = plots$all, top = plots$top),
                        metric = list(plot = plots$metric,

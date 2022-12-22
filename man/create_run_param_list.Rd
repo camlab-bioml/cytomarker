@@ -12,6 +12,7 @@ create_run_param_list(
   panel_size,
   cell_cutoff_value,
   subsample,
+  subsample_number,
   marker_strat,
   antibody_apps,
   selected_cell_types,

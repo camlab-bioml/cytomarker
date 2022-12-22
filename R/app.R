@@ -308,6 +308,12 @@ cytosel <- function(...) {
                      icon("circle-info") %>%
                      bs_embed_tooltip(title = get_tooltip('subsample_sce'),
                      placement = "right")),
+                   numericInput("subset_number", "Number of cells to subsample:", 2000, 
+                                min = 100, max = 10000, step = NA, width = NULL) %>%
+                     shinyInput_label_embed(
+                       icon("circle-info") %>%
+                         bs_embed_tooltip(title = get_tooltip('subset_number'),
+                                          placement = "right")),
                    hidden(div(id = "precomputed",
                    checkboxInput("precomputed_dim", "Use precomputed UMAP", value = F))),
                    hidden(div(id = "apps",
@@ -555,6 +561,7 @@ cytosel <- function(...) {
     
     num_markers_in_selected <- reactiveVal()
     num_markers_in_scratch <- reactiveVal()
+    marker_filtration <- reactiveVal()
     
     cell_types_excluded <- reactiveVal()
     
@@ -593,6 +600,7 @@ cytosel <- function(...) {
     
     downloaded_content <- reactiveVal(FALSE)
     plots_for_markdown <- reactiveVal()
+    markers_with_type <- reactiveVal()
     
     addResourcePath('report', system.file('report', package='cytosel'))
     
@@ -1067,7 +1075,7 @@ cytosel <- function(...) {
             incProgress(detail = "Subsampling data")
             
             avail_cols <- which(sce()$keep_for_analysis == "Yes")
-            to_subsample <- sample(avail_cols, min(length(avail_cols), 2000),
+            to_subsample <- sample(avail_cols, min(length(avail_cols), min(ncol(sce()), input$subset_number)),
                                    replace = FALSE)
             
             sce(create_keep_vector_during_subsetting(sce(), to_subsample))
@@ -1725,6 +1733,12 @@ cytosel <- function(...) {
     
     updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
     
+    if (isTruthy(sce())) {
+      if (isTruthy(yaml_back$`Subsampling Used`) & yaml_back$`Subsampling number` <= ncol(sce())) {
+        updateNumericInput(session, "subset_number", value = yaml_back$`Subsampling number`)
+      }
+    }
+    
     if (isTruthy(yaml_back$`Marker strategy`)) {
       updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
     }
@@ -1917,14 +1931,23 @@ cytosel <- function(...) {
         markers$scratch_markers <- sort(markers$scratch_markers)
       }
       
+      markers_with_type(markers$associated_cell_types)
+      
+      # set the marker inclusion list depending on whether or not the configuration
+      # is subsetting to Abcam products or not
+      # Option 1: if the configuration is true, then have a star for any product in the Abcam catalogue
+      # Option 2: if the configuration is false, then have a star if the marker was in the initial suggestions
+      marker_filtration <- if(isTruthy(STAR_FOR_ABCAM)) unique(antibody_info$Symbol) else original_panel()
+      
+      
       labels_top <- lapply(markers$top_markers, 
-                           function(x) div(x, map_gene_name_to_antibody_icon(x, original_panel()), 
+                           function(x) div(x, map_gene_name_to_antibody_icon(x, marker_filtration), 
                                            style=paste('padding: 3px; color:', 
                                             set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), 
                                             '; background-color:', 
                                           cytosel_palette()[ markers$associated_cell_types[x] ])))
       labels_scratch <- lapply(markers$scratch_markers, 
-                               function(x) div(x, map_gene_name_to_antibody_icon(x, original_panel()), 
+                               function(x) div(x, map_gene_name_to_antibody_icon(x, marker_filtration), 
                                                style=paste('padding: 3px; color:', 
                                             set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), 
                                             '; background-color:', 
@@ -2132,6 +2155,8 @@ cytosel <- function(...) {
                                             panel_size = input$panel_size,
                                             cell_cutoff_value = as.integer(cell_min_threshold()),
                                             subsample = input$subsample_sce,
+                                            subsample_number = ifelse(isTruthy(input$subsample_sce),
+                                                                      input$subset_number, "None"),
                                             marker_strat = input$marker_strategy,
                                             antibody_apps = input$select_aa,
                                             selected_cell_types = cell_types_to_keep(),
@@ -2254,12 +2279,10 @@ cytosel <- function(...) {
       filename <- paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
   
       content = function(fname) {
-        showNotification("Rendering output report and config file, this may take a few moments..",
-                         duration = 4)
+        showNotification("Rendering output report and config file, this may take a few moments..", duration = 4)
         # future_promise({
-        download_data(fname,
-                      current_run_log()$map, plots_for_markdown(), heatmap(), 
-                      df_antibody(), markdown_report_path, current_metrics()$summary)
+        download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap(), df_antibody(), markdown_report_path, current_metrics()$summary,
+                      markers_with_type())
     # })
       },
       contentType = "application/zip"

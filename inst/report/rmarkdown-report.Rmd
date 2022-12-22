@@ -12,6 +12,8 @@ params:
   metric: ""
   config: ""
   tmpdir: ""
+header-includes:
+  - \usepackage{fontawesome5}
 ---
 
 <style>
@@ -82,16 +84,29 @@ reactable(params$df,
                 elementId = "antibody-select")
 ```
 
-## Selected markers
+## Selected markers {.tabset}
+
+### Marker list vector
 
 You selected the following markers to be included in your antibody panel. It can be copied directly as a R-compatible vector. 
 
 ```{r message=FALSE, echo=F, comment=NA}
-with_quotes <- paste0("'", params$marker_selection, "'")
+with_quotes <- paste0("'", names(params$marker_selection), "'")
 first_genes <- paste0(head(with_quotes, n = length(with_quotes) - 1), collapse = " ", sep = ",")
 all_genes <- paste0("c(", first_genes, " ", tail(with_quotes, n = 1), ")")
 cat(all_genes)
 ```
+
+### Marker/Cell-type table
+
+```{r message=FALSE, echo=F, comment=NA}
+reactable(data.frame(Marker = names(params$marker_selection),
+                     Annotation = params$marker_selection),
+          rownames = F,
+           searchable = TRUE,
+                filterable = TRUE)
+```
+
 
 ## Heatmaps
 

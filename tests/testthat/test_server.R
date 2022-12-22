@@ -36,6 +36,7 @@ test_that("Server has basic functionality", {
     # Set analysis parameters that will not proceed
     session$setInputs(user_selected_cells = NULL,
                       panel_size = 200, min_category_count = 0,
+                      subset_number = 99,
                       subsample_sce = T,
                       start_analysis = T,
                       add_selected_to_analysis = T,
@@ -127,6 +128,12 @@ test_that("Server has basic functionality", {
     
     expect_equal(output$scratch_marker_counts, "<B> Scratch Markers: 10 </B>")
     expect_equal(output$selected_marker_counts, "<B> Selected Markers: 14 </B>")
+    
+    withr::with_tempdir({
+      session$setInputs(downloadData = T)
+      expect_true(file.exists(file.path(tempdir(), paste0("config-", Sys.Date(), ".yml"))))
+      expect_false(is.null(output$downloadData))
+    })
     
     # suggest markers to remove
     
@@ -383,35 +390,6 @@ test_that("Reset works on server", {
   })
 })
 
-context("Downloading through the server works as intended")
-
-#### download analysis ######
-test_that("Download works on server", {
-  
-  testServer(cytosel::cytosel(), expr = {
-    
-    session$setInputs(input_scrnaseq = list(datapath =
-                                              test_path("pbmc_small.rds")),
-                      read_back_analysis = list(datapath =
-                                                  test_path("test_config.yml")))
-    
-    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
-                      start_analysis = T)
-    
-    expect_false("NK" %in% cell_types_to_keep())
-    expect_equal(length(cell_types_to_keep()), 5)
-    
-    # expect_false(is.null(output$downloadData))
-    
-    # test that download feature works with temp dir
-    withr::with_tempdir({
-      session$setInputs(downloadData = T)
-      expect_true(file.exists(file.path(tempdir(), paste0("config-", Sys.Date(), ".yml"))))
-      # expect_false(is.null(output$downloadData))
-    })
-  })
-})
-
 context("Current panel with different genes throws error")
 
 test_that("Error from current panel with different genes", {
@@ -449,6 +427,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     
     session$setInputs(subsample_sce = T,
                       panel_size = 20,
+                      subset_number = 99,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
@@ -529,6 +508,7 @@ test_that("Picking the curated dataset works as intended", {
   testServer(cytosel::cytosel(), expr = {
     
     session$setInputs(curated_dataset = T, curated_options = "PBMC (Blood/Immune)",
+                      subset_number = 2000,
                       pick_curated = T)
     expect_true(file.exists(file.path(tempdir(), "/seurat_pbmc.rds")))
     expect_equivalent(dim(sce()), c(13714, 2638))

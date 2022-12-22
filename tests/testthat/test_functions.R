@@ -167,16 +167,6 @@ test_that("create_heatmap works effectively with different normalizations", {
   
 })
 
-# context("Scoring")
-#
-# test_that("get_scores returns valid scores", {
-#
-# })
-  
-
-#   
-# })
-
 context("violin plotting") 
 
 test_that("Violin plotting returns the appropriate data structure", {
@@ -350,7 +340,7 @@ test_that("download works as expected", {
   withr::with_tempdir({
     filepath <- file.path(paste0("Cytosel-Panel-", Sys.Date(), ".zip"))
     
-    placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB")
+    placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
     
     fake_table <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
                                   `Gene Name (Upper)`) |>
@@ -374,28 +364,23 @@ test_that("download works as expected", {
     base_config <- create_run_param_list(marker_list = list(top_markers = rownames(sce)[1:100]), 
                                          "fake_path_to_sce", "logcounts",
                                          "seurat_annotations", 24, 2, "no",
+                                         80,
                                          "fm", NULL, NULL, FALSE, 100, 13714, fake_metrics)
     
     expect_is(base_config, 'list')
     
+    fake_genes <- c("Fake_1", "Fake_2", "Fake_3")
+    names(fake_genes) <- c("Gene_1", "Gene_2", "gene_3")
+    
     download_data(filepath, base_config, plots, heatmap, fake_table, markdown_report_path,
-                  fake_metrics)
+                  fake_metrics, fake_genes)
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)
     
-    # marks_back <- read.table(file.path(td, paste0("markers-", Sys.Date(), ".txt")))
-    # expect_equal(marks_back$V1, rownames(sce)[1:100])
-    
     yaml_back <- read_yaml(file.path(td, paste0("config-", Sys.Date(), ".yml")))
     expect_equal(yaml_back$`Input file`, "fake_path_to_sce")
     expect_equal(yaml_back$`Heterogeneity source`, "seurat_annotations")
-    
-    # table_back <- read.table(file.path(td, paste0("Antibody-info-", Sys.Date(), ".tsv")),
-    #                          sep = "\t", header = T)
-    # 
-    # expect_equal(unique(table_back$Symbol %in% rownames(sce)[1:17]),
-    #              TRUE)
     
   })
   
@@ -435,14 +420,5 @@ test_that("Error modals throw errors", {
   expect_is(reset_option_on_upload_modal(), 'shiny.tag')
   expect_error(invalid_modal())
 })
-
-
-
-
-
-
-
-
-
 
 

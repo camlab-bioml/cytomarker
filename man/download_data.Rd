@@ -11,7 +11,8 @@ download_data(
   heatmap,
   antibody_table,
   markdown_path,
-  run_metrics
+  run_metrics,
+  markers_with_cell_type
 )
 }
 \description{
