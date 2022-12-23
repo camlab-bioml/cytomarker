@@ -63,6 +63,7 @@ test_that("Server has basic functionality", {
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       umap_options = "Cell Type",
+                      select_aa = NULL,
                       umap_panel_options = NULL,
                       start_analysis = T)
     
@@ -283,8 +284,9 @@ test_that("Pre-setting the input rank lists persists in the current markers", {
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm",
-                      bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB"),
-                      bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB"),
+                      select_aa = NULL,
+                      bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
+                      bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
                       bl_scratch = c("GNLY", "FTL"),
                       start_analysis = T)
     
@@ -534,6 +536,7 @@ test_that("datasets with few genes produce errors on marker finding", {
     session$setInputs(subsample_sce = T,
                       panel_size = 100,
                       display_options = "Marker-marker correlation",
+                      select_aa = c("sELISA"),
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
     

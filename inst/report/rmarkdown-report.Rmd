@@ -92,7 +92,7 @@ You selected the following markers to be included in your antibody panel. It can
 
 ```{r message=FALSE, echo=F, comment=NA}
 with_quotes <- paste0("'", names(params$marker_selection), "'")
-first_genes <- paste0(head(with_quotes, n = length(with_quotes) - 1), collapse = " ", sep = ",")
+first_genes <- paste0(utils::head(with_quotes, n = length(with_quotes) - 1), collapse = " ", sep = ",")
 all_genes <- paste0("c(", first_genes, " ", tail(with_quotes, n = 1), ")")
 cat(all_genes)
 ```

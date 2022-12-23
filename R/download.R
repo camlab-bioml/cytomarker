@@ -70,7 +70,7 @@ download_data <- function(zip_filename,
 
     tmpdir <- tempdir()
     current_date <- Sys.Date()
-  
+
     paths_zip <- list() # contains the filenames to save
     paths_report <- list() # contains the file names to be read in by report
     

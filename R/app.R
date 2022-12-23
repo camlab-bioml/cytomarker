@@ -132,7 +132,8 @@ cytosel <- function(...) {
   ui <- tagList(
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
-    if (isTruthy(USE_ANALYTICS)) {
+    # only permit the google analytics non-interactively
+    if (isTruthy(USE_ANALYTICS) & (!interactive())) {
       tags$head(HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=G-B26X9YQQGT'></script>
             <script>
   window.dataLayer = window.dataLayer || [];
@@ -316,14 +317,16 @@ cytosel <- function(...) {
                                           placement = "right")),
                    hidden(div(id = "precomputed",
                    checkboxInput("precomputed_dim", "Use precomputed UMAP", value = F))),
-                   hidden(div(id = "apps",
+                   # hidden(div(id = "apps",
+                        
                               selectInput("select_aa", "Antibody applications:", 
                               applications_parsed$unique_applications, multiple=TRUE) %>%
                                shinyInput_label_embed(
                                icon("circle-info") %>%
                                bs_embed_tooltip(title = get_tooltip('applications'),
                                placement = "right", html = "true"))
-                   ))),
+                   # ))
+                   ),
                    bsCollapsePanel(title = HTML(paste0(
                      "Upload previous analysis", tags$span(icon("sort-down",
                                                 style = "position:right; margin-left: 4px; margin-top: -4px;")))), style = "info",
@@ -801,6 +804,12 @@ cytosel <- function(...) {
       cell_min_threshold(input$min_category_count)
     })
     
+    observeEvent(input$select_aa, {
+
+      # assume that selecting the applications creates a valid panel for analysis
+      valid_existing_panel(TRUE)
+    }, ignoreNULL = F)
+    
     observeEvent(input$show_cat_table, {
     req(sce())
     req(pref_assay())
@@ -882,6 +891,7 @@ cytosel <- function(...) {
                     )
                   }
                 ),
+                
                 `External Link` = colDef(html = T)
                 ),
                 sortable = TRUE,
@@ -991,7 +1001,16 @@ cytosel <- function(...) {
         current_panel_not_valid <- setdiff(input$bl_top, rownames(sce()))
         if (length(current_panel_not_valid) > 0) {
           valid_existing_panel(FALSE)
-          current_pan_not_valid_modal(current_panel_not_valid)
+          current_pan_not_valid_modal(current_panel_not_valid, "current dataset:")
+        }
+        
+        set_allowed_genes()
+        
+        current_panel_not_allowed <- setdiff(input$bl_top, allowed_genes())
+    
+        if (length(current_panel_not_allowed) > 0) {
+          valid_existing_panel(FALSE)
+          current_pan_not_valid_modal(current_panel_not_allowed, "gene lists for the chosen antibody applications:")
         }
       }
     
@@ -1199,7 +1218,15 @@ cytosel <- function(...) {
             cells_per_type(table(colData(
               sce()[,sce()$keep_for_analysis == "Yes"])[[column()]]))
             
-            df_antibody(dplyr::filter(antibody_info, Symbol %in% 
+            if (isTruthy(input$select_aa)) {
+              clean_table <- antibody_info |> mutate(limit_applications = sapply(antibody_info$`Listed Applications`, 
+                                                    FUN = function(x) in_row(input$select_aa, x))) |>
+                dplyr::filter(limit_applications == isTruthy(limit_applications)) |> select(-limit_applications)
+            } else {
+              clean_table <- antibody_info
+            }
+            
+            df_antibody(dplyr::filter(clean_table, Symbol %in% 
                                         current_markers()$top_markers) |>
                           mutate(`Host Species` = factor(`Host Species`),
                                  `Product Category Tier 3` = factor(`Product Category Tier 3`),
@@ -1781,6 +1808,7 @@ cytosel <- function(...) {
       removeModal()
       updateTabsetPanel(session, "tabs", "marker_selection")
       valid_existing_panel(TRUE)
+      original_panel(NULL)
     
       })
     
@@ -2087,9 +2115,9 @@ cytosel <- function(...) {
                                 summary = current_metrics()$summary))
         }
         mm <- metrics()
-        if (is.null(mm)) {
-          return(NULL)
-        }
+        # if (is.null(mm)) {
+        #   return(NULL)
+        # }
         columns <- names(mm)
         plts <- list()
         column <- columns[1]
@@ -2188,7 +2216,7 @@ cytosel <- function(...) {
       updateCheckboxInput(inputId = "precomputed_dim", value = F)
       use_precomputed_umap(FALSE)
       umap_precomputed_col(NULL)
-      original_panel(NULL)
+      
     }
     
     post_upload_configuration <- function(input_sce) {
@@ -2200,7 +2228,7 @@ cytosel <- function(...) {
       shinyjs::hide(id = "download_button")
       
       toggle(id = "analysis_button", condition = isTruthy(sce()))
-      toggle(id = "apps", condition = isTruthy(SUBSET_TO_ABCAM))
+      # toggle(id = "apps", condition = isTruthy(SUBSET_TO_ABCAM))
       
       input_assays <- c(names(assays(sce())))
       
@@ -2258,20 +2286,18 @@ cytosel <- function(...) {
       toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
       
       if (isTruthy(input$bl_top) | isTruthy(current_markers())) {
-        showModal(reset_option_on_upload_modal())
+        showModal(reset_option_on_change_modal("uploaded a new dataset"))
       }
     }
     
     set_allowed_genes <- function() {
-      if (isTruthy(SUBSET_TO_ABCAM)) {
-        allowed_genes(
-          get_allowed_genes(input$select_aa, applications_parsed,
-                            sce()[,sce()$keep_for_analysis == "Yes"])
-        )
-      } else {
-        allowed_genes(rownames(sce()[,sce()$keep_for_analysis == "Yes"]))
-      }
+      
+      if (isTruthy(SUBSET_TO_ABCAM) | length(input$select_aa) > 0) 
+        allowed_genes(get_allowed_genes(input$select_aa, applications_parsed,
+        sce()[,sce()$keep_for_analysis == "Yes"])) else allowed_genes(rownames(sce()[,sce()$keep_for_analysis == "Yes"]))
+      
       allowed_genes(remove_confounding_genes(allowed_genes()))
+
     }
     
     ### SAVE PANEL ###

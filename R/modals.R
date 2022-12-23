@@ -275,12 +275,13 @@ reset_analysis_modal <- function() {
     modalButton("Cancel")))
 }
 
-#' Show an input modal if the current panel contains genes that are not found in the newest uploaded SCE
+#' Show an input modal if the current panel contains genes that are not valid (either not in the dataset or not permitted genes)
 #' @importFrom shinyalert shinyalert
 #' @param missing_genes vector of genes that are not in the current SCE but in the current marker panel
-current_pan_not_valid_modal <- function(missing_genes) { # Marker removal suggestion
+#' @param location Where the 
+current_pan_not_valid_modal <- function(missing_genes, location) { # Marker removal suggestion
   shinyalert(title = "Error",
-             text = HTML(paste("The current panel contains genes that are not found in the SCE:",
+             text = HTML(paste("The current panel contains the following genes that are not found in the ", location,
                                '<br>',
                                "<b>", toString(missing_genes), "</b>", '<br/>',
                                "Please reset the marker panel.")),
@@ -354,8 +355,10 @@ time_zone_modal <- function(possible_time_zones, current_input) {
 
 #' Show an input modal to give the user the option to reset the panel on 
 #' @importFrom shiny modalDialog
-reset_option_on_upload_modal <- function() {
-  modalDialog(helpText("You have uploaded a new dataset. The current panel may be invalid with these data. Would you like to reset the current panel?"),
+#' @param change The type of change detected in the configuration
+reset_option_on_change_modal <- function(change) {
+  modalDialog(helpText(HTML(paste("You have ", "<b>", change, "</b>", ". The current panel may be invalid with these data. 
+                                  Would you like to reset the current panel?", "<br/>"))),
               actionButton("reset_marker_panel_reupload", "Reset the marker panel"),
               footer = tagList(
                 modalButton("Cancel")))

@@ -57,3 +57,6 @@ mtext <- NULL
 
 set_allowed_genes <- function() {
 }
+
+clean_table <- NULL
+limit_applications <- NULL
