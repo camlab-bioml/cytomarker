@@ -73,4 +73,4 @@ reset_panel: "Be default, repeated runs of cytosel will retain the first marker 
 
 applications: "Marker panels can be generated for combinations of experimental protocols and laboratory assays. By default, all protocols listed here will be considered."
 
-subset_number: "cytosel recommends subsetting a dataset of greater than 2000 cells for increased performance."
+subset_number: "cytosel recommends subsetting a dataset of greater than 2000 cells for increased performance. By default cytosel will subset such a dataset to 2000 cells, but the user may modify this value."

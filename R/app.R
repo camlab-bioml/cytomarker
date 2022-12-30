@@ -366,9 +366,15 @@ cytosel <- function(...) {
                  fluidRow(column(8, uiOutput("BL"),
                                  style = "margin-bottom:0px;"
                                  ),
-                          column(4, align = "left", plotOutput("legend", width = "400px",
-                                               height = "500px"),
-                                 style = " margin-top:-70px; margin-left: -50px;"))),
+                          column(4, align = "left", box(div(style = "margin-left: -40px; overflow-y: scroll;"),
+                                                        width = 12,
+                                                        height = "1300px",
+                                                        status = "primary",
+                                                        plotOutput("legend", width = "auto",
+                                               height = "1300px",
+                                               
+                                 )),
+                                 style = "margin-top:-70px; margin-left: -50px;"))),
       tabItem("gene_expression",
               fluidRow(column(3,
                 selectizeInput("genes_for_violin", "Select genes to view their expression:", NULL, multiple=T)),
@@ -396,8 +402,12 @@ cytosel <- function(...) {
                                                      choices = NULL, multiple = F,
                                                      width = "89%",
                                                      ))))),
-                 fluidRow(column(6, plotlyOutput("all_plot", width="500px", height="350px")),
-                          column(6, plotlyOutput("top_plot", width="500px", height="350px")))
+                 fluidRow(column(6, style = "margin-right: -10px; margin-top: 10px",
+                                 plotlyOutput("all_plot", width="500px", height="400px",
+                                                 )),
+                          column(6, style = "margin-right: -10px; margin-top: 10px",
+                                 plotlyOutput("top_plot", width="500px", height="400px",
+                                                 )))
           ),
         
       tabItem("Heatmap",
@@ -860,7 +870,7 @@ cytosel <- function(...) {
     output$antibody_table <- renderReactable({
       req(current_markers())
       req(df_antibody())
-
+      
       reactable(df_antibody(),
                 searchable = TRUE,
                 filterable = TRUE,
@@ -872,9 +882,10 @@ cytosel <- function(...) {
                       onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
                       # "All" has an empty value to clear the filter, and is the default option
                       tags$option(value = "", "All"),
+                      tags$html(multiple = T),
                       lapply(unique(values), tags$option),
                       "aria-label" = sprintf("Filter %s", name),
-                      style = "width: 100%; height: 28px;"
+                      style = "width: 100%; height: 28px"
                     )
                   }
                 ),
@@ -891,7 +902,15 @@ cytosel <- function(...) {
                     )
                   }
                 ),
-                
+#                 `Listed Applications` = colDef(
+#                   filterable = TRUE,
+#                   # Filter by case-sensitive text match
+#                   filterMethod = JS("export function MultiSelectFilterFn(rows, id, filterValues) {
+#     if (filterValues.length === 0) return rows;
+# 
+#     return rows.filter(r => filterValues.includes(r.values[id]));
+# }")
+#                 ),
                 `External Link` = colDef(html = T)
                 ),
                 sortable = TRUE,
@@ -1831,7 +1850,7 @@ cytosel <- function(...) {
           plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
                                                      text=~get(input$coldata_column), 
                                                      type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-                                               layout(title = "UMAP all genes", showlegend = F))
+                                               layout(title = "UMAP all genes"))
           
           plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
                                                      text=~get(input$coldata_column),
@@ -1984,14 +2003,19 @@ cytosel <- function(...) {
       # output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
       
       output$legend <- renderPlot({
-        op <- par(family = "sans", mar = c(3, 2, 3, 3))
+        op <- par(family = "sans", mar = c(4, 0.2, 3, 0.2))
+        
+        longest_factor <- max(nchar(names(cytosel_palette())))
+        label_size <- ifelse(longest_factor < 35, 1.2, ifelse(longest_factor >= 35 & longest_factor < 50,
+                                    1, 0.75))
         plot(NULL ,xaxt='n',yaxt='n',bty='n',
                                        ylab='',xlab='', xlim=0:1, ylim=0:1)
       legend("top", legend = names(cytosel_palette()), 
-             pch=15, pt.cex=2.2, cex=1.2, bty='n',
-             ncol = ceiling(length(cytosel_palette())/15),
+             pch=15, pt.cex=2.2, cex=label_size, bty='n',
+             # ncol = ceiling(length(cytosel_palette())/15),
+             ncol = 1,
              col = cytosel_palette())
-      mtext("Cell Type", cex=1.4)
+      mtext("Cell Type", cex=1.5)
       par(op)})
      
       output$BL <- renderUI({
@@ -2056,7 +2080,7 @@ cytosel <- function(...) {
         
         plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-          layout(title = "UMAP all genes", showlegend = F))
+          layout(title = "UMAP all genes"))
         
         plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
