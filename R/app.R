@@ -1,49 +1,19 @@
 
-# utils::globalVariables(c("Cell type", "Symbol", "r", "score", "what"), "cytosel")
+curated_dataset_names <- scan(system.file("tabula_sapiens_datasets.txt", package = "cytosel"), 
+                           character(), quote = "")
 
-# palette <- NULL
+names(curated_dataset_names) <- gsub("_", " ", curated_dataset_names)
 
-### user selects pre-curated dataset ####
 
-curated_dataset_names <- c("PBMC (Blood/Immune)", "Pancreas", "Glioblastoma")
-
-preview_info <- c(paste("<b>", "<a href='https://satijalab.org/seurat/articles/pbmc3k_tutorial.html' target='_blank' >Seurat PBMC tutorial dataset</a>",
-                        "</b>", "<br/>", "<b>", "Cells:", "</b>", "2638", 
-                         "<br/>", "<b>", "Genes:", "</b>", "13,714", "<br/>", 
-                        "<b>", "Cell category of interest:", "</b>", "ident",
-                        "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "Memory CD4 T, B, CD14+ Mono and 6 others"),
-                  paste("<b>", "<a href='https://www.sciencedirect.com/science/article/pii/S2405471216302666' target='_blank' >Pancreas, Baron et al. (2016)</a>",
-                  "</b>",
-                        "<br/>", "<b>", "Cells:", "</b>", "2069", 
-                       "<br/>", "<b>", "Genes:", "</b>", "20,125", "<br/>", 
-                       "<b>", "Cell category of interest:", "</b>", "label",
-                       "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "acinar, delta, beta and 5 others"),
-                  paste("<b>", "<a href='https://www.sciencedirect.com/science/article/pii/S2211124717314626' target='_blank' >Glioblastoma, Darmanis et al. (2017)</a>",
-                        "</b>",
-                        "<br/>", "<b>", "Cells:", "</b>", "3589", 
-                        "<br/>", "<b>", "Genes:", "</b>", "22,139", "<br/>", 
-                        "<b>", "Cell category of interest:", "</b>", "cell_type",
-                        "<br/>", "<b>", "Cell types in category:", "</b>", "<br/>", "astrocyte, oligodendrocyte, neuron, and 4 others")) |>
-  set_names(curated_dataset_names)
-
-dataset_selections <- c("seurat_pbmc.rds", "baron_pancreas_ref.rds", "glioblastoma_sce.rds") |>
-  set_names(curated_dataset_names)
-
-default_celltype_curated <- c("ident", "label", "cell_type") |>
-  set_names(curated_dataset_names)
-
-# can use to remove any improperly downloaded data sets (shouldn't be necessary with refresh token)
-# 
-for (i in dataset_selections) {
-  if (file.exists(file.path(tempdir(), "/", i))) {
-    command <- paste('rm ', tempdir(), "/", i, sep = "")
+for (i in curated_dataset_names) {
+  if (file.exists(file.path(tempdir(), "/", paste(i, ".rds", sep = "")))) {
+    command <- paste('rm ', tempdir(), "/", paste(i, ".rds", sep = ""), sep = "")
     system(command)
   }
 }
 
 utils::globalVariables(c("palette_to_use", "full_palette",
                          "preview_info", "curated_dataset_names",
-                         "dataset_selections", "default_celltype_curated",
                          "markdown_report_path", "all_zones"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
@@ -675,8 +645,11 @@ cytosel <- function(...) {
     
     observeEvent(input$curated_options, {
     
-      output$curated_set_preview <- renderPrint({HTML(preview_info[names(preview_info) ==
-                                                              input$curated_options])})
+      # output$curated_set_preview <- renderPrint({HTML(preview_info[names(preview_info) ==
+      #                                                         input$curated_options])})
+      output$curated_set_preview <- renderPrint({HTML(as.character(input$curated_options))})
+      
+      
     })
     
     observeEvent(input$pick_curated, {
@@ -689,11 +662,10 @@ cytosel <- function(...) {
       withProgress(message = 'Configuring curated selection', value = 0, {
         setProgress(value = 0)
       
-      if (!file.exists(file.path(tempdir(), dataset_selections[names(dataset_selections) ==
-                                                        input$curated_options]))) {
+      if (!file.exists(file.path(tempdir(), paste(input$curated_options, ".rds", sep = "")))) {
           incProgress(detail = "Downloading curated dataset")
-          rdrop2::drop_download(paste("cytosel/", dataset_selections[names(dataset_selections) ==
-                                                                       input$curated_options],
+          rdrop2::drop_download(paste("tabula_sapiens/", 
+                                      paste(input$curated_options, ".rds", sep = ""),
                                 sep = ""),
                                 local_path = tempdir(),
                                 overwrite = T,
@@ -704,16 +676,14 @@ cytosel <- function(...) {
         incProgress(detail = "Reading input dataset")
         
         input_sce <- read_input_scrnaseq(file.path(tempdir(), 
-                                          dataset_selections[names(dataset_selections) ==
-                                          input$curated_options]))
+                                        paste(input$curated_options, ".rds", sep = "")))
         
         incProgress(detail = "Parsing gene names and assays")
         
         setProgress(value = 1)
       })
       
-      default_category_curated(default_celltype_curated[names(default_celltype_curated) ==
-                           input$curated_options])
+      default_category_curated("cell_ontology_class")
       
       post_upload_configuration(input_sce)
       
@@ -755,9 +725,12 @@ cytosel <- function(...) {
     })
     # })
     
-    observeEvent(input$coldata_column, {
-      req(sce())
-      column(input$coldata_column)
+    to_listen_preview <- reactive({
+      list(input$pick_curated, input$coldata_column, input$input_scrnaseq)
+    })
+    
+    observeEvent(to_listen_preview(), {
+      req(input$coldata_column)
       
       len_possible_cats <- length(unique(sce()[[input$coldata_column]]))
       num_limit <- ifelse(len_possible_cats <= 3, len_possible_cats, 3)
@@ -771,6 +744,11 @@ cytosel <- function(...) {
                                                          collapse = ", "),
                                                    others_addition,
                                                    sep = " ")})
+    })
+    
+    observeEvent(input$coldata_column, {
+      req(sce())
+      column(input$coldata_column)
       
       if (!isTruthy(reupload_cell_types())) {
         updateSelectInput(session, "user_selected_cells",
@@ -782,7 +760,6 @@ cytosel <- function(...) {
 
       reupload_analysis(FALSE)
       reupload_cell_types(FALSE)
-      
       
       })
     
@@ -1828,7 +1805,7 @@ cytosel <- function(...) {
       updateTabsetPanel(session, "tabs", "marker_selection")
       valid_existing_panel(TRUE)
       original_panel(NULL)
-    
+      
       })
     
     observeEvent(input$reset_marker_panel_reupload, {

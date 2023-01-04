@@ -509,11 +509,11 @@ context("Test the loading of the curated datasets from dropbox")
 test_that("Picking the curated dataset works as intended", {
   testServer(cytosel::cytosel(), expr = {
     
-    session$setInputs(curated_dataset = T, curated_options = "PBMC (Blood/Immune)",
+    session$setInputs(curated_dataset = T, curated_options = "Kidney",
                       subset_number = 2000,
                       pick_curated = T)
-    expect_true(file.exists(file.path(tempdir(), "/seurat_pbmc.rds")))
-    expect_equivalent(dim(sce()), c(13714, 2638))
+    expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
+    expect_equivalent(dim(sce()), c(58870, 881))
     
     expect_false(is.null(output$curated_set_preview))
     
