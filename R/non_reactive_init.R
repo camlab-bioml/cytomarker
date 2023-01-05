@@ -60,3 +60,13 @@ set_allowed_genes <- function() {
 
 clean_table <- NULL
 limit_applications <- NULL
+
+ts_datasets <- NULL
+dataset_labels <- NULL
+tissue <- NULL
+tissue_lab <- NULL
+
+update_metadata_column <- function() {
+  
+}
+

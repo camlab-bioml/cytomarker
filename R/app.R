@@ -1,11 +1,7 @@
 
-curated_dataset_names <- scan(system.file("tabula_sapiens_datasets.txt", package = "cytosel"), 
-                           character(), quote = "")
+curated_datasets <- readr::read_csv(system.file("ts_datasets.csv", package = "cytosel"))
 
-names(curated_dataset_names) <- gsub("_", " ", curated_dataset_names)
-
-
-for (i in curated_dataset_names) {
+for (i in curated_datasets$tissue) {
   if (file.exists(file.path(tempdir(), "/", paste(i, ".rds", sep = "")))) {
     command <- paste('rm ', tempdir(), "/", paste(i, ".rds", sep = ""), sep = "")
     system(command)
@@ -13,7 +9,8 @@ for (i in curated_dataset_names) {
 }
 
 utils::globalVariables(c("palette_to_use", "full_palette",
-                         "preview_info", "curated_dataset_names",
+                         "preview_info", "curated_datasets",
+                         "dataset_labels",
                          "markdown_report_path", "all_zones"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
@@ -94,6 +91,10 @@ cytosel <- function(...) {
   # devtools will find the file in the inst directory (move to top level)
   cytosel_token <- readRDS(system.file(file.path("token.rds"),
                                        package = "cytosel"))
+  
+  
+  dataset_labels <- curated_datasets$tissue |> set_names(gsub("_", " ", 
+                                                              curated_datasets$tissue))
   
   all_zones <- cytosel_data$time_zones
   # google analytics event tracking: 
@@ -640,14 +641,23 @@ cytosel <- function(...) {
     
     observeEvent(input$curated_dataset, {
       
-      showModal(curated_dataset_modal(curated_dataset_names))
+      showModal(curated_dataset_modal(names(dataset_labels)))
     })
     
     observeEvent(input$curated_options, {
     
-      # output$curated_set_preview <- renderPrint({HTML(preview_info[names(preview_info) ==
-      #                                                         input$curated_options])})
-      output$curated_set_preview <- renderPrint({HTML(as.character(input$curated_options))})
+      tissue_lab <- dataset_labels[names(dataset_labels) == input$curated_options]
+      
+      ts_dataset_preview <- paste("<b>", "<a href='https://tabula-sapiens-portal.ds.czbiohub.org/' target='_blank'",
+      ">", "Tabula Sapiens dataset: ", input$curated_options, "</a>",
+      "</b>", "<br/>", "<b>", "Cells: ", "</b>", subset(curated_datasets, tissue == tissue_lab)$num_cells[1], 
+    "<br/>", "<b>", "Genes: ", "</b>", "58870", "<br/>", 
+      "<b>", "Cell category of interest: ", "</b>", "cell_ontology_glass",
+    "<br/>", "<b>", "Cell types in category: ", "</b>", "<br/>", subset(curated_datasets, tissue == tissue_lab)$preview[1],
+      sep = "")
+      
+      
+      output$curated_set_preview <- renderPrint({HTML(ts_dataset_preview)})
       
       
     })
@@ -655,17 +665,20 @@ cytosel <- function(...) {
     observeEvent(input$pick_curated, {
       req(input$curated_options)
       
+      
       # future_promise({
       removeModal()
       pre_upload_configuration()
       
+      tissue_lab <- dataset_labels[names(dataset_labels) == input$curated_options]
+      
       withProgress(message = 'Configuring curated selection', value = 0, {
         setProgress(value = 0)
       
-      if (!file.exists(file.path(tempdir(), paste(input$curated_options, ".rds", sep = "")))) {
+      if (!file.exists(file.path(tempdir(), paste(tissue_lab, ".rds", sep = "")))) {
           incProgress(detail = "Downloading curated dataset")
           rdrop2::drop_download(paste("tabula_sapiens/", 
-                                      paste(input$curated_options, ".rds", sep = ""),
+                                      paste(tissue_lab, ".rds", sep = ""),
                                 sep = ""),
                                 local_path = tempdir(),
                                 overwrite = T,
@@ -676,7 +689,7 @@ cytosel <- function(...) {
         incProgress(detail = "Reading input dataset")
         
         input_sce <- read_input_scrnaseq(file.path(tempdir(), 
-                                        paste(input$curated_options, ".rds", sep = "")))
+                                        paste(tissue_lab, ".rds", sep = "")))
         
         incProgress(detail = "Parsing gene names and assays")
         
@@ -686,6 +699,8 @@ cytosel <- function(...) {
       default_category_curated("cell_ontology_class")
       
       post_upload_configuration(input_sce)
+      
+      update_metadata_column()
       
     })
     # })
@@ -746,22 +761,13 @@ cytosel <- function(...) {
                                                    sep = " ")})
     })
     
+    
     observeEvent(input$coldata_column, {
       req(sce())
-      column(input$coldata_column)
       
-      if (!isTruthy(reupload_cell_types())) {
-        updateSelectInput(session, "user_selected_cells",
-                          unique(sce()[[input$coldata_column]]))
-        specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
-      }
-      
-      cell_types_to_keep(NULL)
-
-      reupload_analysis(FALSE)
-      reupload_cell_types(FALSE)
-      
+      update_metadata_column()
       })
+    
     
     observeEvent(input$add_selected_to_analysis, {
       req(sce())
@@ -1933,6 +1939,23 @@ cytosel <- function(...) {
         })
       }
     }, ignoreNULL = FALSE)
+    
+    # update the selected metadata column and subtypes
+    
+    update_metadata_column <- function() {
+      column(input$coldata_column)
+      
+      if (!isTruthy(reupload_cell_types())) {
+        updateSelectInput(session, "user_selected_cells",
+                          unique(sce()[[input$coldata_column]]))
+        specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
+      }
+      
+      cell_types_to_keep(NULL)
+      
+      reupload_analysis(FALSE)
+      reupload_cell_types(FALSE)
+    }
     
     
     ### UPDATE SELECTED MARKERS ###

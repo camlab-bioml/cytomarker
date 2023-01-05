@@ -511,6 +511,7 @@ test_that("Picking the curated dataset works as intended", {
     
     session$setInputs(curated_dataset = T, curated_options = "Kidney",
                       subset_number = 2000,
+                      coldata_column = "cell_ontology_class",
                       pick_curated = T)
     expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
     expect_equivalent(dim(sce()), c(58870, 881))
