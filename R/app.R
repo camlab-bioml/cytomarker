@@ -410,7 +410,7 @@ cytosel <- function(...) {
                                               placement = "right"))),
                           div(style="margin-left:10px; margin-top: 25px; margin-bottom:25px;",
                               actionButton("suggest_gene_removal", "View suggestions"))),
-                 fluidRow(column(12, plotlyOutput("heatmap", height="550px"))),
+                 fluidRow(column(12, plotlyOutput("heatmap", height="auto"))),
                  br()
           ),
 
@@ -1005,6 +1005,8 @@ cytosel <- function(...) {
           valid_existing_panel(FALSE)
           current_pan_not_valid_modal(current_panel_not_valid, "current dataset:")
         }
+        
+        use_precomputed_umap(input$precomputed_dim)
         
         set_allowed_genes()
         
@@ -1686,8 +1688,11 @@ cytosel <- function(...) {
       
       if (isTruthy(input$precomputed_dim)) {
         showModal(pre_computed_umap_modal(possible_umap_dims()))
+      } else {
+        use_precomputed_umap(FALSE)
       }
-    })
+      
+    }, ignoreNULL = F)
     
     observeEvent(input$select_precomputed_umap, {
       req(sce())
@@ -2016,7 +2021,8 @@ cytosel <- function(...) {
              ncol = 1,
              col = cytosel_palette())
       mtext("Cell Type", cex=1.5)
-      par(op)})
+      par(op)
+      })
      
       output$BL <- renderUI({
         bucket_list(
@@ -2072,11 +2078,11 @@ cytosel <- function(...) {
         umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
                           column(), pref_assay(), 
                           use_precomputed_umap(),
-                          umap_precomputed_col(), F, num_markers_in_selected()))
+                          umap_precomputed_col(), F, allowed_genes()))
         umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][current_markers()$top_markers,], 
                           column(), pref_assay(), use_precomputed_umap(),
                           umap_precomputed_col(),
-                          T, num_markers_in_selected()))
+                          T, current_markers()$top_markers))
         
         plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
@@ -2255,6 +2261,10 @@ cytosel <- function(...) {
       # toggle(id = "apps", condition = isTruthy(SUBSET_TO_ABCAM))
       
       input_assays <- c(names(assays(sce())))
+      
+      # set the currenr metrics to NULL
+      current_metrics(NULL)
+      previous_metrics(NULL)
       
       if (!isTruthy(input$min_category_count)) {
         updateNumericInput(session, "min_category_count", 2)

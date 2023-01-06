@@ -15,7 +15,7 @@ dest_dir <- "/home/matt/cytosel/tabula_sapiens/datasets/processed"
 info_frame <- data.frame(tissue = character(), num_cells = numeric(),
                    num_genes = numeric(),
                    preview = character())
-
+  
 for (elem in datasets) {
   gc()
   tissue <- str_split_fixed(elem, "processed/|.rds", 3)[,2]
@@ -41,3 +41,6 @@ for (elem in datasets) {
   info_frame <- rbind(info_frame, to_add)
   
 }
+
+write.csv(info_frame, "ts_datasets.csv", row.names = F, quote = F)
+

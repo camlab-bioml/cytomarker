@@ -17,7 +17,6 @@ for (elem in datasets) {
   tissue <- str_split_fixed(elem, "TS_|.h5ad", 3)[,2]
   tissue <- gsub(" ", "", tissue, fixed = TRUE)
   if (isFALSE(file.exists(file.path(dest_dir, paste(tissue, ".rds", sep = ""))))) {
-    
   gc()
   print(elem)
   data <- readH5AD(elem)

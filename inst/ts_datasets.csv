@@ -2,6 +2,8 @@ tissue,num_cells,num_genes,preview
 Bladder,2671,58870,14 groupings in selected category, including macrophage, capillary endothelial cell, smooth muscle cell and others
 Blood,2551,58870,20 groupings in selected category, including cd8-positive, alpha-beta t cell, cd4-positive, alpha-beta memory t cell, cd8-positive, alpha-beta cytokine secreting effector t cell and others
 Bone_Marrow,2052,58870,16 groupings in selected category, including hematopoietic stem cell, naive b cell, macrophage and others
+Endothelial,1846,58870,15 groupings in selected category, including endothelial cell of hepatic sinusoid, endothelial cell of lymphatic vessel, endothelial cell and others
+Epithelial,3161,58870,61 groupings in selected category, including intrahepatic cholangiocyte, hepatocyte, tracheal goblet cell and others
 Eye,2178,58870,27 groupings in selected category, including monocyte, microglial cell, fibroblast and others
 Fat,1489,58870,11 groupings in selected category, including fibroblast, macrophage, t cell and others
 Heart,1184,58870,6 groupings in selected category, including hepatocyte, cardiac muscle cell, cardiac endothelial cell and others
@@ -19,3 +21,7 @@ Skin,1826,58870,20 groupings in selected category, including macrophage, cd8-pos
 Small_Intestine,1800,58870,21 groupings in selected category, including neutrophil, small intestine goblet cell, monocyte and others
 Spleen,2396,58870,24 groupings in selected category, including intermediate monocyte, memory b cell, nk cell and others
 Thymus,2633,58870,29 groupings in selected category, including cd4-positive helper t cell, t follicular helper cell, naive regulatory t cell and others
+Tongue,952,58870,11 groupings in selected category, including epithelial cell, fibroblast, pericyte cell and others
+Trachea,2068,58870,19 groupings in selected category, including macrophage, tracheal goblet cell, endothelial cell and others
+Uterus,1691,58870,12 groupings in selected category, including fibroblast, pericyte cell, epithelial cell of uterus and others
+Vasculature,1142,58870,14 groupings in selected category, including smooth muscle cell, artery endothelial cell, pericyte cell and others
