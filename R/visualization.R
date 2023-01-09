@@ -39,8 +39,8 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
   if(display == "Marker-marker correlation") {
     
     cc <- round(cor(t(mat)), 4)
-    dims <- ifelse(length(rownames(cc)) < 70, 650, ifelse(length(rownames(cc)) < 100,
-                                                          10*length(rownames(cc)), 1000))
+    dims <- ifelse(length(rownames(cc)) < 70, 650, ifelse(length(rownames(cc)) < 95,
+                                                          10.5*length(rownames(cc)), 1000))
     
     cor_map <- plot_ly(z=cc, 
                        type='heatmap',

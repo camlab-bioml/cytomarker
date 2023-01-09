@@ -416,7 +416,8 @@ test_that("Error modals throw errors", {
   # expected class from a modal dialog box
   expect_is(reset_analysis_modal(), 'shiny.tag')
   expect_is(suggestion_modal(failed = T, c("Sug_1", "Sug_2"), "Sug_1"), 'shiny.tag')
-  expect_is(curated_dataset_modal(c("cur_1", "cur_2"), failed = T), 'shiny.tag')
+  expect_is(curated_dataset_modal(c("cur_1", "cur_2"), 
+                                  c("cur_1", "cur_2"), failed = T), 'shiny.tag')
   expect_error(subsampling_error_modal(c("Type_1", "Type_2")))
   expect_is(time_zone_modal(cytosel_data$time_zones, NULL), 'shiny.tag')
   expect_is(reset_option_on_change_modal("placeholder"), 'shiny.tag')

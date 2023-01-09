@@ -2,8 +2,6 @@ tissue,num_cells,num_genes,preview
 Bladder,2671,58870,14 groupings in selected category, including macrophage, capillary endothelial cell, smooth muscle cell and others
 Blood,2551,58870,20 groupings in selected category, including cd8-positive, alpha-beta t cell, cd4-positive, alpha-beta memory t cell, cd8-positive, alpha-beta cytokine secreting effector t cell and others
 Bone_Marrow,2052,58870,16 groupings in selected category, including hematopoietic stem cell, naive b cell, macrophage and others
-Endothelial,1846,58870,15 groupings in selected category, including endothelial cell of hepatic sinusoid, endothelial cell of lymphatic vessel, endothelial cell and others
-Epithelial,3161,58870,61 groupings in selected category, including intrahepatic cholangiocyte, hepatocyte, tracheal goblet cell and others
 Eye,2178,58870,27 groupings in selected category, including monocyte, microglial cell, fibroblast and others
 Fat,1489,58870,11 groupings in selected category, including fibroblast, macrophage, t cell and others
 Heart,1184,58870,6 groupings in selected category, including hepatocyte, cardiac muscle cell, cardiac endothelial cell and others

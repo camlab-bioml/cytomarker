@@ -70,3 +70,6 @@ update_metadata_column <- function() {
   
 }
 
+possible_curated <- NULL
+compartments <- NULL
+

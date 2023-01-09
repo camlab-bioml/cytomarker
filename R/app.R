@@ -1,6 +1,8 @@
 
 curated_datasets <- readr::read_csv(system.file("ts_datasets.csv", package = "cytosel"))
 
+compartments <- yaml::read_yaml(system.file("ts_compartments.yml", package = "cytosel"))
+
 for (i in curated_datasets$tissue) {
   if (file.exists(file.path(tempdir(), "/", paste(i, ".rds", sep = "")))) {
     command <- paste('rm ', tempdir(), "/", paste(i, ".rds", sep = ""), sep = "")
@@ -9,7 +11,7 @@ for (i in curated_datasets$tissue) {
 }
 
 utils::globalVariables(c("palette_to_use", "full_palette",
-                         "preview_info", "curated_datasets",
+                         "preview_info", "curated_datasets", "compartments",
                          "dataset_labels",
                          "markdown_report_path", "all_zones"), "cytosel")
 
@@ -68,6 +70,8 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' 
 #' @param ... Additional arguments
 cytosel <- function(...) {
+  
+  par(mar = c(0, 0, 0, 0))
   
   # plan(multisession)
   
@@ -641,8 +645,21 @@ cytosel <- function(...) {
     
     observeEvent(input$curated_dataset, {
       
-      showModal(curated_dataset_modal(names(dataset_labels)))
+      showModal(curated_dataset_modal(names(compartments), names(dataset_labels)))
     })
+    
+    observeEvent(input$curated_compartments, {
+      
+      possible_curated <- c()
+      
+      for (sub in input$curated_compartments) {
+        possible_curated <- c(possible_curated, compartments[[sub]])
+      }
+      
+      updateSelectInput(session, "curated_options", 
+                        choices = sort(unique(possible_curated)))
+      
+    }, ignoreNULL = F)
     
     observeEvent(input$curated_options, {
     
