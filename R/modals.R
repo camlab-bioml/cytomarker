@@ -296,14 +296,17 @@ current_pan_not_valid_modal <- function(missing_genes, location) { # Marker remo
 #' Show an input modal for the user to select a pre-curated cytosel dataset
 #' @importFrom shiny modalDialog
 #' @param compartment_options a vector of the possible cell type supersets as established by Tabula Sapiens
+#' @param compartments_selected a vector of currently selected cell type supersets
 #' @param dataset_options a vector of the identifiers for the possible loadable datasets
-curated_dataset_modal <- function(compartment_options, dataset_options, failed = FALSE) {
+curated_dataset_modal <- function(compartment_options, compartments_selected,
+                                  dataset_options, failed = FALSE) {
   modalDialog(
     flowLayout(selectInput("curated_compartments",
-                          "1. Select any specific cell compartment(s)",
-                          compartment_options, multiple = T, selected = compartment_options),
+                          "1. Select cell compartment(s)",
+                          compartment_options, multiple = T, 
+                          selected = compartments_selected),
            selectInput("curated_options",
-                       "2. Choose a pre-annotated dataset to analyze",
+                       "2. Choose a tissue type to analyze",
                        dataset_options),
     htmlOutput("curated_set_preview")),
     if (failed) {

@@ -542,6 +542,9 @@ cytosel <- function(...) {
     
     cell_types_to_keep <- reactiveVal()
     
+    ts_compartments <- reactiveVal(tolower(names(compartments)))
+    compartments_selected <- reactiveVal()
+    
     ## Current data frame of selected cell type markers and the reactable
     current_cell_type_marker_fm <- NULL
     selected_cell_type_markers <- reactive(getReactableState("cell_type_marker_reactable", "selected"))
@@ -646,7 +649,10 @@ cytosel <- function(...) {
     
     observeEvent(input$curated_dataset, {
       
-      showModal(curated_dataset_modal(names(compartments), names(dataset_labels)))
+      if (!isTruthy(compartments_selected())) compartments_selected(names(compartments)) 
+      
+      showModal(curated_dataset_modal(names(compartments),
+                                      compartments_selected(), names(dataset_labels)))
     })
     
     observeEvent(input$curated_compartments, {
@@ -660,6 +666,9 @@ cytosel <- function(...) {
       updateSelectInput(session, "curated_options", 
                         choices = sort(unique(possible_curated)))
       
+      ts_compartments(tolower(input$curated_compartments))
+      compartments_selected(input$curated_compartments)
+      
     }, ignoreNULL = F)
     
     observeEvent(input$curated_options, {
@@ -671,7 +680,7 @@ cytosel <- function(...) {
       "</b>", "<br/>", "<b>", "Cells: ", "</b>", subset(curated_datasets, tissue == tissue_lab)$num_cells[1], 
     "<br/>", "<b>", "Genes: ", "</b>", "58870", "<br/>", 
       "<b>", "Cell category of interest: ", "</b>", "cell_ontology_glass",
-    "<br/>", "<b>", "Cell types in category: ", "</b>", "<br/>", subset(curated_datasets, tissue == tissue_lab)$preview[1],
+    "<br/>", "<b>", "Metadata preview: ", "</b>", "<br/>", subset(curated_datasets, tissue == tissue_lab)$preview[1],
       sep = "")
       
       
@@ -708,6 +717,10 @@ cytosel <- function(...) {
         
         input_sce <- read_input_scrnaseq(file.path(tempdir(), 
                                         paste(tissue_lab, ".rds", sep = "")))
+        
+        input_sce <- input_sce[,input_sce$compartment %in% ts_compartments()]
+        input_sce$compartment <- factor(input_sce$compartment, 
+                                        levels = ts_compartments())
         
         incProgress(detail = "Parsing gene names and assays")
         
