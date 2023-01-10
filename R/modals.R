@@ -299,22 +299,13 @@ current_pan_not_valid_modal <- function(missing_genes, location) { # Marker remo
 #' @param dataset_options a vector of the identifiers for the possible loadable datasets
 curated_dataset_modal <- function(compartment_options, dataset_options, failed = FALSE) {
   modalDialog(
-    flowLayout(cellArgs = list(
-      style = "margin-top:10x;
-                         margin-right: 15px;
-                         margin-bottom: 0px; 
-          margin-left: 15px; "), selectInput("curated_compartments",
-                "Browse specific cell compartment(s)",
-                compartment_options, multiple = T, selected = compartment_options),
+    flowLayout(selectInput("curated_compartments",
+                          "1. Select any specific cell compartment(s)",
+                          compartment_options, multiple = T, selected = compartment_options),
+           selectInput("curated_options",
+                       "2. Choose a pre-annotated dataset to analyze",
+                       dataset_options),
     htmlOutput("curated_set_preview")),
-    div(style = "margin-top: -30px;"),
-    flowLayout(cellArgs = list(
-      style = "margin-top:-20x;
-                         margin-right: 15px;
-                         margin-bottom: 0px; 
-          margin-left: 15px; "), selectInput("curated_options",
-                                             "Choose a pre-annotated dataset to analyze",
-                                             dataset_options)),
     if (failed) {
       div(tags$b("Error", style = "color: red;"))
     },

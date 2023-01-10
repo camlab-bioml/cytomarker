@@ -1,7 +1,6 @@
 
-curated_datasets <- readr::read_csv(system.file("ts_datasets.csv", package = "cytosel"))
-
-compartments <- yaml::read_yaml(system.file("ts_compartments.yml", package = "cytosel"))
+curated_datasets <- utils::read.delim(system.file("ts_datasets.tsv", package = "cytosel"),
+                             sep = "\t")
 
 for (i in curated_datasets$tissue) {
   if (file.exists(file.path(tempdir(), "/", paste(i, ".rds", sep = "")))) {
@@ -39,6 +38,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @import ggplot2
 #' @import sortable
 #' @import scater
+#' @import utils
 #' @import reactable
 #' @import tidyverse
 #' @import printr
@@ -71,8 +71,6 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @param ... Additional arguments
 cytosel <- function(...) {
   
-  par(mar = c(0, 0, 0, 0))
-  
   # plan(multisession)
   
   antibody_info <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
@@ -80,7 +78,10 @@ cytosel <- function(...) {
                     tidyr::drop_na()
   
   options(MulticoreParam=quote(MulticoreParam(workers=availableCores())))
-
+  
+  compartments <- yaml::read_yaml(system.file("ts_compartments.yml", 
+                                              package = "cytosel"))
+  
   
   applications_parsed <- get_antibody_applications(antibody_info, 
                                                    'Symbol', 'Listed Applications')

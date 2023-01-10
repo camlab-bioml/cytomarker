@@ -42,6 +42,6 @@ for (elem in datasets) {
   
 }
 
-write.csv(info_frame, file.path("inst", "ts_datasets.csv"), 
-                                row.names = F, quote = F, sep = "\t")
+write.table(info_frame, file.path("inst", "ts_datasets.tsv"), 
+                                row.names = F, sep = "\t", quote = F)
 

@@ -1,0 +1,25 @@
+tissue	num_cells	num_genes	preview
+Bladder	2671	58870	14 groupings in selected category, including macrophage, capillary endothelial cell, smooth muscle cell and others
+Blood	2551	58870	20 groupings in selected category, including cd8-positive, alpha-beta t cell, cd4-positive, alpha-beta memory t cell, cd8-positive, alpha-beta cytokine secreting effector t cell and others
+Bone_Marrow	2052	58870	16 groupings in selected category, including hematopoietic stem cell, naive b cell, macrophage and others
+Eye	2178	58870	27 groupings in selected category, including monocyte, microglial cell, fibroblast and others
+Fat	1489	58870	11 groupings in selected category, including fibroblast, macrophage, t cell and others
+Heart	1184	58870	6 groupings in selected category, including hepatocyte, cardiac muscle cell, cardiac endothelial cell and others
+Kidney	881	58870	7 groupings in selected category, including cd8-positive, alpha-beta t cell, kidney epithelial cell, endothelial cell and others
+Large_Intestine	1916	58870	20 groupings in selected category, including plasma cell, b cell, cd4-positive, alpha-beta t cell and others
+Liver	1133	58870	13 groupings in selected category, including endothelial cell of hepatic sinusoid, liver dendritic cell, monocyte and others
+Lung	2787	58870	33 groupings in selected category, including neutrophil, cd8-positive alpha-beta t cell, bronchial vessel endothelial cell and others
+Lymph_Node	2454	58870	27 groupings in selected category, including b cell, regulatory t cell, neutrophil and others
+Mammary	1100	58870	12 groupings in selected category, including macrophage, pericyte cell, vascular associated smooth muscle cell and others
+Muscle	2099	58870	17 groupings in selected category, including endothelial cell of lymphatic vessel, endothelial cell of vascular tree, endothelial cell of artery and others
+Pancreas	1459	58870	14 groupings in selected category, including t cell, endothelial cell, nk cell and others
+Prostate	2701	58870	18 groupings in selected category, including fibroblast, hillock-club cell of prostate epithelium, macrophage and others
+Salivary_Gland	2547	58870	23 groupings in selected category, including nk cell, endothelial cell of lymphatic vessel, memory b cell and others
+Skin	1826	58870	20 groupings in selected category, including macrophage, cd8-positive, alpha-beta memory t cell, t cell and others
+Small_Intestine	1800	58870	21 groupings in selected category, including neutrophil, small intestine goblet cell, monocyte and others
+Spleen	2396	58870	24 groupings in selected category, including intermediate monocyte, memory b cell, nk cell and others
+Thymus	2633	58870	29 groupings in selected category, including cd4-positive helper t cell, t follicular helper cell, naive regulatory t cell and others
+Tongue	952	58870	11 groupings in selected category, including epithelial cell, fibroblast, pericyte cell and others
+Trachea	2068	58870	19 groupings in selected category, including macrophage, tracheal goblet cell, endothelial cell and others
+Uterus	1691	58870	12 groupings in selected category, including fibroblast, pericyte cell, epithelial cell of uterus and others
+Vasculature	1142	58870	14 groupings in selected category, including smooth muscle cell, artery endothelial cell, pericyte cell and others
