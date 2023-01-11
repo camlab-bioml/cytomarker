@@ -601,5 +601,24 @@ test_that("cytosel is able to identify an RDS that is not of the proper SCE form
   })
 })
 
+context("Test that proper dataset filtering thresholds are applied automatically")
 
+test_that("Default thresholds are applied when viewing the category table", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")))
+    
+    session$setInputs(assay_select = "counts", assay = "counts",
+                      coldata_column = "seurat_annotations")
+    
+    session$setInputs(show_cat_table = T)
+    
+    expect_equal(cell_min_threshold(), 2)
+    expect_equal(length(specific_cell_types_selected()), 
+                 length(unique(sce()[["seurat_annotations"]])))
+    
+})
+})
 

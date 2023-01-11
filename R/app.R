@@ -56,6 +56,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom SingleCellExperiment reducedDimNames reducedDims
 #' @importFrom plotly plot_ly plotlyOutput renderPlotly layout hide_guides
 #' @importFrom parallelly availableCores
+#' @importFrom parallel mclapply
 #' @importFrom BiocParallel MulticoreParam
 #' @importFrom stringr str_split_fixed
 #' @importFrom magrittr set_names
@@ -379,10 +380,10 @@ cytosel <- function(...) {
                                                      width = "89%",
                                                      ))))),
                  fluidRow(column(6, style = "margin-right: -10px; margin-top: 10px",
-                                 plotlyOutput("all_plot", width="500px", height="400px",
+                                 plotlyOutput("all_plot", width="400px", height="400px",
                                                  )),
                           column(6, style = "margin-right: -10px; margin-top: 10px",
-                                 plotlyOutput("top_plot", width="500px", height="400px",
+                                 plotlyOutput("top_plot", width="400px", height="400px",
                                                  )))
           ),
         
@@ -733,6 +734,9 @@ cytosel <- function(...) {
       
       update_metadata_column()
       
+      updateCheckboxInput(session, inputId = "precomputed_dim",
+                          value = T)
+      
     })
     # })
     
@@ -842,13 +846,10 @@ cytosel <- function(...) {
     cell_category_table <- create_table_of_hetero_cat(sce(),
                                                       input$coldata_column)
     
-      if (!isTruthy(cell_min_threshold())) {
-        cell_min_threshold(2)
-      }
+      # if (!isTruthy(cell_min_threshold())) cell_min_threshold(2)
   
-      if (!isTruthy(specific_cell_types_selected())) {
-        specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
-      }
+  
+      # if (!isTruthy(specific_cell_types_selected())) specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
   
     
     if (nrow(cell_category_table) > 100) {
@@ -2362,7 +2363,7 @@ cytosel <- function(...) {
         sce()[,sce()$keep_for_analysis == "Yes"])) else allowed_genes(rownames(sce()[,sce()$keep_for_analysis == "Yes"]))
       
       allowed_genes(remove_confounding_genes(allowed_genes()))
-
+  
     }
     
     ### SAVE PANEL ###
