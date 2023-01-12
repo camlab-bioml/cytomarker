@@ -725,15 +725,12 @@ cytosel <- function(...) {
         input_sce <- read_input_scrnaseq(file.path(tempdir(), 
                                         paste(tissue_lab, ".rds", sep = "")))
         
-        if (length(ts_compartments() > 0)) {
-          input_sce <- input_sce[,input_sce$compartment %in% ts_compartments()]
-          input_sce$compartment <- factor(input_sce$compartment, 
-                                          levels = ts_compartments())
-        }
+        if (length(ts_compartments()) < 1) ts_compartments = compartments
+      
         
-        input_sce <- input_sce[,input_sce$compartment %in% ts_compartments()]
-        input_sce$compartment <- factor(input_sce$compartment, 
-                                        levels = ts_compartments())
+          input_sce <- input_sce[,input_sce$compartment %in% ts_compartments()]
+          input_sce$compartment <- factor(input_sce$compartment,
+                                          levels = ts_compartments())
         
         incProgress(detail = "Parsing gene names and assays")
         
@@ -946,7 +943,7 @@ cytosel <- function(...) {
 
     ### PLOTS ###
     output$all_plot <- renderPlotly({
-      req(umap_all())
+      # req(umap_all())
       req(column())
       req(plots$all_plot)
       
@@ -956,7 +953,7 @@ cytosel <- function(...) {
     })
     
     output$top_plot <- renderPlotly({
-      req(umap_top())
+      # req(umap_top())
       req(column())
       req(plots$top_plot)
       
@@ -1869,12 +1866,12 @@ cytosel <- function(...) {
     })
     
     to_listen_umap <- reactive({
-      list(input$umap_options, input$show_umap_legend, input$umap_panel_options)
+      list(input$umap_options, input$umap_panel_options, input$show_umap_legend)
     })
+    
     
     observeEvent(to_listen_umap(), {
       req(sce())
-      req(input$umap_panel_options)
       req(input$umap_options)
       
       umap_colouring(input$umap_options)
@@ -1886,13 +1883,13 @@ cytosel <- function(...) {
                                                      text=~get(input$coldata_column), 
                                                      type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
                                                layout(title = "UMAP all genes",
-                                                      showlegend = isTruthy(input$show_umap_legend)))
+                                                      showlegend = input$show_umap_legend))
           
           plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
                                                      text=~get(input$coldata_column),
                                                      type='scatter', hoverinfo="text", colors=cytosel_palette()) %>%
                                                layout(title = "UMAP selected markers",
-                                                      showlegend = isTruthy(input$show_umap_legend)))
+                                                      showlegend = input$show_umap_legend))
           umap_top_gene(FALSE)
           umap_all_gene(FALSE)
           
@@ -1925,27 +1922,27 @@ cytosel <- function(...) {
                           rename(Expression = input$umap_panel_options))
           
           plots$top_plot <- suppressWarnings(plot_ly(umap_top_gene(),
-                                    x = ~UMAP_1, y = ~UMAP_2, 
-                                    color = ~Expression,
-                                    type='scatter',
-                                    text = ~lab,
-                                    hoverinfo = "text",
-                                    colors = c("grey60",
-                                               "blue")) %>%
-            # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
-            layout(title = "UMAP selected markers"))
+                                                     x = ~UMAP_1, y = ~UMAP_2, 
+                                                     color = ~Expression,
+                                                     type='scatter',
+                                                     text = ~lab,
+                                                     hoverinfo = "text",
+                                                     colors = c("grey60",
+                                                                "blue")) %>%
+                                               # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
+                                               layout(title = "UMAP selected markers"))
           
           plots$all_plot <- hide_guides(suppressWarnings(plot_ly(umap_all_gene(),
-                                    x = ~UMAP_1, y = ~UMAP_2, 
-                                    color = ~Expression,
-                                    type='scatter',
-                                    text = ~lab,
-                                    hoverinfo = "text",
-                                    colors = c("grey60",
-                                               "blue")) %>%
-                                                 # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
-            layout(title = "UMAP all genes",
-                   showlegend = F)))
+                                                                 x = ~UMAP_1, y = ~UMAP_2, 
+                                                                 color = ~Expression,
+                                                                 type='scatter',
+                                                                 text = ~lab,
+                                                                 hoverinfo = "text",
+                                                                 colors = c("grey60",
+                                                                            "blue")) %>%
+                                                           # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
+                                                           layout(title = "UMAP all genes",
+                                                                  showlegend = F)))
           
           
         }

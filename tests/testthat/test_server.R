@@ -50,6 +50,7 @@ test_that("Server has basic functionality", {
     
     session$setInputs(min_category_count = 50,
                       start_analysis = T)
+    
     expect_false(any_cells_present())
     
     expect_null(previous_metrics())
@@ -62,9 +63,7 @@ test_that("Server has basic functionality", {
                       min_category_count = 2,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
-                      umap_options = "Cell Type",
                       select_aa = NULL,
-                      umap_panel_options = NULL,
                       start_analysis = T)
     
     # resetting the min count to 2 allows to proceed with analysis
@@ -434,9 +433,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
     
-    session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
-                      # show_umap_legend = T,
-                      start_analysis = T)
+    session$setInputs(start_analysis = T)
     
     expect_equal(cell_min_threshold(), 2)
     expect_equal(length(specific_cell_types_selected()),
@@ -451,6 +448,10 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_null(previous_run_log())
     
     heatmap_1 <- heatmap()
+    
+    session$setInputs(umap_options = "Cell Type",
+                      umap_panel_options = "S100A9", umap_panel_cols = T, 
+                      show_umap_legend = T)
     
     # check defaults for UMAP plots
     expect_false(umap_top_gene())
@@ -545,9 +546,7 @@ test_that("datasets with few genes produce errors on marker finding", {
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
     
-    session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
-                      # show_umap_legend = T,
-                      start_analysis = T)
+    session$setInputs(start_analysis = T)
     
     expect_false(is.null(cell_types_missing_markers()))
     

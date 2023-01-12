@@ -20,7 +20,7 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
     fm <- findMarkers(sce, colData(sce)[[col]], 
                       test.type = test_type, assay.type = pref_assay,
-                      BPPARAM = MulticoreParam())
+                      BPPARAM = MulticoreParam(stop.on.error = F))
     
     for(n in names(fm)) {
       fm[[n]] <- fm[[n]][rownames(fm[[n]]) %in% allowed_genes,]
