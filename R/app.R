@@ -725,8 +725,7 @@ cytosel <- function(...) {
         input_sce <- read_input_scrnaseq(file.path(tempdir(), 
                                         paste(tissue_lab, ".rds", sep = "")))
         
-        if (length(ts_compartments()) < 1) ts_compartments = compartments
-      
+        if (length(ts_compartments()) < 1) ts_compartments(tolower(names(compartments)))
         
           input_sce <- input_sce[,input_sce$compartment %in% ts_compartments()]
           input_sce$compartment <- factor(input_sce$compartment,
