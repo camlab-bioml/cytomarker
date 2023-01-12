@@ -301,13 +301,13 @@ current_pan_not_valid_modal <- function(missing_genes, location) { # Marker remo
 curated_dataset_modal <- function(compartment_options, compartments_selected,
                                   dataset_options, failed = FALSE) {
   modalDialog(
-    flowLayout(selectInput("curated_compartments",
-                          "1. Select cell compartment(s)",
+    flowLayout(selectInput("curated_options",
+                       "1. Choose a tissue type to analyze",
+                       dataset_options),
+               selectInput("curated_compartments",
+                          "2. Select cell compartment(s)",
                           compartment_options, multiple = T, 
                           selected = compartments_selected),
-           selectInput("curated_options",
-                       "2. Choose a tissue type to analyze",
-                       dataset_options),
     htmlOutput("curated_set_preview")),
     if (failed) {
       div(tags$b("Error", style = "color: red;"))

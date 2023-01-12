@@ -433,8 +433,9 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
-  
+    
     session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
+                      # show_umap_legend = T,
                       start_analysis = T)
     
     expect_equal(cell_min_threshold(), 2)
@@ -457,7 +458,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_equal(umap_colouring(), "Cell Type")
     
     session$setInputs(umap_options = "Panel Marker",
-    umap_panel_options = "S100A9", umap_panel_cols = T)
+    umap_panel_options = "S100A9", umap_panel_cols = T, show_umap_legend = T)
     
     # switching the UMAP to gene works
     expect_false(isFALSE(umap_top_gene()))
@@ -545,6 +546,7 @@ test_that("datasets with few genes produce errors on marker finding", {
                       marker_strategy = "fm")
     
     session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
+                      # show_umap_legend = T,
                       start_analysis = T)
     
     expect_false(is.null(cell_types_missing_markers()))

@@ -378,7 +378,10 @@ cytosel <- function(...) {
                                                      "Color Heatmap by Gene Marker", 
                                                      choices = NULL, multiple = F,
                                                      width = "89%",
-                                                     ))))),
+                                                     )))),
+                          column(2, div(style = "margin-top: 30px; margin-left: 60px;"),
+                                            checkboxInput("show_umap_legend", "Show UMAP plot legends", T,
+                                                             ))),
                  fluidRow(column(6, style = "margin-right: -10px; margin-top: 10px",
                                  plotlyOutput("all_plot", width="400px", height="400px",
                                                  )),
@@ -664,8 +667,11 @@ cytosel <- function(...) {
         possible_curated <- c(possible_curated, compartments[[sub]])
       }
       
+      if (length(input$curated_compartments) < 1) possible_curated = names(dataset_labels)      
       updateSelectInput(session, "curated_options", 
-                        choices = sort(unique(possible_curated)))
+                        choices = sort(unique(possible_curated)),
+                        selected = ifelse(input$curated_options %in% possible_curated,
+                                          input$curated_options, sort(unique(possible_curated))[1]))
       
       ts_compartments(tolower(input$curated_compartments))
       compartments_selected(input$curated_compartments)
@@ -718,6 +724,12 @@ cytosel <- function(...) {
         
         input_sce <- read_input_scrnaseq(file.path(tempdir(), 
                                         paste(tissue_lab, ".rds", sep = "")))
+        
+        if (length(ts_compartments() > 0)) {
+          input_sce <- input_sce[,input_sce$compartment %in% ts_compartments()]
+          input_sce$compartment <- factor(input_sce$compartment, 
+                                          levels = ts_compartments())
+        }
         
         input_sce <- input_sce[,input_sce$compartment %in% ts_compartments()]
         input_sce$compartment <- factor(input_sce$compartment, 
@@ -1856,26 +1868,31 @@ cytosel <- function(...) {
       
     })
     
-    observeEvent(input$umap_options, {
+    to_listen_umap <- reactive({
+      list(input$umap_options, input$show_umap_legend, input$umap_panel_options)
+    })
+    
+    observeEvent(to_listen_umap(), {
       req(sce())
+      req(input$umap_panel_options)
+      req(input$umap_options)
       
       umap_colouring(input$umap_options)
       
       toggle(id = "umap_panel_cols", condition = input$umap_options != "Cell Type")
-      
-      observeEvent(input$umap_panel_options, {
-        req(input$umap_panel_options)
         
         if (umap_colouring() == "Cell Type") {
           plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
                                                      text=~get(input$coldata_column), 
                                                      type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-                                               layout(title = "UMAP all genes"))
+                                               layout(title = "UMAP all genes",
+                                                      showlegend = isTruthy(input$show_umap_legend)))
           
           plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
                                                      text=~get(input$coldata_column),
                                                      type='scatter', hoverinfo="text", colors=cytosel_palette()) %>%
-                                               layout(title = "UMAP selected markers"))
+                                               layout(title = "UMAP selected markers",
+                                                      showlegend = isTruthy(input$show_umap_legend)))
           umap_top_gene(FALSE)
           umap_all_gene(FALSE)
           
@@ -1932,9 +1949,8 @@ cytosel <- function(...) {
           
           
         }
-      })
       
-    })
+    }, ignoreNULL = F)
     
     to_listen_violin <- reactive({
       list(input$genes_for_violin, input$viol_viewer)
