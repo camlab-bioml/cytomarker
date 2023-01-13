@@ -48,23 +48,24 @@ htmltools::img(src = "cytosel-logo.png",
 
 ```{r message=F, echo=F, width = 13}
 reactable(params$df,
-                searchable = TRUE,
+              searchable = TRUE,
                 filterable = TRUE,
                 groupBy = "Symbol",
-                columns = list(
-                  `Host Species` = colDef(
+                columns = list(`Host Species` = colDef(aggregate = "unique",
                   filterInput = function(values, name) {
                     tags$select(
                       # Set to undefined to clear the filter
                       onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
                       # "All" has an empty value to clear the filter, and is the default option
                       tags$option(value = "", "All"),
+                      tags$html(multiple = T),
                       lapply(unique(values), tags$option),
                       "aria-label" = sprintf("Filter %s", name),
-                      style = "width: 100%; height: 28px;"
+                      style = "width: 100%; height: 28px"
                     )
                   }
                 ),
+                `Target` = colDef(aggregate = "unique"),
                 `Product Category Tier 3` = colDef(
                   filterInput = function(values, name) {
                     tags$select(
@@ -78,6 +79,15 @@ reactable(params$df,
                     )
                   }
                 ),
+#                 `Listed Applications` = colDef(
+#                   filterable = TRUE,
+#                   # Filter by case-sensitive text match
+#                   filterMethod = JS("export function MultiSelectFilterFn(rows, id, filterValues) {
+#     if (filterValues.length === 0) return rows;
+# 
+#     return rows.filter(r => filterValues.includes(r.values[id]));
+# }")
+#                 ),
                 `External Link` = colDef(html = T)
                 ),
                 sortable = TRUE,
@@ -108,10 +118,24 @@ reactable(data.frame(Marker = names(params$marker_selection),
 ```
 
 
-## Heatmaps
+## Heatmaps  {.tabset}
 
-```{r echo=F, warning=F}
-params$heatmap
+### Marker-marker correlation
+
+```{r echo=F, warning=F, fig.width=9}
+params$heatmap$correlation
+```
+
+### Marker Expression
+
+```{r echo=F, warning=F, fig.width=9}
+params$heatmap$expression
+```
+
+### Marker Z-score
+
+```{r echo=F, warning=F, fig.width=9}
+params$heatmap$z_score
 ```
 
 ## UMAPs {.tabset}

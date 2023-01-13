@@ -511,6 +511,7 @@ cytosel <- function(...) {
     umap_colouring <- reactiveVal()
     umap_all <- reactiveVal()
     heatmap <- reactiveVal()
+    heatmap_for_report <- reactiveVal()
     metrics <- reactiveVal()
     previous_metrics <- reactiveVal()
     current_metrics <- reactiveVal()
@@ -898,7 +899,7 @@ cytosel <- function(...) {
                 searchable = TRUE,
                 filterable = TRUE,
                 groupBy = "Symbol",
-                columns = list(`Host Species` = colDef(
+                columns = list(`Host Species` = colDef(aggregate = "unique",
                   filterInput = function(values, name) {
                     tags$select(
                       # Set to undefined to clear the filter
@@ -912,6 +913,7 @@ cytosel <- function(...) {
                     )
                   }
                 ),
+                `Target` = colDef(aggregate = "unique"),
                 `Product Category Tier 3` = colDef(
                   filterInput = function(values, name) {
                     tags$select(
@@ -2276,6 +2278,19 @@ cytosel <- function(...) {
                              frame = config_df,
                              metrics = current_metrics()$summary))
         
+        heatmap_for_report(list(
+          correlation = create_heatmap(sce()[,sce()$keep_for_analysis == "Yes"], 
+                        current_markers(), column(), "Marker-marker correlation", 
+                        "Expression", pref_assay()),
+          expression = create_heatmap(sce()[,sce()$keep_for_analysis == "Yes"], 
+                                      current_markers(), column(), column(), 
+                                      "Expression", pref_assay()),
+          z_score = create_heatmap(sce()[,sce()$keep_for_analysis == "Yes"], 
+                                   current_markers(), column(), column(), 
+                                   "z-score", pref_assay())))
+        
+        
+        
         # Show help text popover
         shinyjs::show(id = "marker_visualization")
         shinyjs::show(id = "marker_display")
@@ -2385,7 +2400,7 @@ cytosel <- function(...) {
       content = function(fname) {
         showNotification("Rendering output report and config file, this may take a few moments..", duration = 4)
         # future_promise({
-        download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap(), df_antibody(), markdown_report_path, current_metrics()$summary,
+        download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap_for_report(), df_antibody(), markdown_report_path, current_metrics()$summary,
                       markers_with_type())
     # })
       },

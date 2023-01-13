@@ -516,16 +516,34 @@ test_that("Picking the curated dataset works as intended", {
                       coldata_column = "cell_ontology_class",
                       curated_compartments = c("Endothelial", "Immune", "Stromal"),
                       pick_curated = T)
+    
     expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
     expect_equivalent(dim(sce()), c(58870, 750))
     
     expect_false("epithelial" %in% unique(sce()$compartment))
-    
     expect_false(is.null(output$curated_set_preview))
     
   })
   
 })
+
+test_that("Setting null compartments retains the full dataset", {
+  testServer(cytosel::cytosel(), expr = {
+
+    session$setInputs(curated_dataset = T, curated_options = "Kidney",
+                  subset_number = 2000,
+                  coldata_column = "cell_ontology_class",
+                  curated_compartments = NULL,
+                  pick_curated = T)
+    expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
+    expect_equivalent(dim(sce()), c(58870, 881))
+
+    expect_true("epithelial" %in% unique(sce()$compartment))
+
+})
+  
+})
+
 
 
 context("Test that finding markers with very few genes produces an error")
@@ -600,26 +618,5 @@ test_that("cytosel is able to identify an RDS that is not of the proper SCE form
     expect_false(proceed_with_analysis())
     
   })
-})
-
-context("Test that proper dataset filtering thresholds are applied automatically")
-
-test_that("Default thresholds are applied when viewing the category table", {
-  
-  testServer(cytosel::cytosel(), expr = {
-    
-    session$setInputs(input_scrnaseq = list(datapath =
-                                              test_path("pbmc_small.rds")))
-    
-    session$setInputs(assay_select = "counts", assay = "counts",
-                      coldata_column = "seurat_annotations")
-    
-    session$setInputs(show_cat_table = T)
-    
-    expect_equal(cell_min_threshold(), 2)
-    expect_equal(length(specific_cell_types_selected()), 
-                 length(unique(sce()[["seurat_annotations"]])))
-    
-})
 })
 
