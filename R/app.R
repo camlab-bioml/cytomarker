@@ -78,6 +78,12 @@ cytosel <- function(...) {
                                                   `Gene Name (Upper)`) |>
                     tidyr::drop_na()
   
+  antibody_info <- merge(antibody_info, cytosel_data$grch38, 
+                  by.x = "Symbol", by.y = "symbol", all.x = T) |>
+    mutate(`Protein Expression`  = ifelse(!is.na(ensgene), paste("https://www.proteinatlas.org/", 
+                                    ensgene,
+                                "-", Symbol, "/tissue", sep = ""), NA))
+  
   options(MulticoreParam=quote(MulticoreParam(workers=availableCores())))
   
   compartments <- yaml::read_yaml(system.file("ts_compartments.yml", 
@@ -739,12 +745,12 @@ cytosel <- function(...) {
       
       default_category_curated("cell_ontology_class")
       
+      updateCheckboxInput(session, inputId = "precomputed_dim",
+                          value = T)
+      
       post_upload_configuration(input_sce)
       
       update_metadata_column()
-      
-      updateCheckboxInput(session, inputId = "precomputed_dim",
-                          value = T)
       
     })
     # })
@@ -936,7 +942,8 @@ cytosel <- function(...) {
 #     return rows.filter(r => filterValues.includes(r.values[id]));
 # }")
 #                 ),
-                `External Link` = colDef(html = T)
+                `External Link` = colDef(html = T),
+                `Human Protein Atlas` = colDef(html = T)
                 ),
                 sortable = TRUE,
                 elementId = "antibody-select")
@@ -1271,6 +1278,7 @@ cytosel <- function(...) {
             } else {
               clean_table <- antibody_info
             }
+    
             
             df_antibody(dplyr::filter(clean_table, Symbol %in% 
                                         current_markers()$top_markers) |>
@@ -1278,6 +1286,13 @@ cytosel <- function(...) {
                                  `Product Category Tier 3` = factor(`Product Category Tier 3`),
                                  `KO Status` = factor(`KO Status`),
                                  `Clone Number` = factor(`Clone Number`),
+                                 `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`), paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
+                                                                                                     'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
+                                                                                                     ' target="_blank" rel="noopener noreferrer"',
+                                                                                                     '>', "View on ",
+                                                                                                     as.character(icon("external-link-alt")), 
+                                                                                                     "Human Protein Atlas",
+                                                                                                     '</a>'), "None"),
                                  `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"', `Product Name`, '"',
                                                           'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
                                                           ' target="_blank" rel="noopener noreferrer"',
@@ -1285,7 +1300,7 @@ cytosel <- function(...) {
                                                           as.character(icon("external-link-alt")), 
                                                           "abcam.com",
                                                           '</a>')) |>
-                          dplyr::select(-c(`Datasheet URL`)))
+                          dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`)))
             
             update_analysis()
             
@@ -1874,6 +1889,7 @@ cytosel <- function(...) {
     observeEvent(to_listen_umap(), {
       req(sce())
       req(input$umap_options)
+      req(input$umap_panel_options)
       
       umap_colouring(input$umap_options)
       
@@ -2374,13 +2390,14 @@ cytosel <- function(...) {
         column(input$coldata_column)
       }
       
+      if (isTruthy(input$bl_top) | isTruthy(current_markers())) {
+        showModal(reset_option_on_change_modal("uploaded a new dataset"))
+      }
+      
       possible_umap_dims(detect_umap_dims_in_sce(sce()))
       
       toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
       
-      if (isTruthy(input$bl_top) | isTruthy(current_markers())) {
-        showModal(reset_option_on_change_modal("uploaded a new dataset"))
-      }
     }
     
     set_allowed_genes <- function() {
