@@ -73,3 +73,8 @@ update_metadata_column <- function() {
 possible_curated <- NULL
 compartments <- NULL
 
+`Protein Expression` <- NULL
+`Human Protein Atlas` <- NULL
+ensgene <- NULL
+to_add <- NULL
+

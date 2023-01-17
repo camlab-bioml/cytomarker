@@ -49,7 +49,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom readr write_lines read_tsv read_csv
 #' @importFrom dplyr desc mutate_if distinct
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_tooltip use_bs_tooltip
-#' @importFrom shinyjs useShinyjs hidden toggle reset
+#' @importFrom shinyjs useShinyjs hidden toggle reset delay
 #' @importFrom grDevices dev.off pdf
 #' @importFrom zip zip
 #' @importFrom randomcoloR distinctColorPalette
@@ -605,6 +605,8 @@ cytosel <- function(...) {
     plots_for_markdown <- reactiveVal()
     markers_with_type <- reactiveVal()
     
+    curated_selection <- reactiveVal(NULL)
+    
     addResourcePath('report', system.file('report', package='cytosel'))
     
     output$cytosel_logo <- renderImage({
@@ -713,6 +715,8 @@ cytosel <- function(...) {
       
       tissue_lab <- dataset_labels[names(dataset_labels) == input$curated_options]
       
+      curated_selection(input$curated_options)
+      
       withProgress(message = 'Configuring curated selection', value = 0, {
         setProgress(value = 0)
       
@@ -734,9 +738,9 @@ cytosel <- function(...) {
         
         if (length(ts_compartments()) < 1) ts_compartments(tolower(names(compartments)))
         
-          input_sce <- input_sce[,input_sce$compartment %in% ts_compartments()]
-          input_sce$compartment <- factor(input_sce$compartment,
-                                          levels = ts_compartments())
+        input_sce <- input_sce[,input_sce$compartment %in% ts_compartments()]
+        input_sce$compartment <- factor(input_sce$compartment,
+                                  levels = ts_compartments())
         
         incProgress(detail = "Parsing gene names and assays")
         
@@ -744,9 +748,6 @@ cytosel <- function(...) {
       })
       
       default_category_curated("cell_ontology_class")
-      
-      updateCheckboxInput(session, inputId = "precomputed_dim",
-                          value = T)
       
       post_upload_configuration(input_sce)
       
@@ -761,6 +762,7 @@ cytosel <- function(...) {
       
       # future_promise({
       default_category_curated(NULL)
+      curated_selection(NULL)
       withProgress(message = 'Configuring input selection', value = 0, {
       setProgress(value = 0)
       pre_upload_configuration()
@@ -1450,11 +1452,14 @@ cytosel <- function(...) {
       req(input$add_markers)
       
       if(!is.null(input$add_markers) &&
-         (input$add_markers %in% allowed_genes()) && (! input$add_markers %in% 
-            current_markers()$top_markers) && (! input$add_markers %in% 
-                                               current_markers()$scratch_markers)) {
+         (input$add_markers %in% allowed_genes())) {
+         
+         # && (! input$add_markers %in% 
+         #    current_markers()$top_markers) && (! input$add_markers %in% 
+         #                                       current_markers()$scratch_markers)) {
         ## Need to update markers:
-        new_marker <- input$add_markers
+        new_marker <- input$add_markers[!input$add_markers %in% current_markers()$top_markers &
+                                        !input$add_markers %in% current_markers()$scratch_markers]
         
         cm <- current_markers()
         markers <- list(recommended_markers = cm$recommended_markers,
@@ -1487,14 +1492,21 @@ cytosel <- function(...) {
       req(input$genes_for_violin)
       
       if(!is.null(input$genes_for_violin) && 
-         all(input$genes_for_violin %in% allowed_genes()) &&
-         !all(input$genes_for_violin %in% input$bl_scratch) &&
-         !all(input$genes_for_violin %in% input$bl_top)) {
+         all(input$genes_for_violin %in% allowed_genes())) {
+         
+         # &&
+         # !all(input$genes_for_violin %in% current_markers()$top_markers) && 
+         # !all(input$genes_for_violin %in% current_markers()$scratch_markers) &&
+         # !all(input$genes_for_violin %in% input$bl_scratch) &&
+         # !all(input$genes_for_violin %in% input$bl_top)) {
+        
+        to_add <- input$genes_for_violin[!input$genes_for_violin %in% current_markers()$top_markers &
+                                        !input$genes_for_violin %in% current_markers()$scratch_markers]
         
         cm <- current_markers()
         markers <- list(recommended_markers = cm$recommended_markers,
                         scratch_markers = input$bl_scratch,
-                        top_markers = unique(c(input$genes_for_violin,
+                        top_markers = unique(c(to_add,
                         setdiff(cm$top_markers, input$bl_scratch))))
         
         # SMH
@@ -1508,9 +1520,9 @@ cytosel <- function(...) {
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
                   names(fms()[[1]]))
-        
-      } 
-      updateTabsetPanel(session, "tabs", "marker_selection")
+        updateTabsetPanel(session, "tabs", "marker_selection")
+      }
+      
     })
     
     observeEvent(input$add_to_selected, { # Add uploaded markers
@@ -1744,6 +1756,7 @@ cytosel <- function(...) {
       req(possible_umap_dims())
       
       if (isTruthy(input$precomputed_dim)) {
+        proceed_with_analysis(FALSE)
         showModal(pre_computed_umap_modal(possible_umap_dims()))
       } else {
         use_precomputed_umap(FALSE)
@@ -1759,6 +1772,7 @@ cytosel <- function(...) {
         use_precomputed_umap(TRUE)
         umap_precomputed_col(input$possible_precomputed_dims)
         removeModal()
+        proceed_with_analysis(TRUE)
       }
       
     })
@@ -1855,6 +1869,11 @@ cytosel <- function(...) {
       showModal(reset_analysis_modal())
     })
     
+    observeEvent(input$dismiss_marker_reset, {
+      removeModal()
+      proceed_with_analysis(TRUE)
+    })
+    
     observeEvent(input$reset_marker_panel, {
       
       reset_panel(TRUE)
@@ -1869,10 +1888,11 @@ cytosel <- function(...) {
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
                 names(fms()[[1]]))
-      removeModal()
-      updateTabsetPanel(session, "tabs", "marker_selection")
       valid_existing_panel(TRUE)
       original_panel(NULL)
+      removeModal()
+      updateTabsetPanel(session, "tabs", "marker_selection")
+      proceed_with_analysis(TRUE)
       
       })
     
@@ -2319,8 +2339,8 @@ cytosel <- function(...) {
     
     pre_upload_configuration <- function() {
       updateCheckboxInput(inputId = "precomputed_dim", value = F)
-      use_precomputed_umap(FALSE)
-      umap_precomputed_col(NULL)
+      if (!isTruthy(curated_selection())) use_precomputed_umap(FALSE)
+      if (!isTruthy(curated_selection())) umap_precomputed_col(NULL)
       
     }
     
@@ -2391,13 +2411,19 @@ cytosel <- function(...) {
       }
       
       if (isTruthy(input$bl_top) | isTruthy(current_markers())) {
+        proceed_with_analysis(FALSE)
         showModal(reset_option_on_change_modal("uploaded a new dataset"))
+        possible_umap_dims(detect_umap_dims_in_sce(sce()))
+        
       }
-      
-      possible_umap_dims(detect_umap_dims_in_sce(sce()))
-      
-      toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
-      
+        possible_umap_dims(detect_umap_dims_in_sce(sce()))
+        
+        toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
+        
+        if (isTruthy(curated_selection()) & !isTruthy(use_precomputed_umap())) {
+          updateCheckboxInput(session, inputId = "precomputed_dim",
+                              value = T)
+      }
     }
     
     set_allowed_genes <- function() {

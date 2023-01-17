@@ -364,7 +364,7 @@ reset_option_on_change_modal <- function(change) {
                                   Would you like to reset the current panel?", "<br/>"))),
               actionButton("reset_marker_panel_reupload", "Reset the marker panel"),
               footer = tagList(
-                modalButton("Cancel")))
+                actionButton("dismiss_marker_reset", "Dismiss")))
 }
 
 
