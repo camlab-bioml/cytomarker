@@ -423,6 +423,7 @@ test_that("Error modals throw errors", {
   expect_is(time_zone_modal(cytosel_data$time_zones, NULL), 'shiny.tag')
   expect_is(reset_option_on_change_modal("placeholder"), 'shiny.tag')
   expect_error(invalid_modal())
+  expect_error(invalid_metadata_modal("fake_column"))
 })
 
 

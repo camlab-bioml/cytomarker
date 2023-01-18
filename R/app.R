@@ -894,7 +894,7 @@ cytosel <- function(...) {
       req(allowed_genes())
       req(fms())
     
-      showModal(markers_add_modal(allowed_genes(), names(fms()[[1]])))
+      showModal(markers_add_modal(allowed_genes(), names(fms()[[1]]), session))
     })
     
     # ### ANTIBODY EXPLORER ###
@@ -1091,6 +1091,15 @@ cytosel <- function(...) {
         
         cell_cat_summary <- create_table_of_hetero_cat(sce(),
                                                        input$coldata_column)
+
+        if (nrow(cell_cat_summary) > 100) {
+          proceed_with_analysis(FALSE)
+          invalid_metadata_modal(input$coldata_column)
+        } else {
+          proceed_with_analysis(TRUE)
+        }
+      
+        req(proceed_with_analysis())
         
         cell_types_high_enough(remove_cell_types_by_min_counts(cell_cat_summary,
                                                                sce(), 
@@ -1099,8 +1108,6 @@ cytosel <- function(...) {
         
         cell_types_to_keep(intersect(specific_cell_types_selected(),
                                        cell_types_high_enough()))
-        
-        
         
         
         sce(remove_null_and_va_from_cell_cat(sce(), input$coldata_column))

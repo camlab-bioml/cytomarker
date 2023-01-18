@@ -87,6 +87,19 @@ suggestion_modal <- function(failed = FALSE, suggestions, possible_removal) { # 
   )
 }
 
+#' Show a shinyalert error if the metadata column selected has too many levels
+#' @importFrom shinyalert shinyalert
+#' @param column the string name of the metadata column selected
+invalid_metadata_modal <- function(column) {
+  shinyalert(title = "Error", 
+             text = HTML(paste("Metadata column:",'<br/>',
+                          "<b>", toString(column), "</b>", '<br/>', " has more than 100 unique levels. Please select another metadata column to analyze.")), 
+             type = "error", 
+             showConfirmButton = TRUE,
+             confirmButtonCol = "#337AB7",
+             html = T)
+}
+
 #' Show a shinyalert error if the input marker is not found in the current antibody set
 #' @importFrom shinyalert shinyalert
 #' @param dne the string name of the selected marker
@@ -170,7 +183,17 @@ no_cells_left_modal <- function() { # Uploaded marker is not in SCE
 #' Upload markers from a .txt file, add various markers by name, or view suggested markers from a cell category.
 #' @param markers_addable The vector of gene markers that can be added to the input. Should be generated using alowed_genes() in the app
 #' @param suggest_cell_types The vector of cell types for marker suggestion. Should match the names of the findMarkers() output. 
-markers_add_modal <- function(markers_addable, suggest_cell_types) { 
+#' @param session The shiny session currently being used
+markers_add_modal <- function(markers_addable, suggest_cell_types, session) { 
+  updateSelectizeInput(
+    session = session,
+    inputId = "add_markers",
+    # choices = current_markers()$top_markers,
+    # selected = current_markers()$top_markers[1])
+    choices = markers_addable,
+    selected =markers_addable[1],
+    server = T)
+  
   modalDialog(
     helpText("Upload markers from a .txt file, add various markers by name, or view suggested markers from a cell category."),
     fileInput("uploadMarkers", "Upload markers", width = "100%"),
@@ -188,7 +211,7 @@ markers_add_modal <- function(markers_addable, suggest_cell_types) {
                          margin-right: 0px;
                          margin-bottom: -15px; 
           margin-left: 0px; "), 
-      selectizeInput("add_markers", "Add marker by name", choices = markers_addable, width = "100%", multiple = T),
+      selectizeInput("add_markers", "Add marker by name", choices = NULL, width = "100%", multiple = T),
       selectInput('cell_type_markers', "Suggest markers for cell type:", choices=suggest_cell_types)),
     # div(style="display:inline-block",selectizeInput("add_markers", "Add marker by name", 
     #       choices = NULL, width = "100%", multiple = F)),

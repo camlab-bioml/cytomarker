@@ -598,14 +598,19 @@ test_that("Having an existing panel will warn for a reset on upload", {
     expect_equivalent(dim(sce()), c(58870, 881))
     
     expect_false(proceed_with_analysis())
-    
     expect_true("epithelial" %in% unique(sce()$compartment))
+    
+    session$setInputs(coldata_column = "n_genes", assay = "logcounts",
+                      precomputed_dim = "UMAP",
+                      panel_size = 24)
+    
+    session$setInputs(start_analysis = T)
+    
+    expect_false(proceed_with_analysis())
     
   })
   
 })
-
-
 
 context("Test that finding markers with very few genes produces an error")
 
