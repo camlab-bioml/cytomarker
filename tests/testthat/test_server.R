@@ -292,6 +292,17 @@ test_that("Pre-setting the input rank lists persists in the current markers", {
     expect_equal(length(current_markers()$top_markers), length(input$bl_top))
     expect_equal(length(current_markers()$scratch_markers), length(input$bl_scratch))
     
+    # expect_true(proceed_with_analysis())
+    # 
+    # session$setInputs(input_scrnaseq = NULL,
+    #                   curated_dataset = T, curated_options = "Kidney",
+    #                   subset_number = 2000,
+    #                   coldata_column = "cell_ontology_class",
+    #                   curated_compartments = c("Endothelial", "Immune", "Stromal"),
+    #                   pick_curated = T)
+    # 
+    # expect_false(proceed_with_analysis())
+    
   })
   
 })
@@ -474,10 +485,14 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_false(is.null(output$expression_violin))
     expect_true(all(viol_markers %in% current_markers()$top_markers))
     
+    current_length <- length(current_markers()$top_markers)
+    
     viol_1 <- output$expression_violin
     
     session$setInputs(genes_for_violin = viol_markers,
                       add_violin_genes = T, viol_viewer = "By Cell Type")
+    
+    expect_equal(length(current_markers()$top_markers), current_length)
     
     expect_false(identical(viol_1, output$expression_violin))
     
@@ -512,16 +527,39 @@ test_that("Picking the curated dataset works as intended", {
   testServer(cytosel::cytosel(), expr = {
     
     session$setInputs(curated_dataset = T, curated_options = "Kidney",
-                      subset_number = 2000,
                       coldata_column = "cell_ontology_class",
                       curated_compartments = c("Endothelial", "Immune", "Stromal"),
                       pick_curated = T)
+    
+    expect_equal(curated_selection(), "Kidney")
     
     expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
     expect_equivalent(dim(sce()), c(58870, 750))
     
     expect_false("epithelial" %in% unique(sce()$compartment))
     expect_false(is.null(output$curated_set_preview))
+    
+    session$setInputs(select_precomputed_umap = "UMAP",
+                      possible_precomputed_dims = reducedDimNames(sce()))
+    
+    # session$setInputs(start_analysis = T)
+    
+    # if reupload the same dataset, invalidate until verify if resetting or not
+    
+    session$setInputs(curated_dataset = T, curated_options = "Heart",
+                      subset_number = 2000,
+                      coldata_column = "cell_ontology_class",
+                      curated_compartments = NULL,
+                      pick_curated = T)
+    
+    expect_equal(curated_selection(), "Heart")
+    
+    # expect_false(proceed_with_analysis())
+    # 
+    # session$setInputs(dismiss_marker_reset = T)
+    # 
+    # expect_true(proceed_with_analysis())
+    
     
   })
   
@@ -541,6 +579,29 @@ test_that("Setting null compartments retains the full dataset", {
     expect_true("epithelial" %in% unique(sce()$compartment))
 
 })
+  
+})
+
+test_that("Having an existing panel will warn for a reset on upload", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs( bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
+                       bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
+                       bl_scratch = c("GNLY", "FTL"))
+    
+    session$setInputs(curated_dataset = T, curated_options = "Kidney",
+                      subset_number = 2000,
+                      coldata_column = "cell_ontology_class",
+                      curated_compartments = NULL,
+                      pick_curated = T)
+    expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
+    expect_equivalent(dim(sce()), c(58870, 881))
+    
+    expect_false(proceed_with_analysis())
+    
+    expect_true("epithelial" %in% unique(sce()$compartment))
+    
+  })
   
 })
 

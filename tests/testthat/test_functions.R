@@ -352,6 +352,7 @@ test_that("download works as expected", {
              `Product Category Tier 3` = factor(`Product Category Tier 3`),
              `KO Status` = factor(`KO Status`),
              `Clone Number` = factor(`Clone Number`),
+             `Human Protein Atlas` = "fake_link",
              `External Link` = paste0('<a href="',`Datasheet URL`, '"',
                                       ' target="_blank" rel="noopener noreferrer"',
                                       '>',"View in Abcam website",'</a>')) |>

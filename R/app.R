@@ -708,7 +708,6 @@ cytosel <- function(...) {
     observeEvent(input$pick_curated, {
       req(input$curated_options)
       
-      
       # future_promise({
       removeModal()
       pre_upload_configuration()
@@ -1288,14 +1287,16 @@ cytosel <- function(...) {
                                  `Product Category Tier 3` = factor(`Product Category Tier 3`),
                                  `KO Status` = factor(`KO Status`),
                                  `Clone Number` = factor(`Clone Number`),
-                                 `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`), paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
-                                                                                                     'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
-                                                                                                     ' target="_blank" rel="noopener noreferrer"',
-                                                                                                     '>', "View on ",
-                                                                                                     as.character(icon("external-link-alt")), 
-                                                                                                     "Human Protein Atlas",
-                                                                                                     '</a>'), "None"),
-                                 `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"', `Product Name`, '"',
+                                 `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`), 
+                                  paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
+                                  'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
+                                  ' target="_blank" rel="noopener noreferrer"',
+                                  '>', "View on ",
+                                  as.character(icon("external-link-alt")), 
+                                  "Human Protein Atlas",
+                                  '</a>'), "None"),
+                                 `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"', 
+                                                          `Product Name`, '"',
                                                           'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
                                                           ' target="_blank" rel="noopener noreferrer"',
                                                           '>', "View on ",
@@ -2413,9 +2414,11 @@ cytosel <- function(...) {
       if (isTruthy(input$bl_top) | isTruthy(current_markers())) {
         proceed_with_analysis(FALSE)
         showModal(reset_option_on_change_modal("uploaded a new dataset"))
-        possible_umap_dims(detect_umap_dims_in_sce(sce()))
-        
+  
       }
+      
+      req(proceed_with_analysis())
+      
         possible_umap_dims(detect_umap_dims_in_sce(sce()))
         
         toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
