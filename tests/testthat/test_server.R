@@ -554,13 +554,6 @@ test_that("Picking the curated dataset works as intended", {
     
     expect_equal(curated_selection(), "Heart")
     
-    # expect_false(proceed_with_analysis())
-    # 
-    # session$setInputs(dismiss_marker_reset = T)
-    # 
-    # expect_true(proceed_with_analysis())
-    
-    
   })
   
 })
@@ -577,6 +570,13 @@ test_that("Setting null compartments retains the full dataset", {
     expect_equivalent(dim(sce()), c(58870, 881))
 
     expect_true("epithelial" %in% unique(sce()$compartment))
+    
+    expect_true(proceed_with_analysis())
+    
+    session$setInputs(panel_size = 0, start_analysis = T)
+    
+    expect_false(proceed_with_analysis())
+    
 
 })
   

@@ -390,4 +390,19 @@ reset_option_on_change_modal <- function(change) {
                 actionButton("dismiss_marker_reset", "Dismiss")))
 }
 
+#' Show an error modal if the panel size is less than 2 (too small)
+#' @importFrom shinyalert shinyalert
+#' @param size The integer value of the requested panel size 
+panel_too_small_modal <- function(size) {
+  shinyalert(title = "Error", 
+             HTML(paste("The requested panel size:",
+                        '<br/>',
+                        "<b>", toString(size), "</b>", '<br/>',
+                        "is too small. Please set the panel size to at least 2.")),
+             type = "error", 
+             showConfirmButton = TRUE,
+             confirmButtonCol = "#337AB7",
+             html = TRUE)
+}
+
 

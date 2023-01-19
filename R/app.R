@@ -611,8 +611,8 @@ cytosel <- function(...) {
     
     output$cytosel_logo <- renderImage({
       list(src=system.file(file.path("report", "cytosel-logo.png"), package = "cytosel"),
-           width = "75%",
-           height = "9.5%",
+           width = "76%",
+           height = "11.25%",
            class = "topimg",
            alt = "cytosel")
     }, deleteFile = F)
@@ -772,6 +772,8 @@ cytosel <- function(...) {
         invalid_modal()
         proceed_with_analysis(FALSE)
       }
+      
+      req(proceed_with_analysis())
       
       req(isTruthy(input_sce))
       incProgress(detail = "Parsing gene names and assays")
@@ -1049,6 +1051,15 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(sce())
       
+      proceed_with_analysis(TRUE)
+      
+      if (input$panel_size < 2) {
+        panel_too_small_modal(input$panel_size)
+        proceed_with_analysis(FALSE)
+      }
+      
+      req(proceed_with_analysis())
+      
       if (!is_empty(input$bl_top)) {
         current_panel_not_valid <- setdiff(input$bl_top, rownames(sce()))
         if (length(current_panel_not_valid) > 0) {
@@ -1098,7 +1109,7 @@ cytosel <- function(...) {
         } else {
           proceed_with_analysis(TRUE)
         }
-      
+        
         req(proceed_with_analysis())
         
         cell_types_high_enough(remove_cell_types_by_min_counts(cell_cat_summary,
@@ -2426,7 +2437,7 @@ cytosel <- function(...) {
       
       req(proceed_with_analysis())
       
-        possible_umap_dims(detect_umap_dims_in_sce(sce()))
+      possible_umap_dims(detect_umap_dims_in_sce(sce()))
         
         toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
         
