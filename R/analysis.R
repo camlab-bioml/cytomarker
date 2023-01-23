@@ -9,12 +9,18 @@
 #' 
 #' @importFrom SingleCellExperiment colData
 #' @importFrom scran findMarkers
+#' @importFrom parallel mclapply
+#' @importFrom parallelly availableCores
+#' @importFrom BiocParallel bpworkers
 compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
   
-  fms <- lapply(columns, function(col) {
+  fms <- mclapply(columns, mc.cores = availableCores(),
+                  function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
-    fm <- findMarkers(sce, colData(sce)[[col]], test.type = test_type, assay.type = pref_assay)
+    fm <- findMarkers(sce, colData(sce)[[col]], 
+                      test.type = test_type, assay.type = pref_assay,
+                      BPPARAM = MulticoreParam(stop.on.error = F))
     
     for(n in names(fm)) {
       fm[[n]] <- fm[[n]][rownames(fm[[n]]) %in% allowed_genes,]
@@ -48,7 +54,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
   
   marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
   if(marker_strategy == "geneBasis") {
-    sce2 <- retain_informative_genes(sce[allowed_genes,])
+    sce2 <- retain_informative_genes(sce[allowed_genes,], n = 10*panel_size)
     genes <- gene_search(sce2, n_genes=panel_size)
     marker <- list(
       recommended_markers = genes$gene[!is.na(genes$gene)],
@@ -199,7 +205,7 @@ set_current_markers_safely <- function(markers, fms, default_type = NULL) {
 #' @param precomputed_vals Whether or not precomputed UMAP vals exist for the input SCE
 #' @param dim_col If precomputed values exist, the name of the dimension holding the coordinates
 #' @param only_top_markers Whether or not the UMAP computed will contain a subset of markers (Default is False)
-#' @param marker_num The number of markers being used. Used to compute the number of PCA components used
+#' @param markers_to_use The list of markers to compute the UMAP
 #' 
 #' @importFrom scater runUMAP
 #' @importFrom tibble tibble
@@ -207,17 +213,19 @@ set_current_markers_safely <- function(markers, fms, default_type = NULL) {
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel MulticoreParam
 get_umap <- function(sce, columns, pref_assay, precomputed_vals = NULL, dim_col = NULL,
-                     only_top_markers = F, marker_num) {
+                     only_top_markers = F, markers_to_use) {
+  
+  sce <- sce[rownames(sce) %in% markers_to_use,]
   
   # set max components to 25, or set components to the number of top markers if fewer than 25
-  num_comp_use <- ifelse(marker_num <= 25, marker_num, 25)
+  # num_comp_use <- ifelse(marker_num <= 25, marker_num, 25)
   
   if (!isTruthy(precomputed_vals) | isTRUE(only_top_markers)) {
     sce <- runUMAP(sce, exprs_values = pref_assay,
                    n_threads = availableCores(),
                    # ncomponents = num_comp_use, 
                    # pca = num_comp_use,
-                   BPPARAM = MulticoreParam(workers = availableCores()),
+                   BPPARAM = MulticoreParam(),
                    external_neighbors	= T)
     
     df <- as.data.frame(reducedDim(sce, 'UMAP')) |> `colnames<-`(c("UMAP_1", "UMAP_2"))
@@ -288,13 +296,15 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, pref_assay, max_cells =
 #' @importFrom dplyr bind_rows
 #' @importFrom nnet multinom
 #' @importFrom dplyr sample_n
+#' @importFrom parallel mclapply
+#' @importFrom parallelly availableCores
 train_nb <- function(x,y, cell_types) {
   
   flds <- caret::createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
   x <- scale(x)
   
   metrics <- suppressWarnings({ 
-    lapply(flds, function(test_idx) {
+    mclapply(flds, mc.cores = availableCores(), function(test_idx) {
       # fit <- naive_bayes(x[-test_idx,], y[-test_idx])
       # p <- stats::predict(fit, newdata = x[test_idx,])
       df_train <- as.data.frame(x[-test_idx,])

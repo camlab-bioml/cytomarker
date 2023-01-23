@@ -2,13 +2,15 @@
 % Please edit documentation in R/modals.R
 \name{current_pan_not_valid_modal}
 \alias{current_pan_not_valid_modal}
-\title{Show an input modal if the current panel contains genes that are not found in the newest uploaded SCE}
+\title{Show an input modal if the current panel contains genes that are not valid (either not in the dataset or not permitted genes)}
 \usage{
-current_pan_not_valid_modal(missing_genes)
+current_pan_not_valid_modal(missing_genes, location)
 }
 \arguments{
 \item{missing_genes}{vector of genes that are not in the current SCE but in the current marker panel}
+
+\item{location}{Where the}
 }
 \description{
-Show an input modal if the current panel contains genes that are not found in the newest uploaded SCE
+Show an input modal if the current panel contains genes that are not valid (either not in the dataset or not permitted genes)
 }

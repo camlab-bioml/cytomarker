@@ -101,3 +101,14 @@ convert_column_to_character_or_factor <- function(sce, input_column) {
 #'   }
 #' }
 
+#' Filter out antibody table rows by a vector list of antibody applications
+#' @param applications A vector of antibody applications
+#' @param row The string in a row representing the applications for a specific gene in the table
+in_row <- function(applications, row) {
+  return (length(intersect(applications, unlist(strsplit(row, ", ")))) > 0)
+}
+
+
+
+
+

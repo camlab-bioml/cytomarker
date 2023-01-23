@@ -6,3 +6,6 @@
 cytosel.Rcheck/
 ^data-raw$
 ^\.httr-oauth$
+archive/
+
+scripts/

@@ -3,8 +3,9 @@ if (!interactive()) {
 }
 
 library(testthat)
-library(shinytest)
+library(shinytest2)
 library(cytosel)
 library(yaml)
+library(S4Vectors)
 
 test_check("cytosel")

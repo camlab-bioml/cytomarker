@@ -11,7 +11,7 @@ get_umap(
   precomputed_vals = NULL,
   dim_col = NULL,
   only_top_markers = F,
-  marker_num
+  markers_to_use
 )
 }
 \arguments{
@@ -27,7 +27,7 @@ get_umap(
 
 \item{only_top_markers}{Whether or not the UMAP computed will contain a subset of markers (Default is False)}
 
-\item{marker_num}{The number of markers being used. Used to compute the number of PCA components used}
+\item{markers_to_use}{The list of markers to compute the UMAP}
 }
 \description{
 Compute the UMAP

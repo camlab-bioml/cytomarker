@@ -5,7 +5,8 @@ Assay used: logcounts
 Heterogeneity source: seurat_annotations
 Target panel size: 22
 Min Cell Category cutoff: 10
-Subsampling Used: no
+Subsampling Used: yes
+Subsampling number: 99
 Selected marker panel:
 - CD79B
 - BTG1

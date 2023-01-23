@@ -39,13 +39,18 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
   if(display == "Marker-marker correlation") {
     
     cc <- round(cor(t(mat)), 4)
+    dims <- ifelse(length(rownames(cc)) < 70, 650, ifelse(length(rownames(cc)) < 95,
+                                                          10.5*length(rownames(cc)), 1000))
+    
     cor_map <- plot_ly(z=cc, 
                        type='heatmap',
                        x = rownames(cc),
                        y = rownames(cc),
                        hovertemplate = "Gene(x): %{x}<br>Gene(y): %{y}<br>Correlation: %{z}<extra></extra>",
-                       showticklabels = F, width = 550, height = 550) %>% 
-      layout(title='Correlation')
+                       showticklabels = T, width = dims, 
+                       height = dims) %>% 
+      layout(title='Correlation', yaxis = list(autotick = F, tickmode = "linear"),
+             xaxis = list(autotick = F, tickmode = "linear"))
     
     return(cor_map)
   } else {

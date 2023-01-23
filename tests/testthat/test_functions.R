@@ -24,6 +24,9 @@ test_that("SingleCellExperiment object reading", {
   expect_is(sce, 'SingleCellExperiment')
   expect_equivalent(dim(sce), c(100, 500))
   expect_equivalent(rownames(sce), paste("feature-", seq(1, 100, 1), sep=""))
+  
+  expect_null(read_input_scrnaseq(test_path("fake_rds.rds")))
+  
 })
 
 test_that("Seurat object reading", {
@@ -114,8 +117,10 @@ test_that("get_umap returns valid dataframe and values with different assays", {
   obj <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(obj)
 
-  umap_frame_log <- get_umap(sce, "seurat_annotations", "logcounts", marker_num = 20)
-  umap_frame_norm <- get_umap(sce, "seurat_annotations", "counts", marker_num = 20)
+  umap_frame_log <- get_umap(sce, "seurat_annotations", "logcounts", 
+                             markers_to_use = rownames(sce))
+  umap_frame_norm <- get_umap(sce, "seurat_annotations", "counts", 
+                              markers_to_use = rownames(sce))
   expect_is(umap_frame_log, 'data.frame')
   expect_equal(ncol(umap_frame_log), 3)
   expect_equal(nrow(umap_frame_log), ncol(sce))
@@ -163,16 +168,6 @@ test_that("create_heatmap works effectively with different normalizations", {
   expect_false(as.character(heat_cor$x$attrs[[1]]$z)[2] == "expression")
   
 })
-
-# context("Scoring")
-#
-# test_that("get_scores returns valid scores", {
-#
-# })
-  
-
-#   
-# })
 
 context("violin plotting") 
 
@@ -322,9 +317,9 @@ test_that("download works as expected", {
                             "seurat_annotations", "Marker-marker correlation",
                             "z-score", "logcounts")
   
-  umap_all <- get_umap(sce, "seurat_annotations", "logcounts", marker_num = 20)
+  umap_all <- get_umap(sce, "seurat_annotations", "logcounts", markers_to_use = rownames(sce))
   umap_top <- get_umap(sce[rownames(sce)[1:100]], "seurat_annotations", "logcounts",
-                       marker_num = 20)
+                       markers_to_use = rownames(sce))
   
   plots <- list()
   
@@ -347,7 +342,7 @@ test_that("download works as expected", {
   withr::with_tempdir({
     filepath <- file.path(paste0("Cytosel-Panel-", Sys.Date(), ".zip"))
     
-    placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB")
+    placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
     
     fake_table <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
                                   `Gene Name (Upper)`) |>
@@ -357,6 +352,7 @@ test_that("download works as expected", {
              `Product Category Tier 3` = factor(`Product Category Tier 3`),
              `KO Status` = factor(`KO Status`),
              `Clone Number` = factor(`Clone Number`),
+             `Human Protein Atlas` = "fake_link",
              `External Link` = paste0('<a href="',`Datasheet URL`, '"',
                                       ' target="_blank" rel="noopener noreferrer"',
                                       '>',"View in Abcam website",'</a>')) |>
@@ -371,28 +367,23 @@ test_that("download works as expected", {
     base_config <- create_run_param_list(marker_list = list(top_markers = rownames(sce)[1:100]), 
                                          "fake_path_to_sce", "logcounts",
                                          "seurat_annotations", 24, 2, "no",
+                                         80,
                                          "fm", NULL, NULL, FALSE, 100, 13714, fake_metrics)
     
     expect_is(base_config, 'list')
     
+    fake_genes <- c("Fake_1", "Fake_2", "Fake_3")
+    names(fake_genes) <- c("Gene_1", "Gene_2", "gene_3")
+    
     download_data(filepath, base_config, plots, heatmap, fake_table, markdown_report_path,
-                  fake_metrics)
+                  fake_metrics, fake_genes)
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)
     
-    # marks_back <- read.table(file.path(td, paste0("markers-", Sys.Date(), ".txt")))
-    # expect_equal(marks_back$V1, rownames(sce)[1:100])
-    
     yaml_back <- read_yaml(file.path(td, paste0("config-", Sys.Date(), ".yml")))
     expect_equal(yaml_back$`Input file`, "fake_path_to_sce")
     expect_equal(yaml_back$`Heterogeneity source`, "seurat_annotations")
-    
-    # table_back <- read.table(file.path(td, paste0("Antibody-info-", Sys.Date(), ".tsv")),
-    #                          sep = "\t", header = T)
-    # 
-    # expect_equal(unique(table_back$Symbol %in% rownames(sce)[1:17]),
-    #              TRUE)
     
   })
   
@@ -426,19 +417,13 @@ test_that("Error modals throw errors", {
   # expected class from a modal dialog box
   expect_is(reset_analysis_modal(), 'shiny.tag')
   expect_is(suggestion_modal(failed = T, c("Sug_1", "Sug_2"), "Sug_1"), 'shiny.tag')
-  expect_is(curated_dataset_modal(c("cur_1", "cur_2"), failed = T), 'shiny.tag')
+  expect_is(curated_dataset_modal(c("cur_1", "cur_2"), c("cur_1", "cur_2"), 
+                                  c("cur_1", "cur_2"), failed = T), 'shiny.tag')
   expect_error(subsampling_error_modal(c("Type_1", "Type_2")))
   expect_is(time_zone_modal(cytosel_data$time_zones, NULL), 'shiny.tag')
-  expect_is(reset_option_on_upload_modal(), 'shiny.tag')
+  expect_is(reset_option_on_change_modal("placeholder"), 'shiny.tag')
+  expect_error(invalid_modal())
+  expect_error(invalid_metadata_modal("fake_column"))
 })
-
-
-
-
-
-
-
-
-
 
 

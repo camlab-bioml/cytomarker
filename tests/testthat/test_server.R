@@ -36,6 +36,7 @@ test_that("Server has basic functionality", {
     # Set analysis parameters that will not proceed
     session$setInputs(user_selected_cells = NULL,
                       panel_size = 200, min_category_count = 0,
+                      subset_number = 99,
                       subsample_sce = T,
                       start_analysis = T,
                       add_selected_to_analysis = T,
@@ -49,6 +50,7 @@ test_that("Server has basic functionality", {
     
     session$setInputs(min_category_count = 50,
                       start_analysis = T)
+    
     expect_false(any_cells_present())
     
     expect_null(previous_metrics())
@@ -61,8 +63,7 @@ test_that("Server has basic functionality", {
                       min_category_count = 2,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
-                      umap_options = "Cell Type",
-                      umap_panel_options = NULL,
+                      select_aa = NULL,
                       start_analysis = T)
     
     # resetting the min count to 2 allows to proceed with analysis
@@ -127,6 +128,12 @@ test_that("Server has basic functionality", {
     
     expect_equal(output$scratch_marker_counts, "<B> Scratch Markers: 10 </B>")
     expect_equal(output$selected_marker_counts, "<B> Selected Markers: 14 </B>")
+    
+    withr::with_tempdir({
+      session$setInputs(downloadData = T)
+      expect_true(file.exists(file.path(tempdir(), paste0("config-", Sys.Date(), ".yml"))))
+      expect_false(is.null(output$downloadData))
+    })
     
     # suggest markers to remove
     
@@ -276,13 +283,25 @@ test_that("Pre-setting the input rank lists persists in the current markers", {
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm",
-                      bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB"),
-                      bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB"),
+                      select_aa = NULL,
+                      bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
+                      bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
                       bl_scratch = c("GNLY", "FTL"),
                       start_analysis = T)
     
     expect_equal(length(current_markers()$top_markers), length(input$bl_top))
     expect_equal(length(current_markers()$scratch_markers), length(input$bl_scratch))
+    
+    # expect_true(proceed_with_analysis())
+    # 
+    # session$setInputs(input_scrnaseq = NULL,
+    #                   curated_dataset = T, curated_options = "Kidney",
+    #                   subset_number = 2000,
+    #                   coldata_column = "cell_ontology_class",
+    #                   curated_compartments = c("Endothelial", "Immune", "Stromal"),
+    #                   pick_curated = T)
+    # 
+    # expect_false(proceed_with_analysis())
     
   })
   
@@ -383,35 +402,6 @@ test_that("Reset works on server", {
   })
 })
 
-context("Downloading through the server works as intended")
-
-#### download analysis ######
-test_that("Download works on server", {
-  
-  testServer(cytosel::cytosel(), expr = {
-    
-    session$setInputs(input_scrnaseq = list(datapath =
-                                              test_path("pbmc_small.rds")),
-                      read_back_analysis = list(datapath =
-                                                  test_path("test_config.yml")))
-    
-    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
-                      start_analysis = T)
-    
-    expect_false("NK" %in% cell_types_to_keep())
-    expect_equal(length(cell_types_to_keep()), 5)
-    
-    # expect_false(is.null(output$downloadData))
-    
-    # test that download feature works with temp dir
-    withr::with_tempdir({
-      session$setInputs(downloadData = T)
-      expect_true(file.exists(file.path(tempdir(), paste0("config-", Sys.Date(), ".yml"))))
-      # expect_false(is.null(output$downloadData))
-    })
-  })
-})
-
 context("Current panel with different genes throws error")
 
 test_that("Error from current panel with different genes", {
@@ -449,12 +439,12 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     
     session$setInputs(subsample_sce = T,
                       panel_size = 20,
+                      subset_number = 99,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
-  
-    session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
-                      start_analysis = T)
+    
+    session$setInputs(start_analysis = T)
     
     expect_equal(cell_min_threshold(), 2)
     expect_equal(length(specific_cell_types_selected()),
@@ -470,20 +460,24 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     
     heatmap_1 <- heatmap()
     
+    session$setInputs(umap_options = "Cell Type",
+                      umap_panel_options = "S100A9", umap_panel_cols = T, 
+                      show_umap_legend = T)
+    
     # check defaults for UMAP plots
     expect_false(umap_top_gene())
     expect_false(umap_all_gene())
     expect_equal(umap_colouring(), "Cell Type")
     
     session$setInputs(umap_options = "Panel Marker",
-    umap_panel_options = "S100A9", umap_panel_cols = T)
+    umap_panel_options = "S100A9", umap_panel_cols = T, show_umap_legend = T)
     
     # switching the UMAP to gene works
     expect_false(isFALSE(umap_top_gene()))
     expect_false(isFALSE(umap_all_gene()))
     expect_equal(umap_colouring(), "Panel Marker")
     
-    viol_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB")
+    viol_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
     
     # setting the violin plots with genes works
     session$setInputs(genes_for_violin = viol_markers,
@@ -491,10 +485,14 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_false(is.null(output$expression_violin))
     expect_true(all(viol_markers %in% current_markers()$top_markers))
     
+    current_length <- length(current_markers()$top_markers)
+    
     viol_1 <- output$expression_violin
     
     session$setInputs(genes_for_violin = viol_markers,
                       add_violin_genes = T, viol_viewer = "By Cell Type")
+    
+    expect_equal(length(current_markers()$top_markers), current_length)
     
     expect_false(identical(viol_1, output$expression_violin))
     
@@ -507,7 +505,6 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     heatmap_expression_norm = "Expression", start_analysis = T)
     
     expect_false(identical(heatmap_1, heatmap()))
-    
     
     session$setInputs(start_analysis = T)
 
@@ -529,17 +526,91 @@ context("Test the loading of the curated datasets from dropbox")
 test_that("Picking the curated dataset works as intended", {
   testServer(cytosel::cytosel(), expr = {
     
-    session$setInputs(curated_dataset = T, curated_options = "PBMC (Blood/Immune)",
+    session$setInputs(curated_dataset = T, curated_options = "Kidney",
+                      coldata_column = "cell_ontology_class",
+                      curated_compartments = c("Endothelial", "Immune", "Stromal"),
                       pick_curated = T)
-    expect_true(file.exists(file.path(tempdir(), "/seurat_pbmc.rds")))
-    expect_equivalent(dim(sce()), c(13714, 2638))
     
+    expect_equal(curated_selection(), "Kidney")
+    
+    expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
+    expect_equivalent(dim(sce()), c(58870, 750))
+    
+    expect_false("epithelial" %in% unique(sce()$compartment))
     expect_false(is.null(output$curated_set_preview))
+    
+    session$setInputs(select_precomputed_umap = "UMAP",
+                      possible_precomputed_dims = reducedDimNames(sce()))
+    
+    # session$setInputs(start_analysis = T)
+    
+    # if reupload the same dataset, invalidate until verify if resetting or not
+    
+    session$setInputs(curated_dataset = T, curated_options = "Heart",
+                      subset_number = 2000,
+                      coldata_column = "cell_ontology_class",
+                      curated_compartments = NULL,
+                      pick_curated = T)
+    
+    expect_equal(curated_selection(), "Heart")
     
   })
   
 })
 
+test_that("Setting null compartments retains the full dataset", {
+  testServer(cytosel::cytosel(), expr = {
+
+    session$setInputs(curated_dataset = T, curated_options = "Kidney",
+                  subset_number = 2000,
+                  coldata_column = "cell_ontology_class",
+                  curated_compartments = NULL,
+                  pick_curated = T)
+    expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
+    expect_equivalent(dim(sce()), c(58870, 881))
+
+    expect_true("epithelial" %in% unique(sce()$compartment))
+    
+    expect_true(proceed_with_analysis())
+    
+    session$setInputs(panel_size = 0, start_analysis = T)
+    
+    expect_false(proceed_with_analysis())
+    
+
+})
+  
+})
+
+test_that("Having an existing panel will warn for a reset on upload", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs( bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
+                       bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
+                       bl_scratch = c("GNLY", "FTL"))
+    
+    session$setInputs(curated_dataset = T, curated_options = "Kidney",
+                      subset_number = 2000,
+                      coldata_column = "cell_ontology_class",
+                      curated_compartments = NULL,
+                      pick_curated = T)
+    expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
+    expect_equivalent(dim(sce()), c(58870, 881))
+    
+    expect_false(proceed_with_analysis())
+    expect_true("epithelial" %in% unique(sce()$compartment))
+    
+    session$setInputs(coldata_column = "n_genes", assay = "logcounts",
+                      precomputed_dim = "UMAP",
+                      panel_size = 24)
+    
+    session$setInputs(start_analysis = T)
+    
+    expect_false(proceed_with_analysis())
+    
+  })
+  
+})
 
 context("Test that finding markers with very few genes produces an error")
 
@@ -555,11 +626,11 @@ test_that("datasets with few genes produce errors on marker finding", {
     session$setInputs(subsample_sce = T,
                       panel_size = 100,
                       display_options = "Marker-marker correlation",
+                      select_aa = c("sELISA"),
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
     
-    session$setInputs(umap_options = "Cell Type", umap_panel_options = "S100A9",
-                      start_analysis = T)
+    session$setInputs(start_analysis = T)
     
     expect_false(is.null(cell_types_missing_markers()))
     
@@ -603,5 +674,15 @@ test_that("cytosel is able to find lowercase genes as non-human", {
   })
 })
 
+context("test that uploading an RDS in the wrong format generates an error")
 
+test_that("cytosel is able to identify an RDS that is not of the proper SCE format", {
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("fake_rds.rds")))
+    expect_false(proceed_with_analysis())
+    
+  })
+})
 

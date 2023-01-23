@@ -1,5 +1,5 @@
 ---
-title: "Cytosel report"
+title: "cytosel Run Report"
 output: 
   html_document:
     toc: true
@@ -12,6 +12,8 @@ params:
   metric: ""
   config: ""
   tmpdir: ""
+header-includes:
+  - \usepackage{fontawesome5}
 ---
 
 <style>
@@ -21,7 +23,7 @@ params:
 }
 </style>
 
-Below are the results of your Cytosel antibody panel design run.
+Below are the results of your cytosel antibody panel design run.
 
 ```{r message=FALSE, echo=F}
 knitr::opts_knit$set(root.dir = params$tmpdir)
@@ -32,27 +34,38 @@ library(shiny)
 library(printr)
 library(reactable)
 library(plotly)
+library(htmltools)
+library(fontawesome)
 ```
 
+
+```{r, echo=FALSE}
+htmltools::img(src = "cytosel-logo.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding-top: 20px; padding-right:40px; width: 185px;')
+```
 ## Antibody panel
 
-```{r message=F, echo=F}
+```{r message=F, echo=F, width = 13}
 reactable(params$df,
-                searchable = TRUE,
+              searchable = TRUE,
                 filterable = TRUE,
-                columns = list(`Host Species` = colDef(
+                groupBy = "Symbol",
+                columns = list(`Host Species` = colDef(aggregate = "unique",
                   filterInput = function(values, name) {
                     tags$select(
                       # Set to undefined to clear the filter
                       onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
                       # "All" has an empty value to clear the filter, and is the default option
                       tags$option(value = "", "All"),
+                      tags$html(multiple = T),
                       lapply(unique(values), tags$option),
                       "aria-label" = sprintf("Filter %s", name),
-                      style = "width: 100%; height: 28px;"
+                      style = "width: 100%; height: 28px"
                     )
                   }
                 ),
+                `Target` = colDef(aggregate = "unique"),
                 `Product Category Tier 3` = colDef(
                   filterInput = function(values, name) {
                     tags$select(
@@ -66,25 +79,64 @@ reactable(params$df,
                     )
                   }
                 ),
-                `External Link` = colDef(html = T)
+#                 `Listed Applications` = colDef(
+#                   filterable = TRUE,
+#                   # Filter by case-sensitive text match
+#                   filterMethod = JS("export function MultiSelectFilterFn(rows, id, filterValues) {
+#     if (filterValues.length === 0) return rows;
+# 
+#     return rows.filter(r => filterValues.includes(r.values[id]));
+# }")
+#                 ),
+                `External Link` = colDef(html = T),
+                `Human Protein Atlas` = colDef(html = T)
                 ),
                 sortable = TRUE,
                 elementId = "antibody-select")
 ```
 
-## Selected markers
+## Selected markers {.tabset}
 
-You selected the following markers to be included in your antibody panel.
+### Marker list vector
 
-```{r message=FALSE, echo=F, results = 'asis'}
+You selected the following markers to be included in your antibody panel. It can be copied directly as a R-compatible vector. 
 
-cat(paste0("- `", params$marker_selection, "`"), sep = "\n")
+```{r message=FALSE, echo=F, comment=NA}
+with_quotes <- paste0("'", names(params$marker_selection), "'")
+first_genes <- paste0(utils::head(with_quotes, n = length(with_quotes) - 1), collapse = " ", sep = ",")
+all_genes <- paste0("c(", first_genes, " ", tail(with_quotes, n = 1), ")")
+cat(all_genes)
 ```
 
-## Heatmaps
+### Marker/Cell-type table
 
-```{r echo=F, warning=F}
-params$heatmap
+```{r message=FALSE, echo=F, comment=NA}
+reactable(data.frame(Marker = names(params$marker_selection),
+                     Annotation = params$marker_selection),
+          rownames = F,
+           searchable = TRUE,
+                filterable = TRUE)
+```
+
+
+## Heatmaps  {.tabset}
+
+### Marker-marker correlation
+
+```{r echo=F, warning=F, fig.width=9}
+params$heatmap$correlation
+```
+
+### Marker Expression
+
+```{r echo=F, warning=F, fig.width=9}
+params$heatmap$expression
+```
+
+### Marker Z-score
+
+```{r echo=F, warning=F, fig.width=9}
+params$heatmap$z_score
 ```
 
 ## UMAPs {.tabset}

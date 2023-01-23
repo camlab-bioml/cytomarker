@@ -1,0 +1,6 @@
+use_google_analytics: yes
+
+subset_only_abcam_catalog: no
+
+star_for_abcam_product: yes
+

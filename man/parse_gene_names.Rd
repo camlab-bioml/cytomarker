@@ -19,9 +19,15 @@ parse_gene_names(sce, grch38)
 }
 \arguments{
 \item{sce}{SingleCellExperiment object}
+
+\item{grch38}{Dataframe with two columns: \code{ensgene} and \code{symbol}, (originally from the annotables package)}
+
+\item{remove_confounding_genes}{If true (default) genes that frequently confound single cell
+analyses are removed. The following genes are removed: ribosobal proteins, mitochondrial ribosomal
+and other mitochondrial proteins, heat shock proteins, Jun, Fos and Malat1}
 }
 \value{
-genes A vector of gene names, or should it return an sce?
+genes A vector of gene names
 }
 \description{
 Parses the gene names in a sce object

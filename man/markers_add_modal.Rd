@@ -4,12 +4,14 @@
 \alias{markers_add_modal}
 \title{Upload markers from a .txt file, add various markers by name, or view suggested markers from a cell category.}
 \usage{
-markers_add_modal(markers_addable, suggest_cell_types)
+markers_add_modal(markers_addable, suggest_cell_types, session)
 }
 \arguments{
 \item{markers_addable}{The vector of gene markers that can be added to the input. Should be generated using alowed_genes() in the app}
 
 \item{suggest_cell_types}{The vector of cell types for marker suggestion. Should match the names of the findMarkers() output.}
+
+\item{session}{The shiny session currently being used}
 }
 \description{
 Upload markers from a .txt file, add various markers by name, or view suggested markers from a cell category.

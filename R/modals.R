@@ -87,6 +87,19 @@ suggestion_modal <- function(failed = FALSE, suggestions, possible_removal) { # 
   )
 }
 
+#' Show a shinyalert error if the metadata column selected has too many levels
+#' @importFrom shinyalert shinyalert
+#' @param column the string name of the metadata column selected
+invalid_metadata_modal <- function(column) {
+  shinyalert(title = "Error", 
+             text = HTML(paste("Metadata column:",'<br/>',
+                          "<b>", toString(column), "</b>", '<br/>', " has more than 100 unique levels. Please select another metadata column to analyze.")), 
+             type = "error", 
+             showConfirmButton = TRUE,
+             confirmButtonCol = "#337AB7",
+             html = T)
+}
+
 #' Show a shinyalert error if the input marker is not found in the current antibody set
 #' @importFrom shinyalert shinyalert
 #' @param dne the string name of the selected marker
@@ -170,7 +183,17 @@ no_cells_left_modal <- function() { # Uploaded marker is not in SCE
 #' Upload markers from a .txt file, add various markers by name, or view suggested markers from a cell category.
 #' @param markers_addable The vector of gene markers that can be added to the input. Should be generated using alowed_genes() in the app
 #' @param suggest_cell_types The vector of cell types for marker suggestion. Should match the names of the findMarkers() output. 
-markers_add_modal <- function(markers_addable, suggest_cell_types) { 
+#' @param session The shiny session currently being used
+markers_add_modal <- function(markers_addable, suggest_cell_types, session) { 
+  updateSelectizeInput(
+    session = session,
+    inputId = "add_markers",
+    # choices = current_markers()$top_markers,
+    # selected = current_markers()$top_markers[1])
+    choices = markers_addable,
+    selected =markers_addable[1],
+    server = T)
+  
   modalDialog(
     helpText("Upload markers from a .txt file, add various markers by name, or view suggested markers from a cell category."),
     fileInput("uploadMarkers", "Upload markers", width = "100%"),
@@ -188,7 +211,7 @@ markers_add_modal <- function(markers_addable, suggest_cell_types) {
                          margin-right: 0px;
                          margin-bottom: -15px; 
           margin-left: 0px; "), 
-      selectizeInput("add_markers", "Add marker by name", choices = markers_addable, width = "100%", multiple = T),
+      selectizeInput("add_markers", "Add marker by name", choices = NULL, width = "100%", multiple = T),
       selectInput('cell_type_markers', "Suggest markers for cell type:", choices=suggest_cell_types)),
     # div(style="display:inline-block",selectizeInput("add_markers", "Add marker by name", 
     #       choices = NULL, width = "100%", multiple = F)),
@@ -275,12 +298,13 @@ reset_analysis_modal <- function() {
     modalButton("Cancel")))
 }
 
-#' Show an input modal if the current panel contains genes that are not found in the newest uploaded SCE
+#' Show an input modal if the current panel contains genes that are not valid (either not in the dataset or not permitted genes)
 #' @importFrom shinyalert shinyalert
 #' @param missing_genes vector of genes that are not in the current SCE but in the current marker panel
-current_pan_not_valid_modal <- function(missing_genes) { # Marker removal suggestion
+#' @param location Where the 
+current_pan_not_valid_modal <- function(missing_genes, location) { # Marker removal suggestion
   shinyalert(title = "Error",
-             text = HTML(paste("The current panel contains genes that are not found in the SCE:",
+             text = HTML(paste("The current panel contains the following genes that are not found in the ", location,
                                '<br>',
                                "<b>", toString(missing_genes), "</b>", '<br/>',
                                "Please reset the marker panel.")),
@@ -294,16 +318,19 @@ current_pan_not_valid_modal <- function(missing_genes) { # Marker removal sugges
 
 #' Show an input modal for the user to select a pre-curated cytosel dataset
 #' @importFrom shiny modalDialog
+#' @param compartment_options a vector of the possible cell type supersets as established by Tabula Sapiens
+#' @param compartments_selected a vector of currently selected cell type supersets
 #' @param dataset_options a vector of the identifiers for the possible loadable datasets
-curated_dataset_modal <- function(dataset_options, failed = FALSE) {
+curated_dataset_modal <- function(compartment_options, compartments_selected,
+                                  dataset_options, failed = FALSE) {
   modalDialog(
-    flowLayout(cellArgs = list(
-      style = "margin-top:10x;
-                         margin-right: 15px;
-                         margin-bottom: 0px; 
-          margin-left: 15px; "), selectInput("curated_options",
-                "Choose a pre-annotated dataset to analyze",
-                dataset_options),
+    flowLayout(selectInput("curated_options",
+                       "1. Choose a tissue type to analyze",
+                       dataset_options),
+               selectInput("curated_compartments",
+                          "2. Select cell compartment(s)",
+                          compartment_options, multiple = T, 
+                          selected = compartments_selected),
     htmlOutput("curated_set_preview")),
     if (failed) {
       div(tags$b("Error", style = "color: red;"))
@@ -354,11 +381,28 @@ time_zone_modal <- function(possible_time_zones, current_input) {
 
 #' Show an input modal to give the user the option to reset the panel on 
 #' @importFrom shiny modalDialog
-reset_option_on_upload_modal <- function() {
-  modalDialog(helpText("You have uploaded a new dataset. The current panel may be invalid with these data. Would you like to reset the current panel?"),
+#' @param change The type of change detected in the configuration
+reset_option_on_change_modal <- function(change) {
+  modalDialog(helpText(HTML(paste("You have ", "<b>", change, "</b>", ". The current panel may be invalid with these data. 
+                                  Would you like to reset the current panel?", "<br/>"))),
               actionButton("reset_marker_panel_reupload", "Reset the marker panel"),
               footer = tagList(
-                modalButton("Cancel")))
+                actionButton("dismiss_marker_reset", "Dismiss")))
+}
+
+#' Show an error modal if the panel size is less than 2 (too small)
+#' @importFrom shinyalert shinyalert
+#' @param size The integer value of the requested panel size 
+panel_too_small_modal <- function(size) {
+  shinyalert(title = "Error", 
+             HTML(paste("The requested panel size:",
+                        '<br/>',
+                        "<b>", toString(size), "</b>", '<br/>',
+                        "is too small. Please set the panel size to at least 2.")),
+             type = "error", 
+             showConfirmButton = TRUE,
+             confirmButtonCol = "#337AB7",
+             html = TRUE)
 }
 
 
