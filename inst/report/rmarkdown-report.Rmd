@@ -12,6 +12,7 @@ params:
   metric: ""
   config: ""
   tmpdir: ""
+  overall: ""
 header-includes:
   - \usepackage{fontawesome5}
 ---
@@ -36,6 +37,8 @@ library(reactable)
 library(plotly)
 library(htmltools)
 library(fontawesome)
+library(flexdashboard)
+library(emojifont)
 ```
 
 
@@ -155,8 +158,38 @@ params$umap$top
 
 ```
 
+## Overall Score
 
-## Metrics {.tabset}
+```{r echo=F, warning=F, fig.width=2.5, fig.height=2}
+overall_frame <- data.frame(x = 2, y = 2.5, h = 4.25, w = 4.25,
+                            value = params$overall$score, info = "Accuracy score,",
+                            info_2 = paste("n = ", params$overall$counts),
+                            icon = fontawesome(search_fontawesome("chart"))[1],
+                            font_family = "fontawesome-webfont",
+                            color = 1)
+
+ggplot(overall_frame, aes(x, y, height = h, width = w, label = info)) +
+  ## Create the tiles using the `color` column
+  geom_tile(aes(fill = color)) +
+  ## Add the numeric values as text in `value` column
+  geom_text(color = "white", fontface = "bold", size = 20,
+            aes(label = value, x = x - 1.5, y = y + 1.25), hjust = 0) +
+  ## Add the labels for each box stored in the `info` column
+  geom_text(color = "white", fontface = "bold", size = 10,
+            aes(label = info, x = x - 1.5, y = y - 1), hjust = 0) +
+  geom_text(color = "white", fontface = "bold", size = 10,
+            aes(label = info_2, x = x - 1.5, y = y - 1.45), hjust = 0) +
+  coord_fixed() +
+  ## Use `geom_text()` to add the icons by specifying the unicode symbol.
+  geom_text(size = 30, aes(label = icon, family = font_family,
+                           x = x + 1, y = y + 0.2), alpha = 0.25) +
+  theme_void() +
+  guides(fill = FALSE)
+
+```
+
+## Detailed Metrics {.tabset}
+
 
 ### Distribution
 

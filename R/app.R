@@ -62,7 +62,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom magrittr set_names
 #' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar
 #' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
-#' valueBoxOutput renderMenu updateTabItems tabBox
+#' valueBoxOutput renderMenu updateTabItems tabBox renderValueBox valueBox
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @importFrom yaml read_yaml
 #' @import rdrop2
@@ -130,6 +130,9 @@ cytosel <- function(...) {
     },
   # tags$script(HTML("window.onbeforeunload = function() {return 'Please visit https://www.surveymonkey.com/ before you leave!';};"))
     tags$head(tags$style(".modal-dialog{ width:750px}")),
+  tags$head(
+    tags$script(HTML("window.onbeforeunload = function() {return 'Your changes will be lost!';};"))
+  ),
     tags$style("@import url(https://use.fontawesome.com/releases/v5.7.2/css/all.css);"),
     # styling the hover tooltips
     #  https://stackoverflow.com/questions/62360730/change-color-of-bstooltip-boxes-in-shiny
@@ -217,6 +220,8 @@ cytosel <- function(...) {
                                 #base_inputs {
                                 border: 2.5px dashed black;
                                 }
+                                
+                                .small-box {height: 125px}
                                 
                                 '))),
       
@@ -432,20 +437,24 @@ cytosel <- function(...) {
       tabItem("Metrics",
                  # icon = icon("ruler"),
                  br(),
-                 helpText(get_tooltip('metrics')),
-                 tags$span(icon("circle-info") %>%
-                             bs_embed_tooltip(title = get_tooltip('metrics_explanation'),
-                                              placement = "right", html = TRUE)),
+                 fluidRow(
+                          column(10, helpText(get_tooltip('metrics')) %>% tags$span(icon("circle-info") %>%
+                                                                                 bs_embed_tooltip(title = get_tooltip('metrics_explanation'),
+                                                          placement = "right", html = TRUE)), div(style = "height: 100px;")),
+                          column(2,
+                                 valueBoxOutput("current_metric_score", width = NULL
+                                               ))),
                  # textOutput("cells_per_category"),
                 fluidRow(
-                column(8, plotlyOutput("metric_plot", height="550px"),),
+                column(8, plotlyOutput("metric_plot", height="550px")),
                 column(4, align = "center",
                        tabBox(width = NULL,
-                  # Title can include an icon
-                  tabPanel("Current Run Metrics",
+                              id = "metrics_toggle",
+                  tabPanel(id = "current_metrics_viewed", title = "Current Run Metrics",
+                           div(style = "align: center;"),
                            DTOutput("current_run_metrics", width = "100%")
                   ),
-                  tabPanel("Previous Run Metrics",
+                  tabPanel(id = "previous_metrics_viewed", title = "Previous Run Metrics",
                            DTOutput("previous_run_metrics", width = "100%"))
                 )
           ))),
@@ -598,6 +607,9 @@ cytosel <- function(...) {
     current_run_log <- reactiveVal()
     previous_run_log <- reactiveVal(NULL)
     previous_run_log_2 <- reactiveVal(NULL)
+    current_overall_score <- reactiveVal(NULL)
+    previous_overall_score <- reactiveVal(NULL)
+    metrics_being_viewed <- reactiveVal(FALSE)
     
     proper_organism <- reactiveVal(TRUE)
     
@@ -1044,6 +1056,42 @@ cytosel <- function(...) {
     output$metrics_run_prev_2 <- renderDT({
       req(previous_run_log_2())
       previous_run_log_2()$metrics}, server = TRUE)
+    
+    #### Overall Score tables ######
+    
+    to_listen_metrics <- reactive({
+      list(input$tabs, input$metrics_toggle)
+    })
+    
+    
+    observeEvent(to_listen_metrics(),{
+      req(current_overall_score())
+      
+      metrics_val <- ifelse(input$metrics_toggle == "Current Run Metrics", current_overall_score()$score,
+                            ifelse(!is.null(previous_overall_score()), previous_overall_score()$score,
+                                   "None"))
+      
+      metrics_counts <- ifelse(input$metrics_toggle == "Current Run Metrics", current_overall_score()$counts,
+                               ifelse(!is.null(previous_overall_score()), previous_overall_score()$counts,
+                                      "None"))
+      
+      which_set <- ifelse(input$metrics_toggle == "Current Run Metrics", "Current Run, ", "Previous Run, ")
+      
+      if (input$tabs == "Metrics") {
+        
+        output$current_metric_score <- renderValueBox({
+          valueBox(
+            subtitle = paste0("Accuracy, ", which_set, "n = ", metrics_counts),
+            value = metrics_val,
+            icon = NULL,
+            width = NULL,
+            color = "blue",
+          )
+        })
+        
+      }
+
+    })
     
     ### ANALYSIS ###
     observeEvent(input$start_analysis, {
@@ -1854,7 +1902,6 @@ cytosel <- function(...) {
       cell_min_threshold(yaml_back$`Min Cell Category cutoff`)
       updateNumericInput(session, "min_category_count", value = yaml_back$`Min Cell Category cutoff`)
     }
-    
     updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
     
     if (isTruthy(sce())) {
@@ -2244,6 +2291,8 @@ cytosel <- function(...) {
         if (isTruthy(current_metrics())) {
           previous_metrics(list(all = current_metrics()$all |> mutate(Run = "Previous Run"),
                                 summary = current_metrics()$summary))
+          
+          previous_overall_score(current_overall_score())
         }
         mm <- metrics()
         # if (is.null(mm)) {
@@ -2257,6 +2306,7 @@ cytosel <- function(...) {
         ## Add in number of cells per condition
         cpt <- cells_per_type()
         cpt['Overall'] <- sum(cpt)
+        
         m$Counts <- plyr::mapvalues(as.character(m$what),
                                     from = names(cpt), 
                                     to = cpt)
@@ -2274,15 +2324,21 @@ cytosel <- function(...) {
         
         m <- m |> drop_na(score)
         
+        
         current_metrics(m |> mutate(Run = "Current Run"))
-        current_metrics(list(all = current_metrics(),
+        
+        current_overall_score(list(score = round(unique(subset(current_metrics(), what == "Overall")$`score`), 3),
+                                   counts = unique(subset(current_metrics(), what == "Overall")$`Counts`)))
+        
+        current_metrics(list(all = current_metrics() |> filter(what != "Overall"),
                              summary = current_metrics() |>
                                mutate(Counts = as.numeric(Counts)) |>
                                group_by(what, Counts) |>
                                summarize(mean_score = round(mean(score),
                                                             3)) |>
                                arrange(desc(Counts)) |> rename(`Cell Type` = what,
-                                                               `Mean Score` = mean_score)))
+                                                               `Mean Score` = mean_score) |>
+                               filter(`Cell Type` != "Overall")))
         
         if (isTruthy(previous_metrics()$all)) {
           all_metrics <- rbind(previous_metrics()$all, current_metrics()$all) |> 
@@ -2464,7 +2520,8 @@ cytosel <- function(...) {
       content = function(fname) {
         showNotification("Rendering output report and config file, this may take a few moments..", duration = 4)
         # future_promise({
-        download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap_for_report(), df_antibody(), markdown_report_path, current_metrics()$summary,
+        download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap_for_report(), df_antibody(), 
+                      markdown_report_path, current_metrics()$summary, current_overall_score(),
                       markers_with_type())
     # })
       },
