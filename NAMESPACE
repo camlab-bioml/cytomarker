@@ -3,7 +3,7 @@
 export(cytosel)
 import(SummarizedExperiment)
 import(emojifont)
-import(flexdashboard)
+import(fontawesome)
 import(forcats)
 import(geneBasisR)
 import(ggplot2)

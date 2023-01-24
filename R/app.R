@@ -11,7 +11,7 @@ for (i in curated_datasets$tissue) {
 
 utils::globalVariables(c("palette_to_use", "full_palette",
                          "preview_info", "curated_datasets", "compartments",
-                         "dataset_labels",
+                         "dataset_labels", "antibody_info",
                          "markdown_report_path", "all_zones"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
@@ -38,6 +38,8 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @import ggplot2
 #' @import sortable
 #' @import scater
+#' @import fontawesome
+#' @import emojifont
 #' @import utils
 #' @import reactable
 #' @import tidyverse
@@ -1633,38 +1635,30 @@ cytosel <- function(...) {
       req(input$uploadMarkers)
       
       uploaded_markers <- readLines(input$uploadMarkers$datapath)
-      marker <- c()
-      not_sce <- c()
+      marker <- uploaded_markers[uploaded_markers %in% allowed_genes() & length(uploaded_markers) > 1]
+      not_sce <- setdiff(uploaded_markers, marker)
       
-      for(i in seq_len(length(uploaded_markers))) {
-        if(!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && (uploaded_markers[i] %in% rownames(sce()))) {
-          marker <- c(marker, uploaded_markers[i])
-          
-          cm <- current_markers()
-          
-          # SMH
-          current_markers(
-            list(recommended_markers = cm$recommended_markers,
-                 scratch_markers = input$bl_scratch,
-                 top_markers = marker)
-          )
-        } else if (!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && !(uploaded_markers[i] %in% rownames(sce()))) {
-          not_sce <- c(not_sce, uploaded_markers[i])
-        } 
+      if (isTruthy(marker)) {
+        markers <- list(recommended_markers = current_markers()$recommended_markers,
+                        scratch_markers = input$bl_scratch,
+                        top_markers = marker)
+        
+        current_markers(
+          set_current_markers_safely(markers, fms())
+        )
+        
+        if(length(not_sce) > 0) {
+          warning_modal(not_sce)
+        }
+        
+        num_markers_in_selected(length(current_markers()$top_markers))
+        num_markers_in_scratch(length(current_markers()$scratch_markers))
+        
+        update_BL(current_markers(), num_markers_in_selected(),
+                  num_markers_in_scratch(),
+                  names(fms()[[1]]))
       }
-      
-      if(length(not_sce) > 0) {
-        warning_modal(not_sce)
-      }
-      
-      num_markers_in_selected(length(current_markers()$top_markers))
-      num_markers_in_scratch(length(current_markers()$scratch_markers))
-      
-      update_BL(current_markers(), num_markers_in_selected(),
-                num_markers_in_scratch(),
-                names(fms()[[1]]))
     })
-    
     
     ### HEATMAP DISPLAY ###
     observeEvent(input$display_options, {
@@ -2123,11 +2117,11 @@ cytosel <- function(...) {
       
       cytosel_palette(palette_to_use)
       
-      if (length(markers$top_markers) > 0) {
+      if (isTruthy(markers$top_markers)) {
         markers$top_markers <- sort(markers$top_markers)
       }
       
-      if (length(markers$scratch_markers) > 0) {
+      if (isTruthy(markers$scratch_markers)) {
         markers$scratch_markers <- sort(markers$scratch_markers)
       }
       
@@ -2138,7 +2132,6 @@ cytosel <- function(...) {
       # Option 1: if the configuration is true, then have a star for any product in the Abcam catalogue
       # Option 2: if the configuration is false, then have a star if the marker was in the initial suggestions
       marker_filtration <- if(isTruthy(STAR_FOR_ABCAM)) unique(antibody_info$Symbol) else original_panel()
-      
       
       labels_top <- lapply(markers$top_markers, 
                            function(x) div(x, map_gene_name_to_antibody_icon(x, marker_filtration), 
