@@ -9,3 +9,6 @@ cytosel.Rcheck/
 archive/
 
 scripts/
+
+inst/*.csv
+inst/*.tsv

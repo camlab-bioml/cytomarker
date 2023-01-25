@@ -2118,7 +2118,8 @@ cytosel <- function(...) {
       cytosel_palette(palette_to_use)
       
       if (isTruthy(markers$top_markers)) {
-        markers$top_markers <- sort(markers$top_markers)
+        markers$top_markers <- names(sort(markers$associated_cell_types))[names(markers$associated_cell_types) %in% 
+                                  markers$top_markers]
       }
       
       if (isTruthy(markers$scratch_markers)) {

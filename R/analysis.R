@@ -89,6 +89,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
                                       tibble(marker = selected_markers,
                                              cell_type = names(fm)[i],
                                              summary.logFC = f[selected_markers,]$summary.logFC))
+          
         }else{
           cell_types_wout_markers <- c(cell_types_wout_markers, names(fm)[i])
           # message(paste("No markers were found for the following cell types: ",
