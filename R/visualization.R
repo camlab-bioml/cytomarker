@@ -12,7 +12,7 @@
 #' @importFrom stats cor
 #' @importFrom viridis viridis
 #' @importFrom plotly plot_ly layout
-#' @importFrom heatmaply heatmaply
+#' @importFrom heatmaply heatmaply heatmaply_cor
 #' @importFrom tibble rownames_to_column
 #' @importFrom dplyr mutate
 #' @importFrom tidyr pivot_longer
@@ -42,15 +42,26 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     dims <- ifelse(length(rownames(cc)) < 70, 650, ifelse(length(rownames(cc)) < 95,
                                                           10.5*length(rownames(cc)), 1000))
     
-    cor_map <- plot_ly(z=cc, 
+    cor_map <- plot_ly(z=cc,
                        type='heatmap',
                        x = rownames(cc),
                        y = rownames(cc),
                        hovertemplate = "Gene(x): %{x}<br>Gene(y): %{y}<br>Correlation: %{z}<extra></extra>",
-                       showticklabels = T, width = dims, 
-                       height = dims) %>% 
+                       showticklabels = T, width = dims,
+                       height = dims) %>%
       layout(title='Correlation', yaxis = list(autotick = F, tickmode = "linear"),
              xaxis = list(autotick = F, tickmode = "linear"))
+    
+    # cor_map <- heatmaply(cc,
+    #                      main = "Correlation",
+    #                      plot_method = "plotly",
+    #                      label_names = c("Gene", y = "Gene", 
+    #                                      "Correlation"),
+    #                      key.title = "Correlation",
+    #                      column_text_angle = 90,
+    #                      height = dims,
+    #                      width = dims,
+    #                      symm = T)
     
     return(cor_map)
   } else {

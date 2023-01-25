@@ -14,13 +14,14 @@
 #' @importFrom BiocParallel bpworkers
 compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
   
-  fms <- mclapply(columns, mc.cores = availableCores(),
+  fms <- lapply(columns,
                   function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
     fm <- findMarkers(sce, colData(sce)[[col]], 
-                      test.type = test_type, assay.type = pref_assay,
-                      BPPARAM = MulticoreParam(stop.on.error = F))
+                      test.type = test_type, 
+                      # BPPARAM = MulticoreParam(),
+                      assay.type = pref_assay)
     
     for(n in names(fm)) {
       fm[[n]] <- fm[[n]][rownames(fm[[n]]) %in% allowed_genes,]
@@ -226,7 +227,7 @@ get_umap <- function(sce, columns, pref_assay, precomputed_vals = NULL, dim_col 
                    n_threads = availableCores(),
                    # ncomponents = num_comp_use, 
                    # pca = num_comp_use,
-                   BPPARAM = MulticoreParam(),
+                   # BPPARAM = MulticoreParam(),
                    external_neighbors	= T)
     
     df <- as.data.frame(reducedDim(sce, 'UMAP')) |> `colnames<-`(c("UMAP_1", "UMAP_2"))
@@ -305,7 +306,7 @@ train_nb <- function(x,y, cell_types) {
   x <- scale(x)
   
   metrics <- suppressWarnings({ 
-    mclapply(flds, mc.cores = availableCores(), function(test_idx) {
+    lapply(flds, function(test_idx) {
       # fit <- naive_bayes(x[-test_idx,], y[-test_idx])
       # p <- stats::predict(fit, newdata = x[test_idx,])
       df_train <- as.data.frame(x[-test_idx,])

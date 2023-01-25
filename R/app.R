@@ -432,10 +432,10 @@ cytosel <- function(...) {
                                               placement = "right"))),
                           div(style="margin-left:10px; margin-top: 25px; margin-bottom:25px;",
                               actionButton("suggest_gene_removal", "View suggestions"))),
-                 fluidRow(column(12, plotlyOutput("heatmap", height="auto"))),
+                 fluidRow(column(12, plotlyOutput("heatmap", height="auto", width = "auto"))),
                  br()
           ),
-
+      
       tabItem("Metrics",
                  # icon = icon("ruler"),
                  br(),
