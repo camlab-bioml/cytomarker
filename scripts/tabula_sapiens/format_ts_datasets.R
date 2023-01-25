@@ -20,6 +20,8 @@ for (elem in datasets) {
   gc()
   print(elem)
   data <- readH5AD(elem)
+  # data <- data[,data$n_counts_UMIs > 500 & data$n_genes > 500]
+  
   
   types <- as.data.frame(table(data$cell_ontology_class)) |> filter(Freq > 20)
   

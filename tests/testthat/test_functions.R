@@ -375,8 +375,10 @@ test_that("download works as expected", {
     fake_genes <- c("Fake_1", "Fake_2", "Fake_3")
     names(fake_genes) <- c("Gene_1", "Gene_2", "gene_3")
     
+    fake_overall <- list(score = 0.99, counts = 100)
+    
     download_data(filepath, base_config, plots, heatmap, fake_table, markdown_report_path,
-                  fake_metrics, fake_genes)
+                  fake_metrics, fake_overall, fake_genes)
     
     # unzip to tempdir and read back
     unzip(filepath, exdir = td)

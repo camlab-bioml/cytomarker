@@ -11,7 +11,7 @@ for (i in curated_datasets$tissue) {
 
 utils::globalVariables(c("palette_to_use", "full_palette",
                          "preview_info", "curated_datasets", "compartments",
-                         "dataset_labels",
+                         "dataset_labels", "antibody_info",
                          "markdown_report_path", "all_zones"), "cytosel")
 
 ggplot2::theme_set(cowplot::theme_cowplot())
@@ -38,6 +38,8 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @import ggplot2
 #' @import sortable
 #' @import scater
+#' @import fontawesome
+#' @import emojifont
 #' @import utils
 #' @import reactable
 #' @import tidyverse
@@ -62,7 +64,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom magrittr set_names
 #' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar
 #' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
-#' valueBoxOutput renderMenu updateTabItems tabBox
+#' valueBoxOutput renderMenu updateTabItems tabBox renderValueBox valueBox
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @importFrom yaml read_yaml
 #' @import rdrop2
@@ -130,6 +132,9 @@ cytosel <- function(...) {
     },
   # tags$script(HTML("window.onbeforeunload = function() {return 'Please visit https://www.surveymonkey.com/ before you leave!';};"))
     tags$head(tags$style(".modal-dialog{ width:750px}")),
+  tags$head(
+    tags$script(HTML("window.onbeforeunload = function() {return 'Your changes will be lost!';};"))
+  ),
     tags$style("@import url(https://use.fontawesome.com/releases/v5.7.2/css/all.css);"),
     # styling the hover tooltips
     #  https://stackoverflow.com/questions/62360730/change-color-of-bstooltip-boxes-in-shiny
@@ -217,6 +222,8 @@ cytosel <- function(...) {
                                 #base_inputs {
                                 border: 2.5px dashed black;
                                 }
+                                
+                                .small-box {height: 125px}
                                 
                                 '))),
       
@@ -425,27 +432,31 @@ cytosel <- function(...) {
                                               placement = "right"))),
                           div(style="margin-left:10px; margin-top: 25px; margin-bottom:25px;",
                               actionButton("suggest_gene_removal", "View suggestions"))),
-                 fluidRow(column(12, plotlyOutput("heatmap", height="auto"))),
+                 fluidRow(column(12, plotlyOutput("heatmap", height="auto", width = "auto"))),
                  br()
           ),
-
+      
       tabItem("Metrics",
                  # icon = icon("ruler"),
                  br(),
-                 helpText(get_tooltip('metrics')),
-                 tags$span(icon("circle-info") %>%
-                             bs_embed_tooltip(title = get_tooltip('metrics_explanation'),
-                                              placement = "right", html = TRUE)),
+                 fluidRow(
+                          column(10, helpText(get_tooltip('metrics')) %>% tags$span(icon("circle-info") %>%
+                                                                                 bs_embed_tooltip(title = get_tooltip('metrics_explanation'),
+                                                          placement = "right", html = TRUE)), div(style = "height: 100px;")),
+                          column(2,
+                                 valueBoxOutput("current_metric_score", width = NULL
+                                               ))),
                  # textOutput("cells_per_category"),
                 fluidRow(
-                column(8, plotlyOutput("metric_plot", height="550px"),),
+                column(8, plotlyOutput("metric_plot", height="550px")),
                 column(4, align = "center",
                        tabBox(width = NULL,
-                  # Title can include an icon
-                  tabPanel("Current Run Metrics",
+                              id = "metrics_toggle",
+                  tabPanel(id = "current_metrics_viewed", title = "Current Run Metrics",
+                           div(style = "align: center;"),
                            DTOutput("current_run_metrics", width = "100%")
                   ),
-                  tabPanel("Previous Run Metrics",
+                  tabPanel(id = "previous_metrics_viewed", title = "Previous Run Metrics",
                            DTOutput("previous_run_metrics", width = "100%"))
                 )
           ))),
@@ -598,6 +609,9 @@ cytosel <- function(...) {
     current_run_log <- reactiveVal()
     previous_run_log <- reactiveVal(NULL)
     previous_run_log_2 <- reactiveVal(NULL)
+    current_overall_score <- reactiveVal(NULL)
+    previous_overall_score <- reactiveVal(NULL)
+    metrics_being_viewed <- reactiveVal(FALSE)
     
     proper_organism <- reactiveVal(TRUE)
     
@@ -1044,6 +1058,42 @@ cytosel <- function(...) {
     output$metrics_run_prev_2 <- renderDT({
       req(previous_run_log_2())
       previous_run_log_2()$metrics}, server = TRUE)
+    
+    #### Overall Score tables ######
+    
+    to_listen_metrics <- reactive({
+      list(input$tabs, input$metrics_toggle)
+    })
+    
+    
+    observeEvent(to_listen_metrics(),{
+      req(current_overall_score())
+      
+      metrics_val <- ifelse(input$metrics_toggle == "Current Run Metrics", current_overall_score()$score,
+                            ifelse(!is.null(previous_overall_score()), previous_overall_score()$score,
+                                   "None"))
+      
+      metrics_counts <- ifelse(input$metrics_toggle == "Current Run Metrics", current_overall_score()$counts,
+                               ifelse(!is.null(previous_overall_score()), previous_overall_score()$counts,
+                                      "None"))
+      
+      which_set <- ifelse(input$metrics_toggle == "Current Run Metrics", "Current Run, ", "Previous Run, ")
+      
+      if (input$tabs == "Metrics") {
+        
+        output$current_metric_score <- renderValueBox({
+          valueBox(
+            subtitle = paste0("Accuracy, ", which_set, "n = ", metrics_counts),
+            value = metrics_val,
+            icon = NULL,
+            width = NULL,
+            color = "blue",
+          )
+        })
+        
+      }
+
+    })
     
     ### ANALYSIS ###
     observeEvent(input$start_analysis, {
@@ -1585,38 +1635,30 @@ cytosel <- function(...) {
       req(input$uploadMarkers)
       
       uploaded_markers <- readLines(input$uploadMarkers$datapath)
-      marker <- c()
-      not_sce <- c()
+      marker <- uploaded_markers[uploaded_markers %in% allowed_genes() & length(uploaded_markers) > 1]
+      not_sce <- setdiff(uploaded_markers, marker)
       
-      for(i in seq_len(length(uploaded_markers))) {
-        if(!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && (uploaded_markers[i] %in% rownames(sce()))) {
-          marker <- c(marker, uploaded_markers[i])
-          
-          cm <- current_markers()
-          
-          # SMH
-          current_markers(
-            list(recommended_markers = cm$recommended_markers,
-                 scratch_markers = input$bl_scratch,
-                 top_markers = marker)
-          )
-        } else if (!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && !(uploaded_markers[i] %in% rownames(sce()))) {
-          not_sce <- c(not_sce, uploaded_markers[i])
-        } 
+      if (isTruthy(marker)) {
+        markers <- list(recommended_markers = current_markers()$recommended_markers,
+                        scratch_markers = input$bl_scratch,
+                        top_markers = marker)
+        
+        current_markers(
+          set_current_markers_safely(markers, fms())
+        )
+        
+        if(length(not_sce) > 0) {
+          warning_modal(not_sce)
+        }
+        
+        num_markers_in_selected(length(current_markers()$top_markers))
+        num_markers_in_scratch(length(current_markers()$scratch_markers))
+        
+        update_BL(current_markers(), num_markers_in_selected(),
+                  num_markers_in_scratch(),
+                  names(fms()[[1]]))
       }
-      
-      if(length(not_sce) > 0) {
-        warning_modal(not_sce)
-      }
-      
-      num_markers_in_selected(length(current_markers()$top_markers))
-      num_markers_in_scratch(length(current_markers()$scratch_markers))
-      
-      update_BL(current_markers(), num_markers_in_selected(),
-                num_markers_in_scratch(),
-                names(fms()[[1]]))
     })
-    
     
     ### HEATMAP DISPLAY ###
     observeEvent(input$display_options, {
@@ -1854,7 +1896,6 @@ cytosel <- function(...) {
       cell_min_threshold(yaml_back$`Min Cell Category cutoff`)
       updateNumericInput(session, "min_category_count", value = yaml_back$`Min Cell Category cutoff`)
     }
-    
     updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
     
     if (isTruthy(sce())) {
@@ -2076,11 +2117,12 @@ cytosel <- function(...) {
       
       cytosel_palette(palette_to_use)
       
-      if (length(markers$top_markers) > 0) {
-        markers$top_markers <- sort(markers$top_markers)
+      if (isTruthy(markers$top_markers)) {
+        markers$top_markers <- names(sort(markers$associated_cell_types))[names(markers$associated_cell_types) %in% 
+                                  markers$top_markers]
       }
       
-      if (length(markers$scratch_markers) > 0) {
+      if (isTruthy(markers$scratch_markers)) {
         markers$scratch_markers <- sort(markers$scratch_markers)
       }
       
@@ -2091,7 +2133,6 @@ cytosel <- function(...) {
       # Option 1: if the configuration is true, then have a star for any product in the Abcam catalogue
       # Option 2: if the configuration is false, then have a star if the marker was in the initial suggestions
       marker_filtration <- if(isTruthy(STAR_FOR_ABCAM)) unique(antibody_info$Symbol) else original_panel()
-      
       
       labels_top <- lapply(markers$top_markers, 
                            function(x) div(x, map_gene_name_to_antibody_icon(x, marker_filtration), 
@@ -2244,6 +2285,8 @@ cytosel <- function(...) {
         if (isTruthy(current_metrics())) {
           previous_metrics(list(all = current_metrics()$all |> mutate(Run = "Previous Run"),
                                 summary = current_metrics()$summary))
+          
+          previous_overall_score(current_overall_score())
         }
         mm <- metrics()
         # if (is.null(mm)) {
@@ -2257,6 +2300,7 @@ cytosel <- function(...) {
         ## Add in number of cells per condition
         cpt <- cells_per_type()
         cpt['Overall'] <- sum(cpt)
+        
         m$Counts <- plyr::mapvalues(as.character(m$what),
                                     from = names(cpt), 
                                     to = cpt)
@@ -2274,15 +2318,21 @@ cytosel <- function(...) {
         
         m <- m |> drop_na(score)
         
+        
         current_metrics(m |> mutate(Run = "Current Run"))
-        current_metrics(list(all = current_metrics(),
+        
+        current_overall_score(list(score = round(unique(subset(current_metrics(), what == "Overall")$`score`), 3),
+                                   counts = unique(subset(current_metrics(), what == "Overall")$`Counts`)))
+        
+        current_metrics(list(all = current_metrics() |> filter(what != "Overall"),
                              summary = current_metrics() |>
                                mutate(Counts = as.numeric(Counts)) |>
                                group_by(what, Counts) |>
                                summarize(mean_score = round(mean(score),
                                                             3)) |>
                                arrange(desc(Counts)) |> rename(`Cell Type` = what,
-                                                               `Mean Score` = mean_score)))
+                                                               `Mean Score` = mean_score) |>
+                               filter(`Cell Type` != "Overall")))
         
         if (isTruthy(previous_metrics()$all)) {
           all_metrics <- rbind(previous_metrics()$all, current_metrics()$all) |> 
@@ -2464,7 +2514,8 @@ cytosel <- function(...) {
       content = function(fname) {
         showNotification("Rendering output report and config file, this may take a few moments..", duration = 4)
         # future_promise({
-        download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap_for_report(), df_antibody(), markdown_report_path, current_metrics()$summary,
+        download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap_for_report(), df_antibody(), 
+                      markdown_report_path, current_metrics()$summary, current_overall_score(),
                       markers_with_type())
     # })
       },

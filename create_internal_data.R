@@ -9,5 +9,6 @@ all_zones <- all_zones[!sl]
 cytosel_data <- list(antibody_info = antibody_info, grch38 = grch38,
                      time_zones = all_zones)
 
-usethis::use_data(cytosel_data, internal = T, overwrite = T)
+usethis::use_data(cytosel_data, internal = T, overwrite = T,
+                  compress = "xz")
 

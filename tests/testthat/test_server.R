@@ -63,6 +63,8 @@ test_that("Server has basic functionality", {
                       min_category_count = 2,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
+                      tabs = NULL,
+                      metrics_toggle = NULL,
                       select_aa = NULL,
                       start_analysis = T)
     
@@ -134,6 +136,10 @@ test_that("Server has basic functionality", {
       expect_true(file.exists(file.path(tempdir(), paste0("config-", Sys.Date(), ".yml"))))
       expect_false(is.null(output$downloadData))
     })
+    
+    session$setInputs(tabs = "Metrics", metrics_toggle = "Current Run Metrics")
+    
+    expect_true(!is.null(current_overall_score()))
     
     # suggest markers to remove
     
@@ -291,17 +297,6 @@ test_that("Pre-setting the input rank lists persists in the current markers", {
     
     expect_equal(length(current_markers()$top_markers), length(input$bl_top))
     expect_equal(length(current_markers()$scratch_markers), length(input$bl_scratch))
-    
-    # expect_true(proceed_with_analysis())
-    # 
-    # session$setInputs(input_scrnaseq = NULL,
-    #                   curated_dataset = T, curated_options = "Kidney",
-    #                   subset_number = 2000,
-    #                   coldata_column = "cell_ontology_class",
-    #                   curated_compartments = c("Endothelial", "Immune", "Stromal"),
-    #                   pick_curated = T)
-    # 
-    # expect_false(proceed_with_analysis())
     
   })
   

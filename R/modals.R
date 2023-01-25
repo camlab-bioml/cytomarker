@@ -126,7 +126,7 @@ cell_cat_modal <- function(cell_cat_value, cell_choices, cell_types_included) {
                            choices = cell_choices, 
                            selected = cell_types_included,
                            multiple=TRUE),
-               numericInput("min_category_count", "Minimum cell category cutoff:", 
+               numericInput("min_category_count", "Minimum number of cells to keep category:", 
                             cell_cat_value, min = 2, max = 100, step = 0.5, width = NULL)),
     title = "Frequency Count for selected heterogeneity category",
     helpText("Certain cell types can be manually ignored by the user during analysis in the first dialog box above. If this cell is left empty, then by default 
@@ -145,7 +145,7 @@ cell_cat_modal <- function(cell_cat_value, cell_choices, cell_types_included) {
 #' @importFrom shinyalert shinyalert
 threshold_too_low_modal <- function() { # Input marker is not in the dataset
   shinyalert(title = "Error", 
-             text = "Cytosel requires the minimum cell type category to be set to 2 or greater for statistical inference. Please adjust the value of minimum cell category cutoff to at least 2.", 
+             text = "Cytosel requires the minimum cell type category to be set to 2 or greater for statistical inference. Please adjust the value of minimum number of cells to keep category to at least 2.", 
              type = "error", 
              showConfirmButton = TRUE,
              confirmButtonCol = "#337AB7")

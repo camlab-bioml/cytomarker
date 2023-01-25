@@ -67,7 +67,9 @@ Imports:
     printr,
     promises,
     htmltools,
-    utils
+    utils,
+    fontawesome,
+    emojifont
 Suggests:
   stringr,
   yardstick,

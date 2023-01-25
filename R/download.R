@@ -66,6 +66,7 @@ download_data <- function(zip_filename,
                           antibody_table,
                           markdown_path,
                           run_metrics,
+                          overall_metrics,
                           markers_with_cell_type) {
 
     tmpdir <- tempdir()
@@ -93,6 +94,8 @@ download_data <- function(zip_filename,
                        umap = list(all = plots$all, top = plots$top),
                        metric = list(plot = plots$metric,
                                      table = run_metrics),
+                       overall = list(score = overall_metrics$score,
+                                      counts = overall_metrics$counts),
                        config = config_df)
     
     paths_report$tmpdir <- paste0(tmpdir, "/")
