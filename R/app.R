@@ -341,7 +341,8 @@ cytosel <- function(...) {
                           column(8, div(style = "margin-top: -8.5px;"),
                                  radioButtons("panel_sorter", label = "Select marker order", inline = TRUE,
                                                  choices = c("Group by cell type", "Sort alphabetically"),
-                                                 selected="Group by cell type"))),
+                                                 selected="Group by cell type"))
+                          ),
                  hr(),
                  fluidRow(column(7, hidden(div(id = "marker_visualization",
                                                tags$span(icon("circle-info")
@@ -1438,6 +1439,8 @@ cytosel <- function(...) {
       
     })
     
+    
+    
     # re-count the number of markers in each space when the sortable js is changed
     observeEvent(input$bl_top, {
       req(sce())
@@ -2095,13 +2098,26 @@ cytosel <- function(...) {
       req(current_markers())
       req(fms())
       
+      markers <- list(recommended_markers = current_markers()$recommended_markers,
+                      scratch_markers = input$bl_scratch,
+                      top_markers = input$bl_top)
+      
+      # SMH
+      current_markers(
+        set_current_markers_safely(markers, fms())
+      )
+      
+      num_markers_in_selected(length(current_markers()$top_markers))
+      num_markers_in_scratch(length(current_markers()$scratch_markers))
+
     update_BL(current_markers(), num_markers_in_selected(),
               num_markers_in_scratch(),
               names(fms()[[1]]))
-    marker_sort(input$panel_sorter)
-      
-    })
     
+    marker_sort(input$panel_sorter)
+
+    })
+
     # update the selected metadata column and subtypes
     
     update_metadata_column <- function() {
@@ -2135,8 +2151,8 @@ cytosel <- function(...) {
       if (isTruthy(markers$top_markers) & length(markers$top_markers) > 1) {
         
         if (input$panel_sorter == "Group by cell type") {
-          markers$top_markers <- names(sort(markers$associated_cell_types))[names(markers$associated_cell_types) %in% 
-                                                                              markers$top_markers]
+          markers$top_markers <- names(sort(markers$associated_cell_types[names(markers$associated_cell_types) %in%
+                                                                            markers$top_markers]))
         } else {
           markers$top_markers <- sort(markers$top_markers)
         }
@@ -2144,15 +2160,14 @@ cytosel <- function(...) {
       }
       
       if (isTruthy(markers$scratch_markers) & length(markers$scratch_markers) > 1) {
-        
         if (input$panel_sorter == "Group by cell type") {
-        markers$scratch_markers <- names(sort(markers$associated_cell_types))[names(markers$associated_cell_types) %in% 
-                                                                            markers$scratch_markers]
-        
+          markers$scratch_markers <- names(sort(markers$associated_cell_types[names(markers$associated_cell_types) %in%
+                                                                                markers$scratch_markers]))
+          
         } else {
           markers$scratch_markers <- sort(markers$scratch_markers)
         }
-      }
+        }
       
       markers_with_type(markers$associated_cell_types)
       
