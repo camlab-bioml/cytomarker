@@ -337,7 +337,12 @@ cytosel <- function(...) {
       tabItem("marker_selection",
                  # icon = icon("list"),
                  br(),
-                 fluidRow(column(12, actionButton("markers_change_modal", "Add markers to panel"))),
+                 fluidRow(column(4, actionButton("markers_change_modal", "Add markers to panel")),
+                          column(8, div(style = "margin-top: -8.5px;"),
+                                 radioButtons("panel_sorter", label = "Select marker order", inline = TRUE,
+                                                 choices = c("Group by cell type", "Sort alphabetically"),
+                                                 selected="Group by cell type"))
+                          ),
                  hr(),
                  fluidRow(column(7, hidden(div(id = "marker_visualization",
                                                tags$span(icon("circle-info")
@@ -395,11 +400,11 @@ cytosel <- function(...) {
                           column(2, div(style = "margin-top: 30px; margin-left: 60px;"),
                                             checkboxInput("show_umap_legend", "Show UMAP plot legends", T,
                                                              ))),
-                 fluidRow(column(6, style = "margin-right: -10px; margin-top: 10px",
-                                 plotlyOutput("all_plot", width="400px", height="400px",
+                 fluidRow(column(6, style = "margin-right: -15px; margin-top: 10px",
+                                 plotlyOutput("all_plot", width="500px", height="450px",
                                                  )),
-                          column(6, style = "margin-right: -10px; margin-top: 10px",
-                                 plotlyOutput("top_plot", width="400px", height="400px",
+                          column(6, style = "margin-left: -15px; margin-top: 10px",
+                                 plotlyOutput("top_plot", width="500px", height="450px",
                                                  )))
           ),
         
@@ -543,6 +548,8 @@ cytosel <- function(...) {
     fms <- reactiveVal() # Where to store the findMarker outputs
     allowed_genes <- reactiveVal() # Set of "allowed" genes (those with anotibodies, not ribo or mito)
     current_markers <- reactiveVal() # Currently selected markers
+    
+    marker_sort <- reactiveVal(NULL)
     
     display <- reactiveVal() # Display options for heatmap
     
@@ -715,7 +722,6 @@ cytosel <- function(...) {
       
       
       output$curated_set_preview <- renderPrint({HTML(ts_dataset_preview)})
-      
       
     })
     
@@ -1170,7 +1176,6 @@ cytosel <- function(...) {
         cell_types_to_keep(intersect(specific_cell_types_selected(),
                                        cell_types_high_enough()))
         
-        
         sce(remove_null_and_va_from_cell_cat(sce(), input$coldata_column))
         
         showNotification("Ignoring any cells with input category set to NA or null",
@@ -1433,6 +1438,8 @@ cytosel <- function(...) {
       toggle(id = "download_button", condition = isTruthy(current_markers()))
       
     })
+    
+    
     
     # re-count the number of markers in each space when the sortable js is changed
     observeEvent(input$bl_top, {
@@ -2087,6 +2094,18 @@ cytosel <- function(...) {
       }
     }, ignoreNULL = FALSE)
     
+    observeEvent(input$panel_sorter, {
+      req(current_markers())
+      req(fms())
+
+    update_BL(current_markers(), num_markers_in_selected(),
+              num_markers_in_scratch(),
+              names(fms()[[1]]))
+    
+    marker_sort(input$panel_sorter)
+
+    })
+
     # update the selected metadata column and subtypes
     
     update_metadata_column <- function() {
@@ -2117,16 +2136,29 @@ cytosel <- function(...) {
       
       cytosel_palette(palette_to_use)
       
-      if (isTruthy(markers$top_markers)) {
-        markers$top_markers <- names(sort(markers$associated_cell_types))[names(markers$associated_cell_types) %in% 
-                                  markers$top_markers]
+      if (isTruthy(markers$top_markers) & length(markers$top_markers) > 1) {
+        
+        if (input$panel_sorter == "Group by cell type") {
+          markers$top_markers <- names(sort(markers$associated_cell_types[names(markers$associated_cell_types) %in%
+                                                                            markers$top_markers]))
+        } else {
+          markers$top_markers <- sort(markers$top_markers)
+        }
+        
       }
       
-      if (isTruthy(markers$scratch_markers)) {
-        markers$scratch_markers <- sort(markers$scratch_markers)
-      }
+      if (isTruthy(markers$scratch_markers) & length(markers$scratch_markers) > 1) {
+        if (input$panel_sorter == "Group by cell type") {
+          markers$scratch_markers <- names(sort(markers$associated_cell_types[names(markers$associated_cell_types) %in%
+                                                                                markers$scratch_markers]))
+          
+        } else {
+          markers$scratch_markers <- sort(markers$scratch_markers)
+        }
+        }
       
-      markers_with_type(markers$associated_cell_types)
+      markers_with_type(markers$associated_cell_types[names(markers$associated_cell_types) %in% 
+                                                        markers$top_markers])
       
       # set the marker inclusion list depending on whether or not the configuration
       # is subsetting to Abcam products or not
@@ -2146,7 +2178,7 @@ cytosel <- function(...) {
                                             set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), 
                                             '; background-color:', 
                                       cytosel_palette()[ markers$associated_cell_types[x] ])))
- 
+      
       # output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
       
       output$legend <- renderPlot({
@@ -2410,6 +2442,7 @@ cytosel <- function(...) {
       updateCheckboxInput(inputId = "precomputed_dim", value = F)
       if (!isTruthy(curated_selection())) use_precomputed_umap(FALSE)
       if (!isTruthy(curated_selection())) umap_precomputed_col(NULL)
+      specific_cell_types_selected(NULL)
       
     }
     
@@ -2472,6 +2505,8 @@ cytosel <- function(...) {
                                                   colnames(colData(sce())))],
         selected = selection
       )
+      
+      specific_cell_types_selected(unique(sce()[[selection]]))
       
       if (!isTruthy(input$coldata_column)) {
         column(colnames(colData(sce()))[1])

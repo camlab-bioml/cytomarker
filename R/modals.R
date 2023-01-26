@@ -247,9 +247,11 @@ pre_computed_umap_modal <- function(possible_dims) { # Marker removal suggestion
                 NULL,
                 choices = possible_dims,
                 selected = NULL,
-                multiple = F),
-    actionButton("select_precomputed_umap", "Use selected for UMAP")
-    )
+                multiple = F)
+    ),
+    footer = tagList(
+      actionButton("select_precomputed_umap", "Use selected for UMAP"),
+      modalButton("Cancel"))
     )
 }
 
@@ -292,9 +294,9 @@ reupload_warning_modal <- function(title_message, body_message) {
 #' Show an input modal to confirm resetting the analysis
 #' @importFrom shiny modalDialog
 reset_analysis_modal <- function() {
-  modalDialog(helpText("Resetting the marker panel will erase the current top marker and scratch marker lists, and allow a new set to be generated. Please confirm that you would like to override the current panel."),
-  actionButton("reset_marker_panel", "Confirm reset marker panel"),
-  footer = tagList(
+  modalDialog(helpText("Resetting the marker panel will erase the current top marker and scratch marker lists, and allow a new set to be generated. 
+                       Please confirm that you would like to override the current panel."),
+  footer = tagList(actionButton("reset_marker_panel", "Confirm reset marker panel"),
     modalButton("Cancel")))
 }
 
@@ -385,8 +387,7 @@ time_zone_modal <- function(possible_time_zones, current_input) {
 reset_option_on_change_modal <- function(change) {
   modalDialog(helpText(HTML(paste("You have ", "<b>", change, "</b>", ". The current panel may be invalid with these data. 
                                   Would you like to reset the current panel?", "<br/>"))),
-              actionButton("reset_marker_panel_reupload", "Reset the marker panel"),
-              footer = tagList(
+              footer = tagList(actionButton("reset_marker_panel_reupload", "Reset the marker panel"),
                 actionButton("dismiss_marker_reset", "Dismiss")))
 }
 
