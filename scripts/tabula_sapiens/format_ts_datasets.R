@@ -42,15 +42,9 @@ for (elem in datasets) {
   
   subset <- data[, colnames(data) %in% names]
   
-  sce <- SingleCellExperiment(assays = list(counts = assay(subset, "raw_counts")),
-                              colData = DataFrame(as.data.frame(colData(subset)) |> select(-free_annotation)))
+  sce <- SingleCellExperiment(assays = list(logcounts = assay(subset)), 
+                  reducedDims = SimpleList(UMAP = reducedDim(subset, "X_umap")), colData = colData(subset))
   sce$cell_ontology_class <- factor(sce$cell_ontology_class, levels = types$Var1)
-  
-  sce <- logNormCounts(sce)
-  sce <- SingleCellExperiment(assays = list(logcounts = assay(sce, "logcounts"),
-                                            counts = assay(sce, "counts")),
-                              colData = colData(sce))
-  sce <- runUMAP(sce, exprs_values = "logcounts")
   saveRDS(sce, file.path(dest_dir, paste(tissue, ".rds", sep = "")))
       }
   

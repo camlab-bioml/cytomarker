@@ -66,6 +66,7 @@ test_that("Server has basic functionality", {
                       tabs = NULL,
                       metrics_toggle = NULL,
                       select_aa = NULL,
+                      panel_sorter = "Group by cell type",
                       start_analysis = T)
     
     # resetting the min count to 2 allows to proceed with analysis
@@ -136,6 +137,12 @@ test_that("Server has basic functionality", {
       expect_true(file.exists(file.path(tempdir(), paste0("config-", Sys.Date(), ".yml"))))
       expect_false(is.null(output$downloadData))
     })
+    
+    expect_null(marker_sort())
+    
+    session$setInputs(panel_sorter = "Sort alphabetically")
+    
+    expect_equal(marker_sort(), "Sort alphabetically")
     
     session$setInputs(tabs = "Metrics", metrics_toggle = "Current Run Metrics")
     
@@ -437,6 +444,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
                       subset_number = 99,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
+                      panel_sorter = "Group by cell type",
                       marker_strategy = "fm")
     
     session$setInputs(start_analysis = T)
