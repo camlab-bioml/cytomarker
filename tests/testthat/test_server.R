@@ -141,8 +141,10 @@ test_that("Server has basic functionality", {
     expect_null(marker_sort())
     
     session$setInputs(panel_sorter = "Sort alphabetically")
-    
     expect_equal(marker_sort(), "Sort alphabetically")
+    
+    session$setInputs(panel_sorter = "Group by cell type")
+    expect_equal(marker_sort(), "Group by cell type")
     
     session$setInputs(tabs = "Metrics", metrics_toggle = "Current Run Metrics")
     

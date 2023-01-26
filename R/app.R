@@ -2097,18 +2097,6 @@ cytosel <- function(...) {
     observeEvent(input$panel_sorter, {
       req(current_markers())
       req(fms())
-      
-      markers <- list(recommended_markers = current_markers()$recommended_markers,
-                      scratch_markers = input$bl_scratch,
-                      top_markers = input$bl_top)
-      
-      # SMH
-      current_markers(
-        set_current_markers_safely(markers, fms())
-      )
-      
-      num_markers_in_selected(length(current_markers()$top_markers))
-      num_markers_in_scratch(length(current_markers()$scratch_markers))
 
     update_BL(current_markers(), num_markers_in_selected(),
               num_markers_in_scratch(),
@@ -2169,7 +2157,8 @@ cytosel <- function(...) {
         }
         }
       
-      markers_with_type(markers$associated_cell_types)
+      markers_with_type(markers$associated_cell_types[names(markers$associated_cell_types) %in% 
+                                                        markers$top_markers])
       
       # set the marker inclusion list depending on whether or not the configuration
       # is subsetting to Abcam products or not
@@ -2516,6 +2505,8 @@ cytosel <- function(...) {
                                                   colnames(colData(sce())))],
         selected = selection
       )
+      
+      specific_cell_types_selected(unique(sce()[[selection]]))
       
       if (!isTruthy(input$coldata_column)) {
         column(colnames(colData(sce()))[1])
