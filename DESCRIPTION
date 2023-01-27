@@ -57,12 +57,12 @@ Imports:
     rmarkdown,
     rdrop2,
     lubridate,
-    tidyverse,
     printr,
     htmltools,
     utils,
     fontawesome,
-    emojifont
+    emojifont,
+    geneBasisR
 Suggests:
   stringr,
   yardstick,
@@ -76,8 +76,7 @@ Suggests:
   Seurat,
   caret,
   scuttle,
-  scater,
-  geneBasisR
+  scater
 Remotes: 
     github::daqana/dqshiny,
     github::MarioniLab/geneBasisR,

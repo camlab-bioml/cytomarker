@@ -41,7 +41,6 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @import emojifont
 #' @import utils
 #' @import reactable
-#' @import tidyverse
 #' @import printr
 #' @import htmltools
 #' @importFrom rlang is_empty
@@ -73,26 +72,18 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @param ... Additional arguments
 cytosel <- function(...) {
   
-  # plan(multisession)
-  
-  antibody_info <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
-                                                  `Gene Name (Upper)`) |>
-                    tidyr::drop_na()
-  
-  antibody_info <- merge(antibody_info, cytosel_data$grch38, 
-                  by.x = "Symbol", by.y = "symbol", all.x = T) |>
+  antibody_info <- cytosel_data$antibody_info |>
     mutate(`Protein Expression`  = ifelse(!is.na(ensgene), paste("https://www.proteinatlas.org/", 
                                     ensgene,
                                 "-", Symbol, "/tissue", sep = ""), NA))
   
-  options(MulticoreParam=quote(MulticoreParam(workers=availableCores())))
+  # options(MulticoreParam=quote(MulticoreParam(workers=availableCores())))
   
   compartments <- yaml::read_yaml(system.file("ts_compartments.yml", 
                                               package = "cytosel"))
   
   
-  applications_parsed <- get_antibody_applications(antibody_info, 
-                                                   'Symbol', 'Listed Applications')
+  applications_parsed <- cytosel_data$applications
   
   grch38 <- cytosel_data$grch38
   
