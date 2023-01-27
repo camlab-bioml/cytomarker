@@ -8,19 +8,19 @@
 #' @param normalization A vector holding either 'Expression' or 'z-score'
 #' @param pref_assay Assay loaded
 #' 
-#' @importFrom scuttle summarizeAssayByGroup
 #' @importFrom stats cor
 #' @importFrom viridis viridis
 #' @importFrom plotly plot_ly layout
-#' @importFrom heatmaply heatmaply heatmaply_cor
 #' @importFrom tibble rownames_to_column
 #' @importFrom dplyr mutate
 #' @importFrom tidyr pivot_longer
 create_heatmap <- function(sce, markers, column, display, normalization, pref_assay) {
   
+  library(heatmaply)
+  
   normalization <- match.arg(normalization, c("Expression", "z-score"))
   
-  mat <- summarizeAssayByGroup(
+  mat <- scuttle::summarizeAssayByGroup(
     sce,
     id = colData(sce)[[column]],
     subset.row = markers$top_markers,
@@ -68,7 +68,7 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     mat <- round(t(mat), 3)
     gene_num <- ncol(mat)
     
-    expression_map <- heatmaply(mat,
+    expression_map <- heatmaply::heatmaply(mat,
                                 main = as.character(normalization),
                                 plot_method = "plotly",
                                 label_names = c("Cell Type", y = "Gene", 
@@ -130,10 +130,9 @@ map_gene_name_to_antibody_icon <- function(gene_id, markers) {
 #' @param genes The vector of genes to visualize
 #' @param cell_type The cell type category to resolve using the gene vector
 #' @param assay The name of the assay to use. Common selections are logcounts or counts
-#' @importFrom scater plotExpression
 #' @importFrom ggplot2 ggplot
 make_violin_plot <- function(sce, genes, cell_type, assay) {
-  expression_plot <- plotExpression(
+  expression_plot <- scater::plotExpression(
     sce, genes, x = cell_type,
     colour_by = cell_type,
     exprs_values = assay)

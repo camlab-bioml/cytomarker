@@ -19,7 +19,6 @@ Imports:
     shiny,
     sortable,
     ggplot2,
-    scater,
     forcats,
     cowplot,
     readr,
@@ -27,7 +26,6 @@ Imports:
     DT,
     shinyalert,
     SummarizedExperiment,
-    scuttle,
     viridis,
     reactable,
     bsplus,
@@ -36,7 +34,6 @@ Imports:
     plyr,
     yaml,
     randomcoloR,
-    geneBasisR,
     plotly,
     pkgload,
     zellkonverter,
@@ -62,7 +59,6 @@ Imports:
     lubridate,
     tidyverse,
     printr,
-    promises,
     htmltools,
     utils,
     fontawesome,
@@ -78,7 +74,10 @@ Suggests:
   tools,
   scran,
   Seurat,
-  caret
+  caret,
+  scuttle,
+  scater,
+  geneBasisR
 Remotes: 
     github::daqana/dqshiny,
     github::MarioniLab/geneBasisR,

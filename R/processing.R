@@ -41,8 +41,8 @@ read_input_scrnaseq <- function(sce_path) {
 #' is zero they must be counts and are converted to logcounts
 #' @param sce Uploaded SingleCellExperiment
 #' @importFrom SummarizedExperiment assays
-#' @importFrom scater logNormCounts
 detect_assay_and_create_logcounts <- function(sce){
+  library(scater)
   if ("logcounts" %in% names(assays(sce))) {
   count_sums <- assays(sce)$logcounts |> 
     rowSums()
@@ -55,7 +55,7 @@ detect_assay_and_create_logcounts <- function(sce){
   if(modulo_residuals == 0){
     assays(sce)[['counts']] <- assays(sce)$logcounts
     assays(sce)[['logcounts']] <- NULL
-    sce <- logNormCounts(sce)
+    sce <- scater::logNormCounts(sce)
   }
   
   sce <- sce[, Matrix::colSums(logcounts(sce)) > 0]
@@ -175,13 +175,13 @@ check_rowData_for_hugo <- function(sce, grch38){
 
 #' Checks if the rownames of the sce contain human ensembl ID's
 #' @importFrom dplyr select
-#' @importFrom scuttle sumCountsAcrossFeatures
 #' @importFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom SummarizedExperiment colData
 #' @param grch38 a human reference genome that is compatible with annotables
 #' @param sce SingleCellExperiment object
 #' @return a list with the first element being the status of the search, and the second being the genes found
 check_rownames_for_ensembl<- function(sce, grch38){
+  library(scuttle)
   ensemble_genes <- grepl("ENSG[0-9]*", rownames(sce))
   if(any(ensemble_genes)){
     sub_sce <- sce[ensemble_genes]
@@ -195,7 +195,7 @@ check_rownames_for_ensembl<- function(sce, grch38){
     
     rownames(filtered_sce) <- gene_map[rownames(filtered_sce)]
     
-    filtered_mat <- sumCountsAcrossFeatures(filtered_sce,
+    filtered_mat <- scuttle::sumCountsAcrossFeatures(filtered_sce,
                                             rownames(filtered_sce),
                                             average = TRUE,
                                             assay.type = 'logcounts')

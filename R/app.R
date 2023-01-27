@@ -37,7 +37,6 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @import forcats
 #' @import ggplot2
 #' @import sortable
-#' @import scater
 #' @import fontawesome
 #' @import emojifont
 #' @import utils
@@ -630,7 +629,7 @@ cytosel <- function(...) {
     
     addResourcePath('report', system.file('report', package='cytosel'))
     
-    output$cytosel_logo <- renderImage({
+    output$cytosel_logo <- shiny::renderImage({
       list(src=system.file(file.path("report", "cytosel-logo.png"), package = "cytosel"),
            width = "76%",
            height = "11.25%",
