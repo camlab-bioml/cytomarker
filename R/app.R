@@ -1107,6 +1107,9 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(sce())
       
+      library(caret)
+      library(Seurat)
+      
       proceed_with_analysis(TRUE)
       
       if (input$panel_size < 2) {

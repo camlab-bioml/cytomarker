@@ -1,7 +1,7 @@
 Package: cytosel
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
-Authors@R: 
+Authors@R:
     person(given = "First",
            family = "Last",
            role = c("aut", "cre"),
@@ -11,10 +11,8 @@ Description: What the package does (one paragraph).
 License: `use_mit_license()`, `use_gpl3_license()` or friends to
     pick a license
 Imports:
-    scran,
     SingleCellExperiment,
     tibble,
-    caret,
     BiocManager (>= 1.30.19),
     nnet,
     dplyr,
@@ -30,7 +28,6 @@ Imports:
     shinyalert,
     SummarizedExperiment,
     scuttle,
-    Seurat,
     viridis,
     reactable,
     bsplus,
@@ -78,7 +75,10 @@ Suggests:
   stats,
   gridExtra,
   testthat,
-  tools
+  tools,
+  scran,
+  Seurat,
+  caret
 Remotes: 
     github::daqana/dqshiny,
     github::MarioniLab/geneBasisR,
@@ -89,5 +89,5 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
-Depends: 
+Depends:
     R (>= 4.2.2)

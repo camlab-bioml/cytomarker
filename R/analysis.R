@@ -8,17 +8,18 @@
 #' @param pref_assay Assay loaded
 #' 
 #' @importFrom SingleCellExperiment colData
-#' @importFrom scran findMarkers
 #' @importFrom parallel mclapply
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel bpworkers
 compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
   
+  library(scran)
+  
   fms <- lapply(columns,
                   function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
-    fm <- findMarkers(sce, colData(sce)[[col]], 
+    fm <- scran::findMarkers(sce, colData(sce)[[col]], 
                       test.type = test_type, 
                       # BPPARAM = MulticoreParam(),
                       assay.type = pref_assay)
@@ -355,13 +356,12 @@ train_nb <- function(x,y, cell_types) {
 #' `cmat <- cor(t(expression))`
 #' @param n_genes Number of genes to suggest to remove
 #' 
-#' @importFrom caret findCorrelation
 suggest_genes_to_remove <- function(cmat, n_genes=10) {
   rg <- c()
   
   for(i in seq_len(n_genes)) {
     lgl <- !(rownames(cmat) %in% rg)
-    fcs <- findCorrelation(cmat[lgl, lgl], cutoff = 0.01)
+    fcs <- caret::findCorrelation(cmat[lgl, lgl], cutoff = 0.01)
     gene_to_remove <- colnames(cmat[lgl, lgl])[ fcs[1] ]
     rg <- c(rg, gene_to_remove)
   }
