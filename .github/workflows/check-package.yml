@@ -17,7 +17,7 @@ jobs:
          sudo apt-get -y install libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev libgeos-dev
       - name: Install required packages not listed in the package description
         run: |
-          install.packages(c("BiocManager", "caret", "Seurat"))
+          install.packages(c("BiocManager", "caret", "Seurat", "tidyverse"))
           BiocManager::install(version = "3.16")
           BiocManager::install(c('scran', 'scuttle', 'scater'))
         shell: Rscript {0}

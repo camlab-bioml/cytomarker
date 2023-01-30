@@ -1,6 +1,6 @@
 library(SingleCellExperiment)
 library(Matrix)
-library(tidyverse)
+# library(tidyverse)
 library(scater)
 library(scran)
 
