@@ -51,17 +51,15 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
                        height = dims) %>%
       layout(title='Correlation', yaxis = list(autotick = F, tickmode = "linear"),
              xaxis = list(autotick = F, tickmode = "linear"))
-    
-    # cor_map <- heatmaply(cc,
+    # 
+    # cor_map <- heatmaply::heatmaply(cc,
     #                      main = "Correlation",
     #                      plot_method = "plotly",
-    #                      label_names = c("Gene", y = "Gene", 
+    #                      label_names = c("Gene", y = "Gene",
     #                                      "Correlation"),
     #                      key.title = "Correlation",
-    #                      column_text_angle = 90,
-    #                      height = dims,
-    #                      width = dims,
-    #                      symm = T)
+    #                      column_text_angle = 90) %>%
+    #                       layout(width = 1.2*dims, height = dims)
     
     return(cor_map)
   } else {
