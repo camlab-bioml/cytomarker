@@ -8,17 +8,18 @@
 #' @param pref_assay Assay loaded
 #' 
 #' @importFrom SingleCellExperiment colData
-#' @importFrom scran findMarkers
 #' @importFrom parallel mclapply
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel bpworkers
 compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
   
+  library(scran)
+  
   fms <- lapply(columns,
                   function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
-    fm <- findMarkers(sce, colData(sce)[[col]], 
+    fm <- scran::findMarkers(sce, colData(sce)[[col]], 
                       test.type = test_type, 
                       # BPPARAM = MulticoreParam(),
                       assay.type = pref_assay)
@@ -45,8 +46,8 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
 #' @param sce SingleCellExperiment object
 #' @param allowed_genes Set of allowed genes
 #' @param in_session whether the function is being called in a shiny session or not
-#' @import geneBasisR
 #' @importFrom dplyr mutate tally group_by filter pull slice_head arrange summarize
+#' @import geneBasisR
 get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
                         in_session = T) {
   
@@ -209,7 +210,6 @@ set_current_markers_safely <- function(markers, fms, default_type = NULL) {
 #' @param only_top_markers Whether or not the UMAP computed will contain a subset of markers (Default is False)
 #' @param markers_to_use The list of markers to compute the UMAP
 #' 
-#' @importFrom scater runUMAP
 #' @importFrom tibble tibble
 #' @importFrom SingleCellExperiment reducedDim
 #' @importFrom parallelly availableCores
@@ -223,7 +223,7 @@ get_umap <- function(sce, columns, pref_assay, precomputed_vals = NULL, dim_col 
   # num_comp_use <- ifelse(marker_num <= 25, marker_num, 25)
   
   if (!isTruthy(precomputed_vals) | isTRUE(only_top_markers)) {
-    sce <- runUMAP(sce, exprs_values = pref_assay,
+    sce <- scater::runUMAP(sce, exprs_values = pref_assay,
                    n_threads = availableCores(),
                    # ncomponents = num_comp_use, 
                    # pca = num_comp_use,
@@ -355,13 +355,12 @@ train_nb <- function(x,y, cell_types) {
 #' `cmat <- cor(t(expression))`
 #' @param n_genes Number of genes to suggest to remove
 #' 
-#' @importFrom caret findCorrelation
 suggest_genes_to_remove <- function(cmat, n_genes=10) {
   rg <- c()
   
   for(i in seq_len(n_genes)) {
     lgl <- !(rownames(cmat) %in% rg)
-    fcs <- findCorrelation(cmat[lgl, lgl], cutoff = 0.01)
+    fcs <- caret::findCorrelation(cmat[lgl, lgl], cutoff = 0.01)
     gene_to_remove <- colnames(cmat[lgl, lgl])[ fcs[1] ]
     rg <- c(rg, gene_to_remove)
   }

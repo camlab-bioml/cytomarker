@@ -283,8 +283,7 @@ test_that("Filtering sce objects by minimum count passes & retains original size
 context("Antibody finding in the abcam table")
 
 test_that("Filtering sce objects by minimum count passes & retains original size", {
-  antibody_info <- dplyr::rename(cytosel_data$antibody_info, Symbol = `Gene Name (Upper)`)
-  antibody_info <- tidyr::drop_na(antibody_info)
+  antibody_info <- cytosel_data$antibody_info
   
   
   expect_equal(get_antibody_info("CD45", antibody_info)$status, "NO_GENE_FOUND")
@@ -297,8 +296,7 @@ test_that("Filtering sce objects by minimum count passes & retains original size
 context("Return types from catch-all error/notification function")
 
 test_that("throw_error_or_warning returns the correct type", {
-  antibody_info <- dplyr::rename(cytosel_data$antibody_info, Symbol = `Gene Name (Upper)`)
-  antibody_info <- tidyr::drop_na(antibody_info)
+  antibody_info <- cytosel_data$antibody_info
   
   expect_error(throw_error_or_warning(type = 'error', message = "Testing error"))
   expect_error(throw_error_or_warning(type = 'notification', 
@@ -344,9 +342,7 @@ test_that("download works as expected", {
     
     placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
     
-    fake_table <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
-                                  `Gene Name (Upper)`) |>
-      tidyr::drop_na() |> dplyr::filter(Symbol %in% 
+    fake_table <- cytosel_data$antibody_info |> dplyr::filter(Symbol %in% 
                               placeholder_markers) |>
       mutate(`Host Species` = factor(`Host Species`),
              `Product Category Tier 3` = factor(`Product Category Tier 3`),

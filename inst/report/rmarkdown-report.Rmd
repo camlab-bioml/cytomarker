@@ -28,7 +28,7 @@ Below are the results of your cytosel antibody panel design run.
 
 ```{r message=FALSE, echo=F}
 knitr::opts_knit$set(root.dir = params$tmpdir)
-library(tidyverse)
+# library(tidyverse)
 library(DT)
 library(yaml)
 library(shiny)
