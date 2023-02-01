@@ -15,6 +15,21 @@ test_that("conversion functions are effective", {
   expect_false(check_for_human_genes(sce))
 })
 
+context("Pre-processing the antibody applications")
+
+test_that("Processing the antibody applications produces the intended data structures", {
+  
+  applications_parsed <- get_antibody_applications(cytosel_data$antibody_info, 
+                                                   'Symbol', 'Listed Applications')
+  
+  expect_is(applications_parsed, 'list')
+  expect_equal(names(applications_parsed), c("unique_applications", "application_gene_map"))
+  expect_equal(length(applications_parsed$unique_applications), 12)
+  expect_equal(length(applications_parsed$application_gene_map), 12)
+  
+})
+
+
 context("Data reading")
 
 test_that("SingleCellExperiment object reading", {

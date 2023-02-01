@@ -7,8 +7,8 @@ sl <- grepl("/", all_zones)
 all_zones <- all_zones[!sl]
 
 
-antibody_info <- cytosel_data$antibody_info |> dplyr::rename(Symbol = 
-                                                               `Gene Name (Upper)`) |>
+antibody_info <- antibody_info |> dplyr::rename(Symbol = 
+                  `Gene Name (Upper)`) |>
   tidyr::drop_na()
 
 antibody_info <- merge(antibody_info, grch38, 

@@ -75,6 +75,9 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
       top <- marker$top_markers
       scratch <- marker$scratch_markers
       
+      print(fm)
+      print(names(fm))
+      
       ## Create a vector of cell types for which no markers were found
       cell_types_wout_markers <- c()
       for(i in seq_len(n)) {
@@ -83,7 +86,8 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
         
         ## Only keep markers that are over-expressed
         f[is.na(f)] <- 0
-        f <- f[f$summary.logFC > 0,]
+        f <- f[f$summary.logFC > 0 & f$FDR <= 0.05,] 
+        # |> arrange(-summary.logFC)
         
         if(nrow(f) > 0){
           selected_markers <- rownames(f)[seq_len(top_select)]
@@ -91,6 +95,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
                                       tibble(marker = selected_markers,
                                              cell_type = names(fm)[i],
                                              summary.logFC = f[selected_markers,]$summary.logFC))
+          
           
         }else{
           cell_types_wout_markers <- c(cell_types_wout_markers, names(fm)[i])
@@ -120,6 +125,13 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
 
       #recommended_df <- group_by(recommended_df, marker, cell_type)
       
+      write.table(recommended_df, "recommendations.tsv", quote = F, row.names = F,
+                sep = "\t")
+      
+      initial_recommendations <- recommended_df
+      
+      backup_markers <- c()
+      
       # Iteratively remove markers until number of markers equals panel size
       # this needs to happen iteratively to ensure cell types have roughly
       # the same number of markers (otherwise if one cell type has all markers
@@ -143,12 +155,61 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
           slice_head(n = 1) %>% 
           pull(marker)
         
+        cell_type_match <- subset(recommended_df|> filter(marker == remove) |>
+                                    filter(summary.logFC == max(summary.logFC)))$cell_type
+        to_add_remove <- c(remove)
+        names(to_add_remove) <- cell_type_match
+        
+        backup_markers <- c(backup_markers, remove)
+        
         recommended_df <- filter(recommended_df, marker != remove)
       }
       
       recommended <- unique(recommended_df$marker)
+      print(length(recommended))
+      write.table(recommended, "recommended.txt", quote = F, row.names = F, col.names = F)
+      # print cell types that have only markers that are expressed in multiple cell types
+      multimarkers <- initial_recommendations |>
+        filter(marker %in% recommended) |> group_by(marker) |> 
+        # get number of cell types each marker is expressed in
+        mutate(cell_types_expressed_in = dplyr::n()) |> dplyr::ungroup() |> 
+        group_by(marker) |> slice(n=1) |> group_by(cell_type) |> 
+        # get number of markers for a specific cell type
+        mutate(num_markers = length(unique(marker)),
+               highest = max(cell_types_expressed_in),
+               lowest = min(cell_types_expressed_in)) |> ungroup() |>
+        arrange(summary.logFC) |> filter(lowest > 1)
+      
+      if (nrow(multimarkers) > 0) {
+        
+        print(unique(multimarkers$marker))
+        recommended <- recommended[!recommended %in% unique(multimarkers$marker)]
+        multimarkers <- multimarkers |> group_by(cell_type) |> slice(n=1) |> 
+          ungroup() |> group_by(marker) |> slice(n=1)
+        print(length(recommended))
+        print(multimarkers)
+        
+        for (i in unique(multimarkers$cell_type)) {
+          print(i)
+          print(names(fm)[i])
+          f <- fm[[i]]
+          f <- f[!rownames(f) %in% recommended & 
+                     !rownames(f) %in% multimarkers$marker,] |> as.data.frame()
+          
+          ## Only keep markers that are over-expressed
+          f[is.na(f)] <- 0
+          f <- f[f$summary.logFC > 0 & f$FDR <= 0.05,] 
+          new_markers_add <- rownames(f)[seq_len(subset(multimarkers, cell_type == i)$num_markers)]
+          print(new_markers_add)
+          recommended <- c(recommended, new_markers_add)
+          print(recommended)
+        }
+        print(length(unique(recommended)))
+      }
+      
       scratch <- unique(scratch)
       top <- recommended #unique(top)
+      print(length(unique(recommended)))
     }
     marker <- list(recommended_markers = recommended[!is.na(recommended)],
                    scratch_markers = scratch[!is.na(scratch)],
