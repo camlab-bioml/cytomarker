@@ -72,13 +72,13 @@ test_that("good_col returns valid columns", {
 })
 
 test_that("get_markers and compute_fm returns valid output", {
-  sce_path <- test_path("test_sce.rds")
+  sce_path <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(sce_path)
 
-  sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
+  # sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
 
   fms <- compute_fm(sce,
-             "cell_type",
+             "seurat_annotations",
               "logcounts",
             rownames(sce)
   )

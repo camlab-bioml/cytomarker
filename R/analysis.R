@@ -46,7 +46,7 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
 #' @param sce SingleCellExperiment object
 #' @param allowed_genes Set of allowed genes
 #' @param in_session whether the function is being called in a shiny session or not
-#' @importFrom dplyr mutate tally group_by filter pull slice_head arrange summarize
+#' @importFrom dplyr mutate tally group_by filter pull slice_head arrange summarize ungroup
 #' @import geneBasisR
 get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
                         in_session = T) {
@@ -55,6 +55,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
   columns <- names(fms)
   
   marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
+  
   if(marker_strategy == "geneBasis") {
     sce2 <- retain_informative_genes(sce[allowed_genes,], n = 10*panel_size)
     genes <- gene_search(sce2, n_genes=panel_size)
@@ -75,8 +76,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
       top <- marker$top_markers
       scratch <- marker$scratch_markers
       
-      print(fm)
-      print(names(fm))
+      highly_expressed <- tibble(markers = c(), cell_type = c())
       
       ## Create a vector of cell types for which no markers were found
       cell_types_wout_markers <- c()
@@ -86,8 +86,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
         
         ## Only keep markers that are over-expressed
         f[is.na(f)] <- 0
-        f <- f[f$summary.logFC > 0 & f$FDR <= 0.05,] 
-        # |> arrange(-summary.logFC)
+        f <- f[f$summary.logFC > 0 & f$p.value <= 0.05,]
         
         if(nrow(f) > 0){
           selected_markers <- rownames(f)[seq_len(top_select)]
@@ -95,6 +94,12 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
                                       tibble(marker = selected_markers,
                                              cell_type = names(fm)[i],
                                              summary.logFC = f[selected_markers,]$summary.logFC))
+          
+          expressed_markers <- rownames(f)[seq_len(25)]
+          highly_expressed <- bind_rows(highly_expressed, 
+                                      tibble(marker = expressed_markers,
+                                             cell_type = names(fm)[i],
+                                             summary.logFC = f[expressed_markers,]$summary.logFC))
           
           
         }else{
@@ -130,8 +135,6 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
       
       initial_recommendations <- recommended_df
       
-      backup_markers <- c()
-      
       # Iteratively remove markers until number of markers equals panel size
       # this needs to happen iteratively to ensure cell types have roughly
       # the same number of markers (otherwise if one cell type has all markers
@@ -155,56 +158,72 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
           slice_head(n = 1) %>% 
           pull(marker)
         
-        cell_type_match <- subset(recommended_df|> filter(marker == remove) |>
-                                    filter(summary.logFC == max(summary.logFC)))$cell_type
-        to_add_remove <- c(remove)
-        names(to_add_remove) <- cell_type_match
-        
-        backup_markers <- c(backup_markers, remove)
-        
         recommended_df <- filter(recommended_df, marker != remove)
       }
       
       recommended <- unique(recommended_df$marker)
-      print(length(recommended))
+      
       write.table(recommended, "recommended.txt", quote = F, row.names = F, col.names = F)
       # print cell types that have only markers that are expressed in multiple cell types
-      multimarkers <- initial_recommendations |>
-        filter(marker %in% recommended) |> group_by(marker) |> 
-        # get number of cell types each marker is expressed in
-        mutate(cell_types_expressed_in = dplyr::n()) |> dplyr::ungroup() |> 
-        group_by(marker) |> slice(n=1) |> group_by(cell_type) |> 
-        # get number of markers for a specific cell type
-        mutate(num_markers = length(unique(marker)),
-               highest = max(cell_types_expressed_in),
-               lowest = min(cell_types_expressed_in)) |> ungroup() |>
-        arrange(summary.logFC) |> filter(lowest > 1)
+      genes_to_ignore <- c()
+      count <- 0
       
-      if (nrow(multimarkers) > 0) {
+      if (!is.null(recommended) & !is_empty(recommended)) {
+        multimarkers <- initial_recommendations |>
+          filter(marker %in% recommended) |> group_by(marker) |> 
+          # get number of cell types each marker is expressed in
+          mutate(cell_types_expressed_in = dplyr::n()) |> ungroup() |> 
+          group_by(marker) |> slice_head(n=1) |> group_by(cell_type) |> 
+          # get number of markers for a specific cell type
+          mutate(num_markers = length(unique(marker)),
+                 highest = max(cell_types_expressed_in),
+                 lowest = min(cell_types_expressed_in)) |> ungroup() |>
+          arrange(summary.logFC) |> filter(lowest > 1)
         
-        print(unique(multimarkers$marker))
-        recommended <- recommended[!recommended %in% unique(multimarkers$marker)]
-        multimarkers <- multimarkers |> group_by(cell_type) |> slice(n=1) |> 
-          ungroup() |> group_by(marker) |> slice(n=1)
-        print(length(recommended))
-        print(multimarkers)
+        genes_to_ignore <- c(genes_to_ignore, unique(multimarkers$marker))
         
-        for (i in unique(multimarkers$cell_type)) {
-          print(i)
-          print(names(fm)[i])
-          f <- fm[[i]]
-          f <- f[!rownames(f) %in% recommended & 
-                     !rownames(f) %in% multimarkers$marker,] |> as.data.frame()
+        while (nrow(multimarkers) > 0) {
           
-          ## Only keep markers that are over-expressed
-          f[is.na(f)] <- 0
-          f <- f[f$summary.logFC > 0 & f$FDR <= 0.05,] 
-          new_markers_add <- rownames(f)[seq_len(subset(multimarkers, cell_type == i)$num_markers)]
-          print(new_markers_add)
-          recommended <- c(recommended, new_markers_add)
-          print(recommended)
+          print(count)
+          count <- count + 1
+          print(unique(multimarkers$marker))
+          genes_to_ignore <- c(genes_to_ignore, unique(multimarkers$marker))
+          recommended <- recommended[!recommended %in% unique(multimarkers$marker) &
+                                       !recommended %in% genes_to_ignore]
+          multimarkers <- multimarkers |> group_by(cell_type) |> slice_head(n=1) |> 
+            ungroup() |> group_by(marker) |> slice_head(n=1)
+          print(length(recommended))
+          print(multimarkers)
+          
+          for (i in unique(multimarkers$cell_type)) {
+            print(i)
+            print(names(fm)[i])
+            f <- fm[[i]]
+            dont_use <- subset(highly_expressed, cell_type != i)
+            f <- f[!rownames(f) %in% recommended & 
+                     !rownames(f) %in% multimarkers$marker &
+                     !rownames(f) %in% genes_to_ignore &
+                     !rownames(f) %in% dont_use$marker,] |> as.data.frame()
+            
+            ## Only keep markers that are over-expressed
+            f[is.na(f)] <- 0
+            f <- f[f$summary.logFC > 0 & f$p.value <= 0.05,]
+            new_markers_add <- rownames(f)[seq_len(subset(multimarkers, cell_type == i)$num_markers)]
+            print(new_markers_add)
+            recommended <- c(recommended, new_markers_add)
+            print(recommended)
+          }
+          multimarkers <- initial_recommendations |>
+            filter(marker %in% recommended) |> group_by(marker) |> 
+            # get number of cell types each marker is expressed in
+            mutate(cell_types_expressed_in = dplyr::n()) |> ungroup() |> 
+            group_by(marker) |> slice_head(n=1) |> group_by(cell_type) |> 
+            # get number of markers for a specific cell type
+            mutate(num_markers = length(unique(marker)),
+                   highest = max(cell_types_expressed_in),
+                   lowest = min(cell_types_expressed_in)) |> ungroup() |>
+            arrange(summary.logFC) |> filter(lowest > 1)
         }
-        print(length(unique(recommended)))
       }
       
       scratch <- unique(scratch)
