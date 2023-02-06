@@ -95,7 +95,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
                                              cell_type = names(fm)[i],
                                              summary.logFC = f[selected_markers,]$summary.logFC))
           
-          expressed_markers <- rownames(f)[seq_len(25)]
+          expressed_markers <- rownames(f)[seq_len(50)]
           highly_expressed <- bind_rows(highly_expressed, 
                                       tibble(marker = expressed_markers,
                                              cell_type = names(fm)[i],
@@ -271,10 +271,13 @@ get_associated_cell_types <- function(markers, fms) {
 #' @param fms Stored findMarkers outputs
 set_current_markers_safely <- function(markers, fms, default_type = NULL) {
   
+  print("using markers")
+  print(markers)
+  
   markers$associated_cell_types <- get_associated_cell_types(markers, fms)
   
   # if (is.list(markers$associated_cell_types)) {
-  #   markers$associated_cell_types <- unlist(markers$associated_cell_types)
+  #   associated_cell_types <- unlist(associated_cell_types$associated_cell_types)
   # }
   
   markers
