@@ -349,11 +349,11 @@ test_that("Re-upload works on server", {
     expect_true(reupload_analysis())
     
     # verify that the reactive values were populated from the yml
-    expect_equal(length(specific_cell_types_selected()), 6)
+    expect_equal(length(specific_cell_types_selected()), 5)
     expect_equal(cell_min_threshold(), 10)
     expect_equal(length(markers_reupload()$top_markers), 18)
     expect_equal(length(markers_reupload()$scratch_markers), 6)
-    expect_equal(length(specific_cell_types_selected()), 6)
+    expect_equal(length(specific_cell_types_selected()), 5)
     
     session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
                       subsample_sce = T,
@@ -372,6 +372,33 @@ test_that("Re-upload works on server", {
   })
 })
 
+test_that("Second Re-upload works on server", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")))
+    
+    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
+                      subsample_sce = T,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm")
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_config_2.yml")))
+    
+    expect_equal(length(specific_cell_types_selected()), 
+                 length(unique(sce()[["seurat_annotations"]])))
+    
+  })
+})
+
+
 #### Reset analysis ######
 test_that("Reset works on server", {
   
@@ -387,7 +414,7 @@ test_that("Reset works on server", {
     expect_true(reupload_analysis())
     
     # verify that the reactive values were populated from the yml
-    expect_equal(length(specific_cell_types_selected()), 6)
+    expect_equal(length(specific_cell_types_selected()), 5)
     expect_equal(cell_min_threshold(), 10)
     expect_equal(length(markers_reupload()$top_markers), 18)
     expect_equal(length(markers_reupload()$scratch_markers), 6)

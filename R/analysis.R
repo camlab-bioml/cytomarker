@@ -271,9 +271,6 @@ get_associated_cell_types <- function(markers, fms) {
 #' @param fms Stored findMarkers outputs
 set_current_markers_safely <- function(markers, fms, default_type = NULL) {
   
-  print("using markers")
-  print(markers)
-  
   markers$associated_cell_types <- get_associated_cell_types(markers, fms)
   
   # if (is.list(markers$associated_cell_types)) {

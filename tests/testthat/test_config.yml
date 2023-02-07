@@ -1,48 +1,64 @@
-Time: 2022-09-19 14:06:41
-Number of columns (cells): 101
-Number of rows (features): 13715
+Time: 2023-02-08 00:42:45
+Input file: /tmp/RtmpN7FPvH/52d6f7334ffdbd800991b1bc/0.rds
+Number of columns (cells): 100
+Number of rows (features): 13714
 Assay used: logcounts
 Heterogeneity source: seurat_annotations
 Target panel size: 22
 Min Cell Category cutoff: 10
 Subsampling Used: yes
-Subsampling number: 99
+Subsampling number: 98
 Selected marker panel:
-- CD79B
-- BTG1
+- HLA-DPA1
 - CD74
+- HLA-DQA1
 - HLA-DPB1
-- HLA-DRB1
+- LGALS1
 - FTL
-- S100A8
-- CCL5
+- CST3
 - S100A4
+- ANXA2
+- CCL5
+- HLA-C
+- CTSW
 - HLA-A
-- GZMK
-- S100A6
 - ANXA1
-- LDHB
-- FOS
-- CD3E
 - IL7R
-- CD7
+- LDHB
+- CD3D
+- CD3E
 Scratch marker panel:
 - HLA-DRA
-- HLA-DPA1
+- HLA-DRB1
 - LYZ
 - TYROBP
 - S100A9
-- CD3D
+- IL32
 Marker strategy: fm
-Antibody applications:
-- Flow Cyt (Intra)
-- ICC/IF
-- Flow Cyt
+Antibody applications: ~
 Cell Types Analyzed:
 - B
 - CD14+ Mono
 - Memory CD4 T
 - CD8 T
 - Naive CD4 T
-- NK
 Pre-computed UMAP: yes
+Run Metrics:
+  Cell Type:
+  - Naive CD4 T
+  - CD14+ Mono
+  - Memory CD4 T
+  - CD8 T
+  - B
+  Counts:
+  - 24.0
+  - 20.0
+  - 19.0
+  - 13.0
+  - 12.0
+  Mean Score:
+  - 0.659
+  - 0.782
+  - 0.463
+  - 0.69
+  - 0.958
