@@ -718,3 +718,41 @@ test_that("cytosel is able to identify an RDS that is not of the proper SCE form
   })
 })
 
+context("test that cytosel can identify multimarkers")
+
+test_that("cytosel is able to identify multimarkers in a lung dataset 
+          (many cell types for the panel size)", {
+            
+            testServer(cytosel::cytosel(), expr = {
+              
+              session$setInputs(input_scrnaseq = list(datapath =
+                                                        test_path("pbmc_small.rds")),
+                                coldata_column = "fake_col",
+                                pick_curated = T,
+                                min_category_count = 2,
+                                subset_number = 250,
+                                subsample_sce = F,
+                                marker_strategy = "fm",
+                                display_options = "Marker-marker correlation",
+                                heatmap_expression_norm = "Expression",
+                                tabs = NULL,
+                                metrics_toggle = NULL,
+                                select_aa = NULL,
+                                panel_sorter = "Group by cell type")
+              
+              expect_null(multimarkers())
+              
+              session$setInputs(panel_size = 12,
+                                start_analysis = T)
+              
+              print(fms())
+              
+              expect_false(is.null(multimarkers()))
+              
+            })
+          })
+
+
+
+
+

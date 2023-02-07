@@ -539,6 +539,7 @@ cytosel <- function(...) {
     allowed_genes <- reactiveVal() # Set of "allowed" genes (those with anotibodies, not ribo or mito)
     current_markers <- reactiveVal() # Currently selected markers
     
+    multimarkers <- reactiveVal(NULL)
     marker_sort <- reactiveVal(NULL)
     
     display <- reactiveVal() # Display options for heatmap
@@ -1306,6 +1307,7 @@ cytosel <- function(...) {
                 
                 markers <- markers_list$marker[!is.na(markers_list$marker)]
                 markers$scratch_markers <- scratch_markers_to_keep
+                multimarkers(markers_list$multimarkers)
                 
                 if (isTruthy(markers_list$missing)) {
                   throw_error_or_warning(type = 'notification',

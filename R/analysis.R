@@ -53,6 +53,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
   
   cell_types_wout_markers <- c()
   columns <- names(fms)
+  original_multimarkers <- c()
   
   marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
   
@@ -80,6 +81,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
       
       ## Create a vector of cell types for which no markers were found
       cell_types_wout_markers <- c()
+      original_multimarkers <- c()
       for(i in seq_len(n)) {
         f <- fm[[i]]
         f <- f[!(rownames(f) %in% recommended),] |> as.data.frame()
@@ -130,8 +132,8 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
 
       #recommended_df <- group_by(recommended_df, marker, cell_type)
       
-      write.table(recommended_df, "recommendations.tsv", quote = F, row.names = F,
-                sep = "\t")
+      # write.table(recommended_df, "recommendations.tsv", quote = F, row.names = F,
+      #           sep = "\t")
       
       initial_recommendations <- recommended_df
       
@@ -163,24 +165,16 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
       
       recommended <- unique(recommended_df$marker)
       
-      write.table(recommended, "recommended.txt", quote = F, row.names = F, col.names = F)
+      # write.table(recommended, "recommended.txt", quote = F, row.names = F, col.names = F)
       # print cell types that have only markers that are expressed in multiple cell types
       genes_to_ignore <- c()
       count <- 0
       
       if (!is.null(recommended) & !is_empty(recommended)) {
-        multimarkers <- initial_recommendations |>
-          filter(marker %in% recommended) |> group_by(marker) |> 
-          # get number of cell types each marker is expressed in
-          mutate(cell_types_expressed_in = dplyr::n()) |> ungroup() |> 
-          group_by(marker) |> slice_head(n=1) |> group_by(cell_type) |> 
-          # get number of markers for a specific cell type
-          mutate(num_markers = length(unique(marker)),
-                 highest = max(cell_types_expressed_in),
-                 lowest = min(cell_types_expressed_in)) |> ungroup() |>
-          arrange(summary.logFC) |> filter(lowest > 1)
+        multimarkers <- create_multimarker_frame(initial_recommendations, recommended)
         
         genes_to_ignore <- c(genes_to_ignore, unique(multimarkers$marker))
+        original_multimarkers <- c(original_multimarkers, unique(multimarkers$marker))
         
         while (nrow(multimarkers) > 0) {
           
@@ -213,16 +207,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
             recommended <- c(recommended, new_markers_add)
             print(recommended)
           }
-          multimarkers <- initial_recommendations |>
-            filter(marker %in% recommended) |> group_by(marker) |> 
-            # get number of cell types each marker is expressed in
-            mutate(cell_types_expressed_in = dplyr::n()) |> ungroup() |> 
-            group_by(marker) |> slice_head(n=1) |> group_by(cell_type) |> 
-            # get number of markers for a specific cell type
-            mutate(num_markers = length(unique(marker)),
-                   highest = max(cell_types_expressed_in),
-                   lowest = min(cell_types_expressed_in)) |> ungroup() |>
-            arrange(summary.logFC) |> filter(lowest > 1)
+          multimarkers <- create_multimarker_frame(initial_recommendations, recommended)
         }
       }
       
@@ -234,8 +219,28 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
                    scratch_markers = scratch[!is.na(scratch)],
                    top_markers = top[!is.na(top)])
   }
-  return(list(marker = marker, missing = cell_types_wout_markers))
+  return(list(marker = marker, missing = cell_types_wout_markers,
+              multimarkers = original_multimarkers))
 }
+
+
+#' Collect possible mulitmarkers from the output of marker finding
+#' @importFrom dplyr mutate tally group_by filter pull slice_head arrange summarize ungroup
+#' @param frame A dataframe containing the markers selected in `findMarkers`
+#' @param recommended_markers A vector of the currently recommended markers for a panel
+create_multimarker_frame <- function(frame, recommended_markers) {
+  return(frame |>
+    filter(marker %in% recommended_markers) |> group_by(marker) |> 
+    # get number of cell types each marker is expressed in
+    mutate(cell_types_expressed_in = dplyr::n()) |> ungroup() |> 
+    group_by(marker) |> slice_head(n=1) |> group_by(cell_type) |> 
+    # get number of markers for a specific cell type
+    mutate(num_markers = length(unique(marker)),
+           highest = max(cell_types_expressed_in),
+           lowest = min(cell_types_expressed_in)) |> ungroup() |>
+    arrange(summary.logFC) |> filter(lowest > 1))
+}
+
 
 #' Given a list of top markers and the fms, get the associated
 #' cell types
