@@ -35,6 +35,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom tidyr drop_na
 #' @import SummarizedExperiment
 #' @import forcats
+#' @import waiter
 #' @import ggplot2
 #' @import sortable
 #' @import fontawesome
@@ -105,6 +106,9 @@ cytosel <- function(...) {
   # https://www.gravitatedesign.com/blog/event-tracking-google-analytics/
   # https://absentdata.com/track-external-links/
   ui <- tagList(
+    # useWaiter(),
+    useWaitress(),
+    attendantBar("progress-bar"),
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
     # only permit the google analytics non-interactively
@@ -1098,6 +1102,9 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(sce())
       
+      w <- Waitress$new(theme = "overlay-percent", infinite = TRUE)
+      w$start()
+      
       showNotification("Starting analysis",
                   type = 'message',
                   duration = 3)
@@ -1430,8 +1437,6 @@ cytosel <- function(...) {
             unique_element_modal(col)
           }
           
-          
-          
           })
           
       })
@@ -1439,6 +1444,9 @@ cytosel <- function(...) {
       # reset downloaded status when analysis is rerun
       downloaded_content(FALSE)
       toggle(id = "download_button", condition = isTruthy(current_markers()))
+      
+      
+      w$close()
       
     })
     

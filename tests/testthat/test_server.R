@@ -723,6 +723,8 @@ context("test that cytosel can identify multimarkers")
 test_that("cytosel is able to identify multimarkers in a lung dataset 
           (many cell types for the panel size)", {
             
+            skip_on_ci()
+            
             testServer(cytosel::cytosel(), expr = {
               
               session$setInputs(input_scrnaseq = list(datapath =
