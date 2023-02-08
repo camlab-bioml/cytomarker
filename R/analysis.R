@@ -97,7 +97,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
                                              cell_type = names(fm)[i],
                                              summary.logFC = f[selected_markers,]$summary.logFC))
           
-          expressed_markers <- rownames(f)[seq_len(50)]
+          expressed_markers <- rownames(f)[seq_len(25)]
           highly_expressed <- bind_rows(highly_expressed, 
                                       tibble(marker = expressed_markers,
                                              cell_type = names(fm)[i],
@@ -178,20 +178,14 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
         
         while (nrow(multimarkers) > 0) {
           
-          print(count)
           count <- count + 1
-          print(unique(multimarkers$marker))
           genes_to_ignore <- c(genes_to_ignore, unique(multimarkers$marker))
           recommended <- recommended[!recommended %in% unique(multimarkers$marker) &
                                        !recommended %in% genes_to_ignore]
           multimarkers <- multimarkers |> group_by(cell_type) |> slice_head(n=1) |> 
             ungroup() |> group_by(marker) |> slice_head(n=1)
-          print(length(recommended))
-          print(multimarkers)
           
           for (i in unique(multimarkers$cell_type)) {
-            print(i)
-            print(names(fm)[i])
             f <- fm[[i]]
             dont_use <- subset(highly_expressed, cell_type != i)
             f <- f[!rownames(f) %in% recommended & 
@@ -203,9 +197,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
             f[is.na(f)] <- 0
             f <- f[f$summary.logFC > 0 & f$p.value <= 0.05,]
             new_markers_add <- rownames(f)[seq_len(subset(multimarkers, cell_type == i)$num_markers)]
-            print(new_markers_add)
             recommended <- c(recommended, new_markers_add)
-            print(recommended)
           }
           multimarkers <- create_multimarker_frame(initial_recommendations, recommended)
         }
@@ -213,7 +205,6 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
       
       scratch <- unique(scratch)
       top <- recommended #unique(top)
-      print(length(unique(recommended)))
     }
     marker <- list(recommended_markers = recommended[!is.na(recommended)],
                    scratch_markers = scratch[!is.na(scratch)],

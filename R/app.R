@@ -1098,6 +1098,10 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(sce())
       
+      showNotification("Starting analysis",
+                  type = 'message',
+                  duration = 3)
+      
       library(caret)
       library(Seurat)
       
@@ -1331,7 +1335,6 @@ cytosel <- function(...) {
                                duration = NULL)
             }
             current_markers(set_current_markers_safely(markers, fms()))
-            print(current_markers())
             
             # SMH
             
@@ -1914,15 +1917,12 @@ cytosel <- function(...) {
     if (isTruthy(yaml_back$`Assay used`)) {
       pref_assay(yaml_back$`Assay used`)
     }
-      
-      print("checking cutoff")
     
     if (isTruthy(yaml_back$`Min Cell Category cutoff`)) {
       cell_min_threshold(yaml_back$`Min Cell Category cutoff`)
       updateNumericInput(session, "min_category_count", value = yaml_back$`Min Cell Category cutoff`)
     }
       
-      print("checking subsampling")
       if (isTruthy(yaml_back$`Subsampling Used`)) {
         updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
       }  
@@ -1933,8 +1933,6 @@ cytosel <- function(...) {
         updateNumericInput(session, "subset_number", value = yaml_back$`Subsampling number`)
       }
     }
-      
-      print("checking markers")
     
     if (isTruthy(yaml_back$`Marker strategy`)) {
       updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
