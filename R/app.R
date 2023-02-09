@@ -35,7 +35,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom tidyr drop_na
 #' @import SummarizedExperiment
 #' @import forcats
-#' @import waiter
+#' @importFrom waiter useWaitress Waitress
 #' @import ggplot2
 #' @import sortable
 #' @import fontawesome

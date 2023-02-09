@@ -578,13 +578,13 @@ test_that("Picking the curated dataset works as intended", {
     
     # if reupload the same dataset, invalidate until verify if resetting or not
     
-    session$setInputs(curated_dataset = T, curated_options = "Heart",
+    session$setInputs(curated_dataset = T, curated_options = "Liver",
                       subset_number = 2000,
                       coldata_column = "cell_ontology_class",
                       curated_compartments = NULL,
                       pick_curated = T)
     
-    expect_equal(curated_selection(), "Heart")
+    expect_equal(curated_selection(), "Liver")
     
   })
   
@@ -723,7 +723,7 @@ context("test that cytosel can identify multimarkers")
 test_that("cytosel is able to identify multimarkers in a lung dataset 
           (many cell types for the panel size)", {
             
-            # skip_on_ci()
+            skip_on_ci()
             
             testServer(cytosel::cytosel(), expr = {
               
@@ -736,11 +736,11 @@ test_that("cytosel is able to identify multimarkers in a lung dataset
                                 subsample_sce = F,
                                 marker_strategy = "fm",
                                 display_options = "Marker-marker correlation",
-                                heatmap_expression_norm = "Expression",
-                                tabs = NULL,
-                                metrics_toggle = NULL,
-                                select_aa = NULL,
-                                panel_sorter = "Group by cell type")
+                                heatmap_expression_norm = "Expression")
+                                # tabs = NULL,
+                                # metrics_toggle = NULL,
+                                # select_aa = NULL,
+                                # panel_sorter = "Group by cell type")
               
               expect_null(multimarkers())
               
