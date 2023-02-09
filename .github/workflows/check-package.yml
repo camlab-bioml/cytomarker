@@ -15,12 +15,12 @@ jobs:
         run: |
          sudo apt-get update
          sudo apt-get -y install libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev libgeos-dev
-# name: Install required packages not listed in the package description
-# run: |
-# install.packages(c("BiocManager", "caret", "Seurat", "tidyverse"))
-# BiocManager::install(version = "3.16")
-# BiocManager::install(c('scran', 'scuttle', 'scater'))
-# shell: Rscript {0}
+      - name: Install required packages not listed in the package description
+        run: |
+          install.packages(c("BiocManager", "caret", "Seurat", "tidyverse"))
+          BiocManager::install(version = "3.16")
+          BiocManager::install(c('scran', 'scuttle', 'scater'))
+        shell: Rscript {0}
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
