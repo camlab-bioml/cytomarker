@@ -723,7 +723,7 @@ context("test that cytosel can identify multimarkers")
 test_that("cytosel is able to identify multimarkers in a lung dataset 
           (many cell types for the panel size)", {
             
-            skip_on_ci()
+            # skip_on_ci()
             
             testServer(cytosel::cytosel(), expr = {
               
@@ -746,8 +746,6 @@ test_that("cytosel is able to identify multimarkers in a lung dataset
               
               session$setInputs(panel_size = 12,
                                 start_analysis = T)
-              
-              print(fms())
               
               expect_false(is.null(multimarkers()))
               

@@ -108,7 +108,7 @@ cytosel <- function(...) {
   ui <- tagList(
     # useWaiter(),
     useWaitress(),
-    attendantBar("progress-bar"),
+    # attendantBar("progress-bar"),
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
     # only permit the google analytics non-interactively
