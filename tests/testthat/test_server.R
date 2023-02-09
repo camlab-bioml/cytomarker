@@ -387,10 +387,8 @@ test_that("Second Re-upload works on server", {
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
     
-    session$setInputs(input_scrnaseq = list(datapath =
-                                              test_path("pbmc_small.rds")),
-                      read_back_analysis = list(datapath =
-                                                  test_path("test_config_2.yml")))
+    session$setInputs(read_back_analysis = list(datapath =
+                      test_path("test_config_2.yml")))
     
     expect_equal(length(specific_cell_types_selected()), 
                  length(unique(sce()[["seurat_annotations"]])))
@@ -723,7 +721,7 @@ context("test that cytosel can identify multimarkers")
 test_that("cytosel is able to identify multimarkers in a lung dataset 
           (many cell types for the panel size)", {
             
-            skip_on_ci()
+            # skip_on_ci()
             
             testServer(cytosel::cytosel(), expr = {
               

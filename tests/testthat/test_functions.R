@@ -402,6 +402,19 @@ test_that("download works as expected", {
   
 })
 
+context("test parsing multimarkers")
+
+test_that("function for parsing multimarkers works as intended", {
+  
+  # skip_on_ci()
+  initial <- read.table(test_path("recommendations.tsv"), header = T, sep = "\t")
+  recommended <- read.table(test_path("recommended.txt"))$V1
+  multimarkers <- create_multimarker_frame(initial, recommended)
+  expect_equal(nrow(multimarkers), 1)
+  expect_equal(multimarkers$marker, "S100A6")
+  
+})
+
 context("test error warnings from modals")
 
 test_that("Error modals throw errors", {
@@ -437,17 +450,6 @@ test_that("Error modals throw errors", {
   expect_is(reset_option_on_change_modal("placeholder"), 'shiny.tag')
   expect_error(invalid_modal())
   expect_error(invalid_metadata_modal("fake_column"))
-})
-
-context("test parsing multimarkers")
-
-test_that("function for parsing multimarkers works as intended", {
-  initial <- read.table(test_path("recommendations.tsv"), header = T, sep = "\t")
-  recommended <- read.table(test_path("recommended.txt"))$V1
-  multimarkers <- create_multimarker_frame(initial, recommended)
-  expect_equal(nrow(multimarkers), 1)
-  expect_equal(multimarkers$marker, "S100A6")
-  
 })
 
 

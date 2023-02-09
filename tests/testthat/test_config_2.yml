@@ -1,0 +1,64 @@
+Time: 2023-02-08 00:42:45
+Input file: /tmp/RtmpN7FPvH/52d6f7334ffdbd800991b1bc/0.rds
+Number of columns (cells): 100
+Number of rows (features): 13714
+Assay used: logcounts
+Heterogeneity source: fake_column
+Target panel size: 22
+Min Cell Category cutoff: 10
+Subsampling Used: yes
+Subsampling number: 98
+Selected marker panel:
+- HLA-DPA1
+- CD74
+- HLA-DQA1
+- HLA-DPB1
+- LGALS1
+- FTL
+- CST3
+- S100A4
+- ANXA2
+- CCL5
+- HLA-C
+- CTSW
+- HLA-A
+- ANXA1
+- IL7R
+- LDHB
+- CD3D
+- CD3E
+Scratch marker panel:
+- HLA-DRA
+- HLA-DRB1
+- LYZ
+- TYROBP
+- S100A9
+- IL32
+Marker strategy: fm
+Antibody applications: ~
+Cell Types Analyzed:
+- B
+- CD14+ Mono
+- Memory CD4 T
+- CD8 T
+- Naive CD4 T
+Pre-computed UMAP: yes
+Run Metrics:
+  Cell Type:
+  - Naive CD4 T
+  - CD14+ Mono
+  - Memory CD4 T
+  - CD8 T
+  - B
+  Counts:
+  - 24.0
+  - 20.0
+  - 19.0
+  - 13.0
+  - 12.0
+  Mean Score:
+  - 0.659
+  - 0.782
+  - 0.463
+  - 0.69
+  - 0.958
