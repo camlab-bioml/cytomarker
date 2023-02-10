@@ -107,7 +107,7 @@ cytosel <- function(...) {
   # https://absentdata.com/track-external-links/
   ui <- tagList(
     # useWaiter(),
-    useWaitress(),
+    # useWaitress(),
     # attendantBar("progress-bar"),
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
@@ -1102,8 +1102,8 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(sce())
       
-      w <- Waitress$new(theme = "overlay-percent", infinite = TRUE)
-      w$start()
+      # w <- Waitress$new(theme = "overlay-percent", infinite = TRUE)
+      # w$start()
       
       showNotification("Starting analysis",
                   type = 'message',
@@ -1446,7 +1446,7 @@ cytosel <- function(...) {
       toggle(id = "download_button", condition = isTruthy(current_markers()))
       
       
-      w$close()
+      # w$close()
       
     })
     

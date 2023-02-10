@@ -1,6 +1,6 @@
-if (!interactive()) {
-  Sys.setenv("R_TESTS" = "")
-}
+# if (!interactive()) {
+#   Sys.setenv("R_TESTS" = "")
+# }
 
 library(testthat)
 library(shinytest2)

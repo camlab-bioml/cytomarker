@@ -388,7 +388,7 @@ test_that("download works as expected", {
     
     fake_overall <- list(score = 0.99, counts = 100)
     
-    skip_on_ci()
+    # skip_on_ci()
     
     download_data(filepath, base_config, plots, heatmap, fake_table, markdown_report_path,
                   fake_metrics, fake_overall, fake_genes)
@@ -452,6 +452,7 @@ test_that("Error modals throw errors", {
   expect_is(reset_option_on_change_modal("placeholder"), 'shiny.tag')
   expect_error(invalid_modal())
   expect_error(invalid_metadata_modal("fake_column"))
+  
 })
 
 
