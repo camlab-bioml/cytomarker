@@ -9,7 +9,7 @@ jobs:
   run-test-that:
     runs-on: ubuntu-latest
     env:
-      R_TESTS_VERBOSE=2
+      R_TESTS_VERBOSE: 2
     steps:
       - uses: actions/checkout@v2
       - uses: r-lib/actions/setup-r@v2
