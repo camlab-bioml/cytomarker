@@ -75,8 +75,6 @@ cytosel <- function(...) {
   
   rm(list = ls())
   
-  memory.limit(size = 4000)
-  
   antibody_info <- cytosel_data$antibody_info |>
     mutate(`Protein Expression`  = ifelse(!is.na(ensgene), paste("https://www.proteinatlas.org/", 
                                     ensgene,

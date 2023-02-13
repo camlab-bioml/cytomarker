@@ -16,7 +16,3 @@ rsconnect/*
 curated/
 .httr-oauth
 tests/testthat/curated/
-
-recommendations*
-
-.httr-oauth
