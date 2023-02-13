@@ -770,6 +770,9 @@ test_that("Second Re-upload works on server", {
     session$setInputs(read_back_analysis = list(datapath =
                                                   test_path("test_config_2.yml")))
     
+    session$setInputs(precomputed_dim = T, select_precomputed_umap = "UMAP",
+                      possible_precomputed_dims = reducedDimNames(sce()))
+    
     expect_equal(length(specific_cell_types_selected()), 
                  length(unique(sce()[["seurat_annotations"]])))
     
