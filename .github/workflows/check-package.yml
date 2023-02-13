@@ -1,4 +1,4 @@
-ame: test-package
+name: test-package
 on:
   push:
     branches: [main, master]
