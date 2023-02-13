@@ -685,30 +685,6 @@ test_that("The user is able to change the time zone properly", {
   })
 })
 
-test_that("Second Re-upload works on server", {
-  
-  testServer(cytosel::cytosel(), expr = {
-    
-    expect_false(reupload_analysis())
-    
-    session$setInputs(input_scrnaseq = list(datapath =
-                                              test_path("pbmc_small.rds")))
-    
-    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
-                      subsample_sce = F,
-                      display_options = "Marker-marker correlation",
-                      heatmap_expression_norm = "Expression",
-                      marker_strategy = "fm")
-    
-    session$setInputs(read_back_analysis = list(datapath =
-                                                  test_path("test_config_2.yml")))
-    
-    expect_equal(length(specific_cell_types_selected()), 
-                 length(unique(sce()[["seurat_annotations"]])))
-    
-  })
-})
-
 context("test that detection of lowercase genes names registers mouse")
 
 test_that("cytosel is able to find lowercase genes as non-human", {
@@ -774,6 +750,31 @@ test_that("cytosel is able to identify multimarkers in a lung dataset
               
             })
           })
+
+
+test_that("Second Re-upload works on server", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")))
+    
+    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
+                      subsample_sce = F,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm")
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                                                  test_path("test_config_2.yml")))
+    
+    expect_equal(length(specific_cell_types_selected()), 
+                 length(unique(sce()[["seurat_annotations"]])))
+    
+  })
+})
 
 
 

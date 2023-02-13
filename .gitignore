@@ -18,3 +18,5 @@ curated/
 tests/testthat/curated/
 
 recommendations*
+
+.httr-oauth
