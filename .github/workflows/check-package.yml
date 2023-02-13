@@ -9,7 +9,10 @@ on:
 
 jobs:
   run-test-that:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["macos-latest", "ubuntu-latest"]
     env:
       R_TESTS_VERBOSE: 2
       MSYS: winsymlinks:nativestrict

@@ -42,7 +42,7 @@ Cell Types Analyzed:
 - Memory CD4 T
 - CD8 T
 - Naive CD4 T
-Pre-computed UMAP: yes
+Pre-computed UMAP: no
 Run Metrics:
   Cell Type:
   - Naive CD4 T

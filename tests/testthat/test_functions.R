@@ -409,8 +409,8 @@ context("test parsing multimarkers")
 test_that("function for parsing multimarkers works as intended", {
   
   # skip_on_ci()
-  initial <- read.table(test_path("recommendations.tsv"), header = T, sep = "\t")
-  recommended <- read.table(test_path("recommended.txt"))$V1
+  initial <- utils::read.delim(test_path("recommendations.tsv"), header = T, sep = "\t")
+  recommended <- readLines(test_path("recommended.txt"))
   multimarkers <- create_multimarker_frame(initial, recommended)
   expect_equal(nrow(multimarkers), 1)
   expect_equal(multimarkers$marker, "S100A6")

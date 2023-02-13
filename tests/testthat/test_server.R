@@ -335,6 +335,8 @@ test_that("Server can detect sce with only one assay", {
   
 })
 
+gc()
+
 context("Test re-upload and reset Shiny app server functionality")
 
 #### Re-upload analysis ######
@@ -348,7 +350,7 @@ test_that("Re-upload works on server", {
                                               test_path("pbmc_small.rds")),
                       read_back_analysis = list(datapath =
                                                   test_path("test_config.yml")))
-    # verify reupload analysis reactive worked
+    # verify re-upload analysis reactive worked
     expect_true(reupload_analysis())
     
     # verify that the reactive values were populated from the yml
@@ -358,11 +360,16 @@ test_that("Re-upload works on server", {
     expect_equal(length(markers_reupload()$scratch_markers), 6)
     expect_equal(length(specific_cell_types_selected()), 5)
     
-    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
-                      subsample_sce = T,
+    session$setInputs(panel_size = 200, coldata_column = "seurat_annotations",
+                      subsample_sce = F,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
+    
+    session$setInputs(tabs = NULL,
+                      metrics_toggle = NULL,
+                      select_aa = NULL,
+                      panel_sorter = "Group by cell type")
     
     session$setInputs(start_analysis = T)
     
@@ -375,29 +382,9 @@ test_that("Re-upload works on server", {
   })
 })
 
-test_that("Second Re-upload works on server", {
-  
-  testServer(cytosel::cytosel(), expr = {
-    
-    expect_false(reupload_analysis())
-    
-    session$setInputs(input_scrnaseq = list(datapath =
-                                              test_path("pbmc_small.rds")))
-    
-    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
-                      subsample_sce = T,
-                      display_options = "Marker-marker correlation",
-                      heatmap_expression_norm = "Expression",
-                      marker_strategy = "fm")
-    
-    session$setInputs(read_back_analysis = list(datapath =
-                      test_path("test_config_2.yml")))
-    
-    expect_equal(length(specific_cell_types_selected()), 
-                 length(unique(sce()[["seurat_annotations"]])))
-    
-  })
-})
+gc()
+
+context("Test that resetting the cytosel environment works as expected")
 
 
 #### Reset analysis ######
@@ -455,6 +442,8 @@ test_that("Error from current panel with different genes", {
   })
 })
 
+gc()
+
 context("Test UMAP, violin, and heatmap colouring changes")
 
 test_that("Changing the UMAP, violin, and heatmap colourings work", {
@@ -469,13 +458,16 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_equal(length(specific_cell_types_selected()),
                  length(unique(sce()[[input$coldata_column]])))
     
-    session$setInputs(subsample_sce = T,
-                      panel_size = 20,
-                      subset_number = 99,
+    session$setInputs(subsample_sce = F,
+                      panel_size = 200,
                       display_options = "Marker-marker correlation",
-                      heatmap_expression_norm = "Expression",
-                      panel_sorter = "Group by cell type",
-                      marker_strategy = "fm")
+                      heatmap_expression_norm = "Expression")
+    
+    session$setInputs(panel_sorter = "Group by cell type",
+                      marker_strategy = "fm",
+                      tabs = NULL,
+                      metrics_toggle = NULL,
+                      select_aa = NULL)
     
     session$setInputs(start_analysis = T)
     
@@ -549,10 +541,12 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
   })
 })
 
-if (file.exists(file.path(tempdir(), "/seurat_pbmc.rds"))) {
-  command <- paste('rm ', tempdir(), "/seurat_pbmc.rds", sep = "")
-  system(command)
-}
+# if (file.exists(file.path(tempdir(), "/seurat_pbmc.rds"))) {
+#   command <- paste('rm ', tempdir(), "/seurat_pbmc.rds", sep = "")
+#   system(command)
+# }
+
+gc()
 
 context("Test the loading of the curated datasets from dropbox")
 
@@ -691,6 +685,30 @@ test_that("The user is able to change the time zone properly", {
   })
 })
 
+test_that("Second Re-upload works on server", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")))
+    
+    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
+                      subsample_sce = F,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm")
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                                                  test_path("test_config_2.yml")))
+    
+    expect_equal(length(specific_cell_types_selected()), 
+                 length(unique(sce()[["seurat_annotations"]])))
+    
+  })
+})
+
 context("test that detection of lowercase genes names registers mouse")
 
 test_that("cytosel is able to find lowercase genes as non-human", {
@@ -719,6 +737,8 @@ test_that("cytosel is able to identify an RDS that is not of the proper SCE form
   })
 })
 
+gc()
+
 context("test that cytosel can identify multimarkers")
 
 test_that("cytosel is able to identify multimarkers in a lung dataset 
@@ -733,15 +753,17 @@ test_that("cytosel is able to identify multimarkers in a lung dataset
                                 coldata_column = "fake_col",
                                 pick_curated = T,
                                 min_category_count = 2,
-                                subset_number = 250,
-                                subsample_sce = F,
+                                subset_number = 250)
+              
+              session$setInputs(subsample_sce = F,
                                 marker_strategy = "fm",
                                 display_options = "Marker-marker correlation",
                                 heatmap_expression_norm = "Expression")
-                                # tabs = NULL,
-                                # metrics_toggle = NULL,
-                                # select_aa = NULL,
-                                # panel_sorter = "Group by cell type")
+              
+              session$setInputs(tabs = NULL,
+                                metrics_toggle = NULL,
+                                select_aa = NULL,
+                                panel_sorter = "Group by cell type")
               
               expect_null(multimarkers())
               

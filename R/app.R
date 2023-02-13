@@ -73,6 +73,10 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @param ... Additional arguments
 cytosel <- function(...) {
   
+  rm(list = ls())
+  
+  memory.limit(size = 4000)
+  
   antibody_info <- cytosel_data$antibody_info |>
     mutate(`Protein Expression`  = ifelse(!is.na(ensgene), paste("https://www.proteinatlas.org/", 
                                     ensgene,
@@ -107,7 +111,7 @@ cytosel <- function(...) {
   # https://absentdata.com/track-external-links/
   ui <- tagList(
     # useWaiter(),
-    # useWaitress(),
+    useWaitress(),
     # attendantBar("progress-bar"),
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
@@ -1102,8 +1106,8 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(sce())
       
-      # w <- Waitress$new(theme = "overlay-percent", infinite = TRUE)
-      # w$start()
+      new_waitress <- Waitress$new(theme = "overlay-percent", infinite = TRUE)
+      new_waitress$start()
       
       showNotification("Starting analysis",
                   type = 'message',
@@ -1446,11 +1450,9 @@ cytosel <- function(...) {
       toggle(id = "download_button", condition = isTruthy(current_markers()))
       
       
-      # w$close()
+      new_waitress$close()
       
     })
-    
-    
     
     # re-count the number of markers in each space when the sortable js is changed
     observeEvent(input$bl_top, {
