@@ -1,9 +1,9 @@
 Time: 2023-02-08 00:42:45
 Input file: /tmp/RtmpN7FPvH/52d6f7334ffdbd800991b1bc/0.rds
-Number of columns (cells): 101
-Number of rows (features): 13715
+Number of columns (cells): 100
+Number of rows (features): 13714
 Assay used: logcounts
-Heterogeneity source: seurat_annotations
+Heterogeneity source: fake_column
 Target panel size: 22
 Min Cell Category cutoff: 10
 Subsampling Used: yes
@@ -42,4 +42,4 @@ Cell Types Analyzed:
 - Memory CD4 T
 - CD8 T
 - Naive CD4 T
-Pre-computed UMAP: no
+Pre-computed UMAP: yes

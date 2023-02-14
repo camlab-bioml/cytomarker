@@ -35,6 +35,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom tidyr drop_na
 #' @import SummarizedExperiment
 #' @import forcats
+#' @importFrom waiter useWaitress Waitress
 #' @import ggplot2
 #' @import sortable
 #' @import fontawesome
@@ -72,6 +73,8 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @param ... Additional arguments
 cytosel <- function(...) {
   
+  rm(list = ls())
+  
   antibody_info <- cytosel_data$antibody_info |>
     mutate(`Protein Expression`  = ifelse(!is.na(ensgene), paste("https://www.proteinatlas.org/", 
                                     ensgene,
@@ -105,6 +108,9 @@ cytosel <- function(...) {
   # https://www.gravitatedesign.com/blog/event-tracking-google-analytics/
   # https://absentdata.com/track-external-links/
   ui <- tagList(
+    # useWaiter(),
+    useWaitress(),
+    # attendantBar("progress-bar"),
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
     # only permit the google analytics non-interactively
@@ -539,6 +545,7 @@ cytosel <- function(...) {
     allowed_genes <- reactiveVal() # Set of "allowed" genes (those with anotibodies, not ribo or mito)
     current_markers <- reactiveVal() # Currently selected markers
     
+    multimarkers <- reactiveVal(NULL)
     marker_sort <- reactiveVal(NULL)
     
     display <- reactiveVal() # Display options for heatmap
@@ -1097,6 +1104,13 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(sce())
       
+      new_waitress <- Waitress$new(theme = "overlay-percent", infinite = TRUE)
+      new_waitress$start()
+      
+      showNotification("Starting analysis",
+                  type = 'message',
+                  duration = 3)
+      
       library(caret)
       library(Seurat)
       
@@ -1287,9 +1301,13 @@ cytosel <- function(...) {
               ## We compute the set of markers for the first time
               
               if (isTruthy(markers_reupload())) {
-                markers <- list(recommended_markers = markers_reupload()$top_markers,
-                                top_markers = markers_reupload()$top_markers,
-                                scratch_markers = markers_reupload()$scratch_markers)
+                markers <- list(recommended_markers = 
+                                markers_reupload()$top_markers[markers_reupload()$top_markers %in% allowed_genes()],
+                                top_markers = markers_reupload()$top_markers[markers_reupload()$top_markers 
+                                                                             %in% allowed_genes()],
+                                scratch_markers = markers_reupload()$scratch_markers[markers_reupload()$scratch_markers 
+                                                                                     %in% allowed_genes()])
+                
               } else {
                 markers_list <- get_markers(fms(), 
                                        # Adding 10 to make sure panel size is approximate 
@@ -1299,6 +1317,10 @@ cytosel <- function(...) {
                                        input$marker_strategy, 
                                        sce()[,sce()$keep_for_analysis == "Yes"],
                                        allowed_genes())
+                
+                markers <- markers_list$marker[!is.na(markers_list$marker)]
+                markers$scratch_markers <- scratch_markers_to_keep
+                multimarkers(markers_list$multimarkers)
                 
                 if (isTruthy(markers_list$missing)) {
                   throw_error_or_warning(type = 'notification',
@@ -1310,24 +1332,21 @@ cytosel <- function(...) {
                   cell_types_missing_markers(markers_list$missing)
                   
                 }
-                
-                markers <- markers_list$marker[!is.na(markers_list$marker)]
-                
-                setProgress(value = 1)
-                
-                if(length(markers$recommended_markers) < input$panel_size){
-                  showNotification("Cytosel found genes that are good markers for multiple cell types. This will result in a smaller panel size than requested.
-                                 You may manually add additional markers.",
-                                   type = 'message',
-                                   duration = NULL)
-                }
-                ## Forgotten what this is for
-                markers$scratch_markers <- scratch_markers_to_keep
               }
             }
             
-            # SMH
+            setProgress(value = 1)
+            
+            if(length(markers$recommended_markers) < input$panel_size) {
+              showNotification("Cytosel found genes that are good markers for multiple cell types. This will result in a smaller panel size than requested.
+                                 You may manually add additional markers.",
+                               type = 'message',
+                               duration = NULL)
+            }
             current_markers(set_current_markers_safely(markers, fms()))
+            
+            # SMH
+            
             
             if (!isTruthy(original_panel())) {
               original_panel(current_markers()$recommended_markers)
@@ -1420,8 +1439,6 @@ cytosel <- function(...) {
             unique_element_modal(col)
           }
           
-          
-          
           })
           
       })
@@ -1430,9 +1447,10 @@ cytosel <- function(...) {
       downloaded_content(FALSE)
       toggle(id = "download_button", condition = isTruthy(current_markers()))
       
+      
+      new_waitress$close()
+      
     })
-    
-    
     
     # re-count the number of markers in each space when the sortable js is changed
     observeEvent(input$bl_top, {
@@ -1857,37 +1875,53 @@ cytosel <- function(...) {
       
       yaml_length <- sum(c(length(markers_reupload()$top_markers),
                            length(markers_reupload()$scratch_markers)))
-      if (yaml_length != yaml_back$`Target panel size` & yaml_length > 0) {
-        updateNumericInput(session, "panel_size", value = yaml_length)
+      if (isTruthy(yaml_back$`Target panel size`)) {
+        if (yaml_length != yaml_back$`Target panel size` & yaml_length > 0) {
+          updateNumericInput(session, "panel_size", value = yaml_length)
+        }
       }
       
       if (isTruthy(sce())) {
-        if (yaml_back$`Number of columns (cells)` != ncol(sce()) |
-            yaml_back$`Number of rows (features)` != nrow(sce())) {
-          reupload_warning_modal("Incompatible dimensions", "Number of cells and genes")
-    }
-        if (yaml_back$`Heterogeneity source` %in% colnames(colData(sce()))) {
-        updateSelectInput(session, "coldata_column", choices = colnames(colData(sce())),
-        selected = yaml_back$`Heterogeneity source`)
-        updateSelectInput(session, "user_selected_cells", 
-                          yaml_back$`Cell Types Analyzed`)
-        specific_cell_types_selected(yaml_back$`Cell Types Analyzed`)
-        # cell_types_to_keep(yaml_back$`User selected cells`)
-        reupload_cell_types(TRUE)
-        
-        } else {
-          reupload_warning_modal("Cell type not found", yaml_back$`Heterogeneity source`)
+        if ((isTruthy(yaml_back$`Number of columns (cells)`) &
+             isTruthy(yaml_back$`Number of rows (features)`))) {
+          if ((yaml_back$`Number of columns (cells)` != ncol(sce()) |
+               yaml_back$`Number of rows (features)` != nrow(sce()))) {
+            reupload_warning_modal("Incompatible dimensions", "Number of cells and genes")
+          }
         }
+        if (isTruthy(yaml_back$`Heterogeneity source`)) {
+          if (yaml_back$`Heterogeneity source` %in% colnames(colData(sce()))) {
+            updateSelectInput(session, "coldata_column", choices = colnames(colData(sce())),
+                              selected = yaml_back$`Heterogeneity source`)
+            updateSelectInput(session, "user_selected_cells", 
+                              yaml_back$`Cell Types Analyzed`)
+            specific_cell_types_selected(yaml_back$`Cell Types Analyzed`)
+            # cell_types_to_keep(yaml_back$`User selected cells`)
+            reupload_cell_types(TRUE)
+            
+          } else {
+            if (isTruthy(yaml_back$`Heterogeneity source`)) {
+              reupload_warning_modal("Cell type not found", yaml_back$`Heterogeneity source`)
+              specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
+            }
+          }
+        } else {
+          specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
+        }
+      
+      
+        if (isTruthy(yaml_back$`Pre-computed UMAP`)) {
         updateCheckboxInput(session, inputId = "precomputed_dim",
                             value = yaml_back$`Pre-computed UMAP`)
         use_precomputed_umap(yaml_back$`Pre-computed UMAP`)
+        
+        }
         
         if (isTruthy(use_precomputed_umap())) {
           possible_umap_dims(detect_umap_dims_in_sce(sce()))
           showModal(pre_computed_umap_modal(possible_umap_dims()))
         }
       }
-      
     if (isTruthy(yaml_back$`Assay used`)) {
       pref_assay(yaml_back$`Assay used`)
     }
@@ -1896,10 +1930,14 @@ cytosel <- function(...) {
       cell_min_threshold(yaml_back$`Min Cell Category cutoff`)
       updateNumericInput(session, "min_category_count", value = yaml_back$`Min Cell Category cutoff`)
     }
-    updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
-    
-    if (isTruthy(sce())) {
-      if (isTruthy(yaml_back$`Subsampling Used`) & yaml_back$`Subsampling number` <= ncol(sce())) {
+      
+      if (isTruthy(yaml_back$`Subsampling Used`)) {
+        updateCheckboxInput(session, "subsample_sce", value = yaml_back$`Subsampling Used`)
+      }  
+
+    if (isTruthy(sce()) & isTruthy(yaml_back$`Subsampling Used`) & 
+        isTruthy(yaml_back$`Subsampling number`)) {
+      if (yaml_back$`Subsampling number` <= ncol(sce())) {
         updateNumericInput(session, "subset_number", value = yaml_back$`Subsampling number`)
       }
     }
@@ -1907,11 +1945,6 @@ cytosel <- function(...) {
     if (isTruthy(yaml_back$`Marker strategy`)) {
       updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
     }
-    
-    if (isTruthy(yaml_back$`Marker strategy`)) {
-      updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
-    }
-    
     
     if (isTruthy(yaml_back$`Antibody applications`)) {
       updateSelectInput(session, "select_aa", selected = yaml_back$`Antibody applications`)

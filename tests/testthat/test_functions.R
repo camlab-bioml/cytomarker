@@ -15,6 +15,21 @@ test_that("conversion functions are effective", {
   expect_false(check_for_human_genes(sce))
 })
 
+context("Pre-processing the antibody applications")
+
+test_that("Processing the antibody applications produces the intended data structures", {
+  
+  applications_parsed <- get_antibody_applications(cytosel_data$antibody_info, 
+                                                   'Symbol', 'Listed Applications')
+  
+  expect_is(applications_parsed, 'list')
+  expect_equal(names(applications_parsed), c("unique_applications", "application_gene_map"))
+  expect_equal(length(applications_parsed$unique_applications), 12)
+  expect_equal(length(applications_parsed$application_gene_map), 12)
+  
+})
+
+
 context("Data reading")
 
 test_that("SingleCellExperiment object reading", {
@@ -57,13 +72,13 @@ test_that("good_col returns valid columns", {
 })
 
 test_that("get_markers and compute_fm returns valid output", {
-  sce_path <- test_path("test_sce.rds")
+  sce_path <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(sce_path)
 
-  sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
+  # sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
 
   fms <- compute_fm(sce,
-             "cell_type",
+             "seurat_annotations",
               "logcounts",
             rownames(sce)
   )
@@ -373,6 +388,8 @@ test_that("download works as expected", {
     
     fake_overall <- list(score = 0.99, counts = 100)
     
+    # skip_on_ci()
+    
     download_data(filepath, base_config, plots, heatmap, fake_table, markdown_report_path,
                   fake_metrics, fake_overall, fake_genes)
     
@@ -384,6 +401,19 @@ test_that("download works as expected", {
     expect_equal(yaml_back$`Heterogeneity source`, "seurat_annotations")
     
   })
+  
+})
+
+context("test parsing multimarkers")
+
+test_that("function for parsing multimarkers works as intended", {
+  
+  # skip_on_ci()
+  initial <- utils::read.delim(test_path("recommendations.tsv"), header = T, sep = "\t")
+  recommended <- readLines(test_path("recommended.txt"))
+  multimarkers <- create_multimarker_frame(initial, recommended)
+  expect_equal(nrow(multimarkers), 1)
+  expect_equal(multimarkers$marker, "S100A6")
   
 })
 
@@ -422,6 +452,7 @@ test_that("Error modals throw errors", {
   expect_is(reset_option_on_change_modal("placeholder"), 'shiny.tag')
   expect_error(invalid_modal())
   expect_error(invalid_metadata_modal("fake_column"))
+  
 })
 
 

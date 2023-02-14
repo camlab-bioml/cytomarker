@@ -62,7 +62,8 @@ Imports:
     utils,
     fontawesome,
     emojifont,
-    geneBasisR
+    geneBasisR,
+    waiter
 Suggests:
   stringr,
   yardstick,

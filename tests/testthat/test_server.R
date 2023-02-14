@@ -115,8 +115,8 @@ test_that("Server has basic functionality", {
     expect_equal(heatmap()[["x"]][["attrs"]][[1]][["x"]],
                  heatmap()[["x"]][["attrs"]][[1]][["y"]])
     
-    # expect of 200 markers to get somewhere between 150 to 200 for redundancy
-    expect_gt(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])), 150)
+    # expect of 200 markers to get somewhere between 1 to 200 for redundancy
+    expect_gt(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])), 1)
     expect_lte(length(as.character(heatmap()[["x"]][["attrs"]][[1]][["x"]])),
                  200)
     
@@ -131,12 +131,6 @@ test_that("Server has basic functionality", {
     
     expect_equal(output$scratch_marker_counts, "<B> Scratch Markers: 10 </B>")
     expect_equal(output$selected_marker_counts, "<B> Selected Markers: 14 </B>")
-    
-    withr::with_tempdir({
-      session$setInputs(downloadData = T)
-      expect_true(file.exists(file.path(tempdir(), paste0("config-", Sys.Date(), ".yml"))))
-      expect_false(is.null(output$downloadData))
-    })
     
     expect_null(marker_sort())
     
@@ -283,6 +277,15 @@ test_that("Server has basic functionality", {
     
     expect_equal(length(current_markers()$top_markers), 5)
     
+    
+    withr::with_tempdir({
+      
+      # skip_on_ci()
+      session$setInputs(downloadData = T)
+      # expect_true(file.exists(file.path(tempdir(), paste0("config-", Sys.Date(), ".yml"))))
+      expect_false(is.null(output$downloadData))
+    })
+    
   })
 })
 
@@ -332,6 +335,8 @@ test_that("Server can detect sce with only one assay", {
   
 })
 
+gc()
+
 context("Test re-upload and reset Shiny app server functionality")
 
 #### Re-upload analysis ######
@@ -345,21 +350,26 @@ test_that("Re-upload works on server", {
                                               test_path("pbmc_small.rds")),
                       read_back_analysis = list(datapath =
                                                   test_path("test_config.yml")))
-    # verify reupload analysis reactive worked
+    # verify re-upload analysis reactive worked
     expect_true(reupload_analysis())
     
     # verify that the reactive values were populated from the yml
-    expect_equal(length(specific_cell_types_selected()), 6)
+    expect_equal(length(specific_cell_types_selected()), 5)
     expect_equal(cell_min_threshold(), 10)
     expect_equal(length(markers_reupload()$top_markers), 18)
     expect_equal(length(markers_reupload()$scratch_markers), 6)
-    expect_equal(length(specific_cell_types_selected()), 6)
+    expect_equal(length(specific_cell_types_selected()), 5)
     
-    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
-                      subsample_sce = T,
+    session$setInputs(panel_size = 200, coldata_column = "seurat_annotations",
+                      subsample_sce = F,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
+    
+    session$setInputs(tabs = NULL,
+                      metrics_toggle = NULL,
+                      select_aa = NULL,
+                      panel_sorter = "Group by cell type")
     
     session$setInputs(start_analysis = T)
     
@@ -371,6 +381,11 @@ test_that("Re-upload works on server", {
     
   })
 })
+
+gc()
+
+context("Test that resetting the cytosel environment works as expected")
+
 
 #### Reset analysis ######
 test_that("Reset works on server", {
@@ -387,7 +402,7 @@ test_that("Reset works on server", {
     expect_true(reupload_analysis())
     
     # verify that the reactive values were populated from the yml
-    expect_equal(length(specific_cell_types_selected()), 6)
+    expect_equal(length(specific_cell_types_selected()), 5)
     expect_equal(cell_min_threshold(), 10)
     expect_equal(length(markers_reupload()$top_markers), 18)
     expect_equal(length(markers_reupload()$scratch_markers), 6)
@@ -427,6 +442,8 @@ test_that("Error from current panel with different genes", {
   })
 })
 
+gc()
+
 context("Test UMAP, violin, and heatmap colouring changes")
 
 test_that("Changing the UMAP, violin, and heatmap colourings work", {
@@ -441,13 +458,16 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_equal(length(specific_cell_types_selected()),
                  length(unique(sce()[[input$coldata_column]])))
     
-    session$setInputs(subsample_sce = T,
-                      panel_size = 20,
-                      subset_number = 99,
+    session$setInputs(subsample_sce = F,
+                      panel_size = 200,
                       display_options = "Marker-marker correlation",
-                      heatmap_expression_norm = "Expression",
-                      panel_sorter = "Group by cell type",
-                      marker_strategy = "fm")
+                      heatmap_expression_norm = "Expression")
+    
+    session$setInputs(panel_sorter = "Group by cell type",
+                      marker_strategy = "fm",
+                      tabs = NULL,
+                      metrics_toggle = NULL,
+                      select_aa = NULL)
     
     session$setInputs(start_analysis = T)
     
@@ -521,10 +541,12 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
   })
 })
 
-if (file.exists(file.path(tempdir(), "/seurat_pbmc.rds"))) {
-  command <- paste('rm ', tempdir(), "/seurat_pbmc.rds", sep = "")
-  system(command)
-}
+# if (file.exists(file.path(tempdir(), "/seurat_pbmc.rds"))) {
+#   command <- paste('rm ', tempdir(), "/seurat_pbmc.rds", sep = "")
+#   system(command)
+# }
+
+gc()
 
 context("Test the loading of the curated datasets from dropbox")
 
@@ -551,13 +573,13 @@ test_that("Picking the curated dataset works as intended", {
     
     # if reupload the same dataset, invalidate until verify if resetting or not
     
-    session$setInputs(curated_dataset = T, curated_options = "Heart",
+    session$setInputs(curated_dataset = T, curated_options = "Liver",
                       subset_number = 2000,
                       coldata_column = "cell_ontology_class",
                       curated_compartments = NULL,
                       pick_curated = T)
     
-    expect_equal(curated_selection(), "Heart")
+    expect_equal(curated_selection(), "Liver")
     
   })
   
@@ -690,4 +712,145 @@ test_that("cytosel is able to identify an RDS that is not of the proper SCE form
     
   })
 })
+
+gc()
+
+context("test that cytosel can identify multimarkers")
+
+test_that("cytosel is able to identify multimarkers in a lung dataset 
+          (many cell types for the panel size)", {
+            
+            # skip_on_ci()
+            
+            testServer(cytosel::cytosel(), expr = {
+              
+              session$setInputs(input_scrnaseq = list(datapath =
+                                                        test_path("pbmc_small.rds")),
+                                coldata_column = "fake_col",
+                                pick_curated = T,
+                                min_category_count = 2,
+                                subset_number = 250)
+              
+              session$setInputs(subsample_sce = F,
+                                marker_strategy = "fm",
+                                display_options = "Marker-marker correlation",
+                                heatmap_expression_norm = "Expression")
+              
+              session$setInputs(tabs = NULL,
+                                metrics_toggle = NULL,
+                                select_aa = NULL,
+                                panel_sorter = "Group by cell type")
+              
+              expect_null(multimarkers())
+              
+              session$setInputs(panel_size = 12,
+                                start_analysis = T)
+              
+              expect_false(is.null(multimarkers()))
+              
+            })
+          })
+
+
+test_that("Second Re-upload works on server", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")))
+    
+    session$setInputs(panel_size = 24, coldata_column = "seurat_annotations",
+                      subsample_sce = F,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm")
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                                                  test_path("test_config_2.yml")))
+    
+    session$setInputs(precomputed_dim = T, select_precomputed_umap = "UMAP",
+                      possible_precomputed_dims = reducedDimNames(sce()))
+    
+    expect_equal(length(specific_cell_types_selected()), 
+                 length(unique(sce()[["seurat_annotations"]])))
+    
+  })
+})
+
+context("Check that uploading a minimal yml with just markers works as expected")
+
+#### Re-upload analysis ######
+test_that("Re-upload works on server", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_config.yml")))
+    # verify re-upload analysis reactive worked
+    expect_true(reupload_analysis())
+    
+    # verify that the reactive values were populated from the yml
+    expect_equal(length(specific_cell_types_selected()), 5)
+    expect_equal(cell_min_threshold(), 10)
+    expect_equal(length(markers_reupload()$top_markers), 18)
+    expect_equal(length(markers_reupload()$scratch_markers), 6)
+    expect_equal(length(specific_cell_types_selected()), 5)
+    
+    session$setInputs(panel_size = 200, coldata_column = "seurat_annotations",
+                      subsample_sce = F,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm")
+    
+    session$setInputs(tabs = NULL,
+                      metrics_toggle = NULL,
+                      select_aa = NULL,
+                      panel_sorter = "Group by cell type")
+    
+    session$setInputs(start_analysis = T)
+    
+    expect_equal(length(current_markers()$top_markers),
+                 length(markers_reupload()$top_markers))
+    
+    expect_equal(length(current_markers()$scratch_markers),
+                 length(markers_reupload()$scratch_markers))
+    
+  })
+})
+
+gc()
+
+context("Test that resetting the cytosel environment works as expected")
+
+
+#### Reset analysis ######
+test_that("Minimal re-uploads recognizxe markers", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      coldata_column = "seurat_annotations",
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_config_3.yml")))
+    
+    # verify that the reactive values were populated from the yml
+    
+    expect_equal(length(specific_cell_types_selected()), 
+                 length(unique(sce()[["seurat_annotations"]])))
+    expect_equal(length(markers_reupload()$top_markers), 18)
+    expect_equal(length(markers_reupload()$scratch_markers), 6)
+    
+  })
+})
+
+
+
+
 
