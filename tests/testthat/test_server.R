@@ -779,6 +779,77 @@ test_that("Second Re-upload works on server", {
   })
 })
 
+context("Check that uploading a minimal yml with just markers works as expected")
+
+#### Re-upload analysis ######
+test_that("Re-upload works on server", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_config.yml")))
+    # verify re-upload analysis reactive worked
+    expect_true(reupload_analysis())
+    
+    # verify that the reactive values were populated from the yml
+    expect_equal(length(specific_cell_types_selected()), 5)
+    expect_equal(cell_min_threshold(), 10)
+    expect_equal(length(markers_reupload()$top_markers), 18)
+    expect_equal(length(markers_reupload()$scratch_markers), 6)
+    expect_equal(length(specific_cell_types_selected()), 5)
+    
+    session$setInputs(panel_size = 200, coldata_column = "seurat_annotations",
+                      subsample_sce = F,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm")
+    
+    session$setInputs(tabs = NULL,
+                      metrics_toggle = NULL,
+                      select_aa = NULL,
+                      panel_sorter = "Group by cell type")
+    
+    session$setInputs(start_analysis = T)
+    
+    expect_equal(length(current_markers()$top_markers),
+                 length(markers_reupload()$top_markers))
+    
+    expect_equal(length(current_markers()$scratch_markers),
+                 length(markers_reupload()$scratch_markers))
+    
+  })
+})
+
+gc()
+
+context("Test that resetting the cytosel environment works as expected")
+
+
+#### Reset analysis ######
+test_that("Minimal re-uploads recognizxe markers", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      coldata_column = "seurat_annotations",
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_config_3.yml")))
+    
+    # verify that the reactive values were populated from the yml
+    
+    expect_equal(length(specific_cell_types_selected()), 
+                 length(unique(sce()[["seurat_annotations"]])))
+    expect_equal(length(markers_reupload()$top_markers), 18)
+    expect_equal(length(markers_reupload()$scratch_markers), 6)
+    
+  })
+})
+
 
 
 
