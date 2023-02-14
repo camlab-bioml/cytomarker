@@ -1769,6 +1769,7 @@ cytosel <- function(...) {
     observeEvent(input$enter_gene, { # Compute alternative markers
       req(input$number_correlations)
       req(sce())
+      req(fms())
       
       if(!is.null(input$input_gene) && stringr::str_length(input$input_gene) > 1 && (input$input_gene %in% 
                                     rownames(sce()[,sce()$keep_for_analysis == "Yes"])) &&
@@ -1784,7 +1785,8 @@ cytosel <- function(...) {
                                  sce()[,sce()$keep_for_analysis == "Yes"], 
                                  pref_assay(), input$number_correlations,
                                  allowed_genes()[!allowed_genes() %in% current_markers()$top_markers &
-                                                   !allowed_genes() %in% current_markers()$scratch_markers]) |>
+                                                   !allowed_genes() %in% current_markers()$scratch_markers],
+                                 fms()) |>
               drop_na()
           )
           

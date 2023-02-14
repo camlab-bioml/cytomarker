@@ -174,6 +174,9 @@ test_that("Server has basic functionality", {
     expect_false(is.null(output$alternative_markers))
     
     expect_equal(nrow(replacements()), 10)
+    expect_equal(ncol(replacements()), 3)
+    
+    expect_true("CD8 T" %in% unique(replacements()$Association))
     
     expect_equal(0, nrow(replacements()[grepl("^RP[L|S]|^MT-|^MALAT",
                                               replacements()$Gene),]))
