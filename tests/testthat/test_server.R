@@ -35,7 +35,7 @@ test_that("Server has basic functionality", {
     
     # Set analysis parameters that will not proceed
     session$setInputs(user_selected_cells = NULL,
-                      panel_size = 200, min_category_count = 0,
+                      panel_size = 32, min_category_count = 0,
                       subset_number = 99,
                       subsample_sce = T,
                       start_analysis = T,
@@ -123,14 +123,15 @@ test_that("Server has basic functionality", {
     # expect that the marker columns are set properly and the lengths are verified
     
     # expect that the marker columns are set properly and the lengths are verified
-    session$setInputs(bl_scratch = current_markers()$top_markers[1:10],
-                      bl_top = current_markers()$top_markers[11:24])
+    session$setInputs(bl_top = current_markers()$top_markers[1:10],
+                      bl_scratch = current_markers()$top_markers[11:15],
+                      start_analysis = T)
     
-    expect_equal(num_markers_in_selected(), 14)
-    expect_equal(num_markers_in_scratch(), 10)
+    expect_equal(num_markers_in_selected(), 10)
+    expect_equal(num_markers_in_scratch(), 5)
     
-    expect_equal(output$scratch_marker_counts, "<B> Scratch Markers: 10 </B>")
-    expect_equal(output$selected_marker_counts, "<B> Selected Markers: 14 </B>")
+    expect_equal(output$scratch_marker_counts, "<B> Scratch Markers: 5 </B>")
+    expect_equal(output$selected_marker_counts, "<B> Selected Markers: 10 </B>")
     
     expect_null(marker_sort())
     
@@ -148,7 +149,7 @@ test_that("Server has basic functionality", {
     
     session$setInputs(suggest_gene_removal = T,
                       n_genes = 3)
-    
+  
     expect_equal(length(suggestions()), 3)
     
     # move 5 of the top markers into scratch and assert new numbers
@@ -156,7 +157,7 @@ test_that("Server has basic functionality", {
                       remove_suggested = T)
     
     # a gene that doesn't exist will not produce suggested replacements
-    expect_equal(length(current_markers()$top_markers), 11)
+    expect_equal(length(current_markers()$top_markers), 7)
     
     # generate suggested alternative markers
     session$setInputs(input_gene = "FAKE_GENE",
@@ -174,6 +175,9 @@ test_that("Server has basic functionality", {
     expect_false(is.null(output$alternative_markers))
     
     expect_equal(nrow(replacements()), 10)
+    expect_equal(ncol(replacements()), 3)
+    
+    expect_true("CD8 T" %in% unique(replacements()$Association))
     
     expect_equal(0, nrow(replacements()[grepl("^RP[L|S]|^MT-|^MALAT",
                                               replacements()$Gene),]))
@@ -182,14 +186,14 @@ test_that("Server has basic functionality", {
                       send_markers = T,
                       send = T)
     
-    expect_equal(length(current_markers()$top_markers), 17)
+    expect_equal(length(current_markers()$top_markers), 13)
     
     # if you try to add a fake marker, the length will stay the same
     session$setInputs(markers_change_modal = T,
                       add_markers = "FAKE_GENE",
                       enter_marker = T)
     
-    expect_equal(num_markers_in_selected(), 17)
+    expect_equal(num_markers_in_selected(), 13)
     
     
     # if you try to add a marker that's already there, the length will stay the same
@@ -197,7 +201,7 @@ test_that("Server has basic functionality", {
                       add_markers = current_markers()$top_markers[1],
                       enter_marker = T)
     
-    expect_equal(num_markers_in_selected(), 17)
+    expect_equal(num_markers_in_selected(), 13)
     
     # add a gene that isn't in either selected or scratch to increase the count by 1
     different <- allowed_genes()[!allowed_genes() %in% current_markers()$top_markers]
@@ -207,7 +211,7 @@ test_that("Server has basic functionality", {
                       add_markers = different[1],
                       enter_marker = T)
     
-    expect_equal(num_markers_in_selected(), 18)
+    expect_equal(num_markers_in_selected(), 14)
     
     # expect null since no markers have been suggested
     expect_true(is.null(selected_cell_type_markers()))
@@ -233,8 +237,8 @@ test_that("Server has basic functionality", {
                                              test_path("upload_markers.txt")),
                      add_to_selected = T)
     
-    # after adding 5 markers to 18, assert how many top markers there should be
-    expect_equal(length(current_markers()$top_markers), 23)
+    # after adding 5 markers to 14, assert how many top markers there should be
+    expect_equal(length(current_markers()$top_markers), 19)
     
     # if you try to upload a gene that doesn't exist, the length will remain the same
     session$setInputs(uploadMarkers = list(datapath =
@@ -242,7 +246,7 @@ test_that("Server has basic functionality", {
                       add_to_selected = T)
     
     # after adding 5 markers to 18, assert how many top markers there should be
-    expect_equal(length(current_markers()$top_markers), 23)
+    expect_equal(length(current_markers()$top_markers), 19)
     
     # if you try to replace with a gene that doesn't exist, the length will remain the same
     session$setInputs(uploadMarkers = list(datapath =
@@ -250,8 +254,7 @@ test_that("Server has basic functionality", {
                       replace_selected = T)
     
     # after adding 5 markers to 18, assert how many top markers there should be
-    expect_equal(length(current_markers()$top_markers), 23)
-    
+    expect_equal(length(current_markers()$top_markers), 19)
     
     # Look for the uploaded markers in the top markers
     expect_true("EEF2" %in% current_markers()$top_markers)

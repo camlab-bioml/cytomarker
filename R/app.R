@@ -478,7 +478,7 @@ cytosel <- function(...) {
                  actionButton("enter_gene", "Enter"),
                  br(),
                  br(),
-                 DTOutput("alternative_markers")
+                 fluidRow(column(12, DTOutput("alternative_markers")))
                  # hidden(div(id = "send", actionButton("send_markers", "Send markers to selection panel"))),
                  # br()
           ),
@@ -714,7 +714,7 @@ cytosel <- function(...) {
       "</b>", "<br/>", "<b>", "Cells: ", "</b>", subset(curated_datasets, tissue == tissue_lab)$num_cells[1], 
     "<br/>", "<b>", "Genes: ", "</b>", "58870", "<br/>", 
       "<b>", "Cell category of interest: ", "</b>", "cell_ontology_glass",
-    "<br/>", "<b>", "Metadata preview: ", "</b>", "<br/>", subset(curated_datasets, tissue == tissue_lab)$preview[1],
+    "<br/>", "<b>", "Cell Type Distribution: ", "</b>", "<br/>", subset(curated_datasets, tissue == tissue_lab)$preview[1],
       sep = "")
       
       
@@ -1769,6 +1769,7 @@ cytosel <- function(...) {
     observeEvent(input$enter_gene, { # Compute alternative markers
       req(input$number_correlations)
       req(sce())
+      req(fms())
       
       if(!is.null(input$input_gene) && stringr::str_length(input$input_gene) > 1 && (input$input_gene %in% 
                                     rownames(sce()[,sce()$keep_for_analysis == "Yes"])) &&
@@ -1784,7 +1785,8 @@ cytosel <- function(...) {
                                  sce()[,sce()$keep_for_analysis == "Yes"], 
                                  pref_assay(), input$number_correlations,
                                  allowed_genes()[!allowed_genes() %in% current_markers()$top_markers &
-                                                   !allowed_genes() %in% current_markers()$scratch_markers]) |>
+                                                   !allowed_genes() %in% current_markers()$scratch_markers],
+                                 fms()) |>
               drop_na()
           )
           

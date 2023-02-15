@@ -9,7 +9,8 @@ compute_alternatives(
   sce,
   pref_assay,
   n_correlations,
-  allowed_genes
+  allowed_genes,
+  fms
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ compute_alternatives(
 \item{n_correlations}{Number of markers to replace gene_to_replace}
 
 \item{allowed_genes}{A list of genes permitted to be suggested. Prevents suggestion of unwanted genes such as mitochondrial, etc.}
+
+\item{fms}{The output of findMarkers}
 }
 \description{
 Compute alternative markers

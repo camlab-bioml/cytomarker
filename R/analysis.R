@@ -485,8 +485,10 @@ get_antibody_info <- function(gene_id, df) {
 #' @param pref_assay Assay loaded
 #' @param n_correlations Number of markers to replace gene_to_replace
 #' @param allowed_genes A list of genes permitted to be suggested. Prevents suggestion of unwanted genes such as mitochondrial, etc.
+#' @param fms The output of findMarkers
+#' @importFrom dplyr arrange
 compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlations,
-                                 allowed_genes) {
+                                 allowed_genes, fms) {
   x <- as.matrix(assay(sce, pref_assay))[,sample(ncol(sce), min(5000, ncol(sce)))]
   
   y <- x[gene_to_replace, ]
@@ -500,6 +502,10 @@ compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlation
   alternatives <- alternatives[!is.na(alternatives$Correlation),]
   alternatives <- alternatives[order(-(alternatives$Correlation)),]
   alternatives <- alternatives[1:n_correlations,]
+  associated <- get_associated_cell_types(list(recommended_markers = alternatives$Gene), fms)
+  alternatives <- merge(alternatives, data.frame(Gene = names(associated),
+                                                `Association` = associated),
+                        by = "Gene") |> arrange(-Correlation)
   rownames(alternatives) <- NULL
   
   alternatives
