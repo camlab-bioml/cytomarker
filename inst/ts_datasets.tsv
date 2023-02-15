@@ -1,25 +1,25 @@
 tissue	num_cells	num_genes	preview
-Bladder	2671	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Blood	2551	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Bone_Marrow	2052	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Eye	2178	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Fat	1489	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Heart	1184	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Kidney	881	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Large_Intestine	1916	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Liver	1133	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Lung	2787	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Lymph_Node	2454	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Mammary	1100	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Muscle	2099	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Pancreas	1459	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Prostate	2701	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Salivary_Gland	2547	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Skin	1826	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Small_Intestine	1800	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Spleen	2396	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Thymus	2633	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Tongue	952	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Trachea	2068	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Uterus	1691	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
-Vasculature	1142	58870	11 Metadata variables in selected dataset, including organ_tissue, method, donor and others
+Bladder	2671	58870	14  subtypes in cell_ontology_class  <br>  endothelial: 361 cells <br> epithelial: 210 cells <br> immune: 1260 cells <br> stromal: 840 cells
+Blood	2551	58870	20  subtypes in cell_ontology_class  <br>  immune: 2551 cells
+Bone_Marrow	2052	58870	16  subtypes in cell_ontology_class  <br>  immune: 2052 cells
+Eye	2178	58870	27  subtypes in cell_ontology_class  <br>  endothelial: 204 cells <br> epithelial: 665 cells <br> immune: 653 cells <br> stromal: 656 cells
+Fat	1489	58870	11  subtypes in cell_ontology_class  <br>  endothelial: 160 cells <br> immune: 1009 cells <br> stromal: 320 cells
+Heart	1184	58870	6  subtypes in cell_ontology_class  <br>  endothelial: 222 cells <br> epithelial: 222 cells <br> immune: 74 cells <br> stromal: 666 cells
+Kidney	881	58870	7  subtypes in cell_ontology_class  <br>  endothelial: 95 cells <br> epithelial: 131 cells <br> immune: 655 cells
+Large_Intestine	1916	58870	20  subtypes in cell_ontology_class  <br>  endothelial: 53 cells <br> epithelial: 1114 cells <br> immune: 635 cells <br> stromal: 114 cells
+Liver	1133	58870	13  subtypes in cell_ontology_class  <br>  endothelial: 216 cells <br> epithelial: 150 cells <br> immune: 691 cells <br> stromal: 76 cells
+Lung	2787	58870	33  subtypes in cell_ontology_class  <br>  endothelial: 544 cells <br> epithelial: 540 cells <br> immune: 1247 cells <br> stromal: 456 cells
+Lymph_Node	2454	58870	27  subtypes in cell_ontology_class  <br>  endothelial: 101 cells <br> immune: 2252 cells <br> stromal: 101 cells
+Mammary	1100	58870	12  subtypes in cell_ontology_class  <br>  endothelial: 244 cells <br> epithelial: 212 cells <br> immune: 361 cells <br> stromal: 283 cells
+Muscle	2099	58870	17  subtypes in cell_ontology_class  <br>  endothelial: 532 cells <br> immune: 711 cells <br> stromal: 856 cells
+Pancreas	1459	58870	14  subtypes in cell_ontology_class  <br>  endothelial: 144 cells <br> epithelial: 529 cells <br> immune: 595 cells <br> stromal: 191 cells
+Prostate	2701	58870	18  subtypes in cell_ontology_class  <br>  endothelial: 170 cells <br> epithelial: 1020 cells <br> germ line: 0 cells <br> immune: 1139 cells <br> stromal: 372 cells
+Salivary_Gland	2547	58870	23  subtypes in cell_ontology_class  <br>  endothelial: 230 cells <br> epithelial: 592 cells <br> immune: 1380 cells <br> stromal: 345 cells
+Skin	1826	58870	20  subtypes in cell_ontology_class  <br>  endothelial: 106 cells <br> epithelial: 106 cells <br> immune: 1338 cells <br> stromal: 276 cells
+Small_Intestine	1800	58870	21  subtypes in cell_ontology_class  <br>  endothelial: 46 cells <br> epithelial: 1050 cells <br> immune: 602 cells <br> stromal: 102 cells
+Spleen	2396	58870	24  subtypes in cell_ontology_class  <br>  endothelial: 117 cells <br> immune: 2279 cells
+Thymus	2633	58870	29  subtypes in cell_ontology_class  <br>  endothelial: 400 cells <br> epithelial: 100 cells <br> immune: 1847 cells <br> stromal: 286 cells
+Tongue	952	58870	11  subtypes in cell_ontology_class  <br>  endothelial: 286 cells <br> epithelial: 303 cells <br> immune: 101 cells <br> stromal: 262 cells
+Trachea	2068	58870	19  subtypes in cell_ontology_class  <br>  endothelial: 131 cells <br> epithelial: 659 cells <br> immune: 920 cells <br> stromal: 358 cells
+Uterus	1691	58870	12  subtypes in cell_ontology_class  <br>  endothelial: 280 cells <br> epithelial: 293 cells <br> immune: 441 cells <br> stromal: 677 cells
+Vasculature	1142	58870	14  subtypes in cell_ontology_class  <br>  endothelial: 254 cells <br> epithelial: 26 cells <br> immune: 547 cells <br> stromal: 315 cells

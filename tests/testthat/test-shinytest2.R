@@ -10,12 +10,12 @@ test_that("{shinytest2} recording: cytosel", {
   } else {
     cytosel_app <- cytosel::cytosel()
   }
+  announce_snapshot_file("cytosel-001.png")
   app <- AppDriver$new(cytosel_app,
                        variant = platform_variant(), name = "cytosel", height = 732,
       width = 1161, load_timeout = 1e+05
       # shinyOptions = list(test.mode = TRUE)
       )
-    announce_snapshot_file("cytosel-001.png")
     # IMPORTANT: only run the tests non-interactively using Github actions
     # currently devtools test and devtools check give different screenshot results
     skip_if(interactive())

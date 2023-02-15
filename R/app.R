@@ -478,7 +478,7 @@ cytosel <- function(...) {
                  actionButton("enter_gene", "Enter"),
                  br(),
                  br(),
-                 DTOutput("alternative_markers")
+                 fluidRow(column(12, DTOutput("alternative_markers")))
                  # hidden(div(id = "send", actionButton("send_markers", "Send markers to selection panel"))),
                  # br()
           ),
@@ -714,7 +714,7 @@ cytosel <- function(...) {
       "</b>", "<br/>", "<b>", "Cells: ", "</b>", subset(curated_datasets, tissue == tissue_lab)$num_cells[1], 
     "<br/>", "<b>", "Genes: ", "</b>", "58870", "<br/>", 
       "<b>", "Cell category of interest: ", "</b>", "cell_ontology_glass",
-    "<br/>", "<b>", "Metadata preview: ", "</b>", "<br/>", subset(curated_datasets, tissue == tissue_lab)$preview[1],
+    "<br/>", "<b>", "Cell Type Distribution: ", "</b>", "<br/>", subset(curated_datasets, tissue == tissue_lab)$preview[1],
       sep = "")
       
       
