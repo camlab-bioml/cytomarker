@@ -59,8 +59,10 @@ test_that("Server has basic functionality", {
     session$setInputs(user_selected_cells = c("CD8 T", "Memory CD4 T",
                                               "Naive CD4 T",
                                               "Platelet"),
-                      add_selected_to_analysis = T,
-                      min_category_count = 2,
+                      add_selected_to_analysis = T)
+    
+    
+    session$setInputs(min_category_count = 2,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       tabs = NULL,
@@ -124,8 +126,7 @@ test_that("Server has basic functionality", {
     
     # expect that the marker columns are set properly and the lengths are verified
     session$setInputs(bl_top = current_markers()$top_markers[1:10],
-                      bl_scratch = current_markers()$top_markers[11:15],
-                      start_analysis = T)
+                      bl_scratch = current_markers()$top_markers[11:15])
     
     expect_equal(num_markers_in_selected(), 10)
     expect_equal(num_markers_in_scratch(), 5)
@@ -649,14 +650,14 @@ test_that("datasets with few genes produce errors on marker finding", {
     
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_few_genes.rds")),
-                      assay = "counts", coldata_column = "seurat_annotations")
+                      assay = "logcounts", coldata_column = "seurat_annotations")
     
     session$setInputs(show_cat_table = T)
     
     session$setInputs(subsample_sce = T,
-                      panel_size = 100,
+                      panel_size = 32,
                       display_options = "Marker-marker correlation",
-                      select_aa = c("sELISA"),
+                      # select_aa = c("sELISA"),
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
     

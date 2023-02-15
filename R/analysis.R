@@ -22,6 +22,7 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
     fm <- scran::findMarkers(sce, colData(sce)[[col]], 
                       test.type = test_type, 
                       # BPPARAM = MulticoreParam(),
+                      pval.type = "all",
                       assay.type = pref_assay)
     
     for(n in names(fm)) {
@@ -88,7 +89,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
         
         ## Only keep markers that are over-expressed
         f[is.na(f)] <- 0
-        f <- f[f$summary.logFC > 0 & f$p.value <= 0.05,]
+        f <- f[f$summary.logFC > 0,]
         
         if(nrow(f) > 0){
           selected_markers <- rownames(f)[seq_len(top_select)]
@@ -170,7 +171,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
       genes_to_ignore <- c()
       count <- 0
       
-      if (!is.null(recommended) & !is_empty(recommended)) {
+      if (!is.null(recommended) & !is_empty(recommended) & length(allowed_genes) > 1000) {
         multimarkers <- create_multimarker_frame(initial_recommendations, recommended)
         
         genes_to_ignore <- c(genes_to_ignore, unique(multimarkers$marker))
