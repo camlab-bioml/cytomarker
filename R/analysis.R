@@ -177,31 +177,35 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
         genes_to_ignore <- c(genes_to_ignore, unique(multimarkers$marker))
         original_multimarkers <- c(original_multimarkers, unique(multimarkers$marker))
         
-        while (nrow(multimarkers) > 0) {
-          
-          count <- count + 1
-          genes_to_ignore <- c(genes_to_ignore, unique(multimarkers$marker))
-          recommended <- recommended[!recommended %in% unique(multimarkers$marker) &
-                                       !recommended %in% genes_to_ignore]
-          multimarkers <- multimarkers |> group_by(cell_type) |> slice_head(n=1) |> 
-            ungroup() |> group_by(marker) |> slice_head(n=1)
-          
-          for (i in unique(multimarkers$cell_type)) {
-            f <- fm[[i]]
-            dont_use <- subset(highly_expressed, cell_type != i)
-            f <- f[!rownames(f) %in% recommended & 
-                     !rownames(f) %in% multimarkers$marker &
-                     !rownames(f) %in% genes_to_ignore &
-                     !rownames(f) %in% dont_use$marker,] |> as.data.frame()
-            
-            ## Only keep markers that are over-expressed
-            f[is.na(f)] <- 0
-            f <- f[f$summary.logFC > 0 & f$p.value <= 0.05,]
-            new_markers_add <- rownames(f)[seq_len(subset(multimarkers, cell_type == i)$num_markers)]
-            recommended <- c(recommended, new_markers_add)
-          }
-          multimarkers <- create_multimarker_frame(initial_recommendations, recommended)
-        }
+        # print(multimarkers)
+        
+        # while (nrow(multimarkers) > 0) {
+        #   
+        #   print("recursive")
+        #   
+        #   count <- count + 1
+        #   genes_to_ignore <- c(genes_to_ignore, unique(multimarkers$marker))
+        #   recommended <- recommended[!recommended %in% unique(multimarkers$marker) &
+        #                                !recommended %in% genes_to_ignore]
+        #   multimarkers <- multimarkers |> group_by(cell_type) |> slice_head(n=1) |> 
+        #     ungroup() |> group_by(marker) |> slice_head(n=1)
+        #   
+        #   for (i in unique(multimarkers$cell_type)) {
+        #     f <- fm[[i]]
+        #     dont_use <- subset(highly_expressed, cell_type != i)
+        #     f <- f[!rownames(f) %in% recommended & 
+        #              !rownames(f) %in% multimarkers$marker &
+        #              !rownames(f) %in% genes_to_ignore &
+        #              !rownames(f) %in% dont_use$marker,] |> as.data.frame()
+        #     
+        #     ## Only keep markers that are over-expressed
+        #     f[is.na(f)] <- 0
+        #     f <- f[f$summary.logFC > 0,]
+        #     new_markers_add <- rownames(f)[seq_len(subset(multimarkers, cell_type == i)$num_markers)]
+        #     recommended <- c(recommended, new_markers_add)
+        #   }
+        #   multimarkers <- create_multimarker_frame(initial_recommendations, recommended)
+        # }
       }
       
       scratch <- unique(scratch)
@@ -216,7 +220,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
 }
 
 
-#' Collect possible mulitmarkers from the output of marker finding
+#' Collect possible multimarkers from the output of marker finding
 #' @importFrom dplyr mutate tally group_by filter pull slice_head arrange summarize ungroup
 #' @param frame A dataframe containing the markers selected in `findMarkers`
 #' @param recommended_markers A vector of the currently recommended markers for a panel

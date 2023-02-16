@@ -2,7 +2,7 @@
 % Please edit documentation in R/analysis.R
 \name{create_multimarker_frame}
 \alias{create_multimarker_frame}
-\title{Collect possible mulitmarkers from the output of marker finding}
+\title{Collect possible multimarkers from the output of marker finding}
 \usage{
 create_multimarker_frame(frame, recommended_markers)
 }
@@ -12,5 +12,5 @@ create_multimarker_frame(frame, recommended_markers)
 \item{recommended_markers}{A vector of the currently recommended markers for a panel}
 }
 \description{
-Collect possible mulitmarkers from the output of marker finding
+Collect possible multimarkers from the output of marker finding
 }

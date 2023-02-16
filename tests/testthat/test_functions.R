@@ -29,6 +29,28 @@ test_that("Processing the antibody applications produces the intended data struc
   
 })
 
+context("parsing for the allowed genes in an Abcam subset works as intended")
+
+test_that("Processing the antibody applications produces the intended data structures", {
+  
+  obj <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(obj)
+  
+  allowed_all <- as.character(get_allowed_genes(NULL, cytosel_data$applications,
+                    sce))
+  
+  expect_gte(length(allowed_all), 3900)
+  
+  only_protein <- get_allowed_genes("Protein Array", cytosel_data$applications,
+                                                   sce)
+
+  expect_true(length(allowed_all) > length(only_protein))
+  
+})
+
+
+
+
 
 context("Data reading")
 

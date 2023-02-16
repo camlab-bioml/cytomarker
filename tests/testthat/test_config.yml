@@ -35,7 +35,10 @@ Scratch marker panel:
 - S100A9
 - IL32
 Marker strategy: fm
-Antibody applications: ~
+Antibody applications:
+- IHC-P
+- Flow Cyt (Intra)
+- IP
 Cell Types Analyzed:
 - B
 - CD14+ Mono

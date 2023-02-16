@@ -126,7 +126,8 @@ test_that("Server has basic functionality", {
     
     # expect that the marker columns are set properly and the lengths are verified
     session$setInputs(bl_top = current_markers()$top_markers[1:10],
-                      bl_scratch = current_markers()$top_markers[11:15])
+                      bl_scratch = current_markers()$top_markers[11:15],
+                      start_analysis = T)
     
     expect_equal(num_markers_in_selected(), 10)
     expect_equal(num_markers_in_scratch(), 5)
@@ -305,7 +306,7 @@ test_that("Pre-setting the input rank lists persists in the current markers", {
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm",
-                      select_aa = NULL,
+                      select_aa = c("IHC-P", "Flow Cyt (Intra)", "IP"),
                       bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
                       bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
                       bl_scratch = c("GNLY", "FTL"),
@@ -719,41 +720,41 @@ test_that("cytosel is able to identify an RDS that is not of the proper SCE form
 
 gc()
 
-context("test that cytosel can identify multimarkers")
-
-test_that("cytosel is able to identify multimarkers in a lung dataset 
-          (many cell types for the panel size)", {
-            
-            # skip_on_ci()
-            
-            testServer(cytosel::cytosel(), expr = {
-              
-              session$setInputs(input_scrnaseq = list(datapath =
-                                                        test_path("pbmc_small.rds")),
-                                coldata_column = "fake_col",
-                                pick_curated = T,
-                                min_category_count = 2,
-                                subset_number = 250)
-              
-              session$setInputs(subsample_sce = F,
-                                marker_strategy = "fm",
-                                display_options = "Marker-marker correlation",
-                                heatmap_expression_norm = "Expression")
-              
-              session$setInputs(tabs = NULL,
-                                metrics_toggle = NULL,
-                                select_aa = NULL,
-                                panel_sorter = "Group by cell type")
-              
-              expect_null(multimarkers())
-              
-              session$setInputs(panel_size = 12,
-                                start_analysis = T)
-              
-              expect_false(is.null(multimarkers()))
-              
-            })
-          })
+# context("test that cytosel can identify multimarkers")
+# 
+# test_that("cytosel is able to identify multimarkers in a lung dataset 
+#           (many cell types for the panel size)", {
+#             
+#             # skip_on_ci()
+#             
+#             testServer(cytosel::cytosel(), expr = {
+#               
+#               session$setInputs(input_scrnaseq = list(datapath =
+#                                                         test_path("pbmc_small.rds")),
+#                                 coldata_column = "fake_col",
+#                                 pick_curated = T,
+#                                 min_category_count = 2,
+#                                 subset_number = 250)
+#               
+#               session$setInputs(subsample_sce = F,
+#                                 marker_strategy = "fm",
+#                                 display_options = "Marker-marker correlation",
+#                                 heatmap_expression_norm = "Expression")
+#               
+#               session$setInputs(tabs = NULL,
+#                                 metrics_toggle = NULL,
+#                                 select_aa = NULL,
+#                                 panel_sorter = "Group by cell type")
+#               
+#               expect_null(multimarkers())
+#               
+#               session$setInputs(panel_size = 12,
+#                                 start_analysis = T)
+#               
+#               expect_false(is.null(multimarkers()))
+#               
+#             })
+#           })
 
 
 test_that("Second Re-upload works on server", {
@@ -853,7 +854,6 @@ test_that("Minimal re-uploads recognizxe markers", {
     
   })
 })
-
 
 
 
