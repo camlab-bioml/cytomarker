@@ -1,4 +1,6 @@
 
+library(org.Hs.eg.db)
+
 antibody_info <- read_csv(file.path("inst", "Abcam_published_monos_with_gene_v2.csv"))
 grch38 <- read_tsv(file.path("inst", "annotables_grch38.tsv"))
 
@@ -17,8 +19,11 @@ antibody_info <- merge(antibody_info, grch38,
 applications_parsed <- get_antibody_applications(antibody_info, 
                                                  'Symbol', 'Listed Applications')
 
+gene_mapping <- as.data.frame(unlist(org.Hs.egALIAS2EG))
+
 cytosel_data <- list(antibody_info = antibody_info, grch38 = grch38,
-                     time_zones = all_zones, applications = applications_parsed)
+                     time_zones = all_zones, applications = applications_parsed,
+                     gene_mapping = gene_mapping)
 
 usethis::use_data(cytosel_data, internal = T, overwrite = T,
                   compress = "xz")

@@ -1,4 +1,5 @@
 
+
 context("Test basic Shiny app server functionality")
 
 test_that("Server has basic functionality", {
@@ -853,6 +854,97 @@ test_that("Minimal re-uploads recognizxe markers", {
     expect_equal(length(markers_reupload()$scratch_markers), 6)
     
   })
+})
+
+context("Test that a reupload doesn't occur before the dataset is uploaded")
+
+test_that("Re-uploading won't occur before the dataset is processed", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                                                  test_path("test_own_panel.txt")))
+    
+    expect_false(reupload_analysis())
+    
+  })
+})
+
+context("reading a simple list of genes will populate the marker list and search for alias")
+
+test_that("Users may upload a simple list of genes (one per line)", {
+  
+  markers_attempt <- readLines(test_path("test_own_panel.txt"))
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_own_panel.txt")))
+    
+    expect_true(reupload_analysis())
+    expect_equal(length(markers_reupload()$top_markers), 27)
+    expect_false(all(markers_attempt %in% markers_reupload()$top_markers))
+    expect_equal(length(markers_attempt), length(markers_reupload()$top_markers))
+    
+  })
+})
+
+
+context("Check that adding or replacing markers with aliases works as intended")
+
+test_that("adding and replacing markers can identify gene aliases", {
+  
+  marks_to_add <- readLines(test_path("test_own_panel.txt"))
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      assay = "logcounts", coldata_column = "seurat_annotations")
+    
+    session$setInputs(subsample_sce = F,
+                      panel_size = 5,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm",
+                      tabs = NULL,
+                      metrics_toggle = NULL,
+                      select_aa = NULL,
+                      panel_sorter = "Group by cell type",
+                      start_analysis = T)
+    
+    expect_equal(length(current_markers()$top_markers), 5)
+    
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("test_own_panel.txt")),
+                      add_to_selected = T)
+    
+    expect_true(length(current_markers()$top_markers) > 5)
+    
+    second_marks <- current_markers()$top_markers
+    
+    expect_false("hCD40L" %in% current_markers()$top_markers)
+    expect_true("CD40LG" %in% current_markers()$top_markers)
+    
+    
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("test_own_panel.txt")),
+                      replace_selected = T)
+    
+    expect_true(length(second_marks) > length(current_markers()$top_markers))
+    
+    expect_false("hCD40L" %in% current_markers()$top_markers)
+    expect_true("CD40LG" %in% current_markers()$top_markers)
+    
+    
+  })
+  
 })
 
 

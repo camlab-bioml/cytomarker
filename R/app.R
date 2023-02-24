@@ -314,11 +314,11 @@ cytosel <- function(...) {
                    # ))
                    ),
                    bsCollapsePanel(title = HTML(paste0(
-                     "Upload previous analysis", tags$span(icon("sort-down",
+                     "Previous/custom analysis", tags$span(icon("sort-down",
                                                 style = "position:right; margin-left: 4px; margin-top: -4px;")))), style = "info",
                      fileInput("read_back_analysis",
-                               label = "Select a yml file from a previous run",
-                               accept = c(".yml")) %>%
+                               label = "Select a yml file from a previous run or upload a custom .txt file of markers",
+                               accept = c(".yml", ".txt")) %>%
                        shinyInput_label_embed(
                          icon("circle-info") %>%
                            bs_embed_tooltip(title = get_tooltip('reupload'),
@@ -1104,12 +1104,9 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(sce())
       
-      new_waitress <- Waitress$new(theme = "overlay-percent", infinite = TRUE)
-      new_waitress$start()
-      
-      showNotification("Starting analysis",
-                  type = 'message',
-                  duration = 3)
+      # showNotification("Starting analysis",
+      #             type = 'message',
+      #             duration = 3)
       
       library(caret)
       library(Seurat)
@@ -1185,9 +1182,9 @@ cytosel <- function(...) {
         
         sce(remove_null_and_va_from_cell_cat(sce(), input$coldata_column))
         
-        showNotification("Ignoring any cells with input category set to NA or null",
-                         type = 'message',
-                         duration = 4)
+        # showNotification("Ignoring any cells with input category set to NA or null",
+        #                  type = 'message',
+        #                  duration = 4)
         
         sce(create_sce_column_for_analysis(sce(), cell_types_to_keep(), 
                                            input$coldata_column))
@@ -1199,20 +1196,6 @@ cytosel <- function(...) {
           any_cells_present(TRUE)
         }
         
-        different_cells <- setdiff(specific_cell_types_selected(),
-                                   cell_types_high_enough())
-        
-        if (length(different_cells) > 0 & isTruthy(any_cells_present())) {
-          output$ignored_cell_types <- renderDataTable(data.frame(
-            `Cell Type Ignored` = different_cells))
-          cell_types_excluded(different_cells[!is.null(different_cells)])
-          cell_type_ignored_modal(cell_min_threshold(),
-                                  cell_types_excluded())
-        }
-      
-      
-      withProgress(message = 'Configuring analysis', value = 0, {
-        incProgress(detail = "Acquiring data")
         req(proceed_with_analysis())
         req(any_cells_present())
         
@@ -1225,7 +1208,7 @@ cytosel <- function(...) {
           
           
           if (input$subsample_sce) {
-            incProgress(detail = "Subsampling data")
+            # incProgress(detail = "Subsampling data")
             
             avail_cols <- which(sce()$keep_for_analysis == "Yes")
             to_subsample <- sample(avail_cols, min(length(avail_cols), min(ncol(sce()), input$subset_number)),
@@ -1244,6 +1227,21 @@ cytosel <- function(...) {
             }
             
           } 
+          
+          new_waitress <- Waitress$new(theme = "overlay-percent", infinite = TRUE)
+          new_waitress$start()
+          
+          different_cells <- setdiff(specific_cell_types_selected(),
+                                     cell_types_high_enough())
+          
+          if (length(different_cells) > 0 & isTruthy(any_cells_present())) {
+            output$ignored_cell_types <- renderDataTable(data.frame(
+              `Cell Type Ignored` = different_cells))
+            cell_types_excluded(different_cells[!is.null(different_cells)])
+            cell_type_ignored_modal(cell_min_threshold(),
+                                    cell_types_excluded())
+          }
+          
           
           setProgress(value = 1)
           
@@ -1293,20 +1291,22 @@ cytosel <- function(...) {
               ## We get here if input$bl_top exists, ie if this
               ## is an analysis refresh
               ## in this case we set the markers to their existing values
-              markers <- list(recommended_markers = input$bl_recommended,
-                              scratch_markers = input$bl_scratch,
-                              top_markers = input$bl_top)
+              markers <- list(recommended_markers = input$bl_recommended[input$bl_recommended %in% allowed_genes()],
+                              scratch_markers = input$bl_scratch[input$bl_scratch %in% allowed_genes()],
+                              top_markers = input$bl_top[input$bl_top %in% allowed_genes()])
 
             } else {
               ## We compute the set of markers for the first time
               
               if (isTruthy(markers_reupload())) {
+                
                 markers <- list(recommended_markers = 
                                 markers_reupload()$top_markers[markers_reupload()$top_markers %in% allowed_genes()],
                                 top_markers = markers_reupload()$top_markers[markers_reupload()$top_markers 
                                                                              %in% allowed_genes()],
                                 scratch_markers = markers_reupload()$scratch_markers[markers_reupload()$scratch_markers 
                                                                                      %in% allowed_genes()])
+
                 
               } else {
                 markers_list <- get_markers(fms(), 
@@ -1337,8 +1337,10 @@ cytosel <- function(...) {
             
             setProgress(value = 1)
             
-            if(length(markers$recommended_markers) < input$panel_size) {
-              showNotification("Cytosel found genes that are good markers for multiple cell types. This will result in a smaller panel size than requested.
+            if(length(markers$recommended_markers) < input$panel_size &
+               (!isTruthy(reupload_analysis()))) {
+              showNotification("Cytosel found genes that are good markers for multiple cell types.
+              This will result in a smaller panel size than requested.
                                  You may manually add additional markers.",
                                type = 'message',
                                duration = NULL)
@@ -1364,7 +1366,6 @@ cytosel <- function(...) {
             } else {
               clean_table <- antibody_info
             }
-    
             
             df_antibody(dplyr::filter(clean_table, Symbol %in% 
                                         current_markers()$top_markers) |>
@@ -1440,8 +1441,6 @@ cytosel <- function(...) {
           }
           
           })
-          
-      })
       
       # reset downloaded status when analysis is rerun
       downloaded_content(FALSE)
@@ -1565,8 +1564,6 @@ cytosel <- function(...) {
                   num_markers_in_scratch(),
                   names(fms()[[1]]))
         
-        removeModal()
-        
       } else if(!(input$add_markers %in% rownames(sce()))) {
         dne_modal(dne = input$add_markers)
       }
@@ -1580,12 +1577,6 @@ cytosel <- function(...) {
       
       if(!is.null(input$genes_for_violin) && 
          all(input$genes_for_violin %in% allowed_genes())) {
-         
-         # &&
-         # !all(input$genes_for_violin %in% current_markers()$top_markers) && 
-         # !all(input$genes_for_violin %in% current_markers()$scratch_markers) &&
-         # !all(input$genes_for_violin %in% input$bl_scratch) &&
-         # !all(input$genes_for_violin %in% input$bl_top)) {
         
         to_add <- input$genes_for_violin[!input$genes_for_violin %in% current_markers()$top_markers &
                                         !input$genes_for_violin %in% current_markers()$scratch_markers]
@@ -1614,47 +1605,61 @@ cytosel <- function(...) {
     
     observeEvent(input$add_to_selected, { # Add uploaded markers
       req(input$uploadMarkers)
+      req(allowed_genes())
       
       uploaded_markers <- readLines(input$uploadMarkers$datapath)
-      not_sce <- c()
+      alias <- get_gene_aliases(uploaded_markers, cytosel_data$gene_mapping,
+                                allowed_genes())
       
-      for(i in seq_len(length(uploaded_markers))) {
-        if(!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && (uploaded_markers[i] %in% rownames(sce()))) {
-          cm <- current_markers()
-          
-          ## Update markers
-          markers <- list(recommended_markers = cm$recommended_markers,
-                          scratch_markers = input$bl_scratch,
-                          top_markers = unique(c(uploaded_markers[i], setdiff(cm$top_markers, input$bl_scratch))))
-          
-          # SMH
-          current_markers(
-            set_current_markers_safely(markers, fms())
-          )
-        } else if(!is.null(uploaded_markers[i]) && stringr::str_length(uploaded_markers[i]) > 1 && !(uploaded_markers[i] %in% rownames(sce()))) {
-          not_sce <- c(not_sce, uploaded_markers[i])
-        } 
+      to_add <- alias$merged
+      to_add <- to_add[!to_add %in% current_markers()$top_markers &
+                         !to_add %in% current_markers()$scratch_markers]
+      
+      not_sce <- setdiff(uploaded_markers, to_add)
+      
+      if (isTruthy(uploaded_markers)) {
+        markers <- list(recommended_markers = current_markers()$recommended_markers,
+                        scratch_markers = input$bl_scratch,
+                        top_markers = unique(c(current_markers()$top_markers, to_add)))
+        
+        current_markers(
+          set_current_markers_safely(markers, fms())
+        )
+        
+        num_markers_in_selected(length(current_markers()$top_markers))
+        num_markers_in_scratch(length(current_markers()$scratch_markers))
+        
+        update_BL(current_markers(), num_markers_in_selected(),
+                  num_markers_in_scratch(),
+                  names(fms()[[1]]))
+        
+        if(length(not_sce) > 0) {
+          # warning_modal(not_sce)
+          showNotification(paste("The following genes were not found in the dataset and were not added:",
+                                 paste(not_sce, collapse = ",")), duration = 3)
+        }
+        
       }
       
-      if(length(not_sce) > 0) {
-        warning_modal(not_sce)
+      if (length(alias$merged) > length(uploaded_markers) | !all(alias$merged %in% uploaded_markers) |
+          !all(uploaded_markers %in% alias$merged)) {
+        showModal(additional_aliases_model(alias$removed, alias$replaced))
       }
-      
-      num_markers_in_selected(length(current_markers()$top_markers))
-      num_markers_in_scratch(length(current_markers()$scratch_markers))
-      
-      
-      update_BL(current_markers(), num_markers_in_selected(),
-                num_markers_in_scratch(),
-                names(fms()[[1]]))
     })
     
     observeEvent(input$replace_selected, { # Replace selected markers by uploaded markers
       req(input$uploadMarkers)
+      req(allowed_genes())
+      req(current_markers())
       
       uploaded_markers <- readLines(input$uploadMarkers$datapath)
-      marker <- uploaded_markers[uploaded_markers %in% allowed_genes() & length(uploaded_markers) > 1]
+      marker <- uploaded_markers[!uploaded_markers %in% current_markers()$scratch_markers]
       not_sce <- setdiff(uploaded_markers, marker)
+      
+      alias <- get_gene_aliases(marker, cytosel_data$gene_mapping,
+                                allowed_genes())
+      
+      marker <- alias$merged
       
       if (isTruthy(marker)) {
         markers <- list(recommended_markers = current_markers()$recommended_markers,
@@ -1666,7 +1671,9 @@ cytosel <- function(...) {
         )
         
         if(length(not_sce) > 0) {
-          warning_modal(not_sce)
+          # warning_modal(not_sce)
+          showNotification(paste("The following genes were not found in the dataset and were not added:",
+                                 paste(not_sce, collapse = ",")), duration = 3)
         }
         
         num_markers_in_selected(length(current_markers()$top_markers))
@@ -1676,6 +1683,12 @@ cytosel <- function(...) {
                   num_markers_in_scratch(),
                   names(fms()[[1]]))
       }
+      
+      if (length(alias$merged) > length(marker) | !all(alias$merged %in% marker) |
+          !all(marker %in% alias$merged)) {
+        showModal(additional_aliases_model(alias$removed, alias$replaced))
+      }
+      
     })
     
     ### HEATMAP DISPLAY ###
@@ -1862,6 +1875,31 @@ cytosel <- function(...) {
     
     observeEvent(input$read_back_analysis, {
       
+      if(!isTruthy(sce())) {
+        showNotification("Please upload or select a curated dataset prior to uploading a prior configuration.",
+                         duration = 3)
+      }
+      
+      req(sce())
+      req(allowed_genes())
+      
+      if (file_ext(input$read_back_analysis$datapath) == "txt") {
+        uploaded_markers <- readLines(input$read_back_analysis$datapath)
+        alias <- get_gene_aliases(uploaded_markers, cytosel_data$gene_mapping,
+                                         allowed_genes())
+        
+        if (length(alias$merged) > length(uploaded_markers) | !all(alias$merged %in% uploaded_markers) |
+            !all(uploaded_markers %in% alias$merged)) {
+          showModal(additional_aliases_model(alias$removed, alias$replaced))
+        }
+        
+        markers_reupload(list(top_markers = alias$merged,
+                              scratch_markers = NULL))
+      }
+      
+      
+      if (file_ext(input$read_back_analysis$datapath) == "yml") {
+      
       yaml_back <- read_back_in_saved_yaml(input$read_back_analysis$datapath)
       
       if (isTruthy(yaml_back$`Target panel size`)) {
@@ -1870,6 +1908,7 @@ cytosel <- function(...) {
       
       markers_reupload(list(top_markers = yaml_back$`Selected marker panel`,
       scratch_markers = yaml_back$`Scratch marker panel`))
+      
       if (is_empty(input$bl_top)) {
         showNotification("Updating the current panel to the markers from the reuploaded yml.",
                          type = "message", duration = 4)
@@ -1893,11 +1932,17 @@ cytosel <- function(...) {
         }
         if (isTruthy(yaml_back$`Heterogeneity source`)) {
           if (yaml_back$`Heterogeneity source` %in% colnames(colData(sce()))) {
+          
+            
             updateSelectInput(session, "coldata_column", choices = colnames(colData(sce())),
                               selected = yaml_back$`Heterogeneity source`)
             updateSelectInput(session, "user_selected_cells", 
                               yaml_back$`Cell Types Analyzed`)
-            specific_cell_types_selected(yaml_back$`Cell Types Analyzed`)
+            
+            types_to_add <- if(all(yaml_back$`Cell Types Analyzed` %in% unique(sce()[[yaml_back$`Heterogeneity source`]]))) 
+              yaml_back$`Cell Types Analyzed` else unique(sce()[[yaml_back$`Heterogeneity source`]])
+            
+            specific_cell_types_selected(types_to_add)
             # cell_types_to_keep(yaml_back$`User selected cells`)
             reupload_cell_types(TRUE)
             
@@ -1905,7 +1950,8 @@ cytosel <- function(...) {
             if (isTruthy(yaml_back$`Heterogeneity source`)) {
               reupload_warning_modal("Cell type not found", yaml_back$`Heterogeneity source`)
               specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
-            }
+           
+               }
           }
         } else {
           specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
@@ -1952,10 +1998,35 @@ cytosel <- function(...) {
       updateSelectInput(session, "select_aa", selected = yaml_back$`Antibody applications`)
     }
     
+      }
+  
     reupload_analysis(TRUE)
     
     })
     
+    # observeEvent(input$accept_aliases, {
+    #   req(custom_marker_upload())
+    #   
+    #   showNotification("Updating the current panel with uploaded markers and associated aliases.",
+    #                    type = "message", duration = 3)
+    #   
+    #   markers_reupload(list(top_markers = custom_marker_upload()$merged,
+    #                                          scratch_markers = NULL))
+    #   removeModal()
+    #   
+    # })
+    # 
+    # observeEvent(input$decline_aliases, {
+    #   req(custom_marker_upload())
+    #   
+    #   showNotification("Updating the current panel with uploaded markers",
+    #                    type = "message", duration = 3)
+    #   
+    #   markers_reupload(list(top_markers = custom_marker_upload()$original,
+    #                         scratch_markers = NULL))
+    #   removeModal()
+    #   
+    # })
     
     observeEvent(input$create_reset, {
       req(sce())
@@ -2557,7 +2628,10 @@ cytosel <- function(...) {
         if (isTruthy(curated_selection()) & !isTruthy(use_precomputed_umap())) {
           updateCheckboxInput(session, inputId = "precomputed_dim",
                               value = T)
-      }
+        }
+        
+        set_allowed_genes()
+        
     }
     
     set_allowed_genes <- function() {

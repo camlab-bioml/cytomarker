@@ -406,4 +406,23 @@ panel_too_small_modal <- function(size) {
              html = TRUE)
 }
 
+#' Show a pop-up modal if the uploaded panel has additional gene aliases
+#' @importFrom shiny modalDialog
+#' @param original_gene_list The original gene list uploaded
+#' @param merged_list The list with the original genes as well as the alternative aliases
+additional_aliases_model <- function(original_gene_list, alias_list) {
+  # shinyalert(title = "Warning",
+  #            (HTML(paste("The following markers have additional or different aliases in the dataset", "<br/>",
+  #                        "Original upload: ", paste(original_gene_list, collapse = ","), "<br/>",
+  #                        "New aliases: ", paste(alias_list, collapse = ",")))),
+  #            type = "warning",
+  #            showConfirmButton = TRUE,
+  #            confirmButtonCol = "#337AB7",
+  #            html = TRUE)
+  modalDialog(title = "Warning: Gene aliases were found",
+              helpText(HTML(paste("The following markers have additional or different aliases in the dataset", "<br/>",
+                                  "Original upload: ", paste(original_gene_list, collapse = ","), "<br/>",
+                                  "New aliases: ", paste(alias_list, collapse = ",")))))
+}
+
 

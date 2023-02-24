@@ -60,14 +60,14 @@ metrics_explanation: "Balanced accuracy = Sum of recall for each category / numb
 
 
 alternative_markers: "Input a marker that you want to replace. The top markers most correlated to your input will be recommended as a replacement. 
-                          You can search for any marker that is present in your uploaded scRNAseq data, including ones not currently present in your selected panel.
+                          You can search for any marker that is present in your current panel.
                           These markers can be sent to the selected markers panel."
 
 cell_subsetting: "View the frequency and proportion distribution of the 
                   selected cell category, as well as options to remove certain cell types from analysis or set a minimum category cutoff."
 
 reupload: "A .yml config file from previous analysis run can be reuploaded to resume a previous analysis. NOTE: it is highly recommended to reupload the matching scRNA-seq data file along with the .yml file, but files generated 
-from different datasets are also compatible with each other."
+from different datasets are also compatible with each other. <br> Conversely, a .txt file with markers can also be uploaded. This file should have one gene symbol per line."
 
 reset_panel: "Be default, repeated runs of cytosel will retain the first marker panel suggested. The panel can be fully reset to commence a new set of analyses."
 
