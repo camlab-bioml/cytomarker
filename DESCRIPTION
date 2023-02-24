@@ -77,7 +77,8 @@ Suggests:
   Seurat,
   caret,
   scuttle,
-  scater
+  scater,
+  cicerone
 Remotes: 
     github::daqana/dqshiny,
     github::MarioniLab/geneBasisR,

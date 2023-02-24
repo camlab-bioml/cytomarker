@@ -36,6 +36,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @import SummarizedExperiment
 #' @import forcats
 #' @importFrom waiter useWaitress Waitress
+#' @importFrom cicerone use_cicerone Cicerone
 #' @import ggplot2
 #' @import sortable
 #' @import fontawesome
@@ -110,6 +111,7 @@ cytosel <- function(...) {
   ui <- tagList(
     # useWaiter(),
     useWaitress(),
+    use_cicerone(),
     # attendantBar("progress-bar"),
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
@@ -159,6 +161,9 @@ cytosel <- function(...) {
                                     style = "width:100%; color:white; height:70%; margin-right:12px; margin-top:6.5px;
                                     margin-bottom:-2px; color: white;")))),
                     tags$li(class = "dropdown", 
+                            actionLink("help_guide", "Show help guide",
+                                       width = "90%", style = "margin-top:-0.5px;
+                                        margin-right: 15px; margin-bottom:-2px; color: white;"),
                                         actionLink("time_zone", "Set Time Zone",
                                         width = "90%", style = "margin-top:-0.5px;
                                         margin-right: 15px; margin-bottom:-2px; color: white;"))),
@@ -239,7 +244,8 @@ cytosel <- function(...) {
                              bs_embed_tooltip(title = get_tooltip('input_scrnaseq'),
                                               placement = "right", html = "true")
               )),
-              fluidRow(column(4, box(title = "Upload scRNA-seq data", status = "primary",
+              fluidRow(column(4, box(id = "input_box",
+              title = "Upload scRNA-seq data", status = "primary",
                                      width = 12, style = "padding-bottom: -15px",
                                      div(style = "margin-top: -30px; margin-bottom: -25px"),
         fileInput("input_scrnaseq",
@@ -262,7 +268,7 @@ cytosel <- function(...) {
                                            placement = "right", html = "true")
                  )
         ),
-        fluidRow(column(4, box(title = "Browse dataset metadata",
+        fluidRow(column(4, box(id = "metadata_box", title = "Browse dataset metadata",
                                div(style = "margin-top: -30px"),
                                selectInput("coldata_column", "", NULL, multiple=FALSE),
                                width = 12, status = "primary"))),
@@ -520,6 +526,25 @@ cytosel <- function(...) {
   
   server <- function(input, output, session) {
     
+    guide <- Cicerone$
+      new(allow_close = F)$
+      step(
+        "input_box",
+        "Option A: Select your own data to analyze",
+        "Select a local data set to load into cytosel. Use the black hovertips to get more
+        information about what types of data are compatible."
+      )$
+      step(
+        "curated_dataset",
+        "Option B: Select a pre-annotated human dataset",
+        "Browse a selection of 24 human tissue types that are pre-annotated and ready to analysis."
+      )$
+      step(
+        "metadata_box",
+        "Step 2: Choose a relevant metadata variable to analyze",
+        "Browse the metadata of your data set to find a suitable biological category to analyze."
+      )
+    
     ### REACTIVE VARIABLES ###
     plots <- reactiveValues() # Save plots for download
     
@@ -652,6 +677,16 @@ cytosel <- function(...) {
       
       HTML(paste("session Id:", Sys.info()[["nodename"]],
             "<br/>", "server time zone:", time_zone))
+    })
+    
+    observeEvent(input$help_guide, {
+      
+      guide$init()
+      
+      updateTabsetPanel(session, "tabs", "inputs")
+      if (input$tabs == "inputs") {
+        guide$start()
+      }
     })
     
     observeEvent(input$time_zone, {
