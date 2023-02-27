@@ -63,7 +63,8 @@ Imports:
     fontawesome,
     emojifont,
     geneBasisR,
-    waiter
+    waiter,
+    cicerone
 Suggests:
   stringr,
   yardstick,
@@ -77,8 +78,7 @@ Suggests:
   Seurat,
   caret,
   scuttle,
-  scater,
-  cicerone
+  scater
 Remotes: 
     github::daqana/dqshiny,
     github::MarioniLab/geneBasisR,

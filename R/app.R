@@ -111,7 +111,6 @@ cytosel <- function(...) {
   ui <- tagList(
     # useWaiter(),
     useWaitress(),
-    use_cicerone(),
     # attendantBar("progress-bar"),
     includeCSS(system.file(file.path("www", "cytosel.css"),
                           package = "cytosel")),
@@ -148,6 +147,7 @@ cytosel <- function(...) {
     useShinyalert(force = TRUE),
     use_bs_tooltip(),
     useShinyjs(),
+    use_cicerone(),
     
     dashboardPage(title="cytosel",
     
@@ -155,15 +155,18 @@ cytosel <- function(...) {
     dashboardHeader(
                     title = imageOutput("cytosel_logo"),
                     # span(style = "padding-bottom: 50px;", ), 
+                    
                     tags$li(class = "dropdown",
                                                hidden(div(id = "session_info",
                                                           htmlOutput("current_session_info",
                                     style = "width:100%; color:white; height:70%; margin-right:12px; margin-top:6.5px;
                                     margin-bottom:-2px; color: white;")))),
+                    
                     tags$li(class = "dropdown", 
-                            actionLink("help_guide", "Show help guide",
+                            actionLink("help_guide", "Guided tour",
                                        width = "90%", style = "margin-top:-0.5px;
-                                        margin-right: 15px; margin-bottom:-2px; color: white;"),
+                                        margin-right: -10px; margin-bottom:-2px; color: white;")),
+                    tags$li(class = "dropdown", 
                                         actionLink("time_zone", "Set Time Zone",
                                         width = "90%", style = "margin-top:-0.5px;
                                         margin-right: 15px; margin-bottom:-2px; color: white;"))),
@@ -514,7 +517,7 @@ cytosel <- function(...) {
                                             column(6, h4("Run Metrics"),
                                                    DTOutput("metrics_run_prev_2"))))
               )),
-      tabItem("documentation",
+      tabItem(id = "documentation", "documentation",
               htmlOutput("cytosel_hyperlink")
               # h2("Documentation Preview:"),
               # htmlOutput("cytosel_preview"))
@@ -526,24 +529,6 @@ cytosel <- function(...) {
   
   server <- function(input, output, session) {
     
-    guide <- Cicerone$
-      new(allow_close = F)$
-      step(
-        "input_box",
-        "Option A: Select your own data to analyze",
-        "Select a local data set to load into cytosel. Use the black hovertips to get more
-        information about what types of data are compatible."
-      )$
-      step(
-        "curated_dataset",
-        "Option B: Select a pre-annotated human dataset",
-        "Browse a selection of 24 human tissue types that are pre-annotated and ready to analysis."
-      )$
-      step(
-        "metadata_box",
-        "Step 2: Choose a relevant metadata variable to analyze",
-        "Browse the metadata of your data set to find a suitable biological category to analyze."
-      )
     
     ### REACTIVE VARIABLES ###
     plots <- reactiveValues() # Save plots for download
@@ -680,14 +665,57 @@ cytosel <- function(...) {
     })
     
     observeEvent(input$help_guide, {
+
+      req(input$tabs == "inputs")
       
-      guide$init()
+      guide <- Cicerone$
+        new(allow_close = T)$
+        step(
+          "input_box",
+          "Step #1, Option A: Select your own data to analyze",
+          "Select a dataset from your local console to load into cytosel. 
+          Use the black information hovertips to get more
+        information about what types of data files are compatible.",
+        )$
+        step(
+          "curated_dataset",
+          "Step #1, Option B: Select a pre-annotated human dataset",
+          "Browse a selection of 24 human tissue types from the Tabula Sapiens Initiative 
+          that are pre-annotated and ready for analysis."
+        )$
+        step(
+          "metadata_box",
+          "Step #2: Choose a relevant metadata variable to analyze",
+          "Browse the metadata of your dataset to find a suitable biological category to analyze, such as
+          cell type, disease state, patient status, etc. Use the black information hovertips to 
+          see examples of suitable metadata types."
+        )$
+        step(
+          "advanced_collapse",
+          "Step #3 (Optional): Customize the run parameters",
+          "Modify thresholds for data subsetting, filtering, panel size, and 
+          additional run configurations. Additionally, you may upload a previous analysis 
+          or a custom list of markers to generate a panel."
+        )$
+        # step(
+        #   "cytosel_hyperlink",
+        #   "Refer to the official documentation",
+        #   "Refer to the official cytosel documentation for additional information on data formatting,
+        #   processing, and interpreting outputs."
+        # )$
+        step(
+          "start_analysis",
+          "Step #4: Run analysis",
+          "Hit <b> Run analysis! </b> to generate an initial panel and 
+          populate the dashboard with additional analysis & visualization tools."
+        )
       
-      updateTabsetPanel(session, "tabs", "inputs")
-      if (input$tabs == "inputs") {
-        guide$start()
-      }
+
+      guide$init(session = session)
+      guide$start()
     })
+    
+    
     
     observeEvent(input$time_zone, {
       output$current_time <- renderUI({
