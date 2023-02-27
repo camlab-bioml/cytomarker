@@ -436,12 +436,15 @@ test_that("Reset works on server", {
                       bl_top = markers_reupload()$top_markers)
     
     session$setInputs(create_reset = T, reset_marker_panel = T)
+    session$setInputs(dismiss_marker_reset = T)
     
     # resetting the panel sets current markers and input rank lists to 0
     expect_true(reset_panel())
     expect_null(current_markers()$top_markers)
     expect_equal(num_markers_in_selected(), 0)
     expect_equal(num_markers_in_scratch(), 0)
+    
+    expect_true(proceed_with_analysis())
     
   })
 })

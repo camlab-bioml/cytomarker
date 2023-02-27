@@ -115,7 +115,7 @@ test_that("get_markers and compute_fm return different results with different p-
   expect_true(is_empty(markers_1$multimarkers))
   
   fms_2 <- compute_fm(sce,
-                      "seurat_annotations",
+                      "fake_col",
                       "logcounts",
                       rownames(sce),
                       p_val_type = "any"
