@@ -6,12 +6,14 @@
 #' @param sce A SingleCellExperiment object
 #' @param columns A vector storing columns
 #' @param pref_assay Assay loaded
+#' @param p_val_type The type of p-value to use in marker group calculation. Can be either all or any.
 #' 
 #' @importFrom SingleCellExperiment colData
 #' @importFrom parallel mclapply
 #' @importFrom parallelly availableCores
 #' @importFrom BiocParallel bpworkers
-compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
+compute_fm <- function(sce, columns, pref_assay, allowed_genes,
+                       p_val_type = "all") {
   
   library(scran)
   
@@ -22,7 +24,7 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes) {
     fm <- scran::findMarkers(sce, colData(sce)[[col]], 
                       test.type = test_type, 
                       # BPPARAM = MulticoreParam(),
-                      pval.type = "all",
+                      pval.type = p_val_type,
                       assay.type = pref_assay)
     
     for(n in names(fm)) {
@@ -177,35 +179,31 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
         genes_to_ignore <- c(genes_to_ignore, unique(multimarkers$marker))
         original_multimarkers <- c(original_multimarkers, unique(multimarkers$marker))
         
-        # print(multimarkers)
-        
-        # while (nrow(multimarkers) > 0) {
-        #   
-        #   print("recursive")
-        #   
-        #   count <- count + 1
-        #   genes_to_ignore <- c(genes_to_ignore, unique(multimarkers$marker))
-        #   recommended <- recommended[!recommended %in% unique(multimarkers$marker) &
-        #                                !recommended %in% genes_to_ignore]
-        #   multimarkers <- multimarkers |> group_by(cell_type) |> slice_head(n=1) |> 
-        #     ungroup() |> group_by(marker) |> slice_head(n=1)
-        #   
-        #   for (i in unique(multimarkers$cell_type)) {
-        #     f <- fm[[i]]
-        #     dont_use <- subset(highly_expressed, cell_type != i)
-        #     f <- f[!rownames(f) %in% recommended & 
-        #              !rownames(f) %in% multimarkers$marker &
-        #              !rownames(f) %in% genes_to_ignore &
-        #              !rownames(f) %in% dont_use$marker,] |> as.data.frame()
-        #     
-        #     ## Only keep markers that are over-expressed
-        #     f[is.na(f)] <- 0
-        #     f <- f[f$summary.logFC > 0,]
-        #     new_markers_add <- rownames(f)[seq_len(subset(multimarkers, cell_type == i)$num_markers)]
-        #     recommended <- c(recommended, new_markers_add)
-        #   }
-        #   multimarkers <- create_multimarker_frame(initial_recommendations, recommended)
-        # }
+        while (nrow(multimarkers) > 0) {
+
+          count <- count + 1
+          genes_to_ignore <- c(genes_to_ignore, unique(multimarkers$marker))
+          recommended <- recommended[!recommended %in% unique(multimarkers$marker) &
+                                       !recommended %in% genes_to_ignore]
+          multimarkers <- multimarkers |> group_by(cell_type) |> slice_head(n=1) |>
+            ungroup() |> group_by(marker) |> slice_head(n=1)
+
+          for (i in unique(multimarkers$cell_type)) {
+            f <- fm[[i]]
+            dont_use <- subset(highly_expressed, cell_type != i)
+            f <- f[!rownames(f) %in% recommended &
+                     !rownames(f) %in% multimarkers$marker &
+                     !rownames(f) %in% genes_to_ignore &
+                     !rownames(f) %in% dont_use$marker,] |> as.data.frame()
+
+            ## Only keep markers that are over-expressed
+            f[is.na(f)] <- 0
+            f <- f[f$summary.logFC > 0,]
+            new_markers_add <- rownames(f)[seq_len(subset(multimarkers, cell_type == i)$num_markers)]
+            recommended <- c(recommended, new_markers_add)
+          }
+          multimarkers <- create_multimarker_frame(initial_recommendations, recommended)
+        }
       }
       
       scratch <- unique(scratch)

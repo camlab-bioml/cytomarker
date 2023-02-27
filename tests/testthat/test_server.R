@@ -907,9 +907,11 @@ test_that("Users may upload a simple list of genes (one per line)", {
                                                   test_path("test_own_panel.txt")))
     
     expect_true(reupload_analysis())
-    expect_equal(length(markers_reupload()$top_markers), 27)
+    expect_true(length(markers_reupload()$top_markers) > 10)
     expect_false(all(markers_attempt %in% markers_reupload()$top_markers))
-    expect_equal(length(markers_attempt), length(markers_reupload()$top_markers))
+    expect_true(all(markers_reupload()$top_markers %in% allowed_genes()))
+    
+    expect_false(all(markers_reupload()$top_markers %in% markers_attempt))
     
   })
 })

@@ -4,7 +4,7 @@
 \alias{compute_fm}
 \title{Compute the findMarkers outputs and store}
 \usage{
-compute_fm(sce, columns, pref_assay, allowed_genes)
+compute_fm(sce, columns, pref_assay, allowed_genes, p_val_type = "all")
 }
 \arguments{
 \item{sce}{A SingleCellExperiment object}
@@ -12,6 +12,8 @@ compute_fm(sce, columns, pref_assay, allowed_genes)
 \item{columns}{A vector storing columns}
 
 \item{pref_assay}{Assay loaded}
+
+\item{p_val_type}{The type of p-value to use in marker group calculation. Can be either all or any.}
 }
 \description{
 Note: this used to be part of get_markers but needs

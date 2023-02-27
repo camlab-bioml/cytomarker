@@ -93,6 +93,44 @@ test_that("good_col returns valid columns", {
                c("orig.ident", "nCount_RNA", "nFeature_RNA", "col2", "ident"))
 })
 
+context("test that changing the p value type for marker finding affects the multimarker search")
+
+test_that("get_markers and compute_fm return different results with different p-value types", {
+  
+  sce_path <- test_path("pbmc_small.rds")
+  sce <- read_input_scrnaseq(sce_path)
+  
+  # sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
+  
+  fms_1 <- compute_fm(sce,
+                    "seurat_annotations",
+                    "logcounts",
+                    rownames(sce)
+  )
+  
+  markers_1 <- get_markers(fms_1, panel_size = 12, marker_strategy = 'standard',
+                         sce = sce,
+                         allowed_genes = rownames(sce))
+  
+  expect_true(is_empty(markers_1$multimarkers))
+  
+  fms_2 <- compute_fm(sce,
+                      "seurat_annotations",
+                      "logcounts",
+                      rownames(sce),
+                      p_val_type = "any"
+  )
+  
+  markers_2 <- get_markers(fms_2, panel_size = 12, marker_strategy = 'standard',
+                           sce = sce,
+                           allowed_genes = rownames(sce))
+  
+  expect_false(is.null(markers_2$multimarkers))
+  
+})
+
+context("Check for valid output formats in marker finding")
+
 test_that("get_markers and compute_fm returns valid output", {
   sce_path <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(sce_path)
@@ -474,7 +512,7 @@ test_that("Error modals throw errors", {
   expect_is(reset_option_on_change_modal("placeholder"), 'shiny.tag')
   expect_error(invalid_modal())
   expect_error(invalid_metadata_modal("fake_column"))
-
+  
 })
 
 
