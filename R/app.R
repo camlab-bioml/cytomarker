@@ -357,7 +357,7 @@ cytosel <- function(...) {
                           column(5, hidden(div(id = "marker_display",
                    tags$span(icon("circle-info")
                            %>%
-                   bs_embed_tooltip(title = get_tooltip('marker_display'),
+                   bs_embed_tooltip(title =  if(isTruthy(STAR_FOR_ABCAM)) get_tooltip('marker_display_abcam') else get_tooltip('marker_display_all'),
                                     placement = "right", html = TRUE)))))),
                 fluidRow(column(4, align = "center", div(style="display: inline-block; font-size: 15px", 
                                   htmlOutput("scratch_marker_counts"))),
@@ -1167,9 +1167,9 @@ cytosel <- function(...) {
       req(input$coldata_column)
       req(sce())
       
-      # showNotification("Starting analysis",
-      #             type = 'message',
-      #             duration = 3)
+      showNotification("Starting analysis",
+                  type = 'message',
+                  duration = 2)
       
       library(caret)
       library(Seurat)
@@ -1291,6 +1291,8 @@ cytosel <- function(...) {
             
           } 
           
+          req(proceed_with_analysis())
+          
           new_waitress <- Waitress$new(theme = "overlay-percent", infinite = TRUE)
           new_waitress$start()
           
@@ -1306,7 +1308,7 @@ cytosel <- function(...) {
           }
           
           
-          setProgress(value = 1)
+          # setProgress(value = 1)
           
           withProgress(message = 'Starting computations', value = 0, {
             req(proceed_with_analysis())
