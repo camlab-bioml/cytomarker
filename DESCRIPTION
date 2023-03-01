@@ -42,7 +42,7 @@ Imports:
     Matrix,
     annotables (>= 0.1.91),
     RColorBrewer,
-    shinytest2,
+    shinytest2 (== 0.2.0),
     parallelly,
     parallel,
     BiocParallel,
