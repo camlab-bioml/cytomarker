@@ -53,7 +53,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_tooltip use_bs_tooltip
 #' @importFrom shinyjs useShinyjs hidden toggle reset delay
 #' @importFrom grDevices dev.off pdf
-#' @importFrom zip zip
+#' @importFrom utils zip
 #' @importFrom randomcoloR distinctColorPalette
 #' @importFrom SingleCellExperiment reducedDimNames reducedDims
 #' @importFrom plotly plot_ly plotlyOutput renderPlotly layout hide_guides

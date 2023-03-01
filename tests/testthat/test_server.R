@@ -1,23 +1,4 @@
 
-context("Test that starting the help guide does not modify the reactive values")
-
-test_that("Basic help guide functionality", {
-  
-  testServer(cytosel::cytosel(), expr = {
-    
-    expect_null(sce())
-    expect_equal(pref_assay(), "logcounts")
-    
-    session$setInputs(tabs = "inputs")
-    session$setInputs(help_guide = T)
-    
-    expect_null(sce())
-    expect_equal(pref_assay(), "logcounts")
-    
-  })
-
-})
-
 
 context("Test basic Shiny app server functionality")
 
@@ -971,6 +952,24 @@ test_that("adding and replacing markers can identify gene aliases", {
   
 })
 
+context("Test that starting the help guide does not modify the reactive values")
+
+test_that("Basic help guide functionality", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_null(sce())
+    expect_equal(pref_assay(), "logcounts")
+    
+    session$setInputs(tabs = "inputs")
+    session$setInputs(help_guide = T)
+    
+    expect_null(sce())
+    expect_equal(pref_assay(), "logcounts")
+    
+  })
+  
+})
 
 
 

@@ -254,7 +254,7 @@ context("Test that the correct file type is identified")
 
 test_that("cytosel can read in an H5ad file", {
 
-  skip_on_ci()
+  # skip_on_ci()
 
   h5ad_file <- test_path("test_sce.h5ad")
   sce <- read_input_scrnaseq(h5ad_file)

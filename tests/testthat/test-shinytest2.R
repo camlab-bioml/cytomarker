@@ -1,8 +1,9 @@
-
 require(cytosel)
 
 test_that("{shinytest2} recording: cytosel", {
   testthat::local_edition(3)
+  
+  print(interactive())
   
   # set the app depending on the interactive execution to avoid a no package found error
   if (interactive()) {
@@ -15,7 +16,7 @@ test_that("{shinytest2} recording: cytosel", {
   # announce_snapshot_file("cytosel-002.png")
   app <- AppDriver$new(cytosel_app,
                        variant = platform_variant(), name = "cytosel", height = 732,
-      width = 1161, load_timeout = 1e+06
+      width = 1161, load_timeout = 1e+05
       # shinyOptions = list(test.mode = TRUE)
       )
   

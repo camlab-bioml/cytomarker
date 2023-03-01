@@ -8,7 +8,7 @@ jobs:
   shiny-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install cURL Headers
         run: |
          sudo apt-get update
