@@ -42,7 +42,7 @@ Imports:
     Matrix,
     annotables (>= 0.1.91),
     RColorBrewer,
-    shinytest2 (== 0.2.0),
+    shinytest2,
     parallelly,
     parallel,
     BiocParallel,
@@ -84,7 +84,8 @@ Remotes:
     github::MarioniLab/geneBasisR,
     github::camlab-bioml/inferorg,
     github::stephenturner/annotables,
-    github::HenrikBengtsson/parallelly
+    github::HenrikBengtsson/parallelly,
+    github::rstudio/shinytest2@v0.2.0
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
