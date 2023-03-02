@@ -109,6 +109,37 @@ in_row <- function(applications, row) {
 }
 
 
+#' Get a list of aliases for the marker list (all possible gene IDs that match to an Entrez ID)
+#' @param marker_list A vector of markers in gene symbol format
+#' @param gene_mapper A data frame that maps gene symbols to Entrez IDs
+#' @param merge Boolean whether the aliases should be returned along with the original markers
+get_gene_aliases <- function(marker_list, gene_mapper, allowed_genes) {
+  
+  # get the list of entrez ids for the uploaded panel
+  possible_entrez <- gene_mapper[gene_mapper$alias_symbol %in% marker_list,]
+  # expand the possible symbols to include symbols with the same entrez id
+  all_possible_symbols <- gene_mapper[gene_mapper$gene_id %in% possible_entrez$gene_id,]
+  
+  # filter the new
+  all_possible_symbols <- all_possible_symbols[all_possible_symbols$alias_symbol %in% allowed_genes,]
+  
+  # keep only genes from the original upload that are allowed
+  filtered_upload <- marker_list[marker_list %in% allowed_genes]
+  
+  # get a list of genes that were replaced with an alias
+  replaced <- unique(all_possible_symbols$alias_symbol[!all_possible_symbols$alias_symbol %in% marker_list])
+  
+  # get a list of the original marker list that was replaced 
+  # do not include symbols that could not be mapped to Exntra Ids as they will be kept
+  removed <- marker_list[!marker_list %in% all_possible_symbols$alias_symbol &
+                           marker_list %in% possible_entrez$alias_symbol]
+  
+  list(merged = unique(c(filtered_upload, all_possible_symbols$alias_symbol)),
+                            original = marker_list, removed = removed, replaced = replaced)
+  
+}
+
+
 
 
 

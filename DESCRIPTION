@@ -63,7 +63,8 @@ Imports:
     fontawesome,
     emojifont,
     geneBasisR,
-    waiter
+    waiter,
+    cicerone
 Suggests:
   stringr,
   yardstick,
@@ -83,7 +84,8 @@ Remotes:
     github::MarioniLab/geneBasisR,
     github::camlab-bioml/inferorg,
     github::stephenturner/annotables,
-    github::HenrikBengtsson/parallelly
+    github::HenrikBengtsson/parallelly,
+    github::rstudio/shinytest2@v0.2.0
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

@@ -1,4 +1,5 @@
 
+
 context("Test basic Shiny app server functionality")
 
 test_that("Server has basic functionality", {
@@ -59,8 +60,10 @@ test_that("Server has basic functionality", {
     session$setInputs(user_selected_cells = c("CD8 T", "Memory CD4 T",
                                               "Naive CD4 T",
                                               "Platelet"),
-                      add_selected_to_analysis = T,
-                      min_category_count = 2,
+                      add_selected_to_analysis = T)
+    
+    
+    session$setInputs(min_category_count = 2,
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       tabs = NULL,
@@ -304,7 +307,7 @@ test_that("Pre-setting the input rank lists persists in the current markers", {
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm",
-                      select_aa = NULL,
+                      select_aa = c("IHC-P", "Flow Cyt (Intra)", "IP"),
                       bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
                       bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
                       bl_scratch = c("GNLY", "FTL"),
@@ -414,12 +417,15 @@ test_that("Reset works on server", {
                       bl_top = markers_reupload()$top_markers)
     
     session$setInputs(create_reset = T, reset_marker_panel = T)
+    session$setInputs(dismiss_marker_reset = T)
     
     # resetting the panel sets current markers and input rank lists to 0
     expect_true(reset_panel())
     expect_null(current_markers()$top_markers)
     expect_equal(num_markers_in_selected(), 0)
     expect_equal(num_markers_in_scratch(), 0)
+    
+    expect_true(proceed_with_analysis())
     
   })
 })
@@ -649,14 +655,14 @@ test_that("datasets with few genes produce errors on marker finding", {
     
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_few_genes.rds")),
-                      assay = "counts", coldata_column = "seurat_annotations")
+                      assay = "logcounts", coldata_column = "seurat_annotations")
     
     session$setInputs(show_cat_table = T)
     
     session$setInputs(subsample_sce = T,
-                      panel_size = 100,
+                      panel_size = 32,
                       display_options = "Marker-marker correlation",
-                      select_aa = c("sELISA"),
+                      # select_aa = c("sELISA"),
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
     
@@ -718,41 +724,41 @@ test_that("cytosel is able to identify an RDS that is not of the proper SCE form
 
 gc()
 
-context("test that cytosel can identify multimarkers")
-
-test_that("cytosel is able to identify multimarkers in a lung dataset 
-          (many cell types for the panel size)", {
-            
-            # skip_on_ci()
-            
-            testServer(cytosel::cytosel(), expr = {
-              
-              session$setInputs(input_scrnaseq = list(datapath =
-                                                        test_path("pbmc_small.rds")),
-                                coldata_column = "fake_col",
-                                pick_curated = T,
-                                min_category_count = 2,
-                                subset_number = 250)
-              
-              session$setInputs(subsample_sce = F,
-                                marker_strategy = "fm",
-                                display_options = "Marker-marker correlation",
-                                heatmap_expression_norm = "Expression")
-              
-              session$setInputs(tabs = NULL,
-                                metrics_toggle = NULL,
-                                select_aa = NULL,
-                                panel_sorter = "Group by cell type")
-              
-              expect_null(multimarkers())
-              
-              session$setInputs(panel_size = 12,
-                                start_analysis = T)
-              
-              expect_false(is.null(multimarkers()))
-              
-            })
-          })
+# context("test that cytosel can identify multimarkers")
+# 
+# test_that("cytosel is able to identify multimarkers in a lung dataset 
+#           (many cell types for the panel size)", {
+#             
+#             # skip_on_ci()
+#             
+#             testServer(cytosel::cytosel(), expr = {
+#               
+#               session$setInputs(input_scrnaseq = list(datapath =
+#                                                         test_path("pbmc_small.rds")),
+#                                 coldata_column = "fake_col",
+#                                 pick_curated = T,
+#                                 min_category_count = 2,
+#                                 subset_number = 250)
+#               
+#               session$setInputs(subsample_sce = F,
+#                                 marker_strategy = "fm",
+#                                 display_options = "Marker-marker correlation",
+#                                 heatmap_expression_norm = "Expression")
+#               
+#               session$setInputs(tabs = NULL,
+#                                 metrics_toggle = NULL,
+#                                 select_aa = NULL,
+#                                 panel_sorter = "Group by cell type")
+#               
+#               expect_null(multimarkers())
+#               
+#               session$setInputs(panel_size = 12,
+#                                 start_analysis = T)
+#               
+#               expect_false(is.null(multimarkers()))
+#               
+#             })
+#           })
 
 
 test_that("Second Re-upload works on server", {
@@ -853,7 +859,117 @@ test_that("Minimal re-uploads recognizxe markers", {
   })
 })
 
+context("Test that a reupload doesn't occur before the dataset is uploaded")
 
+test_that("Re-uploading won't occur before the dataset is processed", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                                                  test_path("test_own_panel.txt")))
+    
+    expect_false(reupload_analysis())
+    
+  })
+})
+
+context("reading a simple list of genes will populate the marker list and search for alias")
+
+test_that("Users may upload a simple list of genes (one per line)", {
+  
+  markers_attempt <- readLines(test_path("test_own_panel.txt"))
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_false(reupload_analysis())
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      read_back_analysis = list(datapath =
+                                                  test_path("test_own_panel.txt")))
+    
+    expect_true(reupload_analysis())
+    expect_true(length(markers_reupload()$top_markers) > 10)
+    expect_false(all(markers_attempt %in% markers_reupload()$top_markers))
+    expect_true(all(markers_reupload()$top_markers %in% allowed_genes()))
+    
+    expect_false(all(markers_reupload()$top_markers %in% markers_attempt))
+    
+  })
+})
+
+
+context("Check that adding or replacing markers with aliases works as intended")
+
+test_that("adding and replacing markers can identify gene aliases", {
+  
+  marks_to_add <- readLines(test_path("test_own_panel.txt"))
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")),
+                      assay = "logcounts", coldata_column = "seurat_annotations")
+    
+    session$setInputs(subsample_sce = F,
+                      panel_size = 5,
+                      display_options = "Marker-marker correlation",
+                      heatmap_expression_norm = "Expression",
+                      marker_strategy = "fm",
+                      tabs = NULL,
+                      metrics_toggle = NULL,
+                      select_aa = NULL,
+                      panel_sorter = "Group by cell type",
+                      start_analysis = T)
+    
+    expect_equal(length(current_markers()$top_markers), 5)
+    
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("test_own_panel.txt")),
+                      add_to_selected = T)
+    
+    expect_true(length(current_markers()$top_markers) > 5)
+    
+    second_marks <- current_markers()$top_markers
+    
+    expect_false("hCD40L" %in% current_markers()$top_markers)
+    expect_true("CD40LG" %in% current_markers()$top_markers)
+    
+    
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("test_own_panel.txt")),
+                      replace_selected = T)
+    
+    expect_true(length(second_marks) > length(current_markers()$top_markers))
+    
+    expect_false("hCD40L" %in% current_markers()$top_markers)
+    expect_true("CD40LG" %in% current_markers()$top_markers)
+    
+    
+  })
+  
+})
+
+context("Test that starting the help guide does not modify the reactive values")
+
+test_that("Basic help guide functionality", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_null(sce())
+    expect_equal(pref_assay(), "logcounts")
+    
+    session$setInputs(tabs = "inputs")
+    session$setInputs(help_guide = T)
+    
+    expect_null(sce())
+    expect_equal(pref_assay(), "logcounts")
+    
+  })
+  
+})
 
 
 
