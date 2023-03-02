@@ -8,10 +8,6 @@
 #' @param pref_assay Assay loaded
 #' @param p_val_type The type of p-value to use in marker group calculation. Can be either all or any.
 #' 
-#' @importFrom SingleCellExperiment colData
-#' @importFrom parallel mclapply
-#' @importFrom parallelly availableCores
-#' @importFrom BiocParallel bpworkers
 compute_fm <- function(sce, columns, pref_assay, allowed_genes,
                        p_val_type = "all") {
   
@@ -21,7 +17,7 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes,
                   function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
-    fm <- scran::findMarkers(sce, colData(sce)[[col]], 
+    fm <- scran::findMarkers(sce, SummarizedExperiment::colData(sce)[[col]], 
                       test.type = test_type, 
                       # BPPARAM = MulticoreParam(),
                       pval.type = p_val_type,
@@ -290,9 +286,6 @@ set_current_markers_safely <- function(markers, fms, default_type = NULL) {
 #' @param markers_to_use The list of markers to compute the UMAP
 #' 
 #' @importFrom tibble tibble
-#' @importFrom SingleCellExperiment reducedDim
-#' @importFrom parallelly availableCores
-#' @importFrom BiocParallel MulticoreParam
 get_umap <- function(sce, columns, pref_assay, precomputed_vals = NULL, dim_col = NULL,
                      only_top_markers = F, markers_to_use) {
   
@@ -303,21 +296,21 @@ get_umap <- function(sce, columns, pref_assay, precomputed_vals = NULL, dim_col 
   
   if (!isTruthy(precomputed_vals) | isTRUE(only_top_markers)) {
     sce <- scater::runUMAP(sce, exprs_values = pref_assay,
-                   n_threads = availableCores(),
+                   # n_threads = availableCores(),
                    # ncomponents = num_comp_use, 
                    # pca = num_comp_use,
                    # BPPARAM = MulticoreParam(),
                    external_neighbors	= T)
     
-    df <- as.data.frame(reducedDim(sce, 'UMAP')) |> `colnames<-`(c("UMAP_1", "UMAP_2"))
+    df <- as.data.frame(SingleCellExperiment::reducedDim(sce, 'UMAP')) |> `colnames<-`(c("UMAP_1", "UMAP_2"))
     
   } else {
     
-    df <- as.data.frame(reducedDim(sce, dim_col)) |> `colnames<-`(c("UMAP_1", "UMAP_2"))
+    df <- as.data.frame(SingleCellExperiment::reducedDim(sce, dim_col)) |> `colnames<-`(c("UMAP_1", "UMAP_2"))
   }
     
   for(column in columns) {
-    df[[column]] <- as.data.frame(colData(sce))[[column]]
+    df[[column]] <- as.data.frame(SummarizedExperiment::colData(sce))[[column]]
     df[[column]] <- as.character(df[[column]])
   }
 
@@ -357,9 +350,9 @@ get_scores <- function(sce, columns, mrkrs, pref_assay, max_cells = 5000) {
 get_scores_one_column <- function(sce_tr, column, mrkrs, pref_assay, max_cells = 5000) {
   
   x <- t(as.matrix(assay(sce_tr, pref_assay)))
-  y <- factor(colData(sce_tr)[[column]])
+  y <- factor(SummarizedExperiment::colData(sce_tr)[[column]])
   
-  cell_types <- sort(unique(colData(sce_tr)[[column]]))
+  cell_types <- sort(unique(SummarizedExperiment::colData(sce_tr)[[column]]))
   
   train_nb(x,y, cell_types)
 }
@@ -369,16 +362,14 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, pref_assay, max_cells =
 #' Note this currently trains logistic regression
 #' 
 #' @param x A matrix calculated as `x <- t(as.matrix(assay(sce_tr)[[column]]))`
-#' @param y A factor calculated as `y <- factor(colData(sce_tr)[[column]])`
+#' @param y A factor calculated as `y <- factor(SummarizedExperiment::colData(sce_tr)[[column]])`
 #' @param cell_types A sorted vector with unique elements:
-#' cell_types <- sort(unique(colData(sce_tr)[[column]]))
+#' cell_types <- sort(unique(SummarizedExperiment::colData(sce_tr)[[column]]))
 #' 
 #' @importFrom tibble tibble
 #' @importFrom dplyr bind_rows
 #' @importFrom nnet multinom
 #' @importFrom dplyr sample_n
-#' @importFrom parallel mclapply
-#' @importFrom parallelly availableCores
 train_nb <- function(x,y, cell_types) {
   
   flds <- caret::createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)

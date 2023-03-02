@@ -6,9 +6,12 @@
 #' @param sce_path Input uploaded path
 #' @importFrom tools file_ext
 #' @importFrom zellkonverter readH5AD
-#' @importFrom SingleCellExperiment logcounts
 #' @importFrom Matrix rowSums
 read_input_scrnaseq <- function(sce_path) {
+  
+  library(SingleCellExperiment, quiet = T)
+  library(SummarizedExperiment, quiet = T)
+  
   sce <- NULL ## object we're going to return
   
   if(file_ext(sce_path) == "h5ad") {
@@ -40,9 +43,9 @@ read_input_scrnaseq <- function(sce_path) {
 #' the residual of the logcount expression assays' rowsums divided by one. If this
 #' is zero they must be counts and are converted to logcounts
 #' @param sce Uploaded SingleCellExperiment
-#' @importFrom SummarizedExperiment assays
 detect_assay_and_create_logcounts <- function(sce){
-  library(scater)
+  library(scater, quiet = T)
+  library(SummarizedExperiment, quiet = T)
   if ("logcounts" %in% names(assays(sce))) {
   count_sums <- assays(sce)$logcounts |> 
     rowSums()
@@ -175,13 +178,11 @@ check_rowData_for_hugo <- function(sce, grch38){
 
 #' Checks if the rownames of the sce contain human ensembl ID's
 #' @importFrom dplyr select
-#' @importFrom SingleCellExperiment SingleCellExperiment
-#' @importFrom SummarizedExperiment colData
 #' @param grch38 a human reference genome that is compatible with annotables
 #' @param sce SingleCellExperiment object
 #' @return a list with the first element being the status of the search, and the second being the genes found
 check_rownames_for_ensembl<- function(sce, grch38){
-  library(scuttle)
+  library(scuttle, quiet = T)
   ensemble_genes <- grepl("ENSG[0-9]*", rownames(sce))
   if(any(ensemble_genes)){
     sub_sce <- sce[ensemble_genes]
@@ -201,7 +202,7 @@ check_rownames_for_ensembl<- function(sce, grch38){
                                             assay.type = 'logcounts')
     
     filtered_sce <- SingleCellExperiment(list(logcounts = filtered_mat),
-                                         colData = colData(sce))
+                                         colData = SingleCellExperiment::colData(sce))
     
     genes_found <- calculate_proportion_in_annotables(rownames(filtered_sce), grch38)
     # calculate the proportion as the number of retained ensembl vs. original gene identifiers
@@ -390,7 +391,7 @@ create_sce_column_for_analysis <- function(sce, vec_to_keep, input_column) {
 #' @param sce A SingleCellExperiment object
 #' @param vec_to_keep A vector containing the values of an input column that should be retained for analysis
 create_keep_vector_during_subsetting <- function(sce, vec_to_keep) {
-  placeholder_frame <- data.frame(index = seq(1, nrow(colData(sce)))) %>%
+  placeholder_frame <- data.frame(index = seq(1, nrow(SingleCellExperiment::colData(sce)))) %>%
     mutate(in_subsample = ifelse(index %in% vec_to_keep, "Yes", "No"))
   
   sce$in_subsample <- placeholder_frame$in_subsample
@@ -416,10 +417,9 @@ remove_null_and_va_from_cell_cat <- function(sce, input_column) {
 }
 
 #' Detect if the sce has any UMAP dimension assays 
-#' @importFrom SingleCellExperiment reducedDimNames
 detect_umap_dims_in_sce <- function(sce) {
-  return(reducedDimNames(sce)[grepl("UMAP|umap|Umap|uMap|uMAP",
-                          reducedDimNames(sce))])
+  return(SingleCellExperiment::reducedDimNames(sce)[grepl("UMAP|umap|Umap|uMap|uMAP",
+                          SingleCellExperiment::reducedDimNames(sce))])
 }
 
 #' Check if the majority of genes are not human in an SCE

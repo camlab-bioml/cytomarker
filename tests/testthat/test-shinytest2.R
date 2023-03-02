@@ -9,7 +9,7 @@ test_that("{shinytest2} recording: cytosel", {
   } else {
     cytosel_app <- cytosel::cytosel()
   }
-  
+  # cytosel_app <- test_path("../../")
   announce_snapshot_file("cytosel-001.png")
   # announce_snapshot_file("cytosel-002.png")
   app <- AppDriver$new(cytosel_app,

@@ -128,7 +128,6 @@ map_gene_name_to_antibody_icon <- function(gene_id, markers) {
 #' @param genes The vector of genes to visualize
 #' @param cell_type The cell type category to resolve using the gene vector
 #' @param assay The name of the assay to use. Common selections are logcounts or counts
-#' @importFrom ggplot2 ggplot
 make_violin_plot <- function(sce, genes, cell_type, assay) {
   expression_plot <- scater::plotExpression(
     sce, genes, x = cell_type,

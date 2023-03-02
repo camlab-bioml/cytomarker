@@ -11,21 +11,17 @@ Description: What the package does (one paragraph).
 License: `use_mit_license()`, `use_gpl3_license()` or friends to
     pick a license
 Imports:
-    SingleCellExperiment,
     tibble,
     BiocManager (>= 1.30.19),
     nnet,
     dplyr,
     shiny,
     sortable,
-    ggplot2,
     forcats,
     cowplot,
     readr,
-    dqshiny,
     DT,
     shinyalert,
-    SummarizedExperiment,
     viridis,
     reactable,
     bsplus,
@@ -43,9 +39,6 @@ Imports:
     annotables (>= 0.1.91),
     RColorBrewer,
     shinytest2,
-    parallelly,
-    parallel,
-    BiocParallel,
     tidyr,
     htmlwidgets,
     shinydashboard,
@@ -53,7 +46,6 @@ Imports:
     heatmaply,
     stringr,
     rlang,
-    clustifyr,
     rmarkdown,
     rdrop2,
     lubridate,
@@ -64,7 +56,8 @@ Imports:
     emojifont,
     geneBasisR,
     waiter,
-    cicerone
+    cicerone,
+    ggplot2
 Suggests:
   stringr,
   yardstick,
@@ -78,7 +71,10 @@ Suggests:
   Seurat,
   caret,
   scuttle,
-  scater
+  scater,
+  SummarizedExperiment,
+  SingleCellExperiment,
+  clustifyr
 Remotes: 
     github::daqana/dqshiny,
     github::MarioniLab/geneBasisR,

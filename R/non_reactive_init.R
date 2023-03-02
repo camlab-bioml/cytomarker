@@ -78,4 +78,6 @@ compartments <- NULL
 ensgene <- NULL
 to_add <- NULL
 x <- NULL
+assay <- NULL
+aes <- NULL
 

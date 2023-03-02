@@ -14,7 +14,7 @@ utils::globalVariables(c("palette_to_use", "full_palette",
                          "dataset_labels", "antibody_info",
                          "markdown_report_path", "all_zones"), "cytosel")
 
-ggplot2::theme_set(cowplot::theme_cowplot())
+# ggplot2::theme_set(cowplot::theme_cowplot())
 
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
         show.error.messages = FALSE)
@@ -30,14 +30,11 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' 
 #' @import shiny shinytest2
 #' @importFrom shinyalert useShinyalert shinyalert
-#' @importFrom dqshiny autocomplete_input update_autocomplete_input
 #' @importFrom DT DTOutput renderDT
 #' @importFrom tidyr drop_na
-#' @import SummarizedExperiment
 #' @import forcats
 #' @importFrom waiter useWaitress Waitress
 #' @importFrom cicerone use_cicerone Cicerone
-#' @import ggplot2
 #' @import sortable
 #' @import fontawesome
 #' @import emojifont
@@ -47,7 +44,6 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @import htmltools
 #' @importFrom rlang is_empty
 #' @importFrom DT datatable
-#' @importFrom clustifyr plot_gene
 #' @importFrom readr write_lines read_tsv read_csv
 #' @importFrom dplyr desc mutate_if distinct
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_tooltip use_bs_tooltip
@@ -55,11 +51,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom grDevices dev.off pdf
 #' @importFrom utils zip
 #' @importFrom randomcoloR distinctColorPalette
-#' @importFrom SingleCellExperiment reducedDimNames reducedDims
 #' @importFrom plotly plot_ly plotlyOutput renderPlotly layout hide_guides
-#' @importFrom parallelly availableCores
-#' @importFrom parallel mclapply
-#' @importFrom BiocParallel MulticoreParam
 #' @importFrom stringr str_split_fixed
 #' @importFrom magrittr set_names
 #' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar
@@ -67,7 +59,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' valueBoxOutput renderMenu updateTabItems tabBox renderValueBox valueBox
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @importFrom yaml read_yaml
-#' @import rdrop2
+#' @importFrom rdrop2 drop_download
 #' @importFrom lubridate with_tz
 #' @export
 #' 
@@ -801,7 +793,7 @@ cytosel <- function(...) {
       
       if (!file.exists(file.path(tempdir(), paste(tissue_lab, ".rds", sep = "")))) {
           incProgress(detail = "Downloading curated dataset")
-          rdrop2::drop_download(paste("tabula_sapiens/", 
+          drop_download(paste("tabula_sapiens/", 
                                       paste(tissue_lab, ".rds", sep = ""),
                                 sep = ""),
                                 local_path = tempdir(),
@@ -1171,8 +1163,10 @@ cytosel <- function(...) {
                   type = 'message',
                   duration = 2)
       
-      library(caret)
-      library(Seurat)
+      library(caret, quiet = T)
+      library(Seurat, quiet = T)
+      library(clustifyr, quiet = T)
+      library(ggplot2, quiet = T)
       
       proceed_with_analysis(TRUE)
       
@@ -1421,7 +1415,7 @@ cytosel <- function(...) {
         
             num_markers_in_selected(length(current_markers()$top_markers))
             num_markers_in_scratch(length(current_markers()$scratch_markers))
-            cells_per_type(table(colData(
+            cells_per_type(table(SummarizedExperiment::colData(
               sce()[,sce()$keep_for_analysis == "Yes"])[[column()]]))
             
             if (isTruthy(input$select_aa)) {
@@ -1996,10 +1990,10 @@ cytosel <- function(...) {
           }
         }
         if (isTruthy(yaml_back$`Heterogeneity source`)) {
-          if (yaml_back$`Heterogeneity source` %in% colnames(colData(sce()))) {
+          if (yaml_back$`Heterogeneity source` %in% colnames(SummarizedExperiment::colData(sce()))) {
           
             
-            updateSelectInput(session, "coldata_column", choices = colnames(colData(sce())),
+            updateSelectInput(session, "coldata_column", choices = colnames(SummarizedExperiment::colData(sce())),
                               selected = yaml_back$`Heterogeneity source`)
             updateSelectInput(session, "user_selected_cells", 
                               yaml_back$`Cell Types Analyzed`)
@@ -2163,11 +2157,11 @@ cytosel <- function(...) {
           
         } else {
           
-          gene_plot_top <- plot_gene(assay(sce()[,sce()$keep_for_analysis == "Yes"], pref_assay()),
+          gene_plot_top <- clustifyr::plot_gene(assay(sce()[,sce()$keep_for_analysis == "Yes"], pref_assay()),
                                      umap_top() |> select(UMAP_1, UMAP_2) |> drop_na(),
                                      input$umap_panel_options)
           
-          gene_plot_all <- plot_gene(assay(sce()[,sce()$keep_for_analysis == "Yes"], pref_assay()),
+          gene_plot_all <- clustifyr::plot_gene(assay(sce()[,sce()$keep_for_analysis == "Yes"], pref_assay()),
                                      umap_all() |> select(UMAP_1, UMAP_2) |> drop_na(),
                                      input$umap_panel_options)
           
@@ -2234,26 +2228,26 @@ cytosel <- function(...) {
         
         if (input$viol_viewer == "By Marker") {
           output$expression_violin <- renderPlot({
-            suppressWarnings(ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
-                                                    fill = `Cell Type`)) + geom_violin(alpha = 1) +
-                               theme(axis.text.x = element_text(angle = 90)) +
-                               facet_wrap(~Gene, scales="free_y") + 
-                               scale_fill_manual(values = cytosel_palette()))
+            suppressWarnings(ggplot2::ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
+                                                    fill = `Cell Type`)) + ggplot2::geom_violin(alpha = 1) +
+                               ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
+                               ggplot2::facet_wrap(~Gene, scales="free_y") + 
+                               ggplot2::scale_fill_manual(values = cytosel_palette()))
           })
         } else {
           output$expression_violin <- renderPlot({
-            suppressWarnings(ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
-                                                    fill = Gene)) + geom_violin(alpha = 1) +
-                               theme(axis.text.x = element_text(angle = 90)) +
+            suppressWarnings(ggplot2::ggplot(viol_frame, aes(x = `Cell Type`, y = Expression, 
+                                                    fill = Gene)) + ggplot2::geom_violin(alpha = 1) +
+                               ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
                                # facet_wrap(~Gene) + 
-                               scale_fill_manual(values = full_palette))
+                               ggplot2::scale_fill_manual(values = full_palette))
           })
           
         }
         
       } else {
         output$expression_violin <- renderPlot({
-        ggplot() + theme_void()
+        ggplot2::ggplot() + ggplot2::theme_void()
         })
       }
     }, ignoreNULL = FALSE)
@@ -2465,7 +2459,7 @@ cytosel <- function(...) {
             }
           }
         }
-        cells_per_type(table(colData(sce()[,
+        cells_per_type(table(SummarizedExperiment::colData(sce()[,
                             sce()$keep_for_analysis == "Yes"])[[column()]]))
         
         setProgress(value = 0.75)
@@ -2621,7 +2615,7 @@ cytosel <- function(...) {
       toggle(id = "analysis_button", condition = isTruthy(sce()))
       # toggle(id = "apps", condition = isTruthy(SUBSET_TO_ABCAM))
       
-      input_assays <- c(names(assays(sce())))
+      input_assays <- c(names(SummarizedExperiment::assays(sce())))
       
       # set the currenr metrics to NULL
       current_metrics(NULL)
@@ -2658,22 +2652,22 @@ cytosel <- function(...) {
       
       selection <- ifelse(isTruthy(default_category_curated()),
                           default_category_curated(),
-                          colnames(colData(sce()))[!grepl("keep_for_analysis", 
-                                                          colnames(colData(sce())))][1])
+                          colnames(SummarizedExperiment::colData(sce()))[!grepl("keep_for_analysis", 
+                                                          colnames(SummarizedExperiment::colData(sce())))][1])
       
       
       updateSelectInput(
         session = session,
         inputId = "coldata_column",
-        choices = colnames(colData(sce()))[!grepl("keep_for_analysis", 
-                                                  colnames(colData(sce())))],
+        choices = colnames(SummarizedExperiment::colData(sce()))[!grepl("keep_for_analysis", 
+                                                  colnames(SummarizedExperiment::colData(sce())))],
         selected = selection
       )
       
       specific_cell_types_selected(unique(sce()[[selection]]))
       
       if (!isTruthy(input$coldata_column)) {
-        column(colnames(colData(sce()))[1])
+        column(colnames(SummarizedExperiment::colData(sce()))[1])
       } else {
         column(input$coldata_column)
       }
