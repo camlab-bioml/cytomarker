@@ -494,7 +494,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     
     heatmap_1 <- heatmap()
     
-    session$setInputs(umap_options = "Cell Type",
+    session$setInputs(tabs = "UMAP", umap_options = "Cell Type",
                       umap_panel_options = "S100A9", umap_panel_cols = T, 
                       show_umap_legend = T)
     
@@ -503,7 +503,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_false(umap_all_gene())
     expect_equal(umap_colouring(), "Cell Type")
     
-    session$setInputs(umap_options = "Panel Marker",
+    session$setInputs(tabs = "UMAP", umap_options = "Panel Marker",
     umap_panel_options = "S100A9", umap_panel_cols = T, show_umap_legend = T)
     
     # switching the UMAP to gene works
@@ -946,6 +946,11 @@ test_that("adding and replacing markers can identify gene aliases", {
     
     expect_false("hCD40L" %in% current_markers()$top_markers)
     expect_true("CD40LG" %in% current_markers()$top_markers)
+    
+    session$setInputs(gene_alias_table_viewer = T)
+    
+    expect_false(is.null(aliases_table()))
+    expect_true(nrow(aliases_table()) > 0)
     
     
   })

@@ -129,13 +129,18 @@ get_gene_aliases <- function(marker_list, gene_mapper, allowed_genes) {
   # get a list of genes that were replaced with an alias
   replaced <- unique(all_possible_symbols$alias_symbol[!all_possible_symbols$alias_symbol %in% marker_list])
   
+  reduced_table <- merge(all_possible_symbols |> `colnames<-`(c("entrez_id", "Alias")),
+                          possible_entrez |> `colnames<-`(c("entrez_id", "Original Name")),
+                          by = "entrez_id") |> filter(Alias != `Original Name`)
+  
   # get a list of the original marker list that was replaced 
   # do not include symbols that could not be mapped to Exntra Ids as they will be kept
   removed <- marker_list[!marker_list %in% all_possible_symbols$alias_symbol &
                            marker_list %in% possible_entrez$alias_symbol]
   
   list(merged = unique(c(filtered_upload, all_possible_symbols$alias_symbol)),
-                            original = marker_list, removed = removed, replaced = replaced)
+                            original = marker_list, removed = removed, replaced = replaced,
+       table = reduced_table)
   
 }
 

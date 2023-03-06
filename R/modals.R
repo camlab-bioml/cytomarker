@@ -425,4 +425,18 @@ additional_aliases_model <- function(original_gene_list, alias_list) {
                                   "New aliases: ", paste(alias_list, collapse = ",")))))
 }
 
+#' Show an input modal to view the table of gene aliases for the selected panel and dataset
+#' @importFrom shiny modalDialog
+show_alias_table_modal <- function() {
+  modalDialog(
+    DT::dataTableOutput("table_of_gene_aliases"),
+    title = "Gene aliases for the uploaded markers/dataset",
+    helpText("If any gene aliases were detected during dataset or custom panel upload, they will be shown here."),
+    size = "xl",
+    easyClose = TRUE,        
+    footer = tagList(
+      modalButton("Dismiss.")
+    ))
+}
+
 
