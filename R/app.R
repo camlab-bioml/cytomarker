@@ -791,6 +791,8 @@ cytosel <- function(...) {
       # future_promise({
       removeModal()
       pre_upload_configuration()
+      umap_all(NULL)
+      umap_top(NULL)
       
       tissue_lab <- dataset_labels[names(dataset_labels) == input$curated_options]
       
@@ -842,6 +844,8 @@ cytosel <- function(...) {
       # future_promise({
       default_category_curated(NULL)
       curated_selection(NULL)
+      umap_all(NULL)
+      umap_top(NULL)
       withProgress(message = 'Configuring input selection', value = 0, {
       setProgress(value = 0)
       pre_upload_configuration()
@@ -1511,6 +1515,9 @@ cytosel <- function(...) {
       downloaded_content(FALSE)
       toggle(id = "download_button", condition = isTruthy(current_markers()))
       
+      umap_all(NULL)
+      umap_top(NULL)
+      reset_panel(FALSE)
       
       new_waitress$close()
       
@@ -2121,6 +2128,8 @@ cytosel <- function(...) {
                 names(fms()[[1]]))
       valid_existing_panel(TRUE)
       original_panel(NULL)
+      umap_top(NULL)
+      umap_all(NULL)
       removeModal()
       updateTabsetPanel(session, "tabs", "marker_selection")
       proceed_with_analysis(TRUE)
@@ -2133,7 +2142,62 @@ cytosel <- function(...) {
     })
     
     to_listen_umap <- reactive({
-      list(input$umap_options, input$umap_panel_options, input$show_umap_legend)
+      list(input$umap_options, input$umap_panel_options, input$show_umap_legend,
+           input$tabs)
+    })
+    
+    observeEvent(input$tabs, {
+      
+      req(sce())
+      req(current_markers())
+      req(column())
+      req(!isTruthy(reset_panel()))
+      
+      if (input$tabs == "UMAP") {
+        
+        if (!isTruthy(umap_all()) | !isTruthy(umap_top())) {
+          umap_waitress <- Waitress$new(theme = "overlay-percent", infinite = TRUE)
+          umap_waitress$start()
+          
+          if (!isTruthy(umap_all())) {
+            umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
+                              column(), pref_assay(), 
+                              use_precomputed_umap(),
+                              umap_precomputed_col(), F, allowed_genes()))
+            
+            plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
+                                                       text=~get(input$coldata_column), 
+                                                       type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                 layout(title = "UMAP all genes"))
+          }
+          
+          if (!isTruthy(umap_top())) {
+            
+            umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][current_markers()$top_markers,], 
+                              column(), pref_assay(), use_precomputed_umap(),
+                              umap_precomputed_col(),
+                              T, current_markers()$top_markers))
+            
+            plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
+                                                       text=~get(input$coldata_column), 
+                                                       type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                 layout(title = "UMAP selected markers"))
+          
+            }
+          
+          
+          
+          umap_waitress$close()
+          
+        }
+        
+        plots_for_markdown(list(all = suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
+                                                               text=~get(input$coldata_column), 
+                                                               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                         layout(title = "UMAP all genes")),
+                                top = plots$top_plot))
+      }
+      
     })
     
     
@@ -2141,6 +2205,12 @@ cytosel <- function(...) {
       req(sce())
       req(input$umap_options)
       req(input$umap_panel_options)
+      req(umap_all())
+      req(umap_top())
+      req(column() == input$coldata_column)
+      req(current_markers())
+      req(!isTruthy(reset_panel()))
+      req(input$tabs == "UMAP")
       
       umap_colouring(input$umap_options)
       
@@ -2408,32 +2478,6 @@ cytosel <- function(...) {
                   names(fms()[[1]]))
         
         setProgress(value = 0.25)
-        
-        
-        # Update UMAP
-        incProgress(detail = "Computing & creating UMAP plots")
-        
-        umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
-                          column(), pref_assay(), 
-                          use_precomputed_umap(),
-                          umap_precomputed_col(), F, allowed_genes()))
-        umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][current_markers()$top_markers,], 
-                          column(), pref_assay(), use_precomputed_umap(),
-                          umap_precomputed_col(),
-                          T, current_markers()$top_markers))
-        
-        plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
-                                 type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-          layout(title = "UMAP all genes"))
-        
-        plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
-                                 type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-          layout(title = "UMAP selected markers"))
-        
-        plots_for_markdown(list(all = suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
-                                                               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-                                                         layout(title = "UMAP all genes")),
-                                top = plots$top_plot))
         
         setProgress(value = 0.5)
         
@@ -2716,6 +2760,31 @@ cytosel <- function(...) {
       content = function(fname) {
         showNotification("Rendering output report and config file, this may take a few moments..", duration = 4)
         # future_promise({
+        
+        if (!isTruthy(umap_all())) {
+          umap_all(get_umap(sce()[,sce()$keep_for_analysis == "Yes"],
+                            column(), pref_assay(), 
+                            use_precomputed_umap(),
+                            umap_precomputed_col(), F, allowed_genes()))
+        }
+        
+        if (!isTruthy(umap_top())) {
+        umap_top(get_umap(sce()[,sce()$keep_for_analysis == "Yes"][current_markers()$top_markers,], 
+                          column(), pref_assay(), use_precomputed_umap(),
+                          umap_precomputed_col(),
+                          T, current_markers()$top_markers))
+          
+        }
+        
+        plots_for_markdown(list(all = suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
+                                                               text=~get(input$coldata_column), 
+                                                               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                         layout(title = "UMAP all genes")),
+                                top = suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
+                                                               text=~get(input$coldata_column), 
+                                                               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                         layout(title = "UMAP selected markers"))))
+        
         download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap_for_report(), df_antibody(), 
                       markdown_report_path, current_metrics()$summary, current_overall_score(),
                       markers_with_type())
