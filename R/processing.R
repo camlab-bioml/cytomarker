@@ -5,18 +5,18 @@
 #' 
 #' @param sce_path Input uploaded path
 #' @importFrom tools file_ext
-#' @importFrom zellkonverter readH5AD
 #' @importFrom Matrix rowSums
 read_input_scrnaseq <- function(sce_path) {
   
   library(SingleCellExperiment, quiet = T)
   library(SummarizedExperiment, quiet = T)
+  library(zellkonverter, quiet = T)
   
   sce <- NULL ## object we're going to return
   
   if(file_ext(sce_path) == "h5ad") {
     ## We'll assume this is an h5ad file
-    sce <- readH5AD(sce_path)
+    sce <- zellkonverter::readH5AD(sce_path)
   } else {
     ## We'll assume this is an rds
     sce <- readRDS(sce_path)

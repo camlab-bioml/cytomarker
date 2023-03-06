@@ -32,15 +32,12 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom shinyalert useShinyalert shinyalert
 #' @importFrom DT DTOutput renderDT
 #' @importFrom tidyr drop_na
-#' @import forcats
 #' @importFrom waiter useWaitress Waitress
 #' @importFrom cicerone use_cicerone Cicerone
-#' @import sortable
+#' @importFrom sortable add_rank_list bucket_list
 #' @import fontawesome
 #' @import emojifont
-#' @import utils
 #' @import reactable
-#' @import printr
 #' @import htmltools
 #' @importFrom rlang is_empty
 #' @importFrom DT datatable
@@ -49,9 +46,8 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom bsplus use_bs_popover shinyInput_label_embed shiny_iconlink bs_embed_tooltip use_bs_tooltip
 #' @importFrom shinyjs useShinyjs hidden toggle reset delay
 #' @importFrom grDevices dev.off pdf
-#' @importFrom utils zip
+#' @importFrom zip zip
 #' @importFrom randomcoloR distinctColorPalette
-#' @importFrom plotly plot_ly plotlyOutput renderPlotly layout hide_guides
 #' @importFrom stringr str_split_fixed
 #' @importFrom magrittr set_names
 #' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar
@@ -61,7 +57,7 @@ STAR_FOR_ABCAM <- yaml$star_for_abcam_product
 #' @importFrom yaml read_yaml
 #' @importFrom rdrop2 drop_download
 #' @importFrom lubridate with_tz
-#' @export
+#' @export cytosel cytosel
 #' 
 #' @param ... Additional arguments
 cytosel <- function(...) {
@@ -398,10 +394,10 @@ cytosel <- function(...) {
                                             checkboxInput("show_umap_legend", "Show UMAP plot legends", T,
                                                              ))),
                  fluidRow(column(6, style = "margin-right: -15px; margin-top: 10px",
-                                 plotlyOutput("all_plot", width="500px", height="450px",
+                                 plotly::plotlyOutput("all_plot", width="500px", height="450px",
                                                  )),
                           column(6, style = "margin-left: -15px; margin-top: 10px",
-                                 plotlyOutput("top_plot", width="500px", height="450px",
+                                 plotly::plotlyOutput("top_plot", width="500px", height="450px",
                                                  )))
           ),
         
@@ -434,7 +430,7 @@ cytosel <- function(...) {
                                               placement = "right"))),
                           div(style="margin-left:10px; margin-top: 25px; margin-bottom:25px;",
                               actionButton("suggest_gene_removal", "View suggestions"))),
-                 fluidRow(column(12, plotlyOutput("heatmap", height="auto", width = "auto"))),
+                 fluidRow(column(12, plotly::plotlyOutput("heatmap", height="auto", width = "auto"))),
                  br()
           ),
       
@@ -450,7 +446,7 @@ cytosel <- function(...) {
                                                ))),
                  # textOutput("cells_per_category"),
                 fluidRow(
-                column(8, plotlyOutput("metric_plot", height="550px")),
+                column(8, plotly::plotlyOutput("metric_plot", height="550px")),
                 column(4, align = "center",
                        tabBox(width = NULL,
                               id = "metrics_toggle",
@@ -1025,7 +1021,7 @@ cytosel <- function(...) {
     })
 
     ### PLOTS ###
-    output$all_plot <- renderPlotly({
+    output$all_plot <- plotly::renderPlotly({
       # req(umap_all())
       req(column())
       req(plots$all_plot)
@@ -1035,7 +1031,7 @@ cytosel <- function(...) {
       plots$all_plot
     })
     
-    output$top_plot <- renderPlotly({
+    output$top_plot <- plotly::renderPlotly({
       # req(umap_top())
       req(column())
       req(plots$top_plot)
@@ -1044,14 +1040,14 @@ cytosel <- function(...) {
       
     })
     
-    output$heatmap <- renderPlotly({
+    output$heatmap <- plotly::renderPlotly({
       req(heatmap())
       req(column())
       
      heatmap()
     })
     
-    output$metric_plot <- renderPlotly({
+    output$metric_plot <- plotly::renderPlotly({
       req(metrics())
       req(cells_per_type())
       req(plots$metric_plot)
@@ -1167,6 +1163,7 @@ cytosel <- function(...) {
       library(Seurat, quiet = T)
       library(clustifyr, quiet = T)
       library(ggplot2, quiet = T)
+      library(plotly, quiet = T)
       
       proceed_with_analysis(TRUE)
       
@@ -2141,13 +2138,13 @@ cytosel <- function(...) {
       toggle(id = "umap_panel_cols", condition = input$umap_options != "Cell Type")
         
         if (umap_colouring() == "Cell Type") {
-          plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
+          plots$all_plot <- suppressWarnings(plotly::plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
                                                      text=~get(input$coldata_column), 
                                                      type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
                                                layout(title = "UMAP all genes",
                                                       showlegend = input$show_umap_legend))
           
-          plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
+          plots$top_plot <- suppressWarnings(plotly::plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
                                                      text=~get(input$coldata_column),
                                                      type='scatter', hoverinfo="text", colors=cytosel_palette()) %>%
                                                layout(title = "UMAP selected markers",
@@ -2183,7 +2180,7 @@ cytosel <- function(...) {
                                              round(get(input$umap_panel_options), 3), sep = "")) |>
                           rename(Expression = input$umap_panel_options))
           
-          plots$top_plot <- suppressWarnings(plot_ly(umap_top_gene(),
+          plots$top_plot <- suppressWarnings(plotly::plot_ly(umap_top_gene(),
                                                      x = ~UMAP_1, y = ~UMAP_2, 
                                                      color = ~Expression,
                                                      type='scatter',
@@ -2194,7 +2191,7 @@ cytosel <- function(...) {
                                                # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
                                                layout(title = "UMAP selected markers"))
           
-          plots$all_plot <- hide_guides(suppressWarnings(plot_ly(umap_all_gene(),
+          plots$all_plot <- plotly::hide_guides(suppressWarnings(plotly::plot_ly(umap_all_gene(),
                                                                  x = ~UMAP_1, y = ~UMAP_2, 
                                                                  color = ~Expression,
                                                                  type='scatter',
@@ -2416,15 +2413,15 @@ cytosel <- function(...) {
                           umap_precomputed_col(),
                           T, current_markers()$top_markers))
         
-        plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
+        plots$all_plot <- suppressWarnings(plotly::plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
           layout(title = "UMAP all genes"))
         
-        plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
+        plots$top_plot <- suppressWarnings(plotly::plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
                                  type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
           layout(title = "UMAP selected markers"))
         
-        plots_for_markdown(list(all = suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
+        plots_for_markdown(list(all = suppressWarnings(plotly::plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(columns[1]), text=~get(columns[1]), 
                                                                type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
                                                          layout(title = "UMAP all genes")),
                                 top = plots$top_plot))
@@ -2533,7 +2530,7 @@ cytosel <- function(...) {
                     levels = c(rev(unique(what[what != "Overall"])), "Overall")))
         }
         
-        plots$metric_plot <- suppressWarnings(plot_ly(all_metrics, x = ~score, y = ~what, 
+        plots$metric_plot <- suppressWarnings(plotly::plot_ly(all_metrics, x = ~score, y = ~what, 
                                      color = ~Run,
                                      type='box', hoverinfo = 'none') %>% 
           layout(boxmode = "group",
@@ -2720,7 +2717,7 @@ cytosel <- function(...) {
     
   }
   
-  shinyApp(ui, server, ...)
+  shinyApp(ui, server, options = list(shiny.autoload.r=FALSE), ...)
 }
 
 

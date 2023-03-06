@@ -17,8 +17,6 @@ Imports:
     dplyr,
     shiny,
     sortable,
-    forcats,
-    cowplot,
     readr,
     DT,
     shinyalert,
@@ -30,9 +28,7 @@ Imports:
     plyr,
     yaml,
     randomcoloR,
-    plotly,
     pkgload,
-    zellkonverter,
     inferorg (>= 0.1.0),
     magrittr,
     Matrix,
@@ -43,21 +39,17 @@ Imports:
     htmlwidgets,
     shinydashboard,
     shinyBS,
-    heatmaply,
     stringr,
     rlang,
     rmarkdown,
     rdrop2,
     lubridate,
-    printr,
     htmltools,
-    utils,
     fontawesome,
     emojifont,
     geneBasisR,
     waiter,
-    cicerone,
-    ggplot2
+    cicerone
 Suggests:
   stringr,
   yardstick,
@@ -74,13 +66,16 @@ Suggests:
   scater,
   SummarizedExperiment,
   SingleCellExperiment,
-  clustifyr
+  clustifyr,
+  zellkonverter,
+  printr,
+  ggplot2,
+  heatmaply,
+  plotly
 Remotes: 
-    github::daqana/dqshiny,
     github::MarioniLab/geneBasisR,
     github::camlab-bioml/inferorg,
     github::stephenturner/annotables,
-    github::HenrikBengtsson/parallelly,
     github::rstudio/shinytest2@v0.2.0
 Encoding: UTF-8
 LazyData: true
