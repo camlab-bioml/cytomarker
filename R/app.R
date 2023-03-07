@@ -626,6 +626,7 @@ cytosel <- function(...) {
     
     curated_selection <- reactiveVal(NULL)
     aliases_table <- reactiveVal(NULL)
+    aliases_table_subset <- reactiveVal(NULL)
     
     addResourcePath('report', system.file('report', package='cytosel'))
     
@@ -715,7 +716,7 @@ cytosel <- function(...) {
       req(aliases_table())
       
       output$table_of_gene_aliases <- DT::renderDataTable(
-        aliases_table()
+        {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
       )
       
       showModal(show_alias_table_modal())
@@ -946,6 +947,11 @@ cytosel <- function(...) {
 
       # assume that selecting the applications creates a valid panel for analysis
       valid_existing_panel(TRUE)
+      set_allowed_genes()
+      if (isTruthy(aliases_table())) {
+        aliases_table_subset(aliases_table()[aliases_table()$Alias %in% allowed_genes(),])
+      }
+      
     }, ignoreNULL = F)
     
     observeEvent(input$show_cat_table, {
@@ -1694,7 +1700,7 @@ cytosel <- function(...) {
       alias <- get_gene_aliases(uploaded_markers, cytosel_data$gene_mapping,
                                 allowed_genes())
       
-      aliases_table(alias$table)
+      aliases_table(if (isTruthy(aliases_table())) rbind(aliases_table(), alias$table) else alias$table)
       
       to_add <- alias$merged
       to_add <- to_add[!to_add %in% current_markers()$top_markers &
@@ -2758,6 +2764,8 @@ cytosel <- function(...) {
         
         set_allowed_genes()
         aliases_table(NULL)
+        aliases_table_subset(NULL)
+        toggle(id = "gene_alias_tag", condition = isTruthy(aliases_table()))
         
     }
     

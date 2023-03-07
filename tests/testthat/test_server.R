@@ -1,5 +1,4 @@
 
-
 context("Test basic Shiny app server functionality")
 
 test_that("Server has basic functionality", {
@@ -494,9 +493,15 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     
     heatmap_1 <- heatmap()
     
+    expect_true(is.null(umap_all()))
+    expect_true(is.null(umap_top()))
+  
     session$setInputs(tabs = "UMAP", umap_options = "Cell Type",
                       umap_panel_options = "S100A9", umap_panel_cols = T, 
                       show_umap_legend = T)
+    
+    expect_false(is.null(umap_all()))
+    expect_false(is.null(umap_top()))
     
     # check defaults for UMAP plots
     expect_false(umap_top_gene())
@@ -952,10 +957,48 @@ test_that("adding and replacing markers can identify gene aliases", {
     expect_false(is.null(aliases_table()))
     expect_true(nrow(aliases_table()) > 0)
     
+    current_table <- aliases_table()
+
+    
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("cds_1_to_200.txt")),
+                      add_to_selected = T)    
+    
+    expect_true("CD40LG" %in% aliases_table()$Alias)
+    expect_true("hCD40L" %in% aliases_table()$`Original Name`)
+    expect_true(nrow(aliases_table()) > nrow(current_table))
     
   })
   
 })
+
+context("Test basic gene aliases table works")
+
+test_that("A gene alias table is populated when uploading markers", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_true(is.null(aliases_table()))
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")))
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                                                  test_path("cds_1_to_200.txt")))
+    
+    expect_false(is.null(aliases_table()))
+    first_alias <- aliases_table()
+    expect_true(is.null(aliases_table_subset()))
+    
+    session$setInputs(select_aa = c("Protein Array"))
+    expect_false(is.null(aliases_table_subset()))
+    
+    expect_true(nrow(first_alias) > nrow(aliases_table_subset()))
+    
+    
+  })
+})
+
 
 context("Test that starting the help guide does not modify the reactive values")
 

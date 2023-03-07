@@ -431,7 +431,8 @@ show_alias_table_modal <- function() {
   modalDialog(
     DT::dataTableOutput("table_of_gene_aliases"),
     title = "Gene aliases for the uploaded markers/dataset",
-    helpText("If any gene aliases were detected during dataset or custom panel upload, they will be shown here."),
+    helpText("If any gene aliases were detected during dataset or custom panel upload, they will be shown here. Note that changing the selected 
+             antibody applications will change the list of gene aliases shown."),
     size = "xl",
     easyClose = TRUE,        
     footer = tagList(
