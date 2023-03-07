@@ -383,7 +383,7 @@ train_nb <- function(x,y, cell_types) {
         df_train$y <- y[-test_idx]
         df_train <- sample_n(df_train, min(5000, nrow(df_train)))
         
-        write.csv(df_train, "df_train.csv", quote = F, na = "NA")
+        # write.csv(df_train, "df_train.csv", quote = F, na = "NA")
         
         df_test <- as.data.frame(x[test_idx,])
         df_test$y <- y[test_idx]
