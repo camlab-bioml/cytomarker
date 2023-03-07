@@ -4,9 +4,10 @@
 #' (2) Seurat object (converted to SingleCellExperiment)
 #' 
 #' @param sce_path Input uploaded path
+#' @param filter_counts Boolean on whether to filter lowly expressed genes from the counts matrix(Default is True)
 #' @importFrom tools file_ext
 #' @importFrom Matrix rowSums
-read_input_scrnaseq <- function(sce_path) {
+read_input_scrnaseq <- function(sce_path, filter_counts = T) {
   
   library(SingleCellExperiment, quiet = T)
   library(SummarizedExperiment, quiet = T)
@@ -29,13 +30,18 @@ read_input_scrnaseq <- function(sce_path) {
       sce <- Seurat::as.SingleCellExperiment(sce)
     } 
   }
-
+  
   if (isTruthy(sce)) {
+    if ("counts" %in% names(assays(sce)) & isTruthy(filter_counts)) {
+      sce <- sce[rowSums(counts(sce)) > 10,]
+    }
     if ("logcounts" %in% names(assays(sce))) {
       sce <- sce[, Matrix::colSums(logcounts(sce)) > 0]
+      sce <- sce[Matrix::rowSums(logcounts(sce)) > 0,]
     }
   }
   ## Remove cells with no reads - would cause issue with logNormCounts from scater
+  # sce <- sce[rowSums(counts(sce)) > 10,]
   sce
 } 
 

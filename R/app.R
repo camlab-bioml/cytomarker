@@ -784,7 +784,7 @@ cytosel <- function(...) {
       ts_dataset_preview <- paste("<b>", "<a href='https://tabula-sapiens-portal.ds.czbiohub.org/' target='_blank'",
       ">", "Tabula Sapiens dataset: ", input$curated_options, "</a>",
       "</b>", "<br/>", "<b>", "Cells: ", "</b>", subset(curated_datasets, tissue == tissue_lab)$num_cells[1], 
-    "<br/>", "<b>", "Genes: ", "</b>", "58870", "<br/>", 
+    "<br/>", "<b>", "Genes: ", "</b>", subset(curated_datasets, tissue == tissue_lab)$num_genes[1], "<br/>", 
       "<b>", "Cell category of interest: ", "</b>", "cell_ontology_glass",
     "<br/>", "<b>", "Cell Type Distribution: ", "</b>", "<br/>", subset(curated_datasets, tissue == tissue_lab)$preview[1],
       sep = "")
@@ -1949,6 +1949,8 @@ cytosel <- function(...) {
         use_precomputed_umap(FALSE)
       }
       
+      umap_all(NULL)
+      
     }, ignoreNULL = F)
     
     observeEvent(input$select_precomputed_umap, {
@@ -2131,8 +2133,8 @@ cytosel <- function(...) {
     })
     
     observeEvent(input$dismiss_marker_reset, {
-      removeModal()
       proceed_with_analysis(TRUE)
+      removeModal()
     })
     
     observeEvent(input$reset_marker_panel, {
@@ -2146,6 +2148,7 @@ cytosel <- function(...) {
       num_markers_in_scratch(0)
       reset("bl_top")
       reset("bl_scratch")
+      reset("read_back_analysis")
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
                 names(fms()[[1]]))
@@ -2218,7 +2221,8 @@ cytosel <- function(...) {
                                                                text=~get(input$coldata_column), 
                                                                type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
                                                          layout(title = "UMAP all genes")),
-                                top = plots$top_plot))
+                                top = plots$top_plot,
+                                metric = plots_for_markdown()$metric))
       }
       
     })
@@ -2690,9 +2694,11 @@ cytosel <- function(...) {
       
       input_assays <- c(names(SummarizedExperiment::assays(sce())))
       
-      # set the currenr metrics to NULL
+      # set the current metrics to NULL
       current_metrics(NULL)
       previous_metrics(NULL)
+      current_overall_score(NULL)
+      previous_overall_score(NULL)
       
       if (!isTruthy(input$min_category_count)) {
         updateNumericInput(session, "min_category_count", 2)
@@ -2751,6 +2757,9 @@ cytosel <- function(...) {
   
       }
       
+      aliases_table(NULL)
+      aliases_table_subset(NULL)
+      
       req(proceed_with_analysis())
       
       possible_umap_dims(detect_umap_dims_in_sce(sce()))
@@ -2763,8 +2772,6 @@ cytosel <- function(...) {
         }
         
         set_allowed_genes()
-        aliases_table(NULL)
-        aliases_table_subset(NULL)
         toggle(id = "gene_alias_tag", condition = isTruthy(aliases_table()))
         
     }
@@ -2809,7 +2816,8 @@ cytosel <- function(...) {
                                 top = suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
                                                                text=~get(input$coldata_column), 
                                                                type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
-                                                         layout(title = "UMAP selected markers"))))
+                                                         layout(title = "UMAP selected markers")),
+                                metric = plots_for_markdown()$metric))
         
         download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap_for_report(), df_antibody(), 
                       markdown_report_path, current_metrics()$summary, current_overall_score(),

@@ -12,7 +12,7 @@ test_that("Server has basic functionality", {
                                               test_path("pbmc_small.rds")))
     
     expect_is(sce(), 'SingleCellExperiment')
-    expect_equivalent(dim(sce()), c(13714, 100))
+    expect_equivalent(dim(sce()), c(2167, 100))
     session$setInputs(assay_select = "counts", assay = "counts")
     expect_equal(pref_assay(), "counts")
     
@@ -86,7 +86,7 @@ test_that("Server has basic functionality", {
     expect_equal(length(unique(sce()$keep_for_analysis)), 2)
     
     # Ensure that the dimensions od the sce are not reduced after subsetting
-    expect_equivalent(dim(sce()), c(13714, 100))
+    expect_equivalent(dim(sce()), c(2167, 100))
     
     # do not keep Platelet even though it was not selected for removal
     expect_equivalent(subset(colData(sce()), 
@@ -260,7 +260,7 @@ test_that("Server has basic functionality", {
     
     # Look for the uploaded markers in the top markers
     expect_true("EEF2" %in% current_markers()$top_markers)
-    expect_true("MARCKS" %in% current_markers()$top_markers)
+    expect_true("TRAM1" %in% current_markers()$top_markers)
     
     # instead of add, replace markers
     session$setInputs(uploadMarkers = list(datapath =
@@ -306,10 +306,10 @@ test_that("Pre-setting the input rank lists persists in the current markers", {
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm",
-                      select_aa = c("IHC-P", "Flow Cyt (Intra)", "IP"),
-                      bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
-                      bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
-                      bl_scratch = c("GNLY", "FTL"),
+                      select_aa = NULL,
+                      bl_top = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
+                      bl_recommended = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
+                      bl_scratch = c("FGR", "ACAP1"),
                       start_analysis = T)
     
     expect_equal(length(current_markers()$top_markers), length(input$bl_top))
@@ -516,7 +516,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_false(isFALSE(umap_all_gene()))
     expect_equal(umap_colouring(), "Panel Marker")
     
-    viol_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
+    viol_markers <- c("EEF2", "RBM3", "TRAM1", "MSN", "FTL")
     
     # setting the violin plots with genes works
     session$setInputs(genes_for_violin = viol_markers,
@@ -575,7 +575,7 @@ test_that("Picking the curated dataset works as intended", {
     expect_equal(curated_selection(), "Kidney")
     
     expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
-    expect_equivalent(dim(sce()), c(58870, 750))
+    expect_equivalent(dim(sce()), c(23863, 750))
     
     expect_false("epithelial" %in% unique(sce()$compartment))
     expect_false(is.null(output$curated_set_preview))
@@ -608,7 +608,7 @@ test_that("Setting null compartments retains the full dataset", {
                   curated_compartments = NULL,
                   pick_curated = T)
     expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
-    expect_equivalent(dim(sce()), c(58870, 881))
+    expect_equivalent(dim(sce()), c(23863, 881))
 
     expect_true("epithelial" %in% unique(sce()$compartment))
     
@@ -626,8 +626,8 @@ test_that("Setting null compartments retains the full dataset", {
 test_that("Having an existing panel will warn for a reset on upload", {
   testServer(cytosel::cytosel(), expr = {
     
-    session$setInputs( bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
-                       bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
+    session$setInputs( bl_top = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
+                       bl_recommended = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
                        bl_scratch = c("GNLY", "FTL"))
     
     session$setInputs(curated_dataset = T, curated_options = "Kidney",
@@ -636,7 +636,7 @@ test_that("Having an existing panel will warn for a reset on upload", {
                       curated_compartments = NULL,
                       pick_curated = T)
     expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
-    expect_equivalent(dim(sce()), c(58870, 881))
+    expect_equivalent(dim(sce()), c(23863, 881))
     
     expect_false(proceed_with_analysis())
     expect_true("epithelial" %in% unique(sce()$compartment))

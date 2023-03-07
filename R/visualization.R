@@ -28,7 +28,6 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
   )
   
   mat <- (assay(mat, 'mean'))
-  
   legend <- "Mean\nexpression"
   if(normalization == "z-score") {
     mat <- t(scale(t(mat)))

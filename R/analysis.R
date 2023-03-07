@@ -371,43 +371,65 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, pref_assay, max_cells =
 #' @importFrom nnet multinom
 #' @importFrom dplyr sample_n
 train_nb <- function(x,y, cell_types) {
-  
-  flds <- caret::createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
-  x <- scale(x)
-  
-  metrics <- suppressWarnings({ 
-    lapply(flds, function(test_idx) {
-      # fit <- naive_bayes(x[-test_idx,], y[-test_idx])
-      # p <- stats::predict(fit, newdata = x[test_idx,])
-      df_train <- as.data.frame(x[-test_idx,])
-      df_train$y <- y[-test_idx]
-      df_train <- sample_n(df_train, min(5000, nrow(df_train)))
-      
-      df_test <- as.data.frame(x[test_idx,])
-      df_test$y <- y[test_idx]
-      
-      fit <- multinom(y~., data = df_train, trace = FALSE, MaxNWts = 100000)
-      # fit <- glmnet::glmnet(
-      #   x = iris.x, y = iris.y,
-      #   family = "multinomial",
-      #   lambda = 0,
-      #   type.multinomial = "grouped"
-      # )
-      p <- stats::predict(fit, df_test)
-      
-      overall <- yardstick::bal_accuracy_vec(y[test_idx], p)
-      scores <- sapply(cell_types, function(ct) {
-        yardstick::f_meas_vec(factor(y[test_idx] == ct, levels=c("TRUE", "FALSE")), 
-                              factor(p == ct, levels = c("TRUE", "FALSE")))
-      })
+
+    flds <- caret::createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
+    x <- scale(x)
+    x <- x[,colMeans(is.na(x)) == 0]
+    
+    metrics <- lapply(flds, function(test_idx) {
+        # fit <- naive_bayes(x[-test_idx,], y[-test_idx])
+        # p <- stats::predict(fit, newdata = x[test_idx,])
+        df_train <- as.data.frame(x[-test_idx,])
+        df_train$y <- y[-test_idx]
+        df_train <- sample_n(df_train, min(5000, nrow(df_train)))
+        
+        write.csv(df_train, "df_train.csv", quote = F, na = "NA")
+        
+        df_test <- as.data.frame(x[test_idx,])
+        df_test$y <- y[test_idx]
+        
+        fit <- tryCatch({
+          multinom(y~., data = df_train, trace = FALSE, MaxNWts = 100000)
+        },
+        error = function(cond) {
+          message(cond)
+          return(NULL)
+        }, 
+        warning = function(cond) {
+          message(cond)
+          return(NULL)
+        }
+        )
+        
+        if (isTruthy(fit)) {
+          p <- stats::predict(fit, df_test)
+          
+          overall <- yardstick::bal_accuracy_vec(y[test_idx], p)
+          scores <- sapply(cell_types, function(ct) {
+            yardstick::f_meas_vec(factor(y[test_idx] == ct, levels=c("TRUE", "FALSE")), 
+                                  factor(p == ct, levels = c("TRUE", "FALSE")))
+          })
+          tibble(
+            what = c("Overall", as.character(cell_types)),
+            score=c(overall, scores)
+          )
+    } else {
       tibble(
         what = c("Overall", as.character(cell_types)),
-        score=c(overall, scores)
-      )
+        score=c(0, rep(0, length(as.character(cell_types)))))
+    }
+        
     }) %>% bind_rows()
-  })
+        # fit <- glmnet::glmnet(
+        #   x = iris.x, y = iris.y,
+        #   family = "multinomial",
+        #   lambda = 0,
+        #   type.multinomial = "grouped"
+        # )
+    
+  return(metrics)
   
-  metrics
+  
 }
 
 # train_2 <- function(x, y, cell_types) {

@@ -4,13 +4,13 @@ context("Test basic functions")
 test_that("conversion functions are effective", {
   expect_equal(round3(0.3456), "0.300")
   obj <- test_path("pbmc_small.rds")
-  sce <- read_input_scrnaseq(obj)
+  sce <- read_input_scrnaseq(obj, filter_counts = F)
   expect_is(convert_column_to_character_or_factor(sce, "num_col")$num_col,
             "character")
 
   expect_true(check_for_human_genes(sce))
   obj <- test_path("pbmc_lowercase.rds")
-  sce <- read_input_scrnaseq(obj)
+  sce <- read_input_scrnaseq(obj, filter_counts = F)
 
   expect_false(check_for_human_genes(sce))
 })
@@ -34,12 +34,12 @@ context("parsing for the allowed genes in an Abcam subset works as intended")
 test_that("Processing the antibody applications produces the intended data structures", {
 
   obj <- test_path("pbmc_small.rds")
-  sce <- read_input_scrnaseq(obj)
+  sce <- read_input_scrnaseq(obj, filter_counts = F)
 
   allowed_all <- as.character(get_allowed_genes(NULL, cytosel_data$applications,
                     sce))
-
-  expect_gte(length(allowed_all), 3900)
+  
+  expect_gte(length(allowed_all), 900)
 
   only_protein <- get_allowed_genes("Protein Array", cytosel_data$applications,
                                                    sce)
@@ -56,19 +56,19 @@ context("Data reading")
 
 test_that("SingleCellExperiment object reading", {
   obj <- test_path("test_sce.rds")
-  sce <- read_input_scrnaseq(obj)
+  sce <- read_input_scrnaseq(obj, filter_counts = F)
 
   expect_is(sce, 'SingleCellExperiment')
   expect_equivalent(dim(sce), c(100, 500))
   expect_equivalent(rownames(sce), paste("feature-", seq(1, 100, 1), sep=""))
 
-  expect_null(read_input_scrnaseq(test_path("fake_rds.rds")))
+  expect_null(read_input_scrnaseq(test_path("fake_rds.rds"), filter_counts = F))
 
 })
 
 test_that("Seurat object reading", {
   obj <- test_path("test_seu.rds")
-  seu <- read_input_scrnaseq(obj)
+  seu <- read_input_scrnaseq(obj, filter_counts = F)
 
   ## Seurat objects are converted to SingleCellExperiments by read_input_scrnaseq
   expect_is(seu, 'SingleCellExperiment')
@@ -80,7 +80,7 @@ context("Marker finding")
 
 test_that("good_col returns valid columns", {
   sce_path <- test_path("test_sce.rds")
-  sce <- read_input_scrnaseq(sce_path)
+  sce <- read_input_scrnaseq(sce_path, filter_counts = F)
   columns <- good_col(sce, colnames(colData(sce)))
 
   expect_is(columns, 'list')
@@ -98,7 +98,7 @@ context("test that changing the p value type for marker finding affects the mult
 test_that("get_markers and compute_fm return different results with different p-value types", {
   
   sce_path <- test_path("pbmc_small.rds")
-  sce <- read_input_scrnaseq(sce_path)
+  sce <- read_input_scrnaseq(sce_path, filter_counts = F)
   
   # sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
   
@@ -133,7 +133,7 @@ context("Check for valid output formats in marker finding")
 
 test_that("get_markers and compute_fm returns valid output", {
   sce_path <- test_path("pbmc_small.rds")
-  sce <- read_input_scrnaseq(sce_path)
+  sce <- read_input_scrnaseq(sce_path, filter_counts = F)
 
   # sce$cell_type <- sample(c("A", "B"), ncol(sce), replace=TRUE)
 
@@ -180,7 +180,7 @@ test_that("get_markers and compute_fm returns valid output", {
 
 test_that("get_markers errors for non unique values", {
   obj <- test_path("test_sce.rds")
-  sce <- read_input_scrnaseq(obj)
+  sce <- read_input_scrnaseq(obj, filter_counts = F)
 
   expect_error(get_markers(sce, 'col2', 10, 'logcounts'))
 })
@@ -190,7 +190,7 @@ context("Plotting")
 
 test_that("get_umap returns valid dataframe and values with different assays", {
   obj <- test_path("pbmc_small.rds")
-  sce <- read_input_scrnaseq(obj)
+  sce <- read_input_scrnaseq(obj, filter_counts = F)
 
   umap_frame_log <- get_umap(sce, "seurat_annotations", "logcounts",
                              markers_to_use = rownames(sce))
@@ -213,7 +213,7 @@ context("heatmaps")
 
 test_that("create_heatmap works effectively with different normalizations", {
   obj <- test_path("pbmc_small.rds")
-  sce <- read_input_scrnaseq(obj)
+  sce <- read_input_scrnaseq(obj, filter_counts = F)
 
   sce$num_placeholder <- rep(seq(5), 20)
 
@@ -248,7 +248,7 @@ context("violin plotting")
 
 test_that("Violin plotting returns the appropriate data structure", {
   obj <- test_path("pbmc_small.rds")
-  sce <- read_input_scrnaseq(obj)
+  sce <- read_input_scrnaseq(obj, filter_counts = F)
 
   markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "JUNB")
 
@@ -315,7 +315,7 @@ context("Check filtering steps")
 test_that("Filtering sce objects by minimum count passes & retains original size", {
 
   obj <- test_path("pbmc_small.rds")
-  sce <- read_input_scrnaseq(obj)
+  sce <- read_input_scrnaseq(obj, filter_counts = F)
 
   grouped <- create_table_of_hetero_cat(
     sce, "seurat_annotations")
@@ -384,7 +384,7 @@ test_that("download works as expected", {
 
   td <- tempdir(check = TRUE)
   obj <- test_path("pbmc_small.rds")
-  sce <- read_input_scrnaseq(obj)
+  sce <- read_input_scrnaseq(obj, filter_counts = F)
 
   heatmap <- create_heatmap(sce, list(top_markers = rownames(sce)[1:100]),
                             "seurat_annotations", "Marker-marker correlation",

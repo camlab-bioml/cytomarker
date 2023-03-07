@@ -7,10 +7,12 @@ from compressed RDS file. Accepts either:
 (1) SingleCellExperiment
 (2) Seurat object (converted to SingleCellExperiment)}
 \usage{
-read_input_scrnaseq(sce_path)
+read_input_scrnaseq(sce_path, filter_counts = T)
 }
 \arguments{
 \item{sce_path}{Input uploaded path}
+
+\item{filter_counts}{Boolean on whether to filter lowly expressed genes from the counts matrix(Default is True)}
 }
 \description{
 Read the input single-cell RNA-seq dataset
