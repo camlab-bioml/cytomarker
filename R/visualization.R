@@ -72,6 +72,9 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
                                 key.title = as.character(normalization),
                                 column_text_angle = 90,
                                 height = 600, 
+                                fontsize_col = ifelse(gene_num < 75, 10, ifelse(gene_num > 75 & 
+                                                                                  gene_num <= 100, 7.5,
+                                                                                5)),
                                 width = ifelse(25*gene_num <= 450,
                                                450, ifelse(25*gene_num <= 1000,
                                                            25*gene_num, 1000)

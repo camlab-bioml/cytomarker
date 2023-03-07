@@ -397,10 +397,10 @@ cytosel <- function(...) {
                                             checkboxInput("show_umap_legend", "Show UMAP plot legends", T,
                                                              ))),
                  fluidRow(column(6, style = "margin-right: -15px; margin-top: 10px",
-                                 plotly::plotlyOutput("all_plot", width="500px", height="450px",
+                                 plotly::plotlyOutput("all_plot", width="550px", height="500px",
                                                  )),
                           column(6, style = "margin-left: -15px; margin-top: 10px",
-                                 plotly::plotlyOutput("top_plot", width="500px", height="450px",
+                                 plotly::plotlyOutput("top_plot", width="550px", height="500px",
                                                  )))
           ),
         

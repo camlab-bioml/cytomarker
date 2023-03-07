@@ -420,9 +420,10 @@ additional_aliases_model <- function(original_gene_list, alias_list) {
   #            confirmButtonCol = "#337AB7",
   #            html = TRUE)
   modalDialog(title = "Warning: Gene aliases were found",
-              helpText(HTML(paste("The following markers have additional or different aliases in the dataset", "<br/>",
-                                  "Original upload: ", paste(original_gene_list, collapse = ","), "<br/>",
-                                  "New aliases: ", paste(alias_list, collapse = ",")))))
+              helpText(HTML(paste("Certain uploaded markers were found to have aliases in the dataset", "<br/>",
+                                  "Number of original genes: ", length(original_gene_list), "<br/>",
+                                  "The gene aliases and original symbols can be viewed in the", "<b>", "View Gene Aliases",
+                                  "</b>", " menu in the top right corner."))))
 }
 
 #' Show an input modal to view the table of gene aliases for the selected panel and dataset
