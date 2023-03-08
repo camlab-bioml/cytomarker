@@ -1,5 +1,6 @@
 
 library(org.Hs.eg.db)
+library(annotables)
 
 antibody_info <- read_csv(file.path("inst", "Abcam_published_monos_with_gene_v2.csv"))
 grch38 <- read_tsv(file.path("inst", "annotables_grch38.tsv"))
@@ -21,9 +22,13 @@ applications_parsed <- get_antibody_applications(antibody_info,
 
 gene_mapping <- as.data.frame(unlist(org.Hs.egALIAS2EG))
 
+# https://www.genenames.org/download/statistics-and-files/
+protein_coding_genes <- (annotables::grch38 |> filter(biotype == "protein_coding"))$symbol
+
 cytosel_data <- list(antibody_info = antibody_info, grch38 = grch38,
                      time_zones = all_zones, applications = applications_parsed,
-                     gene_mapping = gene_mapping)
+                     gene_mapping = gene_mapping,
+                     protein_coding = protein_coding_genes)
 
 usethis::use_data(cytosel_data, internal = T, overwrite = T,
                   compress = "xz")

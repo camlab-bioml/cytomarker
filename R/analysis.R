@@ -17,7 +17,8 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes,
                   function(col) {
     
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
-    fm <- scran::findMarkers(sce, SummarizedExperiment::colData(sce)[[col]], 
+    ag <- intersect(rownames(sce), allowed_genes)
+    fm <- scran::findMarkers(sce[ag,], SummarizedExperiment::colData(sce)[[col]],
                       test.type = test_type, 
                       # BPPARAM = MulticoreParam(),
                       pval.type = p_val_type,
@@ -392,11 +393,9 @@ train_nb <- function(x,y, cell_types) {
           multinom(y~., data = df_train, trace = FALSE, MaxNWts = 100000)
         },
         error = function(cond) {
-          message(cond)
           return(NULL)
         }, 
         warning = function(cond) {
-          message(cond)
           return(NULL)
         }
         )

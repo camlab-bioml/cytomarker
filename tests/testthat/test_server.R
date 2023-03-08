@@ -667,7 +667,7 @@ test_that("datasets with few genes produce errors on marker finding", {
     session$setInputs(subsample_sce = T,
                       panel_size = 32,
                       display_options = "Marker-marker correlation",
-                      # select_aa = c("sELISA"),
+                      select_aa = c("sELISA"),
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
     
@@ -967,6 +967,15 @@ test_that("adding and replacing markers can identify gene aliases", {
     expect_true("CD40LG" %in% aliases_table()$Alias)
     expect_true("hCD40L" %in% aliases_table()$`Original Name`)
     expect_true(nrow(aliases_table()) > nrow(current_table))
+    
+    current_table_2 <- aliases_table()
+    
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("cds_1_to_200.txt")),
+                      replace_selected = T) 
+    
+    expect_false("hCD40L" %in% aliases_table()$`Original Name`)
+    expect_true(nrow(aliases_table()) < nrow(current_table_2))
     
   })
   

@@ -23,6 +23,7 @@ yaml <- read_yaml(system.file("config.yml", package = "cytosel"))
 USE_ANALYTICS <- yaml$use_google_analytics
 SUBSET_TO_ABCAM <- yaml$subset_only_abcam_catalog
 STAR_FOR_ABCAM <- yaml$star_for_abcam_product
+ONLY_PROTEIN_CODING <- yaml$only_protein_coding
 
 #' Define main entrypoint of app
 #' 
@@ -1715,6 +1716,10 @@ cytosel <- function(...) {
       
       aliases_table(if (isTruthy(aliases_table())) rbind(aliases_table(), alias$table) else alias$table)
       
+      output$table_of_gene_aliases <- DT::renderDataTable(
+        {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
+      )
+      
       to_add <- alias$merged
       to_add <- to_add[!to_add %in% current_markers()$top_markers &
                          !to_add %in% current_markers()$scratch_markers]
@@ -1747,9 +1752,6 @@ cytosel <- function(...) {
       
       if (length(alias$merged) > length(uploaded_markers) | !all(alias$merged %in% uploaded_markers) |
           !all(uploaded_markers %in% alias$merged)) {
-        output$table_of_gene_aliases <- DT::renderDataTable(
-          {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
-        )
         showModal(additional_aliases_modal())
       }
     })
@@ -1767,6 +1769,10 @@ cytosel <- function(...) {
                                 allowed_genes())
       
       aliases_table(alias$table)
+      
+      output$table_of_gene_aliases <- DT::renderDataTable(
+        {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
+      )
       
       marker <- alias$merged
       
@@ -1795,9 +1801,6 @@ cytosel <- function(...) {
       
       if (length(alias$merged) > length(marker) | !all(alias$merged %in% marker) |
           !all(marker %in% alias$merged)) {
-        output$table_of_gene_aliases <- DT::renderDataTable(
-          {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
-        )
         showModal(additional_aliases_modal())
       }
       
@@ -2803,6 +2806,9 @@ cytosel <- function(...) {
       if (isTruthy(SUBSET_TO_ABCAM) | length(input$select_aa) > 0) 
         allowed_genes(get_allowed_genes(input$select_aa, applications_parsed,
         sce()[,sce()$keep_for_analysis == "Yes"])) else allowed_genes(rownames(sce()[,sce()$keep_for_analysis == "Yes"]))
+      
+      allowed_genes(if (isTruthy(ONLY_PROTEIN_CODING)) 
+        allowed_genes()[allowed_genes() %in% cytosel_data$protein_coding] else allowed_genes())
       
       allowed_genes(remove_confounding_genes(allowed_genes()))
   
