@@ -47,8 +47,11 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
                        hovertemplate = "Gene(x): %{x}<br>Gene(y): %{y}<br>Correlation: %{z}<extra></extra>",
                        showticklabels = T, width = dims,
                        height = dims) %>%
-      plotly::layout(title='Correlation', yaxis = list(autotick = F, tickmode = "linear"),
-             xaxis = list(autotick = F, tickmode = "linear"))
+      plotly::layout(title='Correlation', yaxis = list(autotick = F, tickmode = "linear",
+                                                       tickfont = list(size = ifelse(
+                                                         length(rownames(cc)) > 75, 7.5, 10))),
+             xaxis = list(autotick = F, tickmode = "linear", tickfont = list(size = ifelse(
+               length(rownames(cc)) > 75, 7.5, 10))))
     # 
     # cor_map <- heatmaply::heatmaply(cc,
     #                      main = "Correlation",

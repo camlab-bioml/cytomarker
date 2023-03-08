@@ -12,7 +12,7 @@ invalid_modal <- function() { # Input file is invalid
 
 #' #' Show an input modal to select the single cell assay to use for analysis
 #' #' @importFrom shiny modalDialog
-#' assay_modal <- function(assays, failed = FALSE) { # Assay selection
+#' assay_modal <- function(assays, failed = FALSE) { # ASssay selection
 #'   modalDialog(
 #'     selectInput("assay",
 #'                 "Choose which assay to load",
@@ -408,9 +408,7 @@ panel_too_small_modal <- function(size) {
 
 #' Show a pop-up modal if the uploaded panel has additional gene aliases
 #' @importFrom shiny modalDialog
-#' @param original_gene_list The original gene list uploaded
-#' @param merged_list The list with the original genes as well as the alternative aliases
-additional_aliases_model <- function(original_gene_list, alias_list) {
+additional_aliases_modal <- function() {
   # shinyalert(title = "Warning",
   #            (HTML(paste("The following markers have additional or different aliases in the dataset", "<br/>",
   #                        "Original upload: ", paste(original_gene_list, collapse = ","), "<br/>",
@@ -419,10 +417,10 @@ additional_aliases_model <- function(original_gene_list, alias_list) {
   #            showConfirmButton = TRUE,
   #            confirmButtonCol = "#337AB7",
   #            html = TRUE)
-  modalDialog(title = "Warning: Gene aliases were found",
-              helpText(HTML(paste("Certain uploaded markers were found to have aliases in the dataset", "<br/>",
-                                  "Number of original genes: ", length(original_gene_list), "<br/>",
-                                  "The gene aliases and original symbols can be viewed in the", "<b>", "View Gene Aliases",
+  modalDialog(DT::dataTableOutput("table_of_gene_aliases"),
+              title = "Warning: Gene aliases were found",
+              helpText(HTML(paste("Certain uploaded markers were found to have aliases in the dataset. 
+                                  The gene aliases and original symbols can be viewed in the", "<b>", "View Gene Aliases",
                                   "</b>", " menu in the top right corner."))))
 }
 

@@ -799,6 +799,7 @@ cytosel <- function(...) {
       
       # future_promise({
       removeModal()
+      reset("input_scrnaseq")
       pre_upload_configuration()
       umap_all(NULL)
       umap_top(NULL)
@@ -1535,8 +1536,20 @@ cytosel <- function(...) {
       umap_all(NULL)
       umap_top(NULL)
       reset_panel(FALSE)
+    
+     aliases_table(aliases_table()[aliases_table()$Alias %in% 
+            current_markers()$top_markers | aliases_table()$Alias %in% 
+              current_markers()$scratch_markers,])
+     
+     aliases_table_subset(aliases_table_subset()[aliases_table_subset()$Alias %in% 
+                                     current_markers()$top_markers | aliases_table_subset()$Alias %in% 
+                                     current_markers()$scratch_markers,])
+     
+     toggle(id = "gene_alias_tag", condition = isTruthy(aliases_table()))
       
-      new_waitress$close()
+    new_waitress$close()
+      
+      
       
     })
     
@@ -1734,7 +1747,10 @@ cytosel <- function(...) {
       
       if (length(alias$merged) > length(uploaded_markers) | !all(alias$merged %in% uploaded_markers) |
           !all(uploaded_markers %in% alias$merged)) {
-        showModal(additional_aliases_model(alias$removed, alias$replaced))
+        output$table_of_gene_aliases <- DT::renderDataTable(
+          {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
+        )
+        showModal(additional_aliases_modal())
       }
     })
     
@@ -1779,7 +1795,10 @@ cytosel <- function(...) {
       
       if (length(alias$merged) > length(marker) | !all(alias$merged %in% marker) |
           !all(marker %in% alias$merged)) {
-        showModal(additional_aliases_model(alias$removed, alias$replaced))
+        output$table_of_gene_aliases <- DT::renderDataTable(
+          {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
+        )
+        showModal(additional_aliases_modal())
       }
       
     })
@@ -1987,7 +2006,10 @@ cytosel <- function(...) {
         
         if (length(alias$merged) > length(uploaded_markers) | !all(alias$merged %in% uploaded_markers) |
             !all(uploaded_markers %in% alias$merged)) {
-          showModal(additional_aliases_model(alias$removed, alias$replaced))
+          output$table_of_gene_aliases <- DT::renderDataTable(
+            {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
+          )
+          showModal(additional_aliases_modal())
         }
         
         markers_reupload(list(top_markers = alias$merged,
@@ -2191,7 +2213,7 @@ cytosel <- function(...) {
                               use_precomputed_umap(),
                               umap_precomputed_col(), F, allowed_genes()))
             
-            plots$all_plot <- suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
+            plots$all_plot <- suppressWarnings(plotly::plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
                                                        text=~get(input$coldata_column), 
                                                        type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
                                                  layout(title = "UMAP all genes"))
@@ -2204,7 +2226,7 @@ cytosel <- function(...) {
                               umap_precomputed_col(),
                               T, current_markers()$top_markers))
             
-            plots$top_plot <- suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
+            plots$top_plot <- suppressWarnings(plotly::plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
                                                        text=~get(input$coldata_column), 
                                                        type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
                                                  layout(title = "UMAP selected markers"))
@@ -2217,7 +2239,7 @@ cytosel <- function(...) {
           
         }
         
-        plots_for_markdown(list(all = suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
+        plots_for_markdown(list(all = suppressWarnings(plotly::plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
                                                                text=~get(input$coldata_column), 
                                                                type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
                                                          layout(title = "UMAP all genes")),
@@ -2809,11 +2831,11 @@ cytosel <- function(...) {
           
         }
         
-        plots_for_markdown(list(all = suppressWarnings(plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
+        plots_for_markdown(list(all = suppressWarnings(plotly::plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
                                                                text=~get(input$coldata_column), 
                                                                type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
                                                          layout(title = "UMAP all genes")),
-                                top = suppressWarnings(plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
+                                top = suppressWarnings(plotly::plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
                                                                text=~get(input$coldata_column), 
                                                                type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
                                                          layout(title = "UMAP selected markers")),
