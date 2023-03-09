@@ -2009,12 +2009,14 @@ cytosel <- function(...) {
                                          allowed_genes())
         
         aliases_table(alias$table)
+        gene_aliases_to_show(aliases_table()[aliases_table()$Alias %in% allowed_genes(),])
+        
+        output$table_of_gene_aliases <- DT::renderDataTable(
+          gene_aliases_to_show()
+        )
         
         if (length(alias$merged) > length(uploaded_markers) | !all(alias$merged %in% uploaded_markers) |
             !all(uploaded_markers %in% alias$merged)) {
-          output$table_of_gene_aliases <- DT::renderDataTable(
-            {if (isTruthy(gene_aliases_to_show())) gene_aliases_to_show() else aliases_table()}
-          )
           showModal(additional_aliases_modal())
         }
         
@@ -2859,7 +2861,7 @@ cytosel <- function(...) {
     )
     
   }
-  
+
   shinyApp(ui, server, options = list(shiny.autoload.r=FALSE), ...)
 }
 
