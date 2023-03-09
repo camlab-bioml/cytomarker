@@ -22,6 +22,7 @@ for (data_point in datasets) {
   gc()
   print(data_point)
   data <- readH5AD(data_point)
+  data <- data[rowSums(assay(data, "raw_counts")) > 10,]
   # data <- data[,data$n_counts_UMIs > 500 & data$n_genes > 500]
   
   umap <- reducedDim(data, "X_umap") |> as.data.frame() |> `colnames<-`(c("UMAP_1", "UMAP_2"))

@@ -4,7 +4,7 @@
 \alias{unique_element_modal}
 \title{#' Show an input modal to select the single cell assay to use for analysis
 #' @importFrom shiny modalDialog
-assay_modal <- function(assays, failed = FALSE) { # Assay selection
+assay_modal <- function(assays, failed = FALSE) { # ASssay selection
 modalDialog(
 selectInput("assay",
 "Choose which assay to load",

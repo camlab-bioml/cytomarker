@@ -9,10 +9,10 @@ train_nb(x, y, cell_types)
 \arguments{
 \item{x}{A matrix calculated as \code{x <- t(as.matrix(assay(sce_tr)[[column]]))}}
 
-\item{y}{A factor calculated as \code{y <- factor(colData(sce_tr)[[column]])}}
+\item{y}{A factor calculated as \code{y <- factor(SummarizedExperiment::colData(sce_tr)[[column]])}}
 
 \item{cell_types}{A sorted vector with unique elements:
-cell_types <- sort(unique(colData(sce_tr)[\link{column}]))}
+cell_types <- sort(unique(SummarizedExperiment::colData(sce_tr)[\link{column}]))}
 }
 \description{
 Note this currently trains logistic regression

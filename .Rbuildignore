@@ -12,3 +12,6 @@ scripts/
 
 inst/*.csv
 inst/*.tsv
+inst/*.txt
+
+.RData

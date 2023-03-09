@@ -1,5 +1,4 @@
 
-
 context("Test basic Shiny app server functionality")
 
 test_that("Server has basic functionality", {
@@ -13,7 +12,7 @@ test_that("Server has basic functionality", {
                                               test_path("pbmc_small.rds")))
     
     expect_is(sce(), 'SingleCellExperiment')
-    expect_equivalent(dim(sce()), c(13714, 100))
+    expect_equivalent(dim(sce()), c(2167, 100))
     session$setInputs(assay_select = "counts", assay = "counts")
     expect_equal(pref_assay(), "counts")
     
@@ -87,7 +86,7 @@ test_that("Server has basic functionality", {
     expect_equal(length(unique(sce()$keep_for_analysis)), 2)
     
     # Ensure that the dimensions od the sce are not reduced after subsetting
-    expect_equivalent(dim(sce()), c(13714, 100))
+    expect_equivalent(dim(sce()), c(2167, 100))
     
     # do not keep Platelet even though it was not selected for removal
     expect_equivalent(subset(colData(sce()), 
@@ -261,7 +260,7 @@ test_that("Server has basic functionality", {
     
     # Look for the uploaded markers in the top markers
     expect_true("EEF2" %in% current_markers()$top_markers)
-    expect_true("MARCKS" %in% current_markers()$top_markers)
+    expect_true("TRAM1" %in% current_markers()$top_markers)
     
     # instead of add, replace markers
     session$setInputs(uploadMarkers = list(datapath =
@@ -307,10 +306,10 @@ test_that("Pre-setting the input rank lists persists in the current markers", {
                       display_options = "Marker-marker correlation",
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm",
-                      select_aa = c("IHC-P", "Flow Cyt (Intra)", "IP"),
-                      bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
-                      bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
-                      bl_scratch = c("GNLY", "FTL"),
+                      select_aa = NULL,
+                      bl_top = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
+                      bl_recommended = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
+                      bl_scratch = c("FGR", "ACAP1"),
                       start_analysis = T)
     
     expect_equal(length(current_markers()$top_markers), length(input$bl_top))
@@ -494,16 +493,22 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     
     heatmap_1 <- heatmap()
     
-    session$setInputs(umap_options = "Cell Type",
+    expect_true(is.null(umap_all()))
+    expect_true(is.null(umap_top()))
+  
+    session$setInputs(tabs = "UMAP", umap_options = "Cell Type",
                       umap_panel_options = "S100A9", umap_panel_cols = T, 
                       show_umap_legend = T)
+    
+    expect_false(is.null(umap_all()))
+    expect_false(is.null(umap_top()))
     
     # check defaults for UMAP plots
     expect_false(umap_top_gene())
     expect_false(umap_all_gene())
     expect_equal(umap_colouring(), "Cell Type")
     
-    session$setInputs(umap_options = "Panel Marker",
+    session$setInputs(tabs = "UMAP", umap_options = "Panel Marker",
     umap_panel_options = "S100A9", umap_panel_cols = T, show_umap_legend = T)
     
     # switching the UMAP to gene works
@@ -511,7 +516,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_false(isFALSE(umap_all_gene()))
     expect_equal(umap_colouring(), "Panel Marker")
     
-    viol_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
+    viol_markers <- c("EEF2", "RBM3", "TRAM1", "MSN", "FTL")
     
     # setting the violin plots with genes works
     session$setInputs(genes_for_violin = viol_markers,
@@ -570,7 +575,7 @@ test_that("Picking the curated dataset works as intended", {
     expect_equal(curated_selection(), "Kidney")
     
     expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
-    expect_equivalent(dim(sce()), c(58870, 750))
+    expect_equivalent(dim(sce()), c(23863, 750))
     
     expect_false("epithelial" %in% unique(sce()$compartment))
     expect_false(is.null(output$curated_set_preview))
@@ -603,7 +608,7 @@ test_that("Setting null compartments retains the full dataset", {
                   curated_compartments = NULL,
                   pick_curated = T)
     expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
-    expect_equivalent(dim(sce()), c(58870, 881))
+    expect_equivalent(dim(sce()), c(23863, 881))
 
     expect_true("epithelial" %in% unique(sce()$compartment))
     
@@ -621,8 +626,8 @@ test_that("Setting null compartments retains the full dataset", {
 test_that("Having an existing panel will warn for a reset on upload", {
   testServer(cytosel::cytosel(), expr = {
     
-    session$setInputs( bl_top = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
-                       bl_recommended = c("EEF2", "RBM3", "MARCKS", "MSN", "FTL"),
+    session$setInputs( bl_top = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
+                       bl_recommended = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
                        bl_scratch = c("GNLY", "FTL"))
     
     session$setInputs(curated_dataset = T, curated_options = "Kidney",
@@ -631,7 +636,7 @@ test_that("Having an existing panel will warn for a reset on upload", {
                       curated_compartments = NULL,
                       pick_curated = T)
     expect_true(file.exists(file.path(tempdir(), "/Kidney.rds")))
-    expect_equivalent(dim(sce()), c(58870, 881))
+    expect_equivalent(dim(sce()), c(23863, 881))
     
     expect_false(proceed_with_analysis())
     expect_true("epithelial" %in% unique(sce()$compartment))
@@ -662,7 +667,7 @@ test_that("datasets with few genes produce errors on marker finding", {
     session$setInputs(subsample_sce = T,
                       panel_size = 32,
                       display_options = "Marker-marker correlation",
-                      # select_aa = c("sELISA"),
+                      select_aa = c("sELISA"),
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm")
     
@@ -947,10 +952,62 @@ test_that("adding and replacing markers can identify gene aliases", {
     expect_false("hCD40L" %in% current_markers()$top_markers)
     expect_true("CD40LG" %in% current_markers()$top_markers)
     
+    session$setInputs(gene_alias_table_viewer = T)
+    
+    expect_false(is.null(aliases_table()))
+    expect_true(nrow(aliases_table()) > 0)
+    
+    current_table <- aliases_table()
+
+    
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("cds_1_to_200.txt")),
+                      add_to_selected = T)    
+    
+    expect_true("CD40LG" %in% aliases_table()$Alias)
+    expect_true("hCD40L" %in% aliases_table()$`Original Name`)
+    expect_true(nrow(aliases_table()) > nrow(current_table))
+    
+    current_table_2 <- aliases_table()
+    
+    session$setInputs(uploadMarkers = list(datapath =
+                                             test_path("cds_1_to_200.txt")),
+                      replace_selected = T) 
+    
+    expect_false("hCD40L" %in% aliases_table()$`Original Name`)
+    expect_true(nrow(aliases_table()) < nrow(current_table_2))
     
   })
   
 })
+
+context("Test basic gene aliases table works")
+
+test_that("A gene alias table is populated when uploading markers", {
+  
+  testServer(cytosel::cytosel(), expr = {
+    
+    expect_true(is.null(aliases_table()))
+    
+    session$setInputs(input_scrnaseq = list(datapath =
+                                              test_path("pbmc_small.rds")))
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                                                  test_path("cds_1_to_200.txt")))
+    
+    expect_false(is.null(aliases_table()))
+    first_alias <- aliases_table()
+    expect_true(is.null(gene_aliases_to_show()))
+    
+    session$setInputs(select_aa = c("Protein Array"))
+    expect_false(is.null(gene_aliases_to_show()))
+    
+    expect_true(nrow(first_alias) > nrow(gene_aliases_to_show()))
+    
+    
+  })
+})
+
 
 context("Test that starting the help guide does not modify the reactive values")
 

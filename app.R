@@ -12,7 +12,7 @@ options(shiny.autoload.r=FALSE)
 #                requireNamespace, quietly = TRUE)
 #   )
 
-pkgload::load_all(quiet = T, warn_conflicts = F)
+pkgload::load_all(reset = F, quiet = T, warn_conflicts = F, attach = F)
 # PKG is the name of the packaged shiny application
 # run_PKG_app is a function that wraps around shiny::shinyApp()
 cytosel::cytosel()

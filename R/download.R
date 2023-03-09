@@ -3,7 +3,6 @@
 #' @importFrom yaml write_yaml
 #' @importFrom zip zip
 #' @importFrom htmlwidgets saveWidget
-#' @importFrom plotly subplot
 create_run_param_list <- function(
                           marker_list,
                           input_file,
@@ -55,7 +54,6 @@ create_run_param_list <- function(
 #' @importFrom yaml write_yaml
 #' @importFrom zip zip
 #' @importFrom htmlwidgets saveWidget
-#' @importFrom plotly subplot
 #' @importFrom readr write_tsv
 #' @importFrom tibble tibble
 #' @importFrom rmarkdown render

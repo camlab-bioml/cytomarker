@@ -10,13 +10,12 @@
 #' 
 #' @importFrom stats cor
 #' @importFrom viridis viridis
-#' @importFrom plotly plot_ly layout
 #' @importFrom tibble rownames_to_column
 #' @importFrom dplyr mutate
 #' @importFrom tidyr pivot_longer
 create_heatmap <- function(sce, markers, column, display, normalization, pref_assay) {
   
-  library(heatmaply)
+  library(heatmaply, quiet = T)
   
   normalization <- match.arg(normalization, c("Expression", "z-score"))
   
@@ -29,7 +28,6 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
   )
   
   mat <- (assay(mat, 'mean'))
-  
   legend <- "Mean\nexpression"
   if(normalization == "z-score") {
     mat <- t(scale(t(mat)))
@@ -42,15 +40,18 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
     dims <- ifelse(length(rownames(cc)) < 70, 650, ifelse(length(rownames(cc)) < 95,
                                                           10.5*length(rownames(cc)), 1000))
     
-    cor_map <- plot_ly(z=cc,
+    cor_map <- plotly::plot_ly(z=cc,
                        type='heatmap',
                        x = rownames(cc),
                        y = rownames(cc),
                        hovertemplate = "Gene(x): %{x}<br>Gene(y): %{y}<br>Correlation: %{z}<extra></extra>",
                        showticklabels = T, width = dims,
                        height = dims) %>%
-      layout(title='Correlation', yaxis = list(autotick = F, tickmode = "linear"),
-             xaxis = list(autotick = F, tickmode = "linear"))
+      plotly::layout(title='Correlation', yaxis = list(autotick = F, tickmode = "linear",
+                                                       tickfont = list(size = ifelse(
+                                                         length(rownames(cc)) > 75, 7.5, 10))),
+             xaxis = list(autotick = F, tickmode = "linear", tickfont = list(size = ifelse(
+               length(rownames(cc)) > 75, 7.5, 10))))
     # 
     # cor_map <- heatmaply::heatmaply(cc,
     #                      main = "Correlation",
@@ -74,6 +75,9 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
                                 key.title = as.character(normalization),
                                 column_text_angle = 90,
                                 height = 600, 
+                                fontsize_col = ifelse(gene_num < 75, 10, ifelse(gene_num > 75 & 
+                                                                                  gene_num <= 100, 7.5,
+                                                                                5)),
                                 width = ifelse(25*gene_num <= 450,
                                                450, ifelse(25*gene_num <= 1000,
                                                            25*gene_num, 1000)
@@ -128,7 +132,6 @@ map_gene_name_to_antibody_icon <- function(gene_id, markers) {
 #' @param genes The vector of genes to visualize
 #' @param cell_type The cell type category to resolve using the gene vector
 #' @param assay The name of the assay to use. Common selections are logcounts or counts
-#' @importFrom ggplot2 ggplot
 make_violin_plot <- function(sce, genes, cell_type, assay) {
   expression_plot <- scater::plotExpression(
     sce, genes, x = cell_type,
