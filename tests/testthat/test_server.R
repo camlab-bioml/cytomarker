@@ -997,12 +997,12 @@ test_that("A gene alias table is populated when uploading markers", {
     
     expect_false(is.null(aliases_table()))
     first_alias <- aliases_table()
-    expect_true(is.null(aliases_table_subset()))
+    expect_true(is.null(gene_aliases_to_show()))
     
     session$setInputs(select_aa = c("Protein Array"))
-    expect_false(is.null(aliases_table_subset()))
+    expect_false(is.null(gene_aliases_to_show()))
     
-    expect_true(nrow(first_alias) > nrow(aliases_table_subset()))
+    expect_true(nrow(first_alias) > nrow(gene_aliases_to_show()))
     
     
   })

@@ -627,7 +627,7 @@ cytosel <- function(...) {
     
     curated_selection <- reactiveVal(NULL)
     aliases_table <- reactiveVal(NULL)
-    aliases_table_subset <- reactiveVal(NULL)
+    gene_aliases_to_show <- reactiveVal(NULL)
     
     addResourcePath('report', system.file('report', package='cytosel'))
     
@@ -717,7 +717,7 @@ cytosel <- function(...) {
       req(aliases_table())
       
       output$table_of_gene_aliases <- DT::renderDataTable(
-        {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
+        gene_aliases_to_show()
       )
       
       showModal(show_alias_table_modal())
@@ -745,7 +745,7 @@ cytosel <- function(...) {
     })
     
     observe(toggle(id = "session_info", condition = isTruthy(time_zone_set())))
-    observe(toggle(id = "gene_alias_tag", condition = isTruthy(aliases_table())))
+    observe(toggle(id = "gene_alias_tag", condition = isTruthy(gene_aliases_to_show())))
     
     # output$cytosel_preview <- renderUI({
     #   tags$iframe(src="http://camlab-bioml.github.io/cytosel-doc/docs/intro", height=600, width=1100)
@@ -951,7 +951,7 @@ cytosel <- function(...) {
       valid_existing_panel(TRUE)
       set_allowed_genes()
       if (isTruthy(aliases_table())) {
-        aliases_table_subset(aliases_table()[aliases_table()$Alias %in% allowed_genes(),])
+        gene_aliases_to_show(aliases_table()[aliases_table()$Alias %in% allowed_genes(),])
       }
       
     }, ignoreNULL = F)
@@ -1542,11 +1542,11 @@ cytosel <- function(...) {
             current_markers()$top_markers | aliases_table()$Alias %in% 
               current_markers()$scratch_markers,])
      
-     aliases_table_subset(aliases_table_subset()[aliases_table_subset()$Alias %in% 
-                                     current_markers()$top_markers | aliases_table_subset()$Alias %in% 
+     gene_aliases_to_show(gene_aliases_to_show()[gene_aliases_to_show()$Alias %in% 
+                                     current_markers()$top_markers | gene_aliases_to_show()$Alias %in% 
                                      current_markers()$scratch_markers,])
      
-     toggle(id = "gene_alias_tag", condition = isTruthy(aliases_table()))
+     toggle(id = "gene_alias_tag", condition = isTruthy(gene_aliases_to_show()))
       
     new_waitress$close()
       
@@ -1716,8 +1716,10 @@ cytosel <- function(...) {
       
       aliases_table(if (isTruthy(aliases_table())) rbind(aliases_table(), alias$table) else alias$table)
       
+      gene_aliases_to_show(aliases_table()[aliases_table()$Alias %in% allowed_genes(),])
+      
       output$table_of_gene_aliases <- DT::renderDataTable(
-        {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
+        gene_aliases_to_show()
       )
       
       to_add <- alias$merged
@@ -1769,9 +1771,10 @@ cytosel <- function(...) {
                                 allowed_genes())
       
       aliases_table(alias$table)
+      gene_aliases_to_show(aliases_table()[aliases_table()$Alias %in% allowed_genes(),])
       
       output$table_of_gene_aliases <- DT::renderDataTable(
-        {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
+        gene_aliases_to_show()
       )
       
       marker <- alias$merged
@@ -2010,7 +2013,7 @@ cytosel <- function(...) {
         if (length(alias$merged) > length(uploaded_markers) | !all(alias$merged %in% uploaded_markers) |
             !all(uploaded_markers %in% alias$merged)) {
           output$table_of_gene_aliases <- DT::renderDataTable(
-            {if (isTruthy(aliases_table_subset())) aliases_table_subset() else aliases_table()}
+            {if (isTruthy(gene_aliases_to_show())) gene_aliases_to_show() else aliases_table()}
           )
           showModal(additional_aliases_modal())
         }
@@ -2783,7 +2786,7 @@ cytosel <- function(...) {
       }
       
       aliases_table(NULL)
-      aliases_table_subset(NULL)
+      gene_aliases_to_show(NULL)
       
       req(proceed_with_analysis())
       
@@ -2797,7 +2800,7 @@ cytosel <- function(...) {
         }
         
         set_allowed_genes()
-        toggle(id = "gene_alias_tag", condition = isTruthy(aliases_table()))
+        toggle(id = "gene_alias_tag", condition = isTruthy(gene_aliases_to_show()))
         
     }
     
