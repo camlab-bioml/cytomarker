@@ -260,7 +260,7 @@ test_that("Server has basic functionality", {
     
     # Look for the uploaded markers in the top markers
     expect_true("EEF2" %in% current_markers()$top_markers)
-    expect_true("TRAM1" %in% current_markers()$top_markers)
+    expect_true("CFD" %in% current_markers()$top_markers)
     
     # instead of add, replace markers
     session$setInputs(uploadMarkers = list(datapath =
@@ -307,9 +307,9 @@ test_that("Pre-setting the input rank lists persists in the current markers", {
                       heatmap_expression_norm = "Expression",
                       marker_strategy = "fm",
                       select_aa = NULL,
-                      bl_top = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
-                      bl_recommended = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
-                      bl_scratch = c("FGR", "ACAP1"),
+                      bl_top = c("EEF2", "RBM3", "CFD", "MSN", "FTL"),
+                      bl_recommended = c("EEF2", "RBM3", "CFD", "MSN", "FTL"),
+                      bl_scratch = c("GNLY", "GRN"),
                       start_analysis = T)
     
     expect_equal(length(current_markers()$top_markers), length(input$bl_top))
@@ -516,7 +516,7 @@ test_that("Changing the UMAP, violin, and heatmap colourings work", {
     expect_false(isFALSE(umap_all_gene()))
     expect_equal(umap_colouring(), "Panel Marker")
     
-    viol_markers <- c("EEF2", "RBM3", "TRAM1", "MSN", "FTL")
+    viol_markers <- c("EEF2", "RBM3", "CFD", "MSN", "FTL")
     
     # setting the violin plots with genes works
     session$setInputs(genes_for_violin = viol_markers,
@@ -626,8 +626,8 @@ test_that("Setting null compartments retains the full dataset", {
 test_that("Having an existing panel will warn for a reset on upload", {
   testServer(cytosel::cytosel(), expr = {
     
-    session$setInputs( bl_top = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
-                       bl_recommended = c("EEF2", "RBM3", "TRAM1", "MSN", "FTL"),
+    session$setInputs( bl_top = c("EEF2", "RBM3", "CFD", "MSN", "FTL"),
+                       bl_recommended = c("EEF2", "RBM3", "CFD", "MSN", "FTL"),
                        bl_scratch = c("GNLY", "FTL"))
     
     session$setInputs(curated_dataset = T, curated_options = "Kidney",
