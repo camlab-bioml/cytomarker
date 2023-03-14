@@ -235,27 +235,6 @@ too_large_to_show_modal <- function(col_name) {
   )
 }
 
-
-#' Show an input modal if the user wants to use precomputed UMAP coordinates
-#' @importFrom shiny modalDialog
-pre_computed_umap_modal <- function(possible_dims) { # Marker removal suggestion
-  modalDialog(
-    title = "Use Precomputed UMAP",
-    helpText("Select a possible UMAP dimension detected in the uploaded SCE."),
-    flowLayout(
-    selectInput("possible_precomputed_dims",
-                NULL,
-                choices = possible_dims,
-                selected = NULL,
-                multiple = F)
-    ),
-    footer = tagList(
-      actionButton("select_precomputed_umap", "Use selected for UMAP"),
-      modalButton("Cancel"))
-    )
-}
-
-
 #' Show a shinyalert warning if the sce for analysis has more than a set threshold of cell counts
 #' @importFrom shinyalert shinyalert
 #' @param ncell_sce The number of cells in the Singlecellexperiment object used for analysis

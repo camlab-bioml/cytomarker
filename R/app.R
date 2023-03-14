@@ -304,8 +304,13 @@ cytosel <- function(...) {
                                           placement = "right")),
                    hidden(div(id = "precomputed",
                    checkboxInput("precomputed_dim", "Use precomputed UMAP", value = F))),
+                   hidden(div(id = "precomputed_list",
+                              selectInput("possible_precomputed_dims",
+                                          NULL,
+                                          choices = NULL,
+                                          selected = NULL,
+                                          multiple = F))),
                    # hidden(div(id = "apps",
-                        
                               selectInput("select_aa", "Antibody applications:", 
                               applications_parsed$unique_applications, multiple=TRUE) %>%
                                shinyInput_label_embed(
@@ -1199,6 +1204,11 @@ cytosel <- function(...) {
       
       proceed_with_analysis(TRUE)
       
+      if (isTruthy(input$precomputed_dim)) {
+        use_precomputed_umap(TRUE)
+        umap_precomputed_col(input$possible_precomputed_dims)
+      }
+      
       if (input$panel_size < 2) {
         panel_too_small_modal(input$panel_size)
         proceed_with_analysis(FALSE)
@@ -1967,29 +1977,26 @@ cytosel <- function(...) {
       req(sce())
       req(possible_umap_dims())
       
-      if (isTruthy(input$precomputed_dim)) {
-        proceed_with_analysis(FALSE)
-        showModal(pre_computed_umap_modal(possible_umap_dims()))
-      } else {
-        use_precomputed_umap(FALSE)
-      }
+      toggle(id = "precomputed_list", condition = isTruthy(input$precomputed_dim))
+      updateSelectInput(session, "possible_precomputed_dims", 
+                        choices = possible_umap_dims(),
+                        selected = possible_umap_dims()[1])
       
       umap_all(NULL)
       
     }, ignoreNULL = F)
+  
     
-    observeEvent(input$select_precomputed_umap, {
+    observeEvent(input$possible_precomputed_dims, {
       req(sce())
       req(input$possible_precomputed_dims)
       
       if (isTruthy(input$precomputed_dim)) {
         use_precomputed_umap(TRUE)
         umap_precomputed_col(input$possible_precomputed_dims)
-        removeModal()
-        proceed_with_analysis(TRUE)
       }
       
-    })
+    }, ignoreNULL = F)
     
     ## Re-upload previous analysis
     
@@ -2094,7 +2101,9 @@ cytosel <- function(...) {
         
         if (isTruthy(use_precomputed_umap())) {
           possible_umap_dims(detect_umap_dims_in_sce(sce()))
-          showModal(pre_computed_umap_modal(possible_umap_dims()))
+          updateSelectInput(session, "possible_precomputed_dims", 
+                            choices = possible_umap_dims(),
+                            selected = possible_umap_dims()[1])
         }
       }
     if (isTruthy(yaml_back$`Assay used`)) {
