@@ -41,6 +41,7 @@ ONLY_PROTEIN_CODING <- yaml$only_protein_coding
 #' @import reactable
 #' @import htmltools
 #' @importFrom rlang is_empty
+#' @importFrom shinyanimate withAnim startAnim
 #' @importFrom DT datatable
 #' @importFrom readr write_lines read_tsv read_csv
 #' @importFrom dplyr desc mutate_if distinct
@@ -137,6 +138,7 @@ cytosel <- function(...) {
     use_bs_tooltip(),
     useShinyjs(),
     use_cicerone(),
+    withAnim(),
     
     dashboardPage(title="cytosel",
     
@@ -850,6 +852,8 @@ cytosel <- function(...) {
       
       update_metadata_column()
       
+      startAnim(session, 'analysis_button', 'rubberBand')
+      
     })
     # })
     
@@ -890,6 +894,8 @@ cytosel <- function(...) {
       req(proper_organism())
       post_upload_configuration(input_sce)
       
+      startAnim(session, 'analysis_button', 'rubberBand')
+      
     })
     # })
     
@@ -919,6 +925,7 @@ cytosel <- function(...) {
       req(sce())
       
       update_metadata_column()
+      
       })
     
     
@@ -2798,6 +2805,10 @@ cytosel <- function(...) {
       
       aliases_table(NULL)
       gene_aliases_to_show(NULL)
+      
+      output$table_of_gene_aliases <- DT::renderDataTable(
+        gene_aliases_to_show()
+      )
       
       req(proceed_with_analysis())
       

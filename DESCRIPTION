@@ -49,7 +49,8 @@ Imports:
     emojifont,
     geneBasisR,
     waiter,
-    cicerone
+    cicerone,
+    shinyanimate
 Suggests:
   stringr,
   yardstick,
