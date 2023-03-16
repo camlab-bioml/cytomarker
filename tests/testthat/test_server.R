@@ -567,7 +567,9 @@ context("Test the loading of the curated datasets from dropbox")
 test_that("Picking the curated dataset works as intended", {
   testServer(cytosel::cytosel(), expr = {
     
-    session$setInputs(curated_dataset = T, curated_options = "Kidney",
+    session$setInputs(curated_dataset = T, 
+                      curated_selection_choice = "Tabula Sapiens",
+                      curated_options = "Kidney",
                       coldata_column = "cell_ontology_class",
                       curated_compartments = c("Endothelial", "Immune", "Stromal"),
                       pick_curated = T)
@@ -587,13 +589,25 @@ test_that("Picking the curated dataset works as intended", {
     
     # if reupload the same dataset, invalidate until verify if resetting or not
     
-    session$setInputs(curated_dataset = T, curated_options = "Liver",
+    session$setInputs(curated_dataset = T, 
+                      curated_selection_choice = "Tabula Sapiens",
+                      curated_options = "Liver",
                       subset_number = 2000,
                       coldata_column = "cell_ontology_class",
                       curated_compartments = NULL,
                       pick_curated = T)
     
     expect_equal(curated_selection(), "Liver")
+    
+    session$setInputs(curated_dataset = T, 
+                      curated_selection_choice = "Other Human",
+                      curated_options = "Seurat PBMC",
+                      subset_number = 2000,
+                      coldata_column = "ident",
+                      curated_compartments = NULL,
+                      pick_curated = T)
+    
+    expect_equal(curated_selection(), "Seurat PBMC")
     
   })
   
@@ -602,7 +616,8 @@ test_that("Picking the curated dataset works as intended", {
 test_that("Setting null compartments retains the full dataset", {
   testServer(cytosel::cytosel(), expr = {
 
-    session$setInputs(curated_dataset = T, curated_options = "Kidney",
+    session$setInputs(curated_selection_choice = "Tabula Sapiens",
+                      curated_dataset = T, curated_options = "Kidney",
                   subset_number = 2000,
                   coldata_column = "cell_ontology_class",
                   curated_compartments = NULL,
@@ -630,7 +645,8 @@ test_that("Having an existing panel will warn for a reset on upload", {
                        bl_recommended = c("EEF2", "RBM3", "CFD", "MSN", "FTL"),
                        bl_scratch = c("GNLY", "FTL"))
     
-    session$setInputs(curated_dataset = T, curated_options = "Kidney",
+    session$setInputs(curated_selection_choice = "Tabula Sapiens",
+                      curated_dataset = T, curated_options = "Kidney",
                       subset_number = 2000,
                       coldata_column = "cell_ontology_class",
                       curated_compartments = NULL,
@@ -964,8 +980,8 @@ test_that("adding and replacing markers can identify gene aliases", {
                                              test_path("cds_1_to_200.txt")),
                       add_to_selected = T)    
     
-    expect_true("CD40LG" %in% aliases_table()$Alias)
-    expect_true("hCD40L" %in% aliases_table()$`Original Name`)
+    expect_true("CD40LG" %in% aliases_table()$`Alias in dataset`)
+    expect_true("hCD40L" %in% aliases_table()$`Original Upload Name`)
     expect_true(nrow(aliases_table()) > nrow(current_table))
     
     current_table_2 <- aliases_table()
@@ -974,7 +990,7 @@ test_that("adding and replacing markers can identify gene aliases", {
                                              test_path("cds_1_to_200.txt")),
                       replace_selected = T) 
     
-    expect_false("hCD40L" %in% aliases_table()$`Original Name`)
+    expect_false("hCD40L" %in% aliases_table()$`Original Upload Name`)
     expect_true(nrow(aliases_table()) < nrow(current_table_2))
     
   })

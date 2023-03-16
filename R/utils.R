@@ -50,12 +50,8 @@ throw_error_or_warning <- function(type = 'notification',
   # Change duration format so it can also be accepted by shinyalert
   # shinyalert requires timer = 0 if notification should be closed by user
   # and duration is in miliseconds as opposed to seconds for showNotification
-  if(type == 'error'){
-    if(is.null(duration)){
-      duration <- 0
-    }else{
-      duration <- duration * 1000
-    }
+  if(type == 'error') {
+    duration <- if (is.null(duration)) 0 else 1000
   }
   
   if(type == 'error'){
@@ -131,7 +127,8 @@ get_gene_aliases <- function(marker_list, gene_mapper, allowed_genes) {
   
   reduced_table <- merge(all_possible_symbols |> `colnames<-`(c("entrez_id", "Alias")),
                           possible_entrez |> `colnames<-`(c("entrez_id", "Original Name")),
-                          by = "entrez_id") |> filter(Alias != `Original Name`)
+                          by = "entrez_id") |> filter(Alias != `Original Name`) |>
+    `colnames<-`(c("entrez_id", "Alias in dataset", "Original Upload Name"))
   
   # get a list of the original marker list that was replaced 
   # do not include symbols that could not be mapped to Exntra Ids as they will be kept

@@ -2,6 +2,9 @@
 curated_datasets <- utils::read.delim(system.file("ts_datasets.tsv", package = "cytosel"),
                              sep = "\t")
 
+other_curated <- utils::read.delim(system.file("other_datasets.tsv", package = "cytosel"),
+                                   sep = "\t")
+
 for (i in curated_datasets$tissue) {
   if (file.exists(file.path(tempdir(), "/", paste(i, ".rds", sep = "")))) {
     command <- paste('rm ', tempdir(), "/", paste(i, ".rds", sep = ""), sep = "")
@@ -11,10 +14,10 @@ for (i in curated_datasets$tissue) {
 
 utils::globalVariables(c("palette_to_use", "full_palette",
                          "preview_info", "curated_datasets", "compartments",
-                         "dataset_labels", "antibody_info",
-                         "markdown_report_path", "all_zones"), "cytosel")
-
-# ggplot2::theme_set(cowplot::theme_cowplot())
+                         "dataset_labels", "other_dataset_labels", 
+                         "all_curated_dataset_labels",
+                         "antibody_info", "markdown_report_path", 
+                         "all_zones"), "cytosel")
 
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
         show.error.messages = FALSE)
@@ -93,6 +96,11 @@ cytosel <- function(...) {
   
   dataset_labels <- curated_datasets$tissue |> set_names(gsub("_", " ", 
                                                               curated_datasets$tissue))
+  
+  other_dataset_labels <- other_curated$tissue |> set_names(gsub("_", " ", 
+                                            other_curated$tissue))
+  
+  all_curated_dataset_labels <- c(dataset_labels, other_dataset_labels)
   
   all_zones <- cytosel_data$time_zones
   # google analytics event tracking: 
@@ -764,7 +772,28 @@ cytosel <- function(...) {
       
       showModal(curated_dataset_modal(names(compartments),
                                       compartments_selected(), names(dataset_labels)))
+      
+      updateRadioButtons(session, "curated_selection_choice",
+                         selected = "Tabula Sapiens")
+      
+      toggle(id = "curated_ts_compartments", condition = (input$curated_selection_choice == "Tabula Sapiens"))
     })
+    
+    observeEvent(input$curated_selection_choice, {
+
+      toggle(id = "curated_ts_compartments", condition = 
+               (input$curated_selection_choice == "Tabula Sapiens"))
+      
+      if (input$curated_selection_choice == "Other Human") {
+        updateSelectInput(session, "curated_options", choices = names(other_dataset_labels),
+                          label = "Select a human dataset")
+      } else {
+        updateSelectInput(session, "curated_options", choices = names(dataset_labels),
+                          label = "1. Choose a tissue type to analyze")
+      }
+      
+    })
+    
     
     observeEvent(input$curated_compartments, {
       
@@ -787,23 +816,34 @@ cytosel <- function(...) {
     
     observeEvent(input$curated_options, {
     
-      tissue_lab <- dataset_labels[names(dataset_labels) == input$curated_options]
+      if (input$curated_selection_choice == "Tabula Sapiens") {
+        tissue_lab <- dataset_labels[names(dataset_labels) == input$curated_options]
+        
+        dataset_preview <- paste("<b>", "<a href='https://tabula-sapiens-portal.ds.czbiohub.org/' target='_blank'",
+                                 ">", "Tabula Sapiens dataset: ", input$curated_options, "</a>",
+                                 "</b>", "<br/>", "<b>", "Cells: ", "</b>", subset(curated_datasets, tissue == tissue_lab)$num_cells[1], 
+                                 "<br/>", "<b>", "Genes: ", "</b>", subset(curated_datasets, tissue == tissue_lab)$num_genes[1], "<br/>", 
+                                 "<b>", "Cell category of interest: ", "</b>", "cell_ontology_glass",
+                                 "<br/>", "<b>", "Cell Type Distribution: ", "</b>", "<br/>", subset(curated_datasets, tissue == tissue_lab)$preview[1],
+                                 sep = "")
+      } else {
+        tissue_lab <- other_dataset_labels[names(other_dataset_labels) == input$curated_options]
+        
+        dataset_preview <- paste("<b>", "Human dataset: ", input$curated_options, "</a>",
+                                 "</b>", "<br/>", "<b>", "Cells: ", "</b>", subset(other_curated, tissue == tissue_lab)$num_cells[1], 
+                                 "<br/>", "<b>", "Genes: ", "</b>", subset(other_curated, tissue == tissue_lab)$num_genes[1], "<br/>", 
+                                 "<b>", "Cell category of interest: ", "</b>", subset(other_curated, tissue == tissue_lab)$category_interest[1],
+                                 "<br/>", "<b>", "Cell Type Distribution: ", "</b>", "<br/>", subset(other_curated, tissue == tissue_lab)$preview[1],
+                                 sep = "")
+      }
       
-      ts_dataset_preview <- paste("<b>", "<a href='https://tabula-sapiens-portal.ds.czbiohub.org/' target='_blank'",
-      ">", "Tabula Sapiens dataset: ", input$curated_options, "</a>",
-      "</b>", "<br/>", "<b>", "Cells: ", "</b>", subset(curated_datasets, tissue == tissue_lab)$num_cells[1], 
-    "<br/>", "<b>", "Genes: ", "</b>", subset(curated_datasets, tissue == tissue_lab)$num_genes[1], "<br/>", 
-      "<b>", "Cell category of interest: ", "</b>", "cell_ontology_glass",
-    "<br/>", "<b>", "Cell Type Distribution: ", "</b>", "<br/>", subset(curated_datasets, tissue == tissue_lab)$preview[1],
-      sep = "")
-      
-      
-      output$curated_set_preview <- renderPrint({HTML(ts_dataset_preview)})
+      output$curated_set_preview <- renderPrint({HTML(dataset_preview)})
       
     })
     
     observeEvent(input$pick_curated, {
       req(input$curated_options)
+      req(input$curated_selection_choice)
       
       # future_promise({
       removeModal()
@@ -812,7 +852,8 @@ cytosel <- function(...) {
       umap_all(NULL)
       umap_top(NULL)
       
-      tissue_lab <- dataset_labels[names(dataset_labels) == input$curated_options]
+      tissue_lab <- all_curated_dataset_labels[names(
+        all_curated_dataset_labels) == input$curated_options]
       
       curated_selection(input$curated_options)
       
@@ -821,7 +862,10 @@ cytosel <- function(...) {
       
       if (!file.exists(file.path(tempdir(), paste(tissue_lab, ".rds", sep = "")))) {
           incProgress(detail = "Downloading curated dataset")
-          drop_download(paste("tabula_sapiens/", 
+          origin_dir <- if (input$curated_selection_choice == "Tabula Sapiens")
+                               "tabula_sapiens/" else "other_curated_cytosel/"
+          
+          drop_download(paste(origin_dir, 
                                       paste(tissue_lab, ".rds", sep = ""),
                                 sep = ""),
                                 local_path = tempdir(),
@@ -835,18 +879,21 @@ cytosel <- function(...) {
         input_sce <- read_input_scrnaseq(file.path(tempdir(), 
                                         paste(tissue_lab, ".rds", sep = "")))
         
-        if (length(ts_compartments()) < 1) ts_compartments(tolower(names(compartments)))
         
-        input_sce <- input_sce[,input_sce$compartment %in% ts_compartments()]
-        input_sce$compartment <- factor(input_sce$compartment,
-                                  levels = ts_compartments())
-        
+        if (input$curated_selection_choice == "Tabula Sapiens") {
+          if (length(ts_compartments()) < 1) ts_compartments(tolower(names(compartments)))
+          
+          input_sce <- input_sce[,input_sce$compartment %in% ts_compartments()]
+          input_sce$compartment <- factor(input_sce$compartment,
+                                          levels = ts_compartments())
+          default_category_curated("cell_ontology_class")
+        } else {
+          default_category_curated(subset(other_curated, tissue == tissue_lab)$category_interest[1])
+        }
         incProgress(detail = "Parsing gene names and assays")
         
         setProgress(value = 1)
       })
-      
-      default_category_curated("cell_ontology_class")
       
       post_upload_configuration(input_sce)
       
@@ -963,7 +1010,7 @@ cytosel <- function(...) {
       valid_existing_panel(TRUE)
       set_allowed_genes()
       if (isTruthy(aliases_table())) {
-        gene_aliases_to_show(aliases_table()[aliases_table()$Alias %in% allowed_genes(),])
+        gene_aliases_to_show(aliases_table()[aliases_table()$`Alias in dataset` %in% allowed_genes(),])
       }
       
     }, ignoreNULL = F)
@@ -1555,8 +1602,8 @@ cytosel <- function(...) {
       umap_top(NULL)
       reset_panel(FALSE)
     
-     aliases_table(aliases_table()[aliases_table()$Alias %in% 
-            current_markers()$top_markers | aliases_table()$Alias %in% 
+     aliases_table(aliases_table()[aliases_table()$`Alias in dataset` %in% 
+            current_markers()$top_markers | aliases_table()$`Alias in dataset` %in% 
               current_markers()$scratch_markers,])
      
      gene_aliases_to_show(gene_aliases_to_show()[gene_aliases_to_show()$Alias %in% 
@@ -1733,7 +1780,7 @@ cytosel <- function(...) {
       
       aliases_table(if (isTruthy(aliases_table())) rbind(aliases_table(), alias$table) else alias$table)
       
-      gene_aliases_to_show(aliases_table()[aliases_table()$Alias %in% allowed_genes(),])
+      gene_aliases_to_show(aliases_table()[aliases_table()$`Alias in dataset` %in% allowed_genes(),])
       
       output$table_of_gene_aliases <- DT::renderDataTable(
         gene_aliases_to_show()
@@ -1788,7 +1835,7 @@ cytosel <- function(...) {
                                 allowed_genes())
       
       aliases_table(alias$table)
-      gene_aliases_to_show(aliases_table()[aliases_table()$Alias %in% allowed_genes(),])
+      gene_aliases_to_show(aliases_table()[aliases_table()$`Alias in dataset` %in% allowed_genes(),])
       
       output$table_of_gene_aliases <- DT::renderDataTable(
         gene_aliases_to_show()
@@ -2023,7 +2070,7 @@ cytosel <- function(...) {
                                          allowed_genes())
         
         aliases_table(alias$table)
-        gene_aliases_to_show(aliases_table()[aliases_table()$Alias %in% allowed_genes(),])
+        gene_aliases_to_show(aliases_table()[aliases_table()$`Alias in dataset` %in% allowed_genes(),])
         
         output$table_of_gene_aliases <- DT::renderDataTable(
           gene_aliases_to_show()
