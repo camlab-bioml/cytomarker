@@ -1,6 +1,7 @@
 
 library(org.Hs.eg.db)
 library(annotables)
+library(dplyr)
 
 antibody_info <- read_csv(file.path("inst", "Abcam_published_monos_with_gene_v2.csv"))
 grch38 <- read_tsv(file.path("inst", "annotables_grch38.tsv"))
@@ -9,7 +10,7 @@ all_zones <- OlsonNames()
 sl <- grepl("/", all_zones)
 all_zones <- all_zones[!sl]
 
-
+  
 antibody_info <- antibody_info |> dplyr::rename(Symbol = 
                   `Gene Name (Upper)`) |>
   tidyr::drop_na()
@@ -21,6 +22,8 @@ applications_parsed <- get_antibody_applications(antibody_info,
                                                  'Symbol', 'Listed Applications')
 
 gene_mapping <- as.data.frame(unlist(org.Hs.egALIAS2EG))
+
+gene_mapping <- gene_mapping |> group_by(alias_symbol) |> slice_head(n = 1) |> ungroup()
 
 # https://www.genenames.org/download/statistics-and-files/
 protein_coding_genes <- (annotables::grch38 |> filter(biotype == "protein_coding"))$symbol
