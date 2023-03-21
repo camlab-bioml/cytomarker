@@ -7,9 +7,10 @@
 #' @param columns A vector storing columns
 #' @param pref_assay Assay loaded
 #' @param p_val_type The type of p-value to use in marker group calculation. Can be either all or any.
+#' @param use_rank Whether or not to use the logFC rank as the sorting criteria. Default is TRUE
 #' 
 compute_fm <- function(sce, columns, pref_assay, allowed_genes,
-                       p_val_type = "all") {
+                       p_val_type = "all",  use_rank = T) {
   
   library(scran)
   
@@ -21,14 +22,18 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes,
     #                   pval.type = p_val_type,
     #                   assay.type = pref_assay)
     
-    sort_by_cohen <- function(frame) {
-      frame[order(frame$median.logFC.cohen, decreasing=TRUE),] 
+    sort_by_stat <- function(frame, sort_by_rank = use_rank) {
+      if (isTRUE(sort_by_rank)) {
+        return (frame[order(frame$rank.logFC.detected, decreasing=F),])
+      } else {
+        return (frame[order(frame$median.logFC.cohen, decreasing=T),])
+      }
     }
     
     score <- scran::scoreMarkers(assay(sce[ag,], pref_assay),
                               colData(sce)[[columns]])
     
-    fm <- lapply(score, FUN = function(X) sort_by_cohen(X))
+    fm <- lapply(score, FUN = function(X) sort_by_stat(X))
     # fm <- SimpleList(fm)
     
     for(n in names(fm)) {
@@ -607,7 +612,7 @@ get_cell_type_add_markers_reactable <- function(fm, current_markers) {
   list(fm = table,
        reactable = 
          reactable(
-           fm,
+           table,
            selection = "multiple",
            onClick = "select"
          )

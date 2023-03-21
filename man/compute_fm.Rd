@@ -4,7 +4,14 @@
 \alias{compute_fm}
 \title{Compute the findMarkers outputs and store}
 \usage{
-compute_fm(sce, columns, pref_assay, allowed_genes, p_val_type = "all")
+compute_fm(
+  sce,
+  columns,
+  pref_assay,
+  allowed_genes,
+  p_val_type = "all",
+  use_rank = T
+)
 }
 \arguments{
 \item{sce}{A SingleCellExperiment object}
@@ -14,6 +21,8 @@ compute_fm(sce, columns, pref_assay, allowed_genes, p_val_type = "all")
 \item{pref_assay}{Assay loaded}
 
 \item{p_val_type}{The type of p-value to use in marker group calculation. Can be either all or any.}
+
+\item{use_rank}{Whether or not to use the logFC rank as the sorting criteria. Default is TRUE}
 }
 \description{
 Note: this used to be part of get_markers but needs

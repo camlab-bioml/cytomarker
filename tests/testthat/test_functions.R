@@ -107,7 +107,8 @@ test_that("get_markers and compute_fm return different results with different p-
   fms_1 <- compute_fm(sce,
                     "seurat_annotations",
                     "logcounts",
-                    rownames(sce)
+                    rownames(sce),
+                    use_rank = F
   )
   
   markers_1 <- get_markers(fms_1, panel_size = 12, marker_strategy = 'standard',
