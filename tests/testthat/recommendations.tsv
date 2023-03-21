@@ -1,4 +1,4 @@
-marker	cell_type	summary.logFC
+marker	cell_type	median.logFC.cohen
 TXNIP	Cell_1	1.69746207532874
 PTPRCAP	Cell_1	1.5044159987842
 S100A10	Cell_10	1.43691581887884

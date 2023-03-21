@@ -1055,7 +1055,7 @@ cytosel <- function(...) {
       req(allowed_genes())
       req(fms())
     
-      showModal(markers_add_modal(allowed_genes(), names(fms()[[1]]), session))
+      showModal(markers_add_modal(allowed_genes(), names(fms()), session))
     })
     
     # ### ANTIBODY EXPLORER ###
@@ -1470,6 +1470,7 @@ cytosel <- function(...) {
                                        sce()[,sce()$keep_for_analysis == "Yes"],
                                        allowed_genes())
                 
+                
                 markers <- markers_list$marker[!is.na(markers_list$marker)]
                 markers$scratch_markers <- scratch_markers_to_keep
                 multimarkers(markers_list$multimarkers)
@@ -1655,7 +1656,7 @@ cytosel <- function(...) {
     
     observeEvent(input$add_cell_type_markers, {
       if(!is.null(input$cell_type_markers) && !is.null(fms())) {
-        tmp <- get_cell_type_add_markers_reactable(fms()[[1]][[input$cell_type_markers]],
+        tmp <- get_cell_type_add_markers_reactable(fms()[[input$cell_type_markers]],
                                             unique(unlist(current_markers())))
         
         current_cell_type_marker_fm <<- tmp$fm
@@ -1695,7 +1696,7 @@ cytosel <- function(...) {
       
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                names(fms()[[1]]))
+                names(fms()))
       
       removeModal()
     })
@@ -1729,7 +1730,7 @@ cytosel <- function(...) {
         
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  names(fms()[[1]]))
+                  names(fms()))
         
       } else if(!(input$add_markers %in% rownames(sce()))) {
         dne_modal(dne = input$add_markers)
@@ -1764,7 +1765,7 @@ cytosel <- function(...) {
         
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  names(fms()[[1]]))
+                  names(fms()))
         updateTabsetPanel(session, "tabs", "marker_selection")
       }
       
@@ -1806,7 +1807,7 @@ cytosel <- function(...) {
         
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  names(fms()[[1]]))
+                  names(fms()))
         
         if(length(not_sce) > 0) {
           # warning_modal(not_sce)
@@ -1863,7 +1864,7 @@ cytosel <- function(...) {
         
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  names(fms()[[1]]))
+                  names(fms()))
       }
       
       if (length(alias$merged) > length(marker) | !all(alias$merged %in% marker) |
@@ -1946,7 +1947,7 @@ cytosel <- function(...) {
         
         update_BL(current_markers(), num_markers_in_selected(),
                                num_markers_in_scratch(),
-                               names(fms()[[1]]))
+                               names(fms()))
         
         removeModal()
         
@@ -2017,7 +2018,7 @@ cytosel <- function(...) {
       
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                names(fms()[[1]]))
+                names(fms()))
       
       showNotification("Marker(s) added successfully.",
                        duration = 3)
@@ -2244,7 +2245,7 @@ cytosel <- function(...) {
       reset("read_back_analysis")
       update_BL(current_markers(), num_markers_in_selected(),
                 num_markers_in_scratch(),
-                names(fms()[[1]]))
+                names(fms()))
       valid_existing_panel(TRUE)
       original_panel(NULL)
       umap_top(NULL)
@@ -2454,7 +2455,7 @@ cytosel <- function(...) {
 
     update_BL(current_markers(), num_markers_in_selected(),
               num_markers_in_scratch(),
-              names(fms()[[1]]))
+              names(fms()))
     
     marker_sort(input$panel_sorter)
 
@@ -2595,7 +2596,7 @@ cytosel <- function(...) {
         
         update_BL(current_markers(), num_markers_in_selected(),
                   num_markers_in_scratch(),
-                  names(fms()[[1]]))
+                  names(fms()))
         
         setProgress(value = 0.25)
         

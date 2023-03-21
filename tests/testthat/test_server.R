@@ -99,7 +99,7 @@ test_that("Server has basic functionality", {
     
     # Verify proper format of the findmarkers output and marker lists
     expect_equal("seurat_annotations", column())
-    expect_equal(length(names(fms()[[1]])), 3)
+    expect_equal(length(names(fms())), 3)
     
     expect_equal(length(current_markers()), 3)
     

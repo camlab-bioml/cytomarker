@@ -13,26 +13,28 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes,
   
   library(scran)
   
-  fms <- lapply(columns,
-                  function(col) {
-    
     test_type <- ifelse(pref_assay == "counts", "binom", "t")
     ag <- intersect(rownames(sce), allowed_genes)
-    fm <- scran::findMarkers(sce[ag,], SummarizedExperiment::colData(sce)[[col]],
-                      test.type = test_type, 
-                      # BPPARAM = MulticoreParam(),
-                      pval.type = p_val_type,
-                      assay.type = pref_assay)
+    # fm <- scran::findMarkers(sce[ag,], SummarizedExperiment::colData(sce)[[col]],
+    #                   test.type = test_type, 
+    #                   # BPPARAM = MulticoreParam(),
+    #                   pval.type = p_val_type,
+    #                   assay.type = pref_assay)
+    
+    sort_by_cohen <- function(frame) {
+      frame[order(frame$median.logFC.cohen, decreasing=TRUE),] 
+    }
+    
+    score <- scran::scoreMarkers(assay(sce[ag,], pref_assay),
+                              colData(sce)[[columns]])
+    
+    fm <- lapply(score, FUN = function(X) sort_by_cohen(X))
+    # fm <- SimpleList(fm)
     
     for(n in names(fm)) {
       fm[[n]] <- fm[[n]][rownames(fm[[n]]) %in% allowed_genes,]
     }
     fm
-  })
-  
-  names(fms) <- columns
-  
-  fms
   
 }
 
@@ -66,9 +68,10 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
       top_markers = genes$gene[!is.na(genes$gene)]
     )
   } else {
-    for(col in columns) {
-      fm <- fms[[col]]
-      n <- length(fm)
+    
+      n <- length(fms)
+      
+      fm <- fms
       
       top_select <- ceiling((panel_size + 10) / n)
       
@@ -84,24 +87,27 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
       original_multimarkers <- c()
       for(i in seq_len(n)) {
         f <- fm[[i]]
-        f <- f[!(rownames(f) %in% recommended),] |> as.data.frame()
+        
+        f <- f[!(rownames(f) %in% recommended),]
         
         ## Only keep markers that are over-expressed
         f[is.na(f)] <- 0
-        f <- f[f$summary.logFC > 0,]
+        f <- f[f$median.logFC.cohen > 0,]
         
         if(nrow(f) > 0){
           selected_markers <- rownames(f)[seq_len(top_select)]
           recommended_df <- bind_rows(recommended_df, 
                                       tibble(marker = selected_markers,
                                              cell_type = names(fm)[i],
-                                             summary.logFC = f[selected_markers,]$summary.logFC))
+                                             median.logFC.cohen = f[selected_markers,]$median.logFC.cohen))
+          
+          # print(recommended_df)
           
           expressed_markers <- rownames(f)[seq_len(25)]
           highly_expressed <- bind_rows(highly_expressed, 
                                       tibble(marker = expressed_markers,
                                              cell_type = names(fm)[i],
-                                             summary.logFC = f[expressed_markers,]$summary.logFC))
+                                             median.logFC.cohen = f[expressed_markers,]$median.logFC.cohen))
           
           
         }else{
@@ -155,7 +161,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
         remove <- recommended_df %>% 
           filter(cell_type %in% markers_per_cell_type$cell_type) %>% 
           group_by(marker) %>% 
-          summarize(mean_lfc = mean(summary.logFC)) %>% 
+          summarize(mean_lfc = mean(median.logFC.cohen)) %>% 
           arrange(mean_lfc) %>% 
           slice_head(n = 1) %>% 
           pull(marker)
@@ -195,7 +201,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
 
             ## Only keep markers that are over-expressed
             f[is.na(f)] <- 0
-            f <- f[f$summary.logFC > 0,]
+            f <- f[f$median.logFC.cohen > 0,]
             new_markers_add <- rownames(f)[seq_len(subset(multimarkers, cell_type == i)$num_markers)]
             recommended <- c(recommended, new_markers_add)
           }
@@ -205,7 +211,7 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
       
       scratch <- unique(scratch)
       top <- recommended #unique(top)
-    }
+      
     marker <- list(recommended_markers = recommended[!is.na(recommended)],
                    scratch_markers = scratch[!is.na(scratch)],
                    top_markers = top[!is.na(top)])
@@ -229,7 +235,7 @@ create_multimarker_frame <- function(frame, recommended_markers) {
     mutate(num_markers = length(unique(marker)),
            highest = max(cell_types_expressed_in),
            lowest = min(cell_types_expressed_in)) |> ungroup() |>
-    arrange(summary.logFC) |> filter(lowest > 1))
+    arrange(median.logFC.cohen) |> filter(lowest > 1))
 }
 
 
@@ -240,7 +246,7 @@ create_multimarker_frame <- function(frame, recommended_markers) {
 #' recommended_markers, scratch_markers, and top_markers
 #' @param fms Stored findMarkers outputs
 get_associated_cell_types <- function(markers, fms) {
-  fm <- fms[[1]] # For now, we're only doing this for the first
+  fm <- fms # For now, we're only doing this for the first
   
   all_markers <- unique(unlist(markers[c('recommended_markers', 
                         'scratch_markers', 'top_markers')]))
@@ -250,9 +256,9 @@ get_associated_cell_types <- function(markers, fms) {
       tmp <- f[tm,] # get summary statistics for this gene
       
       ## return p value if it's a marker, or 1 otherwise
-      # ifelse(tmp$summary.logFC < 0, 1, tmp$FDR)
+      # ifelse(tmp$median.logFC.cohen < 0, 1, tmp$FDR)
       ## New: return summary logFC
-      -tmp$summary.logFC
+      -tmp$median.logFC.cohen
     })
     names(pvals)[which.min(pvals)]
   })
@@ -593,13 +599,12 @@ get_allowed_genes <- function(selected_applications, applications_parsed, sce) {
 #' @importFrom dplyr mutate_if mutate_at
 get_cell_type_add_markers_reactable <- function(fm, current_markers) {
   fm <- fm[!rownames(fm) %in% current_markers,]
-  fm <- fm[fm$summary.logFC > 0,]
+  fm <- fm[fm$median.logFC.cohen > 0,]
   fm <- as.data.frame(head(fm, 50))
-  fm <- rownames_to_column(fm, 'Gene')
-  fm <- fm[,c("Gene", "FDR", "summary.logFC")]
-  fm$FDR <- signif(fm$FDR, 3)
-  fm$summary.logFC <- round(fm$summary.logFC, digits = 3)
-  list(fm = fm,
+  table <- data.frame(Gene = rownames(fm),
+                      logFC = round(fm$median.logFC.cohen, digits = 3))
+  
+  list(fm = table,
        reactable = 
          reactable(
            fm,
