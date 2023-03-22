@@ -2032,7 +2032,7 @@ cytosel <- function(...) {
       req(sce())
       req(possible_umap_dims())
       
-      toggle(id = "precomputed_list", condition = isTruthy(input$precomputed_dim))
+      shinyjs::show("precomputed_list")
       updateSelectInput(session, "possible_precomputed_dims", 
                         choices = possible_umap_dims(),
                         selected = possible_umap_dims()[1])
@@ -2781,7 +2781,11 @@ cytosel <- function(...) {
       # input_sce <- remove_confounding_genes(input_sce)
       sce(input_sce)
       
+      set_allowed_genes()
+      
       shinyjs::hide(id = "download_button")
+      shinyjs::hide(id = "precomputed")
+      shinyjs::hide(id = "precomputed_list")
       
       toggle(id = "analysis_button", condition = isTruthy(sce()))
       # toggle(id = "apps", condition = isTruthy(SUBSET_TO_ABCAM))
@@ -2793,6 +2797,9 @@ cytosel <- function(...) {
       previous_metrics(NULL)
       current_overall_score(NULL)
       previous_overall_score(NULL)
+      possible_umap_dims(NULL)
+      use_precomputed_umap(FALSE)
+      
       
       if (!isTruthy(input$min_category_count)) {
         updateNumericInput(session, "min_category_count", 2)
@@ -2845,12 +2852,6 @@ cytosel <- function(...) {
         column(input$coldata_column)
       }
       
-      if (isTruthy(input$bl_top) | isTruthy(current_markers())) {
-        proceed_with_analysis(FALSE)
-        showModal(reset_option_on_change_modal("uploaded a new dataset"))
-  
-      }
-      
       aliases_table(NULL)
       gene_aliases_to_show(NULL)
       
@@ -2861,17 +2862,22 @@ cytosel <- function(...) {
       req(proceed_with_analysis())
       
       possible_umap_dims(detect_umap_dims_in_sce(sce()))
-        
-        toggle(id = "precomputed", condition = length(possible_umap_dims()) > 0)
-        
-        if (isTruthy(curated_selection()) & !isTruthy(use_precomputed_umap())) {
-          updateCheckboxInput(session, inputId = "precomputed_dim",
-                              value = T)
-        }
-        
-        set_allowed_genes()
-        toggle(id = "gene_alias_tag", condition = isTruthy(gene_aliases_to_show()))
-        
+      
+      if (length(possible_umap_dims()) > 0) shinyjs::show("precomputed") 
+      if (length(possible_umap_dims()) > 0) shinyjs::show("precomputed_list")
+      if (length(possible_umap_dims()) > 0) updateCheckboxInput(session, inputId = "precomputed_dim",
+                                                                value = T)
+      
+      if (isTruthy(input$bl_top) | isTruthy(current_markers())) {
+        proceed_with_analysis(FALSE)
+        showModal(reset_option_on_change_modal("uploaded a new dataset"))
+  
+      }
+      
+      req(proceed_with_analysis())
+      
+      shinyjs::hide("gene_alias_tag")
+      
     }
     
     set_allowed_genes <- function() {
