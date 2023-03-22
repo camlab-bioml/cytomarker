@@ -54,9 +54,10 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes,
 #' @param allowed_genes Set of allowed genes
 #' @param in_session whether the function is being called in a shiny session or not
 #' @importFrom dplyr mutate tally group_by filter pull slice_head arrange summarize ungroup
-#' @import geneBasisR
 get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
                         in_session = T) {
+  
+  library(geneBasisR)
   
   cell_types_wout_markers <- c()
   columns <- names(fms)
@@ -65,8 +66,8 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
   marker <- list(recommended_markers = c(), scratch_markers = c(), top_markers = c())
   
   if(marker_strategy == "geneBasis") {
-    sce2 <- retain_informative_genes(sce[allowed_genes,], n = 10*panel_size)
-    genes <- gene_search(sce2, n_genes=panel_size)
+    sce2 <- geneBasisR::retain_informative_genes(sce[allowed_genes,], n = 10*panel_size)
+    genes <- geneBasisR::gene_search(sce2, n_genes=panel_size)
     marker <- list(
       recommended_markers = genes$gene[!is.na(genes$gene)],
       scratch_markers = c(),

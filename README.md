@@ -82,6 +82,19 @@ Alteratively, in the RStudio Desktop console:
 devtools::load_all(); cytosel()
 ```
 
+### Docker
+
+cytosel can be run in a containerized environment using the following commands. Ensure that Docker is installed for the specific local OS:
+
+```
+cd cytosel
+docker build -t cytosel . 
+docker run -p 3888:3888 docker.io/library/cytosel 
+````
+
+This should prompt the user to navigate to a local URL such as `http://localhost:3888/`
+
+
 ## Developer guide
 
 The developer guide for cytosel is in progress and being hosted [here](https://github.com/camlab-bioml/cytosel/wiki/cytosel-Developer-guide)

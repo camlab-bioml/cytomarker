@@ -46,7 +46,6 @@ Imports:
     htmltools,
     fontawesome,
     emojifont,
-    geneBasisR,
     waiter,
     cicerone,
     shinyanimate
@@ -71,7 +70,8 @@ Suggests:
   printr,
   ggplot2,
   heatmaply,
-  plotly
+  plotly,
+  geneBasisR
 Remotes: 
     github::MarioniLab/geneBasisR,
     github::camlab-bioml/inferorg,
