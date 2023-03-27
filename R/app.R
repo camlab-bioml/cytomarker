@@ -5,7 +5,7 @@ curated_datasets <- utils::read.delim(system.file("ts_datasets.tsv", package = "
 other_curated <- utils::read.delim(system.file("other_datasets.tsv", package = "cytosel"),
                                    sep = "\t")
 
-for (i in curated_datasets$tissue) {
+for (i in c(curated_datasets$tissue, other_curated$tissue)) {
   if (file.exists(file.path(tempdir(), "/", paste(i, ".rds", sep = "")))) {
     command <- paste('rm ', tempdir(), "/", paste(i, ".rds", sep = ""), sep = "")
     system(command)
