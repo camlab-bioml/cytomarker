@@ -37,6 +37,6 @@ RUN ls
 # RUN yes | R -e "setwd('cytosel'); options(needs.promptUser = FALSE); library(devtools); devtools::load_all()"  
 
 
-ENV PORT=3838
+ENV PORT=3000
 
-CMD R -e "options(shiny.port = 3838, shiny.host='0.0.0.0'); devtools::load_all(); cytosel()"
+CMD R -e "options(shiny.port = $PORT, shiny.host='0.0.0.0'); devtools::load_all(); cytosel()"
