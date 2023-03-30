@@ -49,7 +49,8 @@ Imports:
     geneBasisR,
     waiter,
     cicerone,
-    shinyanimate
+    shinyanimate,
+    feather
 Suggests:
   stringr,
   yardstick,

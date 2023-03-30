@@ -60,6 +60,7 @@ ONLY_PROTEIN_CODING <- yaml$only_protein_coding
 #' valueBoxOutput renderMenu updateTabItems tabBox renderValueBox valueBox
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @importFrom yaml read_yaml
+#' @importFrom feather read_feather
 #' @importFrom rdrop2 drop_download
 #' @importFrom lubridate with_tz
 #' @export cytosel cytosel
@@ -69,7 +70,7 @@ cytosel <- function(...) {
   
   rm(list = ls())
   
-  antibody_info <- cytosel_data$antibody_info |>
+  antibody_info <- read_feather(system.file("registry_with_symbol.feather", package = "cytosel")) |>
     mutate(`Protein Expression`  = ifelse(!is.na(ensgene), paste("https://www.proteinatlas.org/", 
                                     ensgene,
                                 "-", Symbol, "/tissue", sep = ""), NA))
@@ -80,7 +81,7 @@ cytosel <- function(...) {
                                               package = "cytosel"))
   
   
-  applications_parsed <- cytosel_data$applications
+  # applications_parsed <- cytosel_data$applications
   
   grch38 <- cytosel_data$grch38
   
@@ -321,12 +322,12 @@ cytosel <- function(...) {
                                           selected = NULL,
                                           multiple = F))),
                    # hidden(div(id = "apps",
-                              selectInput("select_aa", "Antibody applications:", 
-                              applications_parsed$unique_applications, multiple=TRUE) %>%
+                              hidden(div(selectInput("select_aa", "Antibody applications:", 
+                              NULL, multiple=TRUE) %>%
                                shinyInput_label_embed(
                                icon("circle-info") %>%
                                bs_embed_tooltip(title = get_tooltip('applications'),
-                               placement = "right", html = "true"))
+                               placement = "right", html = "true"))))
                    # ))
                    ),
                    bsCollapsePanel(title = HTML(paste0(
@@ -2879,9 +2880,11 @@ cytosel <- function(...) {
     
     set_allowed_genes <- function() {
       
-      if (isTruthy(SUBSET_TO_ABCAM) | length(input$select_aa) > 0) 
-        allowed_genes(get_allowed_genes(input$select_aa, applications_parsed,
-        sce()[,sce()$keep_for_analysis == "Yes"])) else allowed_genes(rownames(sce()[,sce()$keep_for_analysis == "Yes"]))
+      # if (isTruthy(SUBSET_TO_ABCAM) | length(input$select_aa) > 0) 
+      #   allowed_genes(get_allowed_genes(input$select_aa, applications_parsed,
+      #   sce()[,sce()$keep_for_analysis == "Yes"])) else
+          
+      allowed_genes(rownames(sce()[,sce()$keep_for_analysis == "Yes"]))
       
       allowed_genes(if (isTruthy(ONLY_PROTEIN_CODING)) 
         allowed_genes()[allowed_genes() %in% cytosel_data$protein_coding] else allowed_genes())

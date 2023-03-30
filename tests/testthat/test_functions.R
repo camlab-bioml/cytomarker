@@ -15,47 +15,43 @@ test_that("conversion functions are effective", {
   expect_false(check_for_human_genes(sce))
 })
 
-context("Pre-processing the antibody applications")
+# context("Pre-processing the antibody applications")
+# 
+# test_that("Processing the antibody applications produces the intended data structures", {
+#  
+#   applications_parsed <- get_antibody_applications(cytosel_data$antibody_info |> distinct(Symbol, .keep_all = T),
+#                                                    'Symbol', 'Listed Applications')
+#   
+#   expect_is(applications_parsed, 'list')
+#   expect_equal(names(applications_parsed), c("unique_applications", "application_gene_map"))
+#   
+#   # IMP: normally 12 unique antiby applcations but did only unique combinatinos of symbols
+#   # to reduce the time to parse the full registry
+#   expect_equal(length(applications_parsed$unique_applications), 6)
+#   # expect_equal(length(applications_parsed$unique_applications), 12)
+#   expect_equal(length(applications_parsed$application_gene_map), 6)
+#   # expect_equal(length(applications_parsed$application_gene_map), 12)
+# 
+# })
 
-test_that("Processing the antibody applications produces the intended data structures", {
- 
-  applications_parsed <- get_antibody_applications(cytosel_data$antibody_info |> distinct(Symbol, .keep_all = T),
-                                                   'Symbol', 'Listed Applications')
-  
-  expect_is(applications_parsed, 'list')
-  expect_equal(names(applications_parsed), c("unique_applications", "application_gene_map"))
-  
-  # IMP: normally 12 unique antiby applcations but did only unique combinatinos of symbols
-  # to reduce the time to parse the full registry
-  expect_equal(length(applications_parsed$unique_applications), 6)
-  # expect_equal(length(applications_parsed$unique_applications), 12)
-  expect_equal(length(applications_parsed$application_gene_map), 6)
-  # expect_equal(length(applications_parsed$application_gene_map), 12)
-
-})
-
-context("parsing for the allowed genes in an Abcam subset works as intended")
-
-test_that("Processing the antibody applications produces the intended data structures", {
-
-  obj <- test_path("pbmc_small.rds")
-  sce <- read_input_scrnaseq(obj, filter_counts = F)
-
-  allowed_all <- as.character(get_allowed_genes(NULL, cytosel_data$applications,
-                    sce))
-  
-  expect_gte(length(allowed_all), 900)
-
-  only_protein <- get_allowed_genes("Protein Array", cytosel_data$applications,
-                                                   sce)
-
-  expect_true(length(allowed_all) > length(only_protein))
-
-})
-
-
-
-
+# context("parsing for the allowed genes in an Abcam subset works as intended")
+# 
+# test_that("Processing the antibody applications produces the intended data structures", {
+# 
+#   obj <- test_path("pbmc_small.rds")
+#   sce <- read_input_scrnaseq(obj, filter_counts = F)
+# 
+#   allowed_all <- as.character(get_allowed_genes(NULL, cytosel_data$applications,
+#                     sce))
+#   
+#   expect_gte(length(allowed_all), 900)
+# 
+#   only_protein <- get_allowed_genes("Protein Array", cytosel_data$applications,
+#                                                    sce)
+# 
+#   expect_true(length(allowed_all) > length(only_protein))
+# 
+# })
 
 context("Data reading")
 
