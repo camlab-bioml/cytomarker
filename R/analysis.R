@@ -408,13 +408,11 @@ train_nb <- function(x,y, cell_types) {
             yardstick::f_meas_vec(factor(y[test_idx] == ct, levels=c("TRUE", "FALSE")), 
                                   factor(p == ct, levels = c("TRUE", "FALSE")))
           })
-          tibble(
-            what = c("Overall", as.character(cell_types)),
+          tibble(what = c("Overall", as.character(cell_types)),
             score=c(overall, scores)
           )
     } else {
-      tibble(
-        what = c("Overall", as.character(cell_types)),
+      tibble(what = c("Overall", as.character(cell_types)),
         score=c(0, rep(0, length(as.character(cell_types)))))
     }
         

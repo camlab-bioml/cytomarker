@@ -44,6 +44,7 @@ create_heatmap <- function(sce, markers, column, display, normalization, pref_as
                        type='heatmap',
                        x = rownames(cc),
                        y = rownames(cc),
+                       colorscale = list(c("blue"), c("red")),
                        hovertemplate = "Gene(x): %{x}<br>Gene(y): %{y}<br>Correlation: %{z}<extra></extra>",
                        showticklabels = T, width = dims,
                        height = dims) %>%

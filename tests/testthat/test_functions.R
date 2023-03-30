@@ -18,14 +18,19 @@ test_that("conversion functions are effective", {
 context("Pre-processing the antibody applications")
 
 test_that("Processing the antibody applications produces the intended data structures", {
-
-  applications_parsed <- get_antibody_applications(cytosel_data$antibody_info,
+ 
+  applications_parsed <- get_antibody_applications(cytosel_data$antibody_info |> distinct(Symbol, .keep_all = T),
                                                    'Symbol', 'Listed Applications')
-
+  
   expect_is(applications_parsed, 'list')
   expect_equal(names(applications_parsed), c("unique_applications", "application_gene_map"))
-  expect_equal(length(applications_parsed$unique_applications), 12)
-  expect_equal(length(applications_parsed$application_gene_map), 12)
+  
+  # IMP: normally 12 unique antiby applcations but did only unique combinatinos of symbols
+  # to reduce the time to parse the full registry
+  expect_equal(length(applications_parsed$unique_applications), 6)
+  # expect_equal(length(applications_parsed$unique_applications), 12)
+  expect_equal(length(applications_parsed$application_gene_map), 6)
+  # expect_equal(length(applications_parsed$application_gene_map), 12)
 
 })
 
@@ -417,18 +422,28 @@ test_that("download works as expected", {
 
     placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
 
-    fake_table <- cytosel_data$antibody_info |> dplyr::filter(Symbol %in%
+    fake_table <- cytosel_data$antibody_info |>
+                                        mutate(`Protein Expression`  = ifelse(!is.na(ensgene),
+                                            paste("https://www.proteinatlas.org/", 
+                                          ensgene,
+                        "-", Symbol, "/tissue", sep = ""), NA))|> dplyr::filter(Symbol %in%
                               placeholder_markers) |>
+      dplyr::distinct(ID, .keep_all = T) |>
       mutate(`Host Species` = factor(`Host Species`),
-             `Product Category Tier 3` = factor(`Product Category Tier 3`),
-             `KO Status` = factor(`KO Status`),
-             `Clone Number` = factor(`Clone Number`),
-             `Human Protein Atlas` = "fake_link",
-             `External Link` = paste0('<a href="',`Datasheet URL`, '"',
-                                      ' target="_blank" rel="noopener noreferrer"',
-                                      '>',"View in Abcam website",'</a>')) |>
-      dplyr::select(-c(`Datasheet URL`))
-
+             Symbol = factor(Symbol),
+             
+             #        `Product Category Tier 3` = factor(`Product Category Tier 3`),
+             #        `KO Status` = factor(`KO Status`),
+             #        `Clone Number` = factor(`Clone Number`),
+             `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`),
+                                            paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
+                                                   'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
+                                                   ' target="_blank" rel="noopener noreferrer"',
+                                                   '>', "View on ",
+                                                   as.character(icon("external-link-alt")),
+                                                   "Human Protein Atlas",
+                                                   '</a>'), "None")) |>
+      dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`))
     markdown_report_path <- system.file(file.path("report", "rmarkdown-report.Rmd"),
                                         package = "cytosel")
 

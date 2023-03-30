@@ -235,27 +235,6 @@ too_large_to_show_modal <- function(col_name) {
   )
 }
 
-
-#' Show an input modal if the user wants to use precomputed UMAP coordinates
-#' @importFrom shiny modalDialog
-pre_computed_umap_modal <- function(possible_dims) { # Marker removal suggestion
-  modalDialog(
-    title = "Use Precomputed UMAP",
-    helpText("Select a possible UMAP dimension detected in the uploaded SCE."),
-    flowLayout(
-    selectInput("possible_precomputed_dims",
-                NULL,
-                choices = possible_dims,
-                selected = NULL,
-                multiple = F)
-    ),
-    footer = tagList(
-      actionButton("select_precomputed_umap", "Use selected for UMAP"),
-      modalButton("Cancel"))
-    )
-}
-
-
 #' Show a shinyalert warning if the sce for analysis has more than a set threshold of cell counts
 #' @importFrom shinyalert shinyalert
 #' @param ncell_sce The number of cells in the Singlecellexperiment object used for analysis
@@ -326,14 +305,19 @@ current_pan_not_valid_modal <- function(missing_genes, location) { # Marker remo
 curated_dataset_modal <- function(compartment_options, compartments_selected,
                                   dataset_options, failed = FALSE) {
   modalDialog(
-    flowLayout(selectInput("curated_options",
+    fluidRow(column(6,
+            radioButtons("curated_selection_choice", "Select the curated dataset collection",
+                            choices = c("Tabula Sapiens", "Other Human"),
+                            selected = "Tabula Sapiens"),
+                          selectInput("curated_options",
                        "1. Choose a tissue type to analyze",
                        dataset_options),
-               selectInput("curated_compartments",
+               hidden(div(id = "curated_ts_compartments",
+                          selectInput("curated_compartments",
                           "2. Select cell compartment(s)",
                           compartment_options, multiple = T, 
-                          selected = compartments_selected),
-    htmlOutput("curated_set_preview")),
+                          selected = compartments_selected)))),
+            column(6, htmlOutput("curated_set_preview"))),
     if (failed) {
       div(tags$b("Error", style = "color: red;"))
     },

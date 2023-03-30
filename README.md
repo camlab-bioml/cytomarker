@@ -2,66 +2,87 @@
 
 ![R check](https://github.com/camlab-bioml/cytosel/actions/workflows/check-package.yml/badge.svg)
 
-Antibody panel selection for mass cytometry using scRNA-seq
+Antibody panel selection for mass cytometry using scRNA-seq using R Shiny. cytosel is currently hosted
+on a [public shinyapps.io server](https://camlab.shinyapps.io/cytosel/)
 
-### To run
+## Official Documentation
 
-Navigate to the root directory and run
+The official documentation for cytosel using Docusaurus can be found [here](https://camlab-bioml.github.io/cytosel-doc/docs/intro)
 
-```r
+## Access
+
+cytosel can be accessed through a public shinyapps.io server [here](https://camlab.shinyapps.io/cytosel/)
+
+### Source code access
+
+For those with source code access to cytosel, installation and access can be achieved through the following commands. Ensure that [R](https://cran.r-project.org/) and [RStudio Desktop from Posit](https://posit.co/download/rstudio-desktop/) are installed for your specific operating system. 
+
+```
+git clone https://github.com/camlab-bioml/cytosel.git
+cd cytosel
+R
+# inside R console
+library(devtools) # or, if devtools isn't installed
+install.packages('devtools')
 devtools::load_all(); cytosel()
 ```
 
-### Dependencies
+This will prompt devtools to install all listed dependencies from the package. 
 
-To install dependencies:
+Additional dependencies in R that are suggested by the package may also need to be explicitly
+installed:
 
-```r
-dependencies <- c(
-"scran",
-"SingleCellExperiment",
-"tibble",
-"caret",
-"naivebayes",
-"dplyr",
-"shiny",
-"sortable",
-"ggplot2",
-"scater",
-"forcats",
-"cowplot",
-"readr",
-"dqshiny",
-"DT",
-"shinyalert",
-"SummarizedExperiment",
-"scuttle",
-"Seurat",
-"viridis",
-"reactable",
-"ComplexHeatmap",
-"bsplus",
-"shinyjs",
-"zip",
-"RColorBrewer"
-)
-BiocManager::install(dependencies)
-remotes::install_github("daqana/dqshiny")
+```
+additional_deps <- c('stringr',
+  'yardstick',
+  "htmltools',
+  'methods',
+  'stats',
+  'gridExtra',
+  'testthat',
+  'tools',
+  'scran',
+  'Seurat',
+  'caret',
+  'scuttle',
+  'scater',
+  'SummarizedExperiment',
+  'SingleCellExperiment',
+  'clustifyr',
+  'zellkonverter',
+  'printr',
+  'ggplot2',
+  'heatmaply',
+  'plotly')
+  
+  BiocManager::install(dependencies)
 ```
 
-### To run
+### Running locally
 
-In the command line, run
+In the command line, execute the following commands:
 
-```bash
-git clone https://github.com/camlab-bioml/cytosel.git
-R -e 'shiny::runApp("cytosel")'
+```
+# navigate to the directory with the cytosel source code
+cd cytosel
+R -e 'devtools::load_all(); cytosel()'
 ```
 
-The final line will display something like
+The final line will display a message providing the IP address and local port:
 
 ```
 Listening on http://127.0.0.1:7665
 ```
 
 Navigate to that IP address in your browser to run.
+
+Alteratively, in the RStudio Desktop console: 
+
+```
+devtools::load_all(); cytosel()
+```
+
+## Developer guide
+
+The developer guide for cytosel is in progress and being hosted [here](https://github.com/camlab-bioml/cytosel/wiki/cytosel-Developer-guide)
+
