@@ -1,6 +1,6 @@
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, diff_antibody_table]
 
 name: shiny-deploy
 
