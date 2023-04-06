@@ -649,8 +649,8 @@ cytomarker <- function(...) {
     
     output$cytomarker_logo <- shiny::renderImage({
       list(src=system.file(file.path("report", "cytomarker-logo.png"), package = "cytomarker"),
-           width = "76%",
-           height = "11.25%",
+           width = "95%",
+           height = "11.75%",
            class = "topimg",
            alt = "cytomarker")
     }, deleteFile = F)

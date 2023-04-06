@@ -1,30 +1,30 @@
-# cytosel
+# cytomarker
 
-![R check](https://github.com/camlab-bioml/cytosel/actions/workflows/check-package.yml/badge.svg)
+![R check](https://github.com/camlab-bioml/cytomarker/actions/workflows/check-package.yml/badge.svg)
 
-Antibody panel selection for mass cytometry using scRNA-seq using R Shiny. cytosel is currently hosted
-on a [public shinyapps.io server](https://camlab.shinyapps.io/cytosel/)
+Antibody panel selection for mass cytometry using scRNA-seq using R Shiny. cytomarker is currently hosted
+on a [public shinyapps.io server](https://camlab.shinyapps.io/cytomarker/)
 
 ## Official Documentation
 
-The official documentation for cytosel using Docusaurus can be found [here](https://camlab-bioml.github.io/cytosel-doc/docs/intro)
+The official documentation for cytomarker using Docusaurus can be found [here](https://camlab-bioml.github.io/cytomarker-doc/docs/intro)
 
 ## Access
 
-cytosel can be accessed through a public shinyapps.io server [here](https://camlab.shinyapps.io/cytosel/)
+cytomarker can be accessed through a public shinyapps.io server [here](https://camlab.shinyapps.io/cytomarker/)
 
 ### Source code access
 
-For those with source code access to cytosel, installation and access can be achieved through the following commands. Ensure that [R](https://cran.r-project.org/) and [RStudio Desktop from Posit](https://posit.co/download/rstudio-desktop/) are installed for your specific operating system. 
+For those with source code access to cytomarker, installation and access can be achieved through the following commands. Ensure that [R](https://cran.r-project.org/) and [RStudio Desktop from Posit](https://posit.co/download/rstudio-desktop/) are installed for your specific operating system. 
 
 ```
-git clone https://github.com/camlab-bioml/cytosel.git
-cd cytosel
+git clone https://github.com/camlab-bioml/cytomarker.git
+cd cytomarker
 R
 # inside R console
 library(devtools) # or, if devtools isn't installed
 install.packages('devtools')
-devtools::load_all(); cytosel()
+devtools::load_all(); cytomarker()
 ```
 
 This will prompt devtools to install all listed dependencies from the package. 
@@ -63,9 +63,9 @@ additional_deps <- c('stringr',
 In the command line, execute the following commands:
 
 ```
-# navigate to the directory with the cytosel source code
-cd cytosel
-R -e 'devtools::load_all(); cytosel()'
+# navigate to the directory with the cytomarker source code
+cd cytomarker
+R -e 'devtools::load_all(); cytomarker()'
 ```
 
 The final line will display a message providing the IP address and local port:
@@ -79,10 +79,10 @@ Navigate to that IP address in your browser to run.
 Alteratively, in the RStudio Desktop console: 
 
 ```
-devtools::load_all(); cytosel()
+devtools::load_all(); cytomarker()
 ```
 
 ## Developer guide
 
-The developer guide for cytosel is in progress and being hosted [here](https://github.com/camlab-bioml/cytosel/wiki/cytosel-Developer-guide)
+The developer guide for cytomarker is in progress and being hosted [here](https://github.com/camlab-bioml/cytomarker/wiki/cytomarker-Developer-guide)
 

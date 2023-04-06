@@ -22,10 +22,11 @@ test_that("{shinytest2} recording: cytomarker", {
     app$wait_for_value(output = "cytomarker_logo")
     # IMPORTANT: only run the tests non-interactively using Github actions
     # currently devtools test and devtools check give different screenshot results
-    # skip_if(interactive())
+    
+    skip_if(interactive())
     
     app$expect_screenshot()
-
+    
     # skip_if(interactive())
     # app$click("help_guide")
     # Sys.sleep(7)
