@@ -1,5 +1,5 @@
 ---
-title: "cytosel Run Report"
+title: "cytomarker Run Report"
 output: 
   html_document:
     toc: true
@@ -24,7 +24,7 @@ header-includes:
 }
 </style>
 
-Below are the results of your cytosel antibody panel design run.
+Below are the results of your cytomarker antibody panel design run.
 
 ```{r message=FALSE, echo=F}
 knitr::opts_knit$set(root.dir = params$tmpdir)
@@ -42,7 +42,7 @@ library(emojifont)
 
 
 ```{r, echo=FALSE}
-htmltools::img(src = "cytosel-logo.png", 
+htmltools::img(src = "cytomarker-logo.png", 
                alt = 'logo', 
                style = 'position:absolute; top:0; right:0; padding-top: 20px; padding-right:40px; width: 185px;')
 ```

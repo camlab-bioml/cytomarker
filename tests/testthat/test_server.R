@@ -3,7 +3,7 @@ context("Test basic Shiny app server functionality")
 
 test_that("Server has basic functionality", {
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     # Verify the input sce and default + selected assays
     expect_equal(pref_assay(), "logcounts")
@@ -107,7 +107,7 @@ test_that("Server has basic functionality", {
     expect_false(is.null(current_markers()$top_markers))
     
     # expect that the palette is the same length as the number of cells retained
-    expect_equal(names(cytosel_palette()), c("CD8 T", "Memory CD4 T", "Naive CD4 T"))
+    expect_equal(names(cytomarker_palette()), c("CD8 T", "Memory CD4 T", "Naive CD4 T"))
 
     # prove that the marker-marker correlation plot was made
     
@@ -295,7 +295,7 @@ test_that("Server has basic functionality", {
 })
 
 test_that("Pre-setting the input rank lists persists in the current markers", {
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
@@ -324,7 +324,7 @@ context("Test that Shiny app server can detect single assay")
 
 test_that("Server can detect sce with only one assay", {
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     expect_equal(pref_assay(), "logcounts")
     
@@ -347,7 +347,7 @@ context("Test re-upload and reset Shiny app server functionality")
 #### Re-upload analysis ######
 test_that("Re-upload works on server", {
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     expect_false(reupload_analysis())
   
@@ -389,13 +389,13 @@ test_that("Re-upload works on server", {
 
 gc()
 
-context("Test that resetting the cytosel environment works as expected")
+context("Test that resetting the cytomarker environment works as expected")
 
 
 #### Reset analysis ######
 test_that("Reset works on server", {
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     expect_false(reupload_analysis())
     
@@ -432,7 +432,7 @@ test_that("Reset works on server", {
 context("Current panel with different genes throws error")
 
 test_that("Error from current panel with different genes", {
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
                       panel_size = 20,
@@ -455,7 +455,7 @@ gc()
 context("Test UMAP, violin, and heatmap colouring changes")
 
 test_that("Changing the UMAP, violin, and heatmap colourings work", {
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
@@ -565,7 +565,7 @@ gc()
 context("Test the loading of the curated datasets from dropbox")
 
 test_that("Picking the curated dataset works as intended", {
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     session$setInputs(curated_dataset = T, 
                       curated_selection_choice = "Tabula Sapiens",
@@ -614,7 +614,7 @@ test_that("Picking the curated dataset works as intended", {
 })
 
 test_that("Setting null compartments retains the full dataset", {
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
 
     session$setInputs(curated_selection_choice = "Tabula Sapiens",
                       curated_dataset = T, curated_options = "Kidney",
@@ -639,7 +639,7 @@ test_that("Setting null compartments retains the full dataset", {
 })
 
 test_that("Having an existing panel will warn for a reset on upload", {
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     session$setInputs( bl_top = c("EEF2", "RBM3", "CFD", "MSN", "FTL"),
                        bl_recommended = c("EEF2", "RBM3", "CFD", "MSN", "FTL"),
@@ -672,7 +672,7 @@ test_that("Having an existing panel will warn for a reset on upload", {
 context("Test that finding markers with very few genes produces an error")
 
 test_that("datasets with few genes produce errors on marker finding", {
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_few_genes.rds")),
@@ -697,7 +697,7 @@ test_that("datasets with few genes produce errors on marker finding", {
 context("test that setting the user time zone works as intended")
 
 test_that("The user is able to change the time zone properly", {
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     # expect that the session info is rendered without reactive trigger
     expect_false(is.null(output$current_session_info))
@@ -717,8 +717,8 @@ test_that("The user is able to change the time zone properly", {
 
 context("test that detection of lowercase genes names registers mouse")
 
-test_that("cytosel is able to find lowercase genes as non-human", {
-  testServer(cytosel::cytosel(), expr = {
+test_that("cytomarker is able to find lowercase genes as non-human", {
+  testServer(cytomarker::cytomarker(), expr = {
     
     expect_true(proper_organism())
     
@@ -733,8 +733,8 @@ test_that("cytosel is able to find lowercase genes as non-human", {
 
 context("test that uploading an RDS in the wrong format generates an error")
 
-test_that("cytosel is able to identify an RDS that is not of the proper SCE format", {
-  testServer(cytosel::cytosel(), expr = {
+test_that("cytomarker is able to identify an RDS that is not of the proper SCE format", {
+  testServer(cytomarker::cytomarker(), expr = {
     
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("fake_rds.rds")))
@@ -745,14 +745,14 @@ test_that("cytosel is able to identify an RDS that is not of the proper SCE form
 
 gc()
 
-# context("test that cytosel can identify multimarkers")
+# context("test that cytomarker can identify multimarkers")
 # 
-# test_that("cytosel is able to identify multimarkers in a lung dataset 
+# test_that("cytomarker is able to identify multimarkers in a lung dataset 
 #           (many cell types for the panel size)", {
 #             
 #             # skip_on_ci()
 #             
-#             testServer(cytosel::cytosel(), expr = {
+#             testServer(cytomarker::cytomarker(), expr = {
 #               
 #               session$setInputs(input_scrnaseq = list(datapath =
 #                                                         test_path("pbmc_small.rds")),
@@ -784,7 +784,7 @@ gc()
 
 test_that("Second Re-upload works on server", {
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     expect_false(reupload_analysis())
     
@@ -814,7 +814,7 @@ context("Check that uploading a minimal yml with just markers works as expected"
 #### Re-upload analysis ######
 test_that("Re-upload works on server", {
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     expect_false(reupload_analysis())
     
@@ -856,13 +856,13 @@ test_that("Re-upload works on server", {
 
 gc()
 
-context("Test that resetting the cytosel environment works as expected")
+context("Test that resetting the cytomarker environment works as expected")
 
 
 #### Reset analysis ######
 test_that("Minimal re-uploads recognizxe markers", {
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
@@ -884,7 +884,7 @@ context("Test that a reupload doesn't occur before the dataset is uploaded")
 
 test_that("Re-uploading won't occur before the dataset is processed", {
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     expect_false(reupload_analysis())
     
@@ -902,7 +902,7 @@ test_that("Users may upload a simple list of genes (one per line)", {
   
   markers_attempt <- readLines(test_path("test_own_panel.txt"))
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     expect_false(reupload_analysis())
     
@@ -928,7 +928,7 @@ test_that("adding and replacing markers can identify gene aliases", {
   
   marks_to_add <- readLines(test_path("test_own_panel.txt"))
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     session$setInputs(input_scrnaseq = list(datapath =
                                               test_path("pbmc_small.rds")),
@@ -1001,7 +1001,7 @@ context("Test basic gene aliases table works")
 
 test_that("A gene alias table is populated when uploading markers", {
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     expect_true(is.null(aliases_table()))
     
@@ -1029,7 +1029,7 @@ context("Test that starting the help guide does not modify the reactive values")
 
 test_that("Basic help guide functionality", {
   
-  testServer(cytosel::cytosel(), expr = {
+  testServer(cytomarker::cytomarker(), expr = {
     
     expect_null(sce())
     expect_equal(pref_assay(), "logcounts")

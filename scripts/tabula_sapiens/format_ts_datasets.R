@@ -9,11 +9,11 @@ library(stringr)
 
 use_centroid <- FALSE
 
-ts_dir <- "/home/matt/cytosel/tabula_sapiens/datasets"
+ts_dir <- "/home/matt/cytomarker/tabula_sapiens/datasets"
 datasets <- list.files(ts_dir, ".h5ad", full.names = T)
 # datasets <- datasets[!grepl("Gland", datasets)]
 
-dest_dir <- "/home/matt/cytosel/tabula_sapiens/datasets/processed"
+dest_dir <- "/home/matt/cytomarker/tabula_sapiens/datasets/processed"
 
 for (data_point in datasets) {
   tissue <- str_split_fixed(data_point, "TS_|.h5ad", 3)[,2]

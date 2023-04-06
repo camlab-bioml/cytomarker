@@ -35,7 +35,7 @@ jobs:
 
       - name: Authorize and deploy app    
         env: 
-          APPNAME: cytosel
+          APPNAME: cytomarker
           SERVER: shinyapps.io
         run: |
           options(repos=c(BiocManager::repositories(version = "3.16")))

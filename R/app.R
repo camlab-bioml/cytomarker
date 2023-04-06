@@ -1,8 +1,8 @@
 
-curated_datasets <- utils::read.delim(system.file("ts_datasets.tsv", package = "cytosel"),
+curated_datasets <- utils::read.delim(system.file("ts_datasets.tsv", package = "cytomarker"),
                              sep = "\t")
 
-other_curated <- utils::read.delim(system.file("other_datasets.tsv", package = "cytosel"),
+other_curated <- utils::read.delim(system.file("other_datasets.tsv", package = "cytomarker"),
                                    sep = "\t")
 
 for (i in curated_datasets$tissue) {
@@ -17,12 +17,12 @@ utils::globalVariables(c("palette_to_use", "full_palette",
                          "dataset_labels", "other_dataset_labels", 
                          "all_curated_dataset_labels",
                          "antibody_info", "markdown_report_path", 
-                         "all_zones"), "cytosel")
+                         "all_zones"), "cytomarker")
 
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
         show.error.messages = FALSE)
 
-yaml <- read_yaml(system.file("config.yml", package = "cytosel"))
+yaml <- read_yaml(system.file("config.yml", package = "cytomarker"))
 USE_ANALYTICS <- yaml$use_google_analytics
 SUBSET_TO_ABCAM <- yaml$subset_only_abcam_catalog
 STAR_FOR_ABCAM <- yaml$star_for_abcam_product
@@ -63,14 +63,14 @@ ONLY_PROTEIN_CODING <- yaml$only_protein_coding
 #' @importFrom feather read_feather
 #' @importFrom rdrop2 drop_download
 #' @importFrom lubridate with_tz
-#' @export cytosel cytosel
+#' @export cytomarker cytomarker
 #' 
 #' @param ... Additional arguments
-cytosel <- function(...) {
+cytomarker <- function(...) {
   
   rm(list = ls())
   
-  antibody_info <- read_feather(system.file("registry_with_symbol.feather", package = "cytosel")) |>
+  antibody_info <- read_feather(system.file("registry_with_symbol.feather", package = "cytomarker")) |>
     mutate(`Protein Expression`  = ifelse(!is.na(ensgene), paste("https://www.proteinatlas.org/", 
                                     ensgene,
                                 "-", Symbol, "/tissue", sep = ""), NA))
@@ -78,21 +78,21 @@ cytosel <- function(...) {
   # options(MulticoreParam=quote(MulticoreParam(workers=availableCores())))
   
   compartments <- yaml::read_yaml(system.file("ts_compartments.yml", 
-                                              package = "cytosel"))
+                                              package = "cytomarker"))
   
   
-  # applications_parsed <- cytosel_data$applications
+  # applications_parsed <- cytomarker_data$applications
   
-  grch38 <- cytosel_data$grch38
+  grch38 <- cytomarker_data$grch38
   
   full_palette <- create_global_colour_palette()
   
   markdown_report_path <- system.file(file.path("report", "rmarkdown-report.Rmd"), 
-                                      package = "cytosel")
+                                      package = "cytomarker")
   
   # devtools will find the file in the inst directory (move to top level)
-  cytosel_token <- readRDS(system.file(file.path("token.rds"),
-                                       package = "cytosel"))
+  cytomarker_token <- readRDS(system.file(file.path("token.rds"),
+                                       package = "cytomarker"))
   
   
   dataset_labels <- curated_datasets$tissue |> set_names(gsub("_", " ", 
@@ -103,7 +103,7 @@ cytosel <- function(...) {
   
   all_curated_dataset_labels <- c(dataset_labels, other_dataset_labels)
   
-  all_zones <- cytosel_data$time_zones
+  all_zones <- cytomarker_data$time_zones
   # google analytics event tracking: 
   # https://www.gravitatedesign.com/blog/event-tracking-google-analytics/
   # https://absentdata.com/track-external-links/
@@ -111,8 +111,8 @@ cytosel <- function(...) {
     # useWaiter(),
     useWaitress(),
     # attendantBar("progress-bar"),
-    includeCSS(system.file(file.path("www", "cytosel.css"),
-                          package = "cytosel")),
+    includeCSS(system.file(file.path("www", "cytomarker.css"),
+                          package = "cytomarker")),
     # only permit the google analytics non-interactively
     if (isTruthy(USE_ANALYTICS) & (!interactive())) {
       tags$head(HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=G-B26X9YQQGT'></script>
@@ -149,11 +149,11 @@ cytosel <- function(...) {
     use_cicerone(),
     withAnim(),
     
-    dashboardPage(title="cytosel",
+    dashboardPage(title="cytomarker",
     
     # Title
     dashboardHeader(
-                    title = imageOutput("cytosel_logo"),
+                    title = imageOutput("cytomarker_logo"),
                     # span(style = "padding-bottom: 50px;", ), 
                     
                     tags$li(class = "dropdown",
@@ -181,9 +181,9 @@ cytosel <- function(...) {
         sidebarMenuOutput(outputId = 'output_menu'),
         # menuItem("Documentation", tabName = "documentation", icon = icon("bookmark")),
         column(1, column(11, align = "left", style = "margin-top: 10px", offset = 0, icon("bookmark", style = "margin-left: -10px;"),
-               tags$a(href="http://camlab-bioml.github.io/cytosel-doc/docs/intro",
+               tags$a(href="http://camlab-bioml.github.io/cytomarker-doc/docs/intro",
                       " Documentation",
-                      id = "Cytosel Documentation",
+                      id = "cytomarker Documentation",
                       target="_blank", style = "margin-left: 2px;"))),
         br(),
         column(12, align = "center", offset = 0,
@@ -526,9 +526,9 @@ cytosel <- function(...) {
                                                    DTOutput("metrics_run_prev_2"))))
               )),
       tabItem(id = "documentation", "documentation",
-              htmlOutput("cytosel_hyperlink")
+              htmlOutput("cytomarker_hyperlink")
               # h2("Documentation Preview:"),
-              # htmlOutput("cytosel_preview"))
+              # htmlOutput("cytomarker_preview"))
       )
     )
   )
@@ -576,7 +576,7 @@ cytosel <- function(...) {
     
     summary_cat_tally <- reactiveVal()
     
-    cytosel_palette <- reactiveVal()
+    cytomarker_palette <- reactiveVal()
     
     proceed_with_analysis <- reactiveVal(TRUE)
     
@@ -645,21 +645,21 @@ cytosel <- function(...) {
     aliases_table <- reactiveVal(NULL)
     gene_aliases_to_show <- reactiveVal(NULL)
     
-    addResourcePath('report', system.file('report', package='cytosel'))
+    addResourcePath('report', system.file('report', package='cytomarker'))
     
-    output$cytosel_logo <- shiny::renderImage({
-      list(src=system.file(file.path("report", "cytosel-logo.png"), package = "cytosel"),
+    output$cytomarker_logo <- shiny::renderImage({
+      list(src=system.file(file.path("report", "cytomarker-logo.png"), package = "cytomarker"),
            width = "76%",
            height = "11.25%",
            class = "topimg",
-           alt = "cytosel")
+           alt = "cytomarker")
     }, deleteFile = F)
     
-    output$cytosel_hyperlink <-  renderUI({
-      # url <- a("Cytosel Documentation", href="http://camlab-bioml.github.io/cytosel-doc/docs/intro")
-      # tagList("Cytosel Documentation", url)
-      tags$a(href="http://camlab-bioml.github.io/cytosel-doc/docs/intro",
-             "Click Here to access the cytosel documentation in a new tab",
+    output$cytomarker_hyperlink <-  renderUI({
+      # url <- a("cytomarker Documentation", href="http://camlab-bioml.github.io/cytomarker-doc/docs/intro")
+      # tagList("cytomarker Documentation", url)
+      tags$a(href="http://camlab-bioml.github.io/cytomarker-doc/docs/intro",
+             "Click Here to access the cytomarker documentation in a new tab",
              target="_blank")
     })
     
@@ -683,7 +683,7 @@ cytosel <- function(...) {
         step(
           "input_box",
           "Step #1, Option A: Select your own data to analyze",
-          "Select a dataset from your local console to load into cytosel. 
+          "Select a dataset from your local console to load into cytomarker. 
           Use the black information hovertips to get more
         information about what types of data files are compatible.",
         )$
@@ -708,9 +708,9 @@ cytosel <- function(...) {
           or a custom list of markers to generate a panel."
         )$
         # step(
-        #   "cytosel_hyperlink",
+        #   "cytomarker_hyperlink",
         #   "Refer to the official documentation",
-        #   "Refer to the official cytosel documentation for additional information on data formatting,
+        #   "Refer to the official cytomarker documentation for additional information on data formatting,
         #   processing, and interpreting outputs."
         # )$
         step(
@@ -763,8 +763,8 @@ cytosel <- function(...) {
     observe(toggle(id = "session_info", condition = isTruthy(time_zone_set())))
     observe(toggle(id = "gene_alias_tag", condition = isTruthy(gene_aliases_to_show())))
     
-    # output$cytosel_preview <- renderUI({
-    #   tags$iframe(src="http://camlab-bioml.github.io/cytosel-doc/docs/intro", height=600, width=1100)
+    # output$cytomarker_preview <- renderUI({
+    #   tags$iframe(src="http://camlab-bioml.github.io/cytomarker-doc/docs/intro", height=600, width=1100)
     # })
     
     observeEvent(input$curated_dataset, {
@@ -864,14 +864,14 @@ cytosel <- function(...) {
       if (!file.exists(file.path(tempdir(), paste(tissue_lab, ".rds", sep = "")))) {
           incProgress(detail = "Downloading curated dataset")
           origin_dir <- if (input$curated_selection_choice == "Tabula Sapiens")
-                               "tabula_sapiens/" else "other_curated_cytosel/"
+                               "tabula_sapiens/" else "other_curated_cytomarker/"
           
           drop_download(paste(origin_dir, 
                                       paste(tissue_lab, ".rds", sep = ""),
                                 sep = ""),
                                 local_path = tempdir(),
                                 overwrite = T,
-                                dtoken = cytosel_token)
+                                dtoken = cytomarker_token)
       }
         
         setProgress(value = 0.5)
@@ -932,7 +932,7 @@ cytosel <- function(...) {
       setProgress(value = 0.85)
       found_human <- check_for_human_genes(input_sce)
       if (!isTruthy(found_human)) {
-        throw_error_or_warning(type = "error", message = "cytosel has detected that the gene names 
+        throw_error_or_warning(type = "error", message = "cytomarker has detected that the gene names 
                                provided are not human. Currently, only human datasets are supported.")
         proper_organism(found_human)
       }
@@ -1492,7 +1492,7 @@ cytosel <- function(...) {
             
             if(length(markers$recommended_markers) < input$panel_size &
                (!isTruthy(reupload_analysis()))) {
-              showNotification("Cytosel found genes that are good markers for multiple cell types.
+              showNotification("cytomarker found genes that are good markers for multiple cell types.
               This will result in a smaller panel size than requested.
                                  You may manually add additional markers.",
                                type = 'message',
@@ -1780,7 +1780,7 @@ cytosel <- function(...) {
       req(allowed_genes())
       
       uploaded_markers <- readLines(input$uploadMarkers$datapath)
-      alias <- get_gene_aliases(uploaded_markers, cytosel_data$gene_mapping,
+      alias <- get_gene_aliases(uploaded_markers, cytomarker_data$gene_mapping,
                                 allowed_genes())
       
       aliases_table(if (isTruthy(aliases_table())) rbind(aliases_table(), alias$table) else alias$table)
@@ -1836,7 +1836,7 @@ cytosel <- function(...) {
       marker <- uploaded_markers[!uploaded_markers %in% current_markers()$scratch_markers]
       not_sce <- setdiff(uploaded_markers, marker)
       
-      alias <- get_gene_aliases(marker, cytosel_data$gene_mapping,
+      alias <- get_gene_aliases(marker, cytomarker_data$gene_mapping,
                                 allowed_genes())
       
       aliases_table(alias$table)
@@ -2071,7 +2071,7 @@ cytosel <- function(...) {
       
       if (file_ext(input$read_back_analysis$datapath) == "txt") {
         uploaded_markers <- readLines(input$read_back_analysis$datapath)
-        alias <- get_gene_aliases(uploaded_markers, cytosel_data$gene_mapping,
+        alias <- get_gene_aliases(uploaded_markers, cytomarker_data$gene_mapping,
                                          allowed_genes())
         
         aliases_table(alias$table)
@@ -2291,7 +2291,7 @@ cytosel <- function(...) {
             
             plots$all_plot <- suppressWarnings(plotly::plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
                                                        text=~get(input$coldata_column), 
-                                                       type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                       type='scatter', hoverinfo="text", colors=cytomarker_palette()) %>% 
                                                  layout(title = "UMAP all genes"))
           }
           
@@ -2304,7 +2304,7 @@ cytosel <- function(...) {
             
             plots$top_plot <- suppressWarnings(plotly::plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
                                                        text=~get(input$coldata_column), 
-                                                       type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                       type='scatter', hoverinfo="text", colors=cytomarker_palette()) %>% 
                                                  layout(title = "UMAP selected markers"))
           
             }
@@ -2317,7 +2317,7 @@ cytosel <- function(...) {
         
         plots_for_markdown(list(all = suppressWarnings(plotly::plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
                                                                text=~get(input$coldata_column), 
-                                                               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                               type='scatter', hoverinfo="text", colors=cytomarker_palette()) %>% 
                                                          layout(title = "UMAP all genes")),
                                 top = plots$top_plot,
                                 metric = plots_for_markdown()$metric))
@@ -2344,13 +2344,13 @@ cytosel <- function(...) {
         if (umap_colouring() == "Cell Type") {
           plots$all_plot <- suppressWarnings(plotly::plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
                                                      text=~get(input$coldata_column), 
-                                                     type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                     type='scatter', hoverinfo="text", colors=cytomarker_palette()) %>% 
                                                layout(title = "UMAP all genes",
                                                       showlegend = input$show_umap_legend))
           
           plots$top_plot <- suppressWarnings(plotly::plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column),
                                                      text=~get(input$coldata_column),
-                                                     type='scatter', hoverinfo="text", colors=cytosel_palette()) %>%
+                                                     type='scatter', hoverinfo="text", colors=cytomarker_palette()) %>%
                                                layout(title = "UMAP selected markers",
                                                       showlegend = input$show_umap_legend))
           umap_top_gene(FALSE)
@@ -2392,7 +2392,7 @@ cytosel <- function(...) {
                                                      hoverinfo = "text",
                                                      colors = c("grey60",
                                                                 "blue")) %>%
-                                               # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
+                                               # cytomarker_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
                                                layout(title = "UMAP selected markers"))
           
           plots$all_plot <- plotly::hide_guides(suppressWarnings(plotly::plot_ly(umap_all_gene(),
@@ -2403,7 +2403,7 @@ cytosel <- function(...) {
                                                                  hoverinfo = "text",
                                                                  colors = c("grey60",
                                                                             "blue")) %>%
-                                                           # cytosel_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
+                                                           # cytomarker_palette()[current_markers()$associated_cell_types[input$umap_panel_options]])) %>%
                                                            layout(title = "UMAP all genes",
                                                                   showlegend = F)))
           
@@ -2433,7 +2433,7 @@ cytosel <- function(...) {
                                                     fill = `Cell Type`)) + ggplot2::geom_violin(alpha = 1) +
                                ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
                                ggplot2::facet_wrap(~Gene, scales="free_y") + 
-                               ggplot2::scale_fill_manual(values = cytosel_palette()))
+                               ggplot2::scale_fill_manual(values = cytomarker_palette()))
           })
         } else {
           output$expression_violin <- renderPlot({
@@ -2493,7 +2493,7 @@ cytosel <- function(...) {
       palette_to_use <- full_palette[1:length(unique_cell_types)]
       names(palette_to_use) <- unique_cell_types
       
-      cytosel_palette(palette_to_use)
+      cytomarker_palette(palette_to_use)
       
       if (isTruthy(markers$top_markers) & length(markers$top_markers) > 1) {
         
@@ -2528,31 +2528,31 @@ cytosel <- function(...) {
       labels_top <- lapply(markers$top_markers, 
                            function(x) div(x, map_gene_name_to_antibody_icon(x, marker_filtration), 
                                            style=paste('padding: 3px; color:', 
-                                            set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), 
+                                            set_text_colour_based_on_background(cytomarker_palette()[ markers$associated_cell_types[x]]), 
                                             '; background-color:', 
-                                          cytosel_palette()[ markers$associated_cell_types[x] ])))
+                                          cytomarker_palette()[ markers$associated_cell_types[x] ])))
       labels_scratch <- lapply(markers$scratch_markers, 
                                function(x) div(x, map_gene_name_to_antibody_icon(x, marker_filtration), 
                                                style=paste('padding: 3px; color:', 
-                                            set_text_colour_based_on_background(cytosel_palette()[ markers$associated_cell_types[x]]), 
+                                            set_text_colour_based_on_background(cytomarker_palette()[ markers$associated_cell_types[x]]), 
                                             '; background-color:', 
-                                      cytosel_palette()[ markers$associated_cell_types[x] ])))
+                                      cytomarker_palette()[ markers$associated_cell_types[x] ])))
       
-      # output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytosel_palette())))
+      # output$legend <- renderPlot(cowplot::ggdraw(get_legend(cytomarker_palette())))
       
       output$legend <- renderPlot({
         op <- par(family = "sans", mar = c(4, 0.2, 3, 0.2))
         
-        longest_factor <- max(nchar(names(cytosel_palette())))
+        longest_factor <- max(nchar(names(cytomarker_palette())))
         label_size <- ifelse(longest_factor < 35, 1.2, ifelse(longest_factor >= 35 & longest_factor < 50,
                                     1, 0.75))
         plot(NULL ,xaxt='n',yaxt='n',bty='n',
                                        ylab='',xlab='', xlim=0:1, ylim=0:1)
-      legend("top", legend = names(cytosel_palette()), 
+      legend("top", legend = names(cytomarker_palette()), 
              pch=15, pt.cex=2.2, cex=label_size, bty='n',
-             # ncol = ceiling(length(cytosel_palette())/15),
+             # ncol = ceiling(length(cytomarker_palette())/15),
              ncol = 1,
-             col = cytosel_palette())
+             col = cytomarker_palette())
       mtext("Cell Type", cex=1.5)
       par(op)
       })
@@ -2887,7 +2887,7 @@ cytosel <- function(...) {
       allowed_genes(rownames(sce()[,sce()$keep_for_analysis == "Yes"]))
       
       allowed_genes(if (isTruthy(ONLY_PROTEIN_CODING)) 
-        allowed_genes()[allowed_genes() %in% cytosel_data$protein_coding] else allowed_genes())
+        allowed_genes()[allowed_genes() %in% cytomarker_data$protein_coding] else allowed_genes())
       
       allowed_genes(remove_confounding_genes(allowed_genes()))
   
@@ -2895,7 +2895,7 @@ cytosel <- function(...) {
     
     ### SAVE PANEL ###
     output$downloadData <- downloadHandler(
-      filename <- paste0("Cytosel-Panel-", Sys.Date(), ".zip"),
+      filename <- paste0("cytomarker-Panel-", Sys.Date(), ".zip"),
   
       content = function(fname) {
         showNotification("Rendering output report and config file, this may take a few moments..", duration = 4)
@@ -2918,11 +2918,11 @@ cytosel <- function(...) {
         
         plots_for_markdown(list(all = suppressWarnings(plotly::plot_ly(umap_all(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
                                                                text=~get(input$coldata_column), 
-                                                               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                               type='scatter', hoverinfo="text", colors=cytomarker_palette()) %>% 
                                                          layout(title = "UMAP all genes")),
                                 top = suppressWarnings(plotly::plot_ly(umap_top(), x=~UMAP_1, y=~UMAP_2, color=~get(input$coldata_column), 
                                                                text=~get(input$coldata_column), 
-                                                               type='scatter', hoverinfo="text", colors=cytosel_palette()) %>% 
+                                                               type='scatter', hoverinfo="text", colors=cytomarker_palette()) %>% 
                                                          layout(title = "UMAP selected markers")),
                                 metric = plots_for_markdown()$metric))
         

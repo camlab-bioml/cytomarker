@@ -19,7 +19,7 @@ test_that("conversion functions are effective", {
 # 
 # test_that("Processing the antibody applications produces the intended data structures", {
 #  
-#   applications_parsed <- get_antibody_applications(cytosel_data$antibody_info |> distinct(Symbol, .keep_all = T),
+#   applications_parsed <- get_antibody_applications(cytomarker_data$antibody_info |> distinct(Symbol, .keep_all = T),
 #                                                    'Symbol', 'Listed Applications')
 #   
 #   expect_is(applications_parsed, 'list')
@@ -41,12 +41,12 @@ test_that("conversion functions are effective", {
 #   obj <- test_path("pbmc_small.rds")
 #   sce <- read_input_scrnaseq(obj, filter_counts = F)
 # 
-#   allowed_all <- as.character(get_allowed_genes(NULL, cytosel_data$applications,
+#   allowed_all <- as.character(get_allowed_genes(NULL, cytomarker_data$applications,
 #                     sce))
 #   
 #   expect_gte(length(allowed_all), 900)
 # 
-#   only_protein <- get_allowed_genes("Protein Array", cytosel_data$applications,
+#   only_protein <- get_allowed_genes("Protein Array", cytomarker_data$applications,
 #                                                    sce)
 # 
 #   expect_true(length(allowed_all) > length(only_protein))
@@ -359,7 +359,7 @@ test_that("Filtering sce objects by minimum count passes & retains original size
 context("Antibody finding in the abcam table")
 
 test_that("Filtering sce objects by minimum count passes & retains original size", {
-  antibody_info <- cytosel_data$antibody_info
+  antibody_info <- read_feather(system.file("registry_with_symbol.feather", package = "cytomarker"))
 
 
   expect_equal(get_antibody_info("CD45", antibody_info)$status, "NO_GENE_FOUND")
@@ -372,7 +372,7 @@ test_that("Filtering sce objects by minimum count passes & retains original size
 context("Return types from catch-all error/notification function")
 
 test_that("throw_error_or_warning returns the correct type", {
-  antibody_info <- cytosel_data$antibody_info
+  antibody_info <- cytomarker_data$antibody_info
 
   expect_error(throw_error_or_warning(type = 'error', message = "Testing error"))
   expect_error(throw_error_or_warning(type = 'notification',
@@ -414,11 +414,11 @@ test_that("download works as expected", {
            yaxis = list(title="Source"))
 
   withr::with_tempdir({
-    filepath <- file.path(paste0("Cytosel-Panel-", Sys.Date(), ".zip"))
-
+    filepath <- file.path(paste0("cytomarker-Panel-", Sys.Date(), ".zip"))
+    
     placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
 
-    fake_table <- cytosel_data$antibody_info |>
+    fake_table <- read_feather(system.file("registry_with_symbol.feather", package = "cytomarker")) |>
                                         mutate(`Protein Expression`  = ifelse(!is.na(ensgene),
                                             paste("https://www.proteinatlas.org/", 
                                           ensgene,
@@ -440,12 +440,13 @@ test_that("download works as expected", {
                                                    "Human Protein Atlas",
                                                    '</a>'), "None")) |>
       dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`))
+    
     markdown_report_path <- system.file(file.path("report", "rmarkdown-report.Rmd"),
-                                        package = "cytosel")
+                                        package = "cytomarker")
 
     fake_metrics <- data.frame(`Cell Type` = c("Fake_1", "Fake_2", "Fake_3"),
                                Score = c(0.99, 1, 0.8))
-
+    
     base_config <- create_run_param_list(marker_list = list(top_markers = rownames(sce)[1:100]),
                                          "fake_path_to_sce", "logcounts",
                                          "seurat_annotations", 24, 2, "no",
@@ -519,7 +520,7 @@ test_that("Error modals throw errors", {
   expect_is(curated_dataset_modal(c("cur_1", "cur_2"), c("cur_1", "cur_2"),
                                   c("cur_1", "cur_2"), failed = T), 'shiny.tag')
   expect_error(subsampling_error_modal(c("Type_1", "Type_2")))
-  expect_is(time_zone_modal(cytosel_data$time_zones, NULL), 'shiny.tag')
+  expect_is(time_zone_modal(cytomarker_data$time_zones, NULL), 'shiny.tag')
   expect_is(reset_option_on_change_modal("placeholder"), 'shiny.tag')
   expect_error(invalid_modal())
   expect_error(invalid_metadata_modal("fake_column"))

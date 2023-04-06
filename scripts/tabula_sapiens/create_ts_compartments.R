@@ -1,5 +1,5 @@
 
-curated_datasets <- readr::read_csv(system.file("ts_datasets.csv", package = "cytosel"))
+curated_datasets <- readr::read_csv(system.file("ts_datasets.csv", package = "cytomarker"))
 
 curated_datasets$tissue
 

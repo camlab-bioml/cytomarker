@@ -7,10 +7,10 @@ library(plyr)
 library(stringr)
 
 
-ts_dir <- "/home/matt/cytosel/tabula_sapiens/datasets/processed"
+ts_dir <- "/home/matt/cytomarker/tabula_sapiens/datasets/processed"
 datasets <- list.files(ts_dir, ".rds", full.names = T)
 
-dest_dir <- "/home/matt/cytosel/tabula_sapiens/datasets/processed"
+dest_dir <- "/home/matt/cytomarker/tabula_sapiens/datasets/processed"
 
 info_frame <- data.frame(tissue = character(), num_cells = numeric(),
                    num_genes = numeric(),

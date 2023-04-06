@@ -43,13 +43,14 @@ gene_mapping <- gene_mapping |> group_by(alias_symbol) |> slice_head(n = 1) |> u
 # https://www.genenames.org/download/statistics-and-files/
 protein_coding_genes <- (annotables::grch38 |> filter(biotype == "protein_coding"))$symbol
 
-cytosel_data <- list(antibody_info = antibody_info, grch38 = grch38,
+cytomarker_data <- list(# antibody_info = antibody_info,
+                      grch38 = grch38,
                      time_zones = all_zones,
                      # applications = applications_parsed,
                      gene_mapping = gene_mapping,
                      protein_coding = protein_coding_genes)
 
-usethis::use_data(cytosel_data, internal = T, overwrite = T,
+usethis::use_data(cytomarker_data, internal = T, overwrite = T,
                   compress = "xz")
 
 path <- file.path("inst", "registry_with_symbol.feather")

@@ -7,8 +7,8 @@ if (!interactive()) {
 
 library(testthat)
 library(shinytest2)
-library(cytosel)
+library(cytomarker)
 library(yaml)
 library(S4Vectors)
 
-test_check("cytosel")
+test_check("cytomarker")
