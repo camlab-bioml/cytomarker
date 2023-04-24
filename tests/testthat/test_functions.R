@@ -424,7 +424,7 @@ test_that("download works as expected", {
                                           ensgene,
                         "-", Symbol, "/tissue", sep = ""), NA))|> dplyr::filter(Symbol %in%
                               placeholder_markers) |>
-      dplyr::distinct(ID, .keep_all = T) |>
+      # dplyr::distinct(ID, .keep_all = T) |>
       mutate(`Host Species` = factor(`Host Species`),
              Symbol = factor(Symbol),
              
@@ -438,7 +438,15 @@ test_that("download works as expected", {
                                                    '>', "View on ",
                                                    as.character(icon("external-link-alt")),
                                                    "Human Protein Atlas",
-                                                   '</a>'), "None")) |>
+                                                   '</a>'), "None"),
+             `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"',
+                                      `Product Name`, '"',
+                                      'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
+                                      ' target="_blank" rel="noopener noreferrer"',
+                                      '>', "View on ",
+                                      as.character(icon("external-link-alt")),
+                                      "bdbiosciences.com",
+                                      '</a>')) |>
       dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`))
     
     markdown_report_path <- system.file(file.path("report", "rmarkdown-report.Rmd"),

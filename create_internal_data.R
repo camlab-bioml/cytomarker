@@ -3,10 +3,13 @@ library(org.Hs.eg.db)
 library(annotables)
 library(dplyr)
 library(feather)
+library(tidyverse)
 
 # antibody_info <- read_csv(file.path("inst", "Abcam_published_monos_with_gene_v2.csv"))
-antibody_info <- read_tsv(file.path("inst", "registry_with_symbol.tsv"))
+antibody_info <- read_csv(file.path("inst", "bd_us_catalog_20230410_HJackson.csv"))
 grch38 <- read_tsv(file.path("inst", "annotables_grch38.tsv"))
+
+antibody_info <- antibody_info |> filter(Symbol %in% grch38$symbol) |> na.omit()
 
 # abcam_antibody <- read_csv(file.path("inst", "Abcam_published_monos_with_gene_v2.csv"))
 # 
@@ -23,7 +26,6 @@ all_zones <- all_zones[!sl]
 
 
 antibody_info <- antibody_info |> tidyr::drop_na()
-
 
 
   # 
