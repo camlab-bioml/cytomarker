@@ -20,7 +20,25 @@ For those with source code access to cytomarker, installation and access can be 
 ```
 git clone https://github.com/camlab-bioml/cytomarker.git
 cd cytomarker
-R
+=======
+Antibody panel selection for mass cytometry using scRNA-seq using R Shiny. cytomarker is currently hosted
+on a [public shinyapps.io server](https://camlab.shinyapps.io/cytomarker/)
+
+## Official Documentation
+
+The official documentation for cytomarker using Docusaurus can be found [here](https://camlab-bioml.github.io/cytomarker-doc/docs/intro)
+
+## Access
+
+cytomarker can be accessed through a public shinyapps.io server [here](https://camlab.shinyapps.io/cytomarker/)
+
+### Source code access
+
+For those with source code access to cytomarker, installation and access can be achieved through the following commands. Ensure that [R](https://cran.r-project.org/) and [RStudio Desktop from Posit](https://posit.co/download/rstudio-desktop/) are installed for your specific operating system. 
+
+```
+git clone https://github.com/camlab-bioml/cytomarker.git
+cd cytomarker
 # inside R console
 library(devtools) # or, if devtools isn't installed
 install.packages('devtools')

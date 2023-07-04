@@ -450,6 +450,9 @@ test_that("download works as expected", {
                                       '</a>')) |>
       dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`))
     
+    expect_false("BD Biosciences" %in% fake_table$Vendor)
+    expect_true("Abcam" %in% fake_table$Vendor)
+    
     markdown_report_path <- system.file(file.path("report", "rmarkdown-report.Rmd"),
                                         package = "cytomarker")
 

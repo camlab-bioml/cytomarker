@@ -49,6 +49,10 @@ all_zones <- OlsonNames()
 sl <- grepl("/", all_zones)
 all_zones <- all_zones[!sl]
 
+
+applications_parsed <- get_antibody_applications(antibody_info, 
+                                                 'Symbol', 'Listed Applications')
+
 gene_mapping <- as.data.frame(unlist(org.Hs.egALIAS2EG))
 
 gene_mapping <- gene_mapping |> group_by(alias_symbol) |> slice_head(n = 1) |> ungroup()
