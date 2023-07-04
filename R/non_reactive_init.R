@@ -81,8 +81,9 @@ x <- NULL
 assay <- NULL
 aes <- NULL
 ID <- NULL
-processWidget <- function() {
-}
-
+processWidget <- NULL
 Vendor <- NULL
+. <- NULL
+addOutputId <- NULL
+session <- NULL
 

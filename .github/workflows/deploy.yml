@@ -1,6 +1,6 @@
 on:
   push:
-    branches: [main, master, diff_antibody_table]
+    branches: [main, master]
 
 name: shiny-deploy
 
@@ -28,7 +28,7 @@ jobs:
       - name: Install required install packages and remote repos
         run: |
           install.packages(c("rsconnect", "BiocManager"))
-          BiocManager::install(version = "3.16")
+          BiocManager::install(version = "3.17")
           BiocManager::install(c('BiocGenerics', 'GenomeInfoDbData', 'limma', 'zlibbioc'))
           BiocManager::install(ask = F)
         shell: Rscript {0}
@@ -38,7 +38,7 @@ jobs:
           APPNAME: cytomarker
           SERVER: shinyapps.io
         run: |
-          options(repos=c(BiocManager::repositories(version = "3.16")))
+          options(repos=c(BiocManager::repositories(version = "3.17")))
           rsconnect::setAccountInfo("${{ secrets.SHINYAPPS_ACC }}", "${{ secrets.SHINYAPPS_TOKEN }}", "${{ secrets.SHINYAPPS_SEC }}")
           rsconnect::deployApp(appName = "${{ env.APPNAME }}", account = "${{ secrets.SHINYAPPS_ACC }}", server = "${{ env.SERVER }}")
         shell: Rscript {0}

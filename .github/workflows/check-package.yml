@@ -1,7 +1,7 @@
 name: test-package
 on:
   push:
-    branches: [main, master, diff_antibody_table]
+    branches: [main, master]
   pull_request:
     branches: [main, master]
 

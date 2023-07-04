@@ -31,5 +31,5 @@ test_that("{shinytest2} recording: cytomarker", {
     # app$click("help_guide")
     # Sys.sleep(7)
     # app$expect_screenshot()
-
+    
 })
