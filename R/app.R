@@ -70,7 +70,7 @@ cytomarker <- function(...) {
 
 rm(list = ls())
 
-antibody_info <- read_feather(system.file("registry_with_symbol.feather", package = "cytomarker")) |>
+antibody_info <- read_feather(system.file("merged_catalog.feather", package = "cytomarker")) |>
   mutate(`Protein Expression`  = ifelse(!is.na(ensgene), paste("https://www.proteinatlas.org/", 
                                   ensgene,
                               "-", Symbol, "/tissue", sep = ""), NA))
@@ -1545,7 +1545,8 @@ server <- function(input, output, session) {
                                                         ' target="_blank" rel="noopener noreferrer"',
                                                         '>', "View on ",
                                                         as.character(icon("external-link-alt")),
-                                                        "bdbiosciences.com",
+                                                        ifelse(Vendor == "Abcam", "Abcam.com",
+                                                        "bdbiosciences.com"),
                                                         '</a>')) |>
                         dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`)))
           
@@ -2786,6 +2787,8 @@ server <- function(input, output, session) {
     # input_sce <- remove_confounding_genes(input_sce)
     sce(input_sce)
     
+    set_allowed_genes()
+    
     shinyjs::hide(id = "download_button")
     
     toggle(id = "analysis_button", condition = isTruthy(sce()))
@@ -2831,7 +2834,7 @@ server <- function(input, output, session) {
     selection <- ifelse(isTruthy(default_category_curated()),
                         default_category_curated(),
                         colnames(SummarizedExperiment::colData(sce()))[!grepl("keep_for_analysis", 
-                                                        colnames(SummarizedExperiment::colData(sce())))][1])
+                        colnames(SummarizedExperiment::colData(sce())))][1])
     
     
     updateSelectInput(
@@ -2850,18 +2853,19 @@ server <- function(input, output, session) {
       column(input$coldata_column)
     }
     
-    if (isTruthy(input$bl_top) | isTruthy(current_markers())) {
-      proceed_with_analysis(FALSE)
-      showModal(reset_option_on_change_modal("uploaded a new dataset"))
-
-    }
-    
     aliases_table(NULL)
     gene_aliases_to_show(NULL)
     
     output$table_of_gene_aliases <- DT::renderDataTable(
       gene_aliases_to_show()
     )
+    
+    
+    if (isTruthy(input$bl_top) | isTruthy(current_markers())) {
+      proceed_with_analysis(FALSE)
+      showModal(reset_option_on_change_modal("uploaded a new dataset"))
+      
+    }
     
     req(proceed_with_analysis())
     
@@ -2873,8 +2877,6 @@ server <- function(input, output, session) {
         updateCheckboxInput(session, inputId = "precomputed_dim",
                             value = T)
       }
-      
-      set_allowed_genes()
       toggle(id = "gene_alias_tag", condition = isTruthy(gene_aliases_to_show()))
       
   }

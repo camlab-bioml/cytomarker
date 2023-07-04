@@ -359,7 +359,7 @@ test_that("Filtering sce objects by minimum count passes & retains original size
 context("Antibody finding in the abcam table")
 
 test_that("Filtering sce objects by minimum count passes & retains original size", {
-  antibody_info <- read_feather(system.file("registry_with_symbol.feather", package = "cytomarker"))
+  antibody_info <- read_feather(system.file("merged_catalog.feather", package = "cytomarker"))
 
 
   expect_equal(get_antibody_info("CD45", antibody_info)$status, "NO_GENE_FOUND")
@@ -418,7 +418,7 @@ test_that("download works as expected", {
     
     placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
 
-    fake_table <- read_feather(system.file("registry_with_symbol.feather", package = "cytomarker")) |>
+    fake_table <- read_feather(system.file("merged_catalog.feather", package = "cytomarker")) |>
                                         mutate(`Protein Expression`  = ifelse(!is.na(ensgene),
                                             paste("https://www.proteinatlas.org/", 
                                           ensgene,
@@ -445,7 +445,8 @@ test_that("download works as expected", {
                                       ' target="_blank" rel="noopener noreferrer"',
                                       '>', "View on ",
                                       as.character(icon("external-link-alt")),
-                                      "bdbiosciences.com",
+                                      ifelse(Vendor == "Abcam", "Abcam.com",
+                                             "bdbiosciences.com"),
                                       '</a>')) |>
       dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`))
     

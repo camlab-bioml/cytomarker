@@ -81,4 +81,8 @@ x <- NULL
 assay <- NULL
 aes <- NULL
 ID <- NULL
+processWidget <- function() {
+}
+
+Vendor <- NULL
 

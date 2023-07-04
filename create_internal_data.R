@@ -4,39 +4,50 @@ library(annotables)
 library(dplyr)
 library(feather)
 library(tidyverse)
+library(stringr)
 
-# antibody_info <- read_csv(file.path("inst", "Abcam_published_monos_with_gene_v2.csv"))
-antibody_info <- read_csv(file.path("inst", "bd_us_catalog_20230410_HJackson.csv"))
+abcam_antibodies <- read_csv(file.path("inst", "Abcam_published_monos_with_gene_v2.csv"))
+
 grch38 <- read_tsv(file.path("inst", "annotables_grch38.tsv"))
 
-antibody_info <- antibody_info |> filter(Symbol %in% grch38$symbol) |> na.omit()
+abcam_antibodies <- abcam_antibodies |> dplyr::rename(Symbol = 
+                                                        `Gene Name (Upper)`) |>
+  tidyr::drop_na()
 
-# abcam_antibody <- read_csv(file.path("inst", "Abcam_published_monos_with_gene_v2.csv"))
-# 
-# abcam_antibody <- abcam_antibody |> dplyr::select(c(`Gene Name (Upper)`, `Listed Applications`)) |>
-#   `colnames<-`(c('Symbol', 'Listed Applications'))
+bd_antibodies <- read_csv(file.path("inst", "bd_us_catalog_20230410_HJackson.csv"))
+colnames(bd_antibodies) <- str_to_title(colnames(bd_antibodies))
 
-# antibody_info <- merge(antibody_info, abcam_antibody, 
-#                        by = "Symbol")
+# alternate method
+bd_antibodies <- bd_antibodies |> mutate(Symbol = str_split_fixed(Symbol, " ", 2)[,1]) |>
+  mutate(Symbol = str_split_fixed(Symbol, ",|/", 2)[,1])
+
+
+bd_antibodies <- bd_antibodies |> mutate(Vendor = "BD Biosciences") |> filter(Symbol %in% grch38$symbol) |>
+  na.omit()
+
+
+### View the colnames and modify to fit each other
+colnames(abcam_antibodies)
+colnames(bd_antibodies)
+
+abcam_antibodies <- abcam_antibodies |> rename(`Product Description` = `Product Category Tier 3`) |>
+  mutate(Vendor = "Abcam")
+bd_antibodies <- bd_antibodies |> rename(`Datasheet URL` = `Datasheet Url`)
+
+common_cols <- intersect(colnames(bd_antibodies), colnames(abcam_antibodies))
+
+merged_datasets <- merge(abcam_antibodies, bd_antibodies, by=common_cols, all=TRUE)
+
+merged_datasets <- merge(merged_datasets, grch38, 
+                         by.x = "Symbol", by.y = "symbol", all.x = T) |>
+  select(-c("Ab ID", "Format", "Product Size", "Isotype"))
+
+merged_datasets <- merged_datasets |> relocate(Vendor, .after = `Product Name`)
 
 
 all_zones <- OlsonNames()
 sl <- grepl("/", all_zones)
 all_zones <- all_zones[!sl]
-
-
-antibody_info <- antibody_info |> tidyr::drop_na()
-
-
-  # 
-  # dplyr::rename(Symbol = 
-  #                 `Gene Name (Upper)`) |>
-
-antibody_info <- merge(antibody_info, grch38, 
-                       by.x = "Symbol", by.y = "symbol", all.x = T)
-
-# applications_parsed <- get_antibody_applications(antibody_info, 
-#                                                  'Symbol', 'Listed Applications')
 
 gene_mapping <- as.data.frame(unlist(org.Hs.egALIAS2EG))
 
@@ -55,6 +66,6 @@ cytomarker_data <- list(# antibody_info = antibody_info,
 usethis::use_data(cytomarker_data, internal = T, overwrite = T,
                   compress = "xz")
 
-path <- file.path("inst", "registry_with_symbol.feather")
-write_feather(antibody_info, path)
+path <- file.path("inst", "merged_catalog.feather")
+write_feather(merged_datasets, path)
 
