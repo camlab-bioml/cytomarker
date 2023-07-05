@@ -9,6 +9,7 @@ test_that("{shinytest2} recording: cytomarker", {
   } else {
     cytomarker_app <- cytomarker::cytomarker()
   }
+  
   # cytomarker_app <- test_path("../../")
   announce_snapshot_file("cytomarker-001.png")
   # announce_snapshot_file("cytomarker-002.png")
