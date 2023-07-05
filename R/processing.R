@@ -343,7 +343,7 @@ remove_cell_types_by_min_counts <- function(grouped_frame, sce, metadata_column,
   return(as.vector(keep_frame[metadata_column][,1]))
 }
 
-#' Create the global cytosel palette with or without seeding. The palette begins with 12 color-blind friendly colours
+#' Create the global cytomarker palette with or without seeding. The palette begins with 12 color-blind friendly colours
 #' then moves into 74 uniquely generated colors form brewer.pal, ending with 2 repeats from the first vector for
 #' a final vector of 100 unique colours.. 
 #' @importFrom RColorBrewer brewer.pal brewer.pal.info

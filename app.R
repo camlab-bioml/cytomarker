@@ -4,8 +4,8 @@ options(shiny.autoload.r=FALSE)
 
 # library(rdrop2)
 # 
-# cytosel_token <- readRDS(file.path("curated", "token.rds"))
-# rdrop2::drop_auth(rdstoken = cytosel_token)
+# cytomarker_token <- readRDS(file.path("curated", "token.rds"))
+# rdrop2::drop_auth(rdstoken = cytomarker_token)
 
 # suppressPackageStartupMessages(
 #   sapply(c("zellkonverter", "printr", "rmarkdown"),
@@ -15,4 +15,4 @@ options(shiny.autoload.r=FALSE)
 pkgload::load_all(reset = F, quiet = T, warn_conflicts = F, attach = F)
 # PKG is the name of the packaged shiny application
 # run_PKG_app is a function that wraps around shiny::shinyApp()
-cytosel::cytosel()
+cytomarker::cytomarker()

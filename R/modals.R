@@ -145,14 +145,14 @@ cell_cat_modal <- function(cell_cat_value, cell_choices, cell_types_included) {
 #' @importFrom shinyalert shinyalert
 threshold_too_low_modal <- function() { # Input marker is not in the dataset
   shinyalert(title = "Error", 
-             text = "Cytosel requires the minimum cell type category to be set to 2 or greater for statistical inference. Please adjust the value of minimum number of cells to keep category to at least 2.", 
+             text = "cytomarker requires the minimum cell type category to be set to 2 or greater for statistical inference. Please adjust the value of minimum number of cells to keep category to at least 2.", 
              type = "error", 
              showConfirmButton = TRUE,
              confirmButtonCol = "#337AB7")
 }
 
 #' Show a shinyalert warning if cell types retained for analysis are below the minimum cell cutoff. 
-#' cytosel will ignore these for analysis and print their names during analysis.
+#' cytomarker will ignore these for analysis and print their names during analysis.
 #' @importFrom shinyalert shinyalert
 #' @param min_cat_count The current value of minimum cell cutoff (minimum of 2).
 #' @param the vector of the names of cell types below the cutoff to be ignored.
@@ -297,7 +297,7 @@ current_pan_not_valid_modal <- function(missing_genes, location) { # Marker remo
 }
 
 
-#' Show an input modal for the user to select a pre-curated cytosel dataset
+#' Show an input modal for the user to select a pre-curated cytomarker dataset
 #' @importFrom shiny modalDialog
 #' @param compartment_options a vector of the possible cell type supersets as established by Tabula Sapiens
 #' @param compartments_selected a vector of currently selected cell type supersets

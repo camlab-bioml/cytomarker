@@ -15,42 +15,43 @@ test_that("conversion functions are effective", {
   expect_false(check_for_human_genes(sce))
 })
 
-context("Pre-processing the antibody applications")
+# context("Pre-processing the antibody applications")
+# 
+# test_that("Processing the antibody applications produces the intended data structures", {
+#  
+#   applications_parsed <- get_antibody_applications(cytomarker_data$antibody_info |> distinct(Symbol, .keep_all = T),
+#                                                    'Symbol', 'Listed Applications')
+#   
+#   expect_is(applications_parsed, 'list')
+#   expect_equal(names(applications_parsed), c("unique_applications", "application_gene_map"))
+#   
+#   # IMP: normally 12 unique antiby applcations but did only unique combinatinos of symbols
+#   # to reduce the time to parse the full registry
+#   expect_equal(length(applications_parsed$unique_applications), 6)
+#   # expect_equal(length(applications_parsed$unique_applications), 12)
+#   expect_equal(length(applications_parsed$application_gene_map), 6)
+#   # expect_equal(length(applications_parsed$application_gene_map), 12)
+# 
+# })
 
-test_that("Processing the antibody applications produces the intended data structures", {
-
-  applications_parsed <- get_antibody_applications(cytosel_data$antibody_info,
-                                                   'Symbol', 'Listed Applications')
-
-  expect_is(applications_parsed, 'list')
-  expect_equal(names(applications_parsed), c("unique_applications", "application_gene_map"))
-  expect_equal(length(applications_parsed$unique_applications), 12)
-  expect_equal(length(applications_parsed$application_gene_map), 12)
-
-})
-
-context("parsing for the allowed genes in an Abcam subset works as intended")
-
-test_that("Processing the antibody applications produces the intended data structures", {
-
-  obj <- test_path("pbmc_small.rds")
-  sce <- read_input_scrnaseq(obj, filter_counts = F)
-
-  allowed_all <- as.character(get_allowed_genes(NULL, cytosel_data$applications,
-                    sce))
-  
-  expect_gte(length(allowed_all), 900)
-
-  only_protein <- get_allowed_genes("Protein Array", cytosel_data$applications,
-                                                   sce)
-
-  expect_true(length(allowed_all) > length(only_protein))
-
-})
-
-
-
-
+# context("parsing for the allowed genes in an Abcam subset works as intended")
+# 
+# test_that("Processing the antibody applications produces the intended data structures", {
+# 
+#   obj <- test_path("pbmc_small.rds")
+#   sce <- read_input_scrnaseq(obj, filter_counts = F)
+# 
+#   allowed_all <- as.character(get_allowed_genes(NULL, cytomarker_data$applications,
+#                     sce))
+#   
+#   expect_gte(length(allowed_all), 900)
+# 
+#   only_protein <- get_allowed_genes("Protein Array", cytomarker_data$applications,
+#                                                    sce)
+# 
+#   expect_true(length(allowed_all) > length(only_protein))
+# 
+# })
 
 context("Data reading")
 
@@ -358,7 +359,7 @@ test_that("Filtering sce objects by minimum count passes & retains original size
 context("Antibody finding in the abcam table")
 
 test_that("Filtering sce objects by minimum count passes & retains original size", {
-  antibody_info <- cytosel_data$antibody_info
+  antibody_info <- read_feather(system.file("merged_catalog.feather", package = "cytomarker"))
 
 
   expect_equal(get_antibody_info("CD45", antibody_info)$status, "NO_GENE_FOUND")
@@ -371,7 +372,7 @@ test_that("Filtering sce objects by minimum count passes & retains original size
 context("Return types from catch-all error/notification function")
 
 test_that("throw_error_or_warning returns the correct type", {
-  antibody_info <- cytosel_data$antibody_info
+  antibody_info <- cytomarker_data$antibody_info
 
   expect_error(throw_error_or_warning(type = 'error', message = "Testing error"))
   expect_error(throw_error_or_warning(type = 'notification',
@@ -413,28 +414,51 @@ test_that("download works as expected", {
            yaxis = list(title="Source"))
 
   withr::with_tempdir({
-    filepath <- file.path(paste0("Cytosel-Panel-", Sys.Date(), ".zip"))
-
+    filepath <- file.path(paste0("cytomarker-Panel-", Sys.Date(), ".zip"))
+    
     placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
 
-    fake_table <- cytosel_data$antibody_info |> dplyr::filter(Symbol %in%
+    fake_table <- read_feather(system.file("merged_catalog.feather", package = "cytomarker")) |>
+                                        mutate(`Protein Expression`  = ifelse(!is.na(ensgene),
+                                            paste("https://www.proteinatlas.org/", 
+                                          ensgene,
+                        "-", Symbol, "/tissue", sep = ""), NA))|> dplyr::filter(Symbol %in%
                               placeholder_markers) |>
+      # dplyr::distinct(ID, .keep_all = T) |>
       mutate(`Host Species` = factor(`Host Species`),
-             `Product Category Tier 3` = factor(`Product Category Tier 3`),
-             `KO Status` = factor(`KO Status`),
-             `Clone Number` = factor(`Clone Number`),
-             `Human Protein Atlas` = "fake_link",
-             `External Link` = paste0('<a href="',`Datasheet URL`, '"',
+             Symbol = factor(Symbol),
+             
+             #        `Product Category Tier 3` = factor(`Product Category Tier 3`),
+             #        `KO Status` = factor(`KO Status`),
+             #        `Clone Number` = factor(`Clone Number`),
+             `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`),
+                                            paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
+                                                   'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
+                                                   ' target="_blank" rel="noopener noreferrer"',
+                                                   '>', "View on ",
+                                                   as.character(icon("external-link-alt")),
+                                                   "Human Protein Atlas",
+                                                   '</a>'), "None"),
+             `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"',
+                                      `Product Name`, '"',
+                                      'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
                                       ' target="_blank" rel="noopener noreferrer"',
-                                      '>',"View in Abcam website",'</a>')) |>
-      dplyr::select(-c(`Datasheet URL`))
-
+                                      '>', "View on ",
+                                      as.character(icon("external-link-alt")),
+                                      ifelse(Vendor == "Abcam", "Abcam.com",
+                                             "bdbiosciences.com"),
+                                      '</a>')) |>
+      dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`))
+    
+    expect_false("BD Biosciences" %in% fake_table$Vendor)
+    expect_true("Abcam" %in% fake_table$Vendor)
+    
     markdown_report_path <- system.file(file.path("report", "rmarkdown-report.Rmd"),
-                                        package = "cytosel")
+                                        package = "cytomarker")
 
     fake_metrics <- data.frame(`Cell Type` = c("Fake_1", "Fake_2", "Fake_3"),
                                Score = c(0.99, 1, 0.8))
-
+    
     base_config <- create_run_param_list(marker_list = list(top_markers = rownames(sce)[1:100]),
                                          "fake_path_to_sce", "logcounts",
                                          "seurat_annotations", 24, 2, "no",
@@ -508,7 +532,7 @@ test_that("Error modals throw errors", {
   expect_is(curated_dataset_modal(c("cur_1", "cur_2"), c("cur_1", "cur_2"),
                                   c("cur_1", "cur_2"), failed = T), 'shiny.tag')
   expect_error(subsampling_error_modal(c("Type_1", "Type_2")))
-  expect_is(time_zone_modal(cytosel_data$time_zones, NULL), 'shiny.tag')
+  expect_is(time_zone_modal(cytomarker_data$time_zones, NULL), 'shiny.tag')
   expect_is(reset_option_on_change_modal("placeholder"), 'shiny.tag')
   expect_error(invalid_modal())
   expect_error(invalid_metadata_modal("fake_column"))

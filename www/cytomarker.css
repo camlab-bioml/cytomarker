@@ -1,0 +1,25 @@
+/* Styles for shinyBS popover buttons */
+/* use !important to override shinyDashboard btn-info settings */
+
+.btn-info {
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
+.rank-list-item {
+  padding-left: 0px !important;
+  padding-top: 0px !important;
+  padding-right: 0px !important;
+  padding-bottom: 0px !important;
+}
+
+.popover {
+   min-width:120px;
+   width:100%;
+   max-width:500px;
+   overflow-wrap:break-word;
+}
+
+.shiny-split-layout > div {
+   overflow: visible;
+}

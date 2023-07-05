@@ -2,7 +2,7 @@
 % Please edit documentation in R/modals.R
 \name{curated_dataset_modal}
 \alias{curated_dataset_modal}
-\title{Show an input modal for the user to select a pre-curated cytosel dataset}
+\title{Show an input modal for the user to select a pre-curated cytomarker dataset}
 \usage{
 curated_dataset_modal(
   compartment_options,
@@ -19,5 +19,5 @@ curated_dataset_modal(
 \item{dataset_options}{a vector of the identifiers for the possible loadable datasets}
 }
 \description{
-Show an input modal for the user to select a pre-curated cytosel dataset
+Show an input modal for the user to select a pre-curated cytomarker dataset
 }

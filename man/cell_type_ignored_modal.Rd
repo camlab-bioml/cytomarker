@@ -3,7 +3,7 @@
 \name{cell_type_ignored_modal}
 \alias{cell_type_ignored_modal}
 \title{Show a shinyalert warning if cell types retained for analysis are below the minimum cell cutoff.
-cytosel will ignore these for analysis and print their names during analysis.}
+cytomarker will ignore these for analysis and print their names during analysis.}
 \usage{
 cell_type_ignored_modal(min_cat_count, excluded_cells)
 }
@@ -14,5 +14,5 @@ cell_type_ignored_modal(min_cat_count, excluded_cells)
 }
 \description{
 Show a shinyalert warning if cell types retained for analysis are below the minimum cell cutoff.
-cytosel will ignore these for analysis and print their names during analysis.
+cytomarker will ignore these for analysis and print their names during analysis.
 }

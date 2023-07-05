@@ -253,7 +253,7 @@ test_that("rowData with matches to non-human identify an error", {
 
 context("Test that the correct file type is identified")
 
-test_that("cytosel can read in an H5ad file", {
+test_that("cytomarker can read in an H5ad file", {
 
   # skip_on_ci()
 

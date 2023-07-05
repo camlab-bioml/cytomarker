@@ -1,4 +1,5 @@
-Package: cytosel
+
+Package: cytomarker
 Title: Interactive cytometry panel design using single-cell RNA-seq
 Version: 0.1.0
 Authors@R:
@@ -6,7 +7,7 @@ Authors@R:
            family = "Watson",
            role = c("aut", "cre"),
            email = "mwatson@lunenfeld.ca")
-Description: cytosel is an R Shiny application designed to facilitate interactive cytometry panel design using scRNA-seq data. cytosel provides a robust statistical method for resolving cell type populations of interest using a multinomial logistic regression model for gene markers of interest. Using cytosel's data visualization components and extensive collection of configuration options, researchers are able to interactively construct balanced antibody panels with minimal redundancy and high sensitivity to resolving cell type populations in scRNA-seq datasets.
+Description: cytomarker is an R Shiny application designed to facilitate interactive cytometry panel design using scRNA-seq data. cytomarker provides a robust statistical method for resolving cell type populations of interest using a multinomial logistic regression model for gene markers of interest. Using cytomarker's data visualization components and extensive collection of configuration options, researchers are able to interactively construct balanced antibody panels with minimal redundancy and high sensitivity to resolving cell type populations in scRNA-seq datasets.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to
     pick a license
 Imports:
@@ -49,7 +50,8 @@ Imports:
     geneBasisR,
     waiter,
     cicerone,
-    shinyanimate
+    shinyanimate,
+    feather
 Suggests:
   stringr,
   yardstick,

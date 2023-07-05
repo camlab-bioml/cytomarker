@@ -80,4 +80,10 @@ to_add <- NULL
 x <- NULL
 assay <- NULL
 aes <- NULL
-
+ID <- NULL
+processWidget <- NULL
+Vendor <- NULL
+. <- NULL
+addOutputId <- NULL
+session <- NULL
+outputName <- NULL

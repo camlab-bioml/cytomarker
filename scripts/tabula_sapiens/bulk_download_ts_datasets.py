@@ -15,7 +15,7 @@ tissue_links = {'Bladder': 34701958, 'Blood': 34701964, 'Bone_Marrow': 34701967,
                 'Immune': 34702069
                 }
 
-dest_dir = "/home/matt/cytosel/tabula_sapiens/datasets/"
+dest_dir = "/home/matt/cytomarker/tabula_sapiens/datasets/"
 
 for key, value in tissue_links.items():
     url = "https://figshare.com/ndownloader/files/" + str(value)
