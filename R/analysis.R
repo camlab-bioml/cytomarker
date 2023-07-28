@@ -405,8 +405,8 @@ train_nb <- function(x,y, cell_types) {
           
           overall <- yardstick::bal_accuracy_vec(y[test_idx], p)
           scores <- sapply(cell_types, function(ct) {
-            yardstick::f_meas_vec(factor(y[test_idx] == ct, levels=c("TRUE", "FALSE")), 
-                                  factor(p == ct, levels = c("TRUE", "FALSE")))
+            yardstick::f_meas_vec(factor(as.character(y[test_idx]) == as.character(ct), levels=c("TRUE", "FALSE")), 
+                                  factor(as.character(p) == as.character(ct), levels = c("TRUE", "FALSE")))
           })
           tibble(what = c("Overall", as.character(cell_types)),
             score=c(overall, scores)
