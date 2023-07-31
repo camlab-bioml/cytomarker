@@ -13,24 +13,6 @@ The official documentation for cytomarker using Docusaurus can be found [here](h
 
 cytomarker can be accessed through a public shinyapps.io server [here](https://camlab.shinyapps.io/cytomarker/)
 
-### Source code access
-
-For those with source code access to cytomarker, installation and access can be achieved through the following commands. Ensure that [R](https://cran.r-project.org/) and [RStudio Desktop from Posit](https://posit.co/download/rstudio-desktop/) are installed for your specific operating system. 
-
-```
-git clone https://github.com/camlab-bioml/cytomarker.git
-cd cytomarker
-=======
-Antibody panel selection for mass cytometry using scRNA-seq using R Shiny. cytomarker is currently hosted
-on a [public shinyapps.io server](https://camlab.shinyapps.io/cytomarker/)
-
-## Official Documentation
-
-The official documentation for cytomarker using Docusaurus can be found [here](https://camlab-bioml.github.io/cytomarker-doc/docs/intro)
-
-## Access
-
-cytomarker can be accessed through a public shinyapps.io server [here](https://camlab.shinyapps.io/cytomarker/)
 
 ### Source code access
 
@@ -39,7 +21,11 @@ For those with source code access to cytomarker, installation and access can be 
 ```
 git clone https://github.com/camlab-bioml/cytomarker.git
 cd cytomarker
-# inside R console
+```
+
+Once cloned, open RStudio and import the project using `File -> Open Project`, and select the `cytomarker.Rproj` file. After importing the codebase, install the app dependencies:
+
+```
 library(devtools) # or, if devtools isn't installed
 install.packages('devtools')
 devtools::load_all(); cytomarker()
@@ -53,7 +39,7 @@ installed:
 ```
 additional_deps <- c('stringr',
   'yardstick',
-  "htmltools',
+  'htmltools',
   'methods',
   'stats',
   'gridExtra',
@@ -73,7 +59,7 @@ additional_deps <- c('stringr',
   'heatmaply',
   'plotly')
   
-  BiocManager::install(dependencies)
+  BiocManager::install(additional_deps)
 ```
 
 ### Running locally
