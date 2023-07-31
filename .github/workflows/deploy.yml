@@ -28,10 +28,10 @@ jobs:
       - name: Install required install packages and remote repos
         run: |
           install.packages(c("remotes", "BiocManager"))
-          remotes::install_version("rsconnect", "0.8.29")
           BiocManager::install(version = "3.17")
           BiocManager::install(c('BiocGenerics', 'GenomeInfoDbData', 'limma', 'zlibbioc'))
           BiocManager::install(ask = F)
+          remotes::install_version("rsconnect", "0.8.29")
         shell: Rscript {0}
 
       - name: Authorize and deploy app    
