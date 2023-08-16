@@ -5,6 +5,13 @@ curated_datasets <- utils::read.delim(system.file("ts_datasets.tsv", package = "
 other_curated <- utils::read.delim(system.file("other_datasets.tsv", package = "cytomarker"),
                                    sep = "\t")
 
+cellxgene_datasets <- utils::read.delim(system.file("cellxgene_census_human_datasets.tsv", 
+                            package = "cytomarker"), sep = "\t")
+
+cellxgene_merged <- merge(cellxgene_datasets, other_curated, by.x = "dataset_id", by.y = "tissue")
+cellxgene_sets <- cellxgene_merged$dataset_id
+names(cellxgene_sets) <- cellxgene_merged$dataset_title
+
 for (i in curated_datasets$tissue) {
   if (file.exists(file.path(tempdir(), "/", paste(i, ".rds", sep = "")))) {
     command <- paste('rm ', tempdir(), "/", paste(i, ".rds", sep = ""), sep = "")
@@ -17,7 +24,7 @@ utils::globalVariables(c("palette_to_use", "full_palette",
                          "dataset_labels", "other_dataset_labels", 
                          "all_curated_dataset_labels",
                          "antibody_info", "markdown_report_path", 
-                         "all_zones"), "cytomarker")
+                         "all_zones", "cellxgene_sets", "other_curated"), "cytomarker")
 
 options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
         show.error.messages = FALSE)
@@ -98,8 +105,7 @@ cytomarker <- function(...) {
   dataset_labels <- curated_datasets$tissue |> set_names(gsub("_", " ", 
                                                               curated_datasets$tissue))
   
-  other_dataset_labels <- other_curated$tissue |> set_names(gsub("_", " ", 
-                                                                 other_curated$tissue))
+  other_dataset_labels <- cellxgene_sets |> set_names(names(cellxgene_sets))
   
   all_curated_dataset_labels <- c(dataset_labels, other_dataset_labels)
   
@@ -864,7 +870,7 @@ gtag('config', 'G-B26X9YQQGT');
         if (!file.exists(file.path(tempdir(), paste(tissue_lab, ".rds", sep = "")))) {
           incProgress(detail = "Downloading curated dataset")
           origin_dir <- if (input$curated_selection_choice == "Tabula Sapiens")
-            "tabula_sapiens/" else "other_curated_cytomarker/"
+            "tabula_sapiens/" else "cellxgene_census/"
           
           drop_download(paste(origin_dir, 
                               paste(tissue_lab, ".rds", sep = ""),

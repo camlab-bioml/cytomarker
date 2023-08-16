@@ -207,8 +207,15 @@ check_rownames_for_ensembl<- function(sce, grch38){
                                             average = TRUE,
                                             assay.type = 'logcounts')
     
+    if ("UMAP" %in% reducedDimNames(sce)) {
+      umap_add <- reducedDim(sce, "UMAP")
+    } else {
+      umap_add <- NULL
+    }
+    
     filtered_sce <- SingleCellExperiment(list(logcounts = filtered_mat),
-                                         colData = SingleCellExperiment::colData(sce))
+                                         colData = SingleCellExperiment::colData(sce),
+                                         reducedDims = SimpleList(UMAP = umap_add))
     
     genes_found <- calculate_proportion_in_annotables(rownames(filtered_sce), grch38)
     # calculate the proportion as the number of retained ensembl vs. original gene identifiers

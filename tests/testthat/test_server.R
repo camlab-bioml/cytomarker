@@ -599,15 +599,19 @@ test_that("Picking the curated dataset works as intended", {
     
     expect_equal(curated_selection(), "Liver")
     
+    expect_equal(dim(sce())[2], 1133)
+    
     session$setInputs(curated_dataset = T, 
                       curated_selection_choice = "Other Human",
-                      curated_options = "Seurat PBMC",
+                      curated_options = "Non-neuronal cells of human eye",
                       subset_number = 2000,
                       coldata_column = "ident",
                       curated_compartments = NULL,
                       pick_curated = T)
     
-    expect_equal(curated_selection(), "Seurat PBMC")
+    expect_equal(curated_selection(), "Non-neuronal cells of human eye")
+    
+    expect_equal(dim(sce())[2], 1365)
     
   })
   
