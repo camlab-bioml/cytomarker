@@ -1107,8 +1107,7 @@ gtag('config', 'G-B26X9YQQGT');
                 #                 ),
                 # `External Link` = colDef(html = T),
                 `Human Protein Atlas` = colDef(html = T)
-                ,
-                `External Link` = colDef(html = T)
+                # `External Link` = colDef(html = T)
                 ),
                 sortable = TRUE,
                 elementId = "antibody-select")
@@ -1548,7 +1547,8 @@ gtag('config', 'G-B26X9YQQGT');
                                                         ifelse(Vendor == "Abcam", "Abcam.com",
                                                                "bdbiosciences.com"),
                                                         '</a>')) |>
-                        dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`)))
+                        dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`, `Vendor`,
+                                         `External Link`)))
           
           update_analysis()
           
@@ -2928,7 +2928,7 @@ gtag('config', 'G-B26X9YQQGT');
                                                                        type='scatter', hoverinfo="text", colors=cytomarker_palette()) %>% 
                                                          layout(title = "UMAP selected markers")),
                                 metric = plots_for_markdown()$metric))
-        
+
         download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap_for_report(), df_antibody(), 
                       markdown_report_path, current_metrics()$summary, current_overall_score(),
                       markers_with_type())
