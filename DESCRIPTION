@@ -42,7 +42,6 @@ Imports:
     stringr,
     rlang,
     rmarkdown,
-    rdrop2,
     lubridate,
     htmltools,
     fontawesome,
@@ -78,7 +77,8 @@ Remotes:
     github::MarioniLab/geneBasisR,
     github::camlab-bioml/inferorg,
     github::stephenturner/annotables,
-    github::rstudio/shinytest2@v0.2.0
+    github::rstudio/shinytest2@v0.2.0,
+    github::karthik/rdrop2
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
