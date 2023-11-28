@@ -50,7 +50,8 @@ Imports:
     waiter,
     cicerone,
     shinyanimate,
-    feather
+    feather,
+    rdrop2
 Suggests:
   stringr,
   yardstick,
