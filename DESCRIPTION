@@ -51,8 +51,7 @@ Imports:
     waiter,
     cicerone,
     shinyanimate,
-    feather,
-    Matrix (== 1.6-1.1)
+    feather
 Suggests:
   stringr,
   yardstick,
