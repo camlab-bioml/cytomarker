@@ -36,7 +36,6 @@ Imports:
     RColorBrewer,
     shinytest2,
     tidyr,
-    htmlwidgets (== 1.6.2),
     shinydashboard,
     shinyBS,
     stringr,
@@ -85,4 +84,5 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Depends:
-    R (>= 4.2.2)
+    R (>= 4.3.0),
+    htmlwidgets (== 1.6.2)
