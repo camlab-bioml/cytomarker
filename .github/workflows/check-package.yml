@@ -17,6 +17,10 @@ jobs:
         run: |
          sudo apt-get update
          sudo apt-get -y install libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev libgeos-dev
+      - name: Install required install packages and remote repos
+        run: |
+          install.packages(c("remotes", "BiocManager"))
+          BiocManager::install(version = "3.18")
 # name: Install required packages not listed in the package description
 # run: |
 # install.packages(c("BiocManager", "caret", "Seurat", "tidyverse"))

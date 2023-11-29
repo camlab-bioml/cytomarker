@@ -28,7 +28,7 @@ jobs:
       - name: Install required install packages and remote repos
         run: |
           install.packages(c("remotes", "BiocManager"))
-          BiocManager::install(version = "3.17")
+          BiocManager::install(version = "3.18")
           BiocManager::install(c('BiocGenerics', 'GenomeInfoDbData', 'limma', 'zlibbioc'))
           BiocManager::install(ask = F)
           remotes::install_version("rsconnect", "0.8.29")
@@ -39,7 +39,7 @@ jobs:
           APPNAME: cytomarker
           SERVER: shinyapps.io
         run: |
-          options(repos=c(BiocManager::repositories(version = "3.17")), rsconnect.packrat = TRUE)
+          options(repos=c(BiocManager::repositories(version = "3.18")), rsconnect.packrat = TRUE)
           rsconnect::setAccountInfo("${{ secrets.SHINYAPPS_ACC }}", "${{ secrets.SHINYAPPS_TOKEN }}", "${{ secrets.SHINYAPPS_SEC }}")
           rsconnect::deployApp(appName = "${{ env.APPNAME }}", account = "${{ secrets.SHINYAPPS_ACC }}", server = "${{ env.SERVER }}")
         shell: Rscript {0}
