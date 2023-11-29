@@ -36,7 +36,7 @@ Imports:
     RColorBrewer,
     shinytest2,
     tidyr,
-    htmlwidgets,
+    htmlwidgets (== 1.6.2),
     shinydashboard,
     shinyBS,
     stringr,
