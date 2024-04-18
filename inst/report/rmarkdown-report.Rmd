@@ -5,7 +5,6 @@ output:
     toc: true
     toc_float: true
 params:
-  df: ""
   marker_selection: ""
   heatmap: ""
   umap: ""
@@ -45,56 +44,6 @@ library(emojifont)
 htmltools::img(src = "cytomarker-logo.png", 
                alt = 'logo', 
                style = 'position:absolute; top:0; right:0; padding-top: 20px; padding-right:40px; width: 185px;')
-```
-## Antibody panel
-
-```{r message=F, echo=F, width = 13}
-reactable(params$df,
-               searchable = TRUE,
-                filterable = TRUE,
-                groupBy = "Symbol",
-                columns = list(`Host Species` = colDef(aggregate = "unique",
-                  filterInput = function(values, name) {
-                    tags$select(
-                      # Set to undefined to clear the filter
-                      onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
-                      # "All" has an empty value to clear the filter, and is the default option
-                      tags$option(value = "", "All"),
-                      tags$html(multiple = T),
-                      lapply(unique(values), tags$option),
-                      "aria-label" = sprintf("Filter %s", name),
-                      style = "width: 100%; height: 28px"
-                    )
-                  }
-                ),
-                # `Target` = colDef(aggregate = "unique"),
-                # `Product Category Tier 3` = colDef(
-                #   filterInput = function(values, name) {
-                #     tags$select(
-                #       # Set to undefined to clear the filter
-                #       onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
-                #       # "All" has an empty value to clear the filter, and is the default option
-                #       tags$option(value = "", "All"),
-                #       lapply(unique(values), tags$option),
-                #       "aria-label" = sprintf("Filter %s", name),
-                #       style = "width: 100%; height: 28px;"
-                #     )
-                #   }
-                # ),
-#                 `Listed Applications` = colDef(
-#                   filterable = TRUE,
-#                   # Filter by case-sensitive text match
-#                   filterMethod = JS("export function MultiSelectFilterFn(rows, id, filterValues) {
-#     if (filterValues.length === 0) return rows;
-# 
-#     return rows.filter(r => filterValues.includes(r.values[id]));
-# }")
-#                 ),
-                `External Link` = colDef(html = T),
-                `Human Protein Atlas` = colDef(html = T)
-                ),
-                sortable = TRUE,
-                elementId = "antibody-select")
 ```
 
 ## Selected markers {.tabset}

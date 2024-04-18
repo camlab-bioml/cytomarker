@@ -24,8 +24,7 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 
 yaml <- read_yaml(system.file("config.yml", package = "cytomarker"))
 USE_ANALYTICS <- yaml$use_google_analytics
-SUBSET_TO_ABCAM <- yaml$subset_only_abcam_catalog
-STAR_FOR_ABCAM <- yaml$star_for_abcam_product
+STAR_FOR_CATALOG <- FALSE
 ONLY_PROTEIN_CODING <- yaml$only_protein_coding
 
 #' Define main entrypoint of app
@@ -69,11 +68,6 @@ ONLY_PROTEIN_CODING <- yaml$only_protein_coding
 cytomarker <- function(...) {
   
   rm(list = ls())
-  
-  antibody_info <- read_feather(system.file("merged_catalog.feather", package = "cytomarker")) |>
-    mutate(`Protein Expression`  = ifelse(!is.na(ensgene), paste("https://www.proteinatlas.org/", 
-                                                                 ensgene,
-                                                                 "-", Symbol, "/tissue", sep = ""), NA))
   
   # options(MulticoreParam=quote(MulticoreParam(workers=availableCores())))
   
@@ -365,7 +359,7 @@ gtag('config', 'G-B26X9YQQGT');
                                        column(5, hidden(div(id = "marker_display",
                                                             tags$span(icon("circle-info")
                                                                       %>%
-                                                                        bs_embed_tooltip(title =  if(isTruthy(STAR_FOR_ABCAM)) get_tooltip('marker_display_abcam') else get_tooltip('marker_display_all'),
+                                                                        bs_embed_tooltip(title =  if(isTruthy(STAR_FOR_CATALOG)) get_tooltip('marker_display_abcam') else get_tooltip('marker_display_all'),
                                                                                          placement = "right", html = TRUE)))))),
                               fluidRow(column(4, align = "center", div(style="display: inline-block; font-size: 15px", 
                                                                        htmlOutput("scratch_marker_counts"))),
@@ -499,14 +493,6 @@ gtag('config', 'G-B26X9YQQGT');
                               # hidden(div(id = "send", actionButton("send_markers", "Send markers to selection panel"))),
                               # br()
                       ),
-                      
-                      tabItem("antibody_explorer",
-                              # icon = icon("wpexplorer"),
-                              fluidRow(column(12,
-                                              br(),
-                                              reactableOutput("antibody_table"),
-                                              # DT::dataTableOutput("antibody_table")))
-                              ))),
                       tabItem("runs",
                               tabsetPanel(type = "tabs",
                                           tabPanel(uiOutput("current_run_name"), 
@@ -597,7 +583,7 @@ gtag('config', 'G-B26X9YQQGT');
     
     num_markers_in_selected <- reactiveVal()
     num_markers_in_scratch <- reactiveVal()
-    marker_filtration <- reactiveVal()
+    # marker_filtration <- reactiveVal()
     
     cell_types_excluded <- reactiveVal()
     
@@ -611,8 +597,7 @@ gtag('config', 'G-B26X9YQQGT');
     possible_umap_dims <- reactiveVal()
     umap_precomputed_col <- reactiveVal(NULL)
     first_render_outputs <- reactiveVal(FALSE)
-    df_antibody <- reactiveVal()
-    
+
     view_advanced_settings <- reactiveVal(FALSE)
     
     reupload_analysis <- reactiveVal(FALSE)
@@ -1005,16 +990,16 @@ gtag('config', 'G-B26X9YQQGT');
       cell_min_threshold(input$min_category_count)
     })
     
-    observeEvent(input$select_aa, {
-      
-      # assume that selecting the applications creates a valid panel for analysis
-      valid_existing_panel(TRUE)
-      set_allowed_genes()
-      if (isTruthy(aliases_table())) {
-        gene_aliases_to_show(aliases_table()[aliases_table()$`Alias in dataset` %in% allowed_genes(),])
-      }
-      
-    }, ignoreNULL = F)
+    # observeEvent(input$select_aa, {
+    #   
+    #   # assume that selecting the applications creates a valid panel for analysis
+    #   valid_existing_panel(TRUE)
+    #   set_allowed_genes()
+    #   if (isTruthy(aliases_table())) {
+    #     gene_aliases_to_show(aliases_table()[aliases_table()$`Alias in dataset` %in% allowed_genes(),])
+    #   }
+    #   
+    # }, ignoreNULL = F)
     
     observeEvent(input$show_cat_table, {
       req(sce())
@@ -1057,61 +1042,6 @@ gtag('config', 'G-B26X9YQQGT');
       req(fms())
       
       showModal(markers_add_modal(allowed_genes(), names(fms()[[1]]), session))
-    })
-    
-    # ### ANTIBODY EXPLORER ###
-    output$antibody_table <- renderReactable({
-      req(current_markers())
-      req(df_antibody())
-      
-      reactable(df_antibody(),
-                searchable = TRUE,
-                filterable = TRUE,
-                groupBy = "Symbol",
-                columns = list(`Host Species` = colDef(aggregate = "unique",
-                                                       filterInput = function(values, name) {
-                                                         tags$select(
-                                                           # Set to undefined to clear the filter
-                                                           onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
-                                                           # "All" has an empty value to clear the filter, and is the default option
-                                                           tags$option(value = "", "All"),
-                                                           tags$html(multiple = T),
-                                                           lapply(unique(values), tags$option),
-                                                           "aria-label" = sprintf("Filter %s", name),
-                                                           style = "width: 100%; height: 28px"
-                                                         )
-                                                       }
-                ),
-                # `Target` = colDef(aggregate = "unique"),
-                # `Product Category Tier 3` = colDef(
-                #   filterInput = function(values, name) {
-                #     tags$select(
-                #       # Set to undefined to clear the filter
-                #       onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
-                #       # "All" has an empty value to clear the filter, and is the default option
-                #       tags$option(value = "", "All"),
-                #       lapply(unique(values), tags$option),
-                #       "aria-label" = sprintf("Filter %s", name),
-                #       style = "width: 100%; height: 28px;"
-                #     )
-                #   }
-                # ),
-                #                 `Listed Applications` = colDef(
-                #                   filterable = TRUE,
-                #                   # Filter by case-sensitive text match
-                #                   filterMethod = JS("export function MultiSelectFilterFn(rows, id, filterValues) {
-                #     if (filterValues.length === 0) return rows;
-                # 
-                #     return rows.filter(r => filterValues.includes(r.values[id]));
-                # }")
-                #                 ),
-                # `External Link` = colDef(html = T),
-                `Human Protein Atlas` = colDef(html = T)
-                ,
-                `External Link` = colDef(html = T)
-                ),
-                sortable = TRUE,
-                elementId = "antibody-select")
     })
     
     ### PLOTS ###
@@ -1420,7 +1350,7 @@ gtag('config', 'G-B26X9YQQGT');
           setProgress(value = 0.5)
           
           incProgress(detail = "Computing cell type markers")
-          
+
           ## Compute set of allowed genes
           
           set_allowed_genes()
@@ -1514,42 +1444,6 @@ gtag('config', 'G-B26X9YQQGT');
           cells_per_type(table(SummarizedExperiment::colData(
             sce()[,sce()$keep_for_analysis == "Yes"])[[column()]]))
           
-          if (isTruthy(input$select_aa)) {
-            clean_table <- antibody_info |> mutate(limit_applications = sapply(antibody_info$`Listed Applications`, 
-                                                                               FUN = function(x) in_row(input$select_aa, x))) |>
-              dplyr::filter(limit_applications == isTruthy(limit_applications)) |> select(-limit_applications)
-          } else {
-            clean_table <- antibody_info
-          }
-          
-          df_antibody(dplyr::filter(clean_table, Symbol %in% 
-                                      current_markers()$top_markers) |>
-                        # dplyr::distinct(ID, .keep_all = T) |>
-                        mutate(`Host Species` = factor(`Host Species`),
-                               Symbol = factor(Symbol),
-                               
-                               #        `Product Category Tier 3` = factor(`Product Category Tier 3`),
-                               #        `KO Status` = factor(`KO Status`),
-                               #        `Clone Number` = factor(`Clone Number`),
-                               `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`),
-                                                              paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
-                                                                     'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
-                                                                     ' target="_blank" rel="noopener noreferrer"',
-                                                                     '>', "View on ",
-                                                                     as.character(icon("external-link-alt")),
-                                                                     "Human Protein Atlas",
-                                                                     '</a>'), "None"),
-                               `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"',
-                                                        `Product Name`, '"',
-                                                        'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
-                                                        ' target="_blank" rel="noopener noreferrer"',
-                                                        '>', "View on ",
-                                                        as.character(icon("external-link-alt")),
-                                                        ifelse(Vendor == "Abcam", "Abcam.com",
-                                                               "bdbiosciences.com"),
-                                                        '</a>')) |>
-                        dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`)))
-          
           update_analysis()
           
           updateSelectizeInput(
@@ -1582,8 +1476,6 @@ gtag('config', 'G-B26X9YQQGT');
                          icon = icon("line-chart")),
                 menuItem("Alternative Markers", tabName = "alternative_markers", 
                          icon = icon("arrows-h")),
-                menuItem("Antibody Explorer", tabName = "antibody_explorer", 
-                         icon = icon("list-alt")),
                 menuItem("Run Logs", tabName = "runs", 
                          icon = icon("magnifying-glass"))
               )
@@ -1592,6 +1484,7 @@ gtag('config', 'G-B26X9YQQGT');
             first_render_outputs(TRUE)
             setProgress(value = 1)
           }
+
           reupload_analysis(FALSE)
           updateTabsetPanel(session, "tabs", "marker_selection")
           
@@ -2191,10 +2084,6 @@ gtag('config', 'G-B26X9YQQGT');
           updateRadioButtons(session, "marker_strategy", selected = yaml_back$`Marker strategy`)
         }
         
-        if (isTruthy(yaml_back$`Antibody applications`)) {
-          updateSelectInput(session, "select_aa", selected = yaml_back$`Antibody applications`)
-        }
-        
       }
       
       reupload_analysis(TRUE)
@@ -2525,16 +2414,15 @@ gtag('config', 'G-B26X9YQQGT');
       # is subsetting to Abcam products or not
       # Option 1: if the configuration is true, then have a star for any product in the Abcam catalogue
       # Option 2: if the configuration is false, then have a star if the marker was in the initial suggestions
-      marker_filtration <- if(isTruthy(STAR_FOR_ABCAM)) unique(antibody_info$Symbol) else original_panel()
       
       labels_top <- lapply(markers$top_markers, 
-                           function(x) div(x, map_gene_name_to_antibody_icon(x, marker_filtration), 
+                           function(x) div(x, map_gene_name_to_antibody_icon(x, original_panel()), 
                                            style=paste('padding: 3px; color:', 
                                                        set_text_colour_based_on_background(cytomarker_palette()[ markers$associated_cell_types[x]]), 
                                                        '; background-color:', 
                                                        cytomarker_palette()[ markers$associated_cell_types[x] ])))
       labels_scratch <- lapply(markers$scratch_markers, 
-                               function(x) div(x, map_gene_name_to_antibody_icon(x, marker_filtration), 
+                               function(x) div(x, map_gene_name_to_antibody_icon(x, original_panel()), 
                                                style=paste('padding: 3px; color:', 
                                                            set_text_colour_based_on_background(cytomarker_palette()[ markers$associated_cell_types[x]]), 
                                                            '; background-color:', 
@@ -2637,7 +2525,7 @@ gtag('config', 'G-B26X9YQQGT');
           }
         }
         cells_per_type(table(SummarizedExperiment::colData(sce()[,
-                                                                 sce()$keep_for_analysis == "Yes"])[[column()]]))
+                          sce()$keep_for_analysis == "Yes"])[[column()]]))
         
         setProgress(value = 0.75)
         
@@ -2707,7 +2595,7 @@ gtag('config', 'G-B26X9YQQGT');
                                  levels = c(rev(unique(what[what != "Overall"])), "Overall")))
         } else {
           all_metrics <- current_metrics()$all |>  mutate(what = factor(what,
-                                                                        levels = c(rev(unique(what[what != "Overall"])), "Overall")))
+                  levels = c(rev(unique(what[what != "Overall"])), "Overall")))
         }
         
         plots$metric_plot <- suppressWarnings(plotly::plot_ly(all_metrics, x = ~score, y = ~what, 
@@ -2724,6 +2612,7 @@ gtag('config', 'G-B26X9YQQGT');
         previous_run_log_2(previous_run_log())
         previous_run_log(current_run_log())
         
+
         run_config <- create_run_param_list(marker_list = current_markers(),
                                             input_file = input$input_scrnaseq$datapath,
                                             assay_used = pref_assay(),
@@ -2734,7 +2623,6 @@ gtag('config', 'G-B26X9YQQGT');
                                             subsample_number = ifelse(isTruthy(input$subsample_sce),
                                                                       input$subset_number, "None"),
                                             marker_strat = input$marker_strategy,
-                                            antibody_apps = input$select_aa,
                                             selected_cell_types = cell_types_to_keep(),
                                             precomputed_umap_used = input$precomputed_dim,
                                             num_cells = ncol(sce()),
@@ -2929,7 +2817,7 @@ gtag('config', 'G-B26X9YQQGT');
                                                          layout(title = "UMAP selected markers")),
                                 metric = plots_for_markdown()$metric))
         
-        download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap_for_report(), df_antibody(), 
+        download_data(fname, current_run_log()$map, plots_for_markdown(), heatmap_for_report(), 
                       markdown_report_path, current_metrics()$summary, current_overall_score(),
                       markers_with_type())
         # })

@@ -317,7 +317,7 @@ test_that("Filtering sce objects by minimum count passes & retains original size
 
   obj <- test_path("pbmc_small.rds")
   sce <- read_input_scrnaseq(obj, filter_counts = F)
-
+  
   grouped <- create_table_of_hetero_cat(
     sce, "seurat_annotations")
   expect_is(grouped, 'data.frame')
@@ -354,20 +354,6 @@ test_that("Filtering sce objects by minimum count passes & retains original size
                     as.data.frame(table(sce_with_retention$keep_for_analysis))[,2])
 
 })
-
-
-context("Antibody finding in the abcam table")
-
-test_that("Filtering sce objects by minimum count passes & retains original size", {
-  antibody_info <- read_feather(system.file("merged_catalog.feather", package = "cytomarker"))
-
-
-  expect_equal(get_antibody_info("CD45", antibody_info)$status, "NO_GENE_FOUND")
-  expect_equal(get_antibody_info("CD74", antibody_info)$status, "ANTIBODY_FOUND")
-
-
-})
-
 
 context("Return types from catch-all error/notification function")
 
@@ -417,41 +403,6 @@ test_that("download works as expected", {
     filepath <- file.path(paste0("cytomarker-Panel-", Sys.Date(), ".zip"))
     
     placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
-
-    fake_table <- read_feather(system.file("merged_catalog.feather", package = "cytomarker")) |>
-                                        mutate(`Protein Expression`  = ifelse(!is.na(ensgene),
-                                            paste("https://www.proteinatlas.org/", 
-                                          ensgene,
-                        "-", Symbol, "/tissue", sep = ""), NA))|> dplyr::filter(Symbol %in%
-                              placeholder_markers) |>
-      # dplyr::distinct(ID, .keep_all = T) |>
-      mutate(`Host Species` = factor(`Host Species`),
-             Symbol = factor(Symbol),
-             
-             #        `Product Category Tier 3` = factor(`Product Category Tier 3`),
-             #        `KO Status` = factor(`KO Status`),
-             #        `Clone Number` = factor(`Clone Number`),
-             `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`),
-                                            paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
-                                                   'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
-                                                   ' target="_blank" rel="noopener noreferrer"',
-                                                   '>', "View on ",
-                                                   as.character(icon("external-link-alt")),
-                                                   "Human Protein Atlas",
-                                                   '</a>'), "None"),
-             `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"',
-                                      `Product Name`, '"',
-                                      'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
-                                      ' target="_blank" rel="noopener noreferrer"',
-                                      '>', "View on ",
-                                      as.character(icon("external-link-alt")),
-                                      ifelse(Vendor == "Abcam", "Abcam.com",
-                                             "bdbiosciences.com"),
-                                      '</a>')) |>
-      dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`))
-    
-    expect_false("BD Biosciences" %in% fake_table$Vendor)
-    expect_true("Abcam" %in% fake_table$Vendor)
     
     markdown_report_path <- system.file(file.path("report", "rmarkdown-report.Rmd"),
                                         package = "cytomarker")
@@ -463,8 +414,8 @@ test_that("download works as expected", {
                                          "fake_path_to_sce", "logcounts",
                                          "seurat_annotations", 24, 2, "no",
                                          80,
-                                         "fm", NULL, NULL, FALSE, 100, 13714, fake_metrics)
-
+                                         "fm", NULL, FALSE, 100, 13714, fake_metrics)
+    
     expect_is(base_config, 'list')
 
     fake_genes <- c("Fake_1", "Fake_2", "Fake_3")
@@ -474,7 +425,7 @@ test_that("download works as expected", {
 
     # skip_on_ci()
 
-    download_data(filepath, base_config, plots, heatmap, fake_table, markdown_report_path,
+    download_data(filepath, base_config, plots, heatmap, markdown_report_path,
                   fake_metrics, fake_overall, fake_genes)
 
     # unzip to tempdir and read back
