@@ -16,7 +16,6 @@ Imports:
     nnet,
     dplyr,
     shiny,
-    sortable,
     readr,
     DT,
     shinyalert,
@@ -42,7 +41,6 @@ Imports:
     stringr,
     rlang,
     rmarkdown,
-    rdrop2,
     lubridate,
     htmltools,
     fontawesome,
@@ -51,7 +49,9 @@ Imports:
     waiter,
     cicerone,
     shinyanimate,
-    feather
+    feather,
+    sortable,
+    rdrop2
 Suggests:
   stringr,
   yardstick,
@@ -74,11 +74,13 @@ Suggests:
   ggplot2,
   heatmaply,
   plotly
-Remotes: 
+Remotes:
     github::MarioniLab/geneBasisR,
     github::camlab-bioml/inferorg,
     github::stephenturner/annotables,
-    github::rstudio/shinytest2@v0.2.0
+    github::rstudio/shinytest2@v0.2.0,
+    github::limnotrack/rdrop2,
+    github::rstudio/sortable
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
