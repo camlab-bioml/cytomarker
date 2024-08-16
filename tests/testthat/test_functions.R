@@ -7,7 +7,7 @@ test_that("conversion functions are effective", {
   sce <- read_input_scrnaseq(obj, filter_counts = F)
   expect_is(convert_column_to_character_or_factor(sce, "num_col")$num_col,
             "character")
-
+  
   expect_true(check_for_human_genes(sce))
   obj <- test_path("pbmc_lowercase.rds")
   sce <- read_input_scrnaseq(obj, filter_counts = F)

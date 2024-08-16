@@ -9,7 +9,6 @@ download_data(
   config,
   plots,
   heatmap,
-  antibody_table,
   markdown_path,
   run_metrics,
   overall_metrics,

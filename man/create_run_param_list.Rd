@@ -14,7 +14,6 @@ create_run_param_list(
   subsample,
   subsample_number,
   marker_strat,
-  antibody_apps,
   selected_cell_types,
   precomputed_umap_used,
   num_cells,
