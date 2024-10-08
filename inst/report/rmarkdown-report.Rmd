@@ -53,7 +53,8 @@ reactable(params$df,
                searchable = TRUE,
                 filterable = TRUE,
                 groupBy = "Symbol",
-                columns = list(`Host Species` = colDef(aggregate = "unique",
+                columns = list(
+                  `Vendor` = colDef(aggregate = "unique",
                   filterInput = function(values, name) {
                     tags$select(
                       # Set to undefined to clear the filter
@@ -90,7 +91,7 @@ reactable(params$df,
 #     return rows.filter(r => filterValues.includes(r.values[id]));
 # }")
 #                 ),
-                `External Link` = colDef(html = T),
+                # `External Link` = colDef(html = T),
                 `Human Protein Atlas` = colDef(html = T)
                 ),
                 sortable = TRUE,

@@ -70,7 +70,7 @@ cytomarker <- function(...) {
   
   rm(list = ls())
   
-  antibody_info <- read_feather(system.file("merged_catalog.feather", package = "cytomarker")) |>
+  antibody_info <- read_feather(system.file("catalog.feather", package = "cytomarker")) |>
     mutate(`Protein Expression`  = ifelse(!is.na(ensgene), paste("https://www.proteinatlas.org/", 
                                                                  ensgene,
                                                                  "-", Symbol, "/tissue", sep = ""), NA))
@@ -1064,11 +1064,13 @@ gtag('config', 'G-B26X9YQQGT');
       req(current_markers())
       req(df_antibody())
       
+      
       reactable(df_antibody(),
                 searchable = TRUE,
                 filterable = TRUE,
                 groupBy = "Symbol",
-                columns = list(`Host Species` = colDef(aggregate = "unique",
+                columns = list(
+                  `Vendor` = colDef(aggregate = "unique",
                                                        filterInput = function(values, name) {
                                                          tags$select(
                                                            # Set to undefined to clear the filter
@@ -1107,8 +1109,7 @@ gtag('config', 'G-B26X9YQQGT');
                 #                 ),
                 # `External Link` = colDef(html = T),
                 `Human Protein Atlas` = colDef(html = T)
-                ,
-                `External Link` = colDef(html = T)
+                # `External Link` = colDef(html = T)
                 ),
                 sortable = TRUE,
                 elementId = "antibody-select")
@@ -1525,9 +1526,9 @@ gtag('config', 'G-B26X9YQQGT');
           df_antibody(dplyr::filter(clean_table, Symbol %in% 
                                       current_markers()$top_markers) |>
                         # dplyr::distinct(ID, .keep_all = T) |>
-                        mutate(`Host Species` = factor(`Host Species`),
+                        mutate(
+                          `Vendor` = factor(`Vendor`),
                                Symbol = factor(Symbol),
-                               
                                #        `Product Category Tier 3` = factor(`Product Category Tier 3`),
                                #        `KO Status` = factor(`KO Status`),
                                #        `Clone Number` = factor(`Clone Number`),
@@ -1538,20 +1539,19 @@ gtag('config', 'G-B26X9YQQGT');
                                                                      '>', "View on ",
                                                                      as.character(icon("external-link-alt")),
                                                                      "Human Protein Atlas",
-                                                                     '</a>'), "None"),
-                               `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"',
-                                                        `Product Name`, '"',
-                                                        'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
-                                                        ' target="_blank" rel="noopener noreferrer"',
-                                                        '>', "View on ",
-                                                        as.character(icon("external-link-alt")),
-                                                        ifelse(Vendor == "Abcam", "Abcam.com",
-                                                               "bdbiosciences.com"),
-                                                        '</a>')) |>
-                        dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`)))
+                                                                     '</a>'), "None")
+                               # `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"',
+                               #                          `Product Name`, '"',
+                               #                          'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
+                               #                          ' target="_blank" rel="noopener noreferrer"',
+                               #                          '>', "View on ",
+                               #                          as.character(icon("external-link-alt")),
+                               #                          ifelse(Vendor == "Abcam", "Abcam.com",
+                               #                                 "bdbiosciences.com"),
+                               #                          '</a>')
+                               ) |> dplyr::select(-c(`Protein Expression`, `ensgene`)))
           
           update_analysis()
-          
           updateSelectizeInput(
             session = session,
             inputId = "umap_panel_options",
