@@ -322,6 +322,7 @@ gtag('config', 'G-B26X9YQQGT');
                                                                                      selected = NULL,
                                                                                      multiple = F))),
                                                               # hidden(div(id = "apps",
+                                                              # TODO: for now, applications are blocked because of the catalog format
                                                               hidden(div(selectInput("select_aa", "Antibody applications:", 
                                                                                      NULL, multiple=TRUE) %>%
                                                                            shinyInput_label_embed(
@@ -1085,19 +1086,6 @@ gtag('config', 'G-B26X9YQQGT');
                                                        }
                 ),
                 # `Target` = colDef(aggregate = "unique"),
-                # `Product Category Tier 3` = colDef(
-                #   filterInput = function(values, name) {
-                #     tags$select(
-                #       # Set to undefined to clear the filter
-                #       onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
-                #       # "All" has an empty value to clear the filter, and is the default option
-                #       tags$option(value = "", "All"),
-                #       lapply(unique(values), tags$option),
-                #       "aria-label" = sprintf("Filter %s", name),
-                #       style = "width: 100%; height: 28px;"
-                #     )
-                #   }
-                # ),
                 #                 `Listed Applications` = colDef(
                 #                   filterable = TRUE,
                 #                   # Filter by case-sensitive text match
@@ -1107,9 +1095,7 @@ gtag('config', 'G-B26X9YQQGT');
                 #     return rows.filter(r => filterValues.includes(r.values[id]));
                 # }")
                 #                 ),
-                # `External Link` = colDef(html = T),
                 `Human Protein Atlas` = colDef(html = T)
-                # `External Link` = colDef(html = T)
                 ),
                 sortable = TRUE,
                 elementId = "antibody-select")
@@ -1529,9 +1515,6 @@ gtag('config', 'G-B26X9YQQGT');
                         mutate(
                           `Vendor` = factor(`Vendor`),
                                Symbol = factor(Symbol),
-                               #        `Product Category Tier 3` = factor(`Product Category Tier 3`),
-                               #        `KO Status` = factor(`KO Status`),
-                               #        `Clone Number` = factor(`Clone Number`),
                                `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`),
                                                               paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
                                                                      'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
@@ -1540,15 +1523,6 @@ gtag('config', 'G-B26X9YQQGT');
                                                                      as.character(icon("external-link-alt")),
                                                                      "Human Protein Atlas",
                                                                      '</a>'), "None")
-                               # `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"',
-                               #                          `Product Name`, '"',
-                               #                          'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
-                               #                          ' target="_blank" rel="noopener noreferrer"',
-                               #                          '>', "View on ",
-                               #                          as.character(icon("external-link-alt")),
-                               #                          ifelse(Vendor == "Abcam", "Abcam.com",
-                               #                                 "bdbiosciences.com"),
-                               #                          '</a>')
                                ) |> dplyr::select(-c(`Protein Expression`, `ensgene`)))
           
           update_analysis()
@@ -2883,6 +2857,7 @@ gtag('config', 'G-B26X9YQQGT');
     
     set_allowed_genes <- function() {
       
+      # TODO: for now, do not use antibody app subsets because of the catalog format
       # if (isTruthy(SUBSET_TO_ABCAM) | length(input$select_aa) > 0) 
       #   allowed_genes(get_allowed_genes(input$select_aa, applications_parsed,
       #   sce()[,sce()$keep_for_analysis == "Yes"])) else

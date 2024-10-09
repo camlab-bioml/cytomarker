@@ -5,9 +5,13 @@
 Antibody panel selection for mass cytometry using scRNA-seq using R Shiny. cytomarker is currently hosted
 on a [public shinyapps.io server](https://camlab.shinyapps.io/cytomarker/)
 
+<p align="center">
+    <img src="cytomarker.png">
+</p>
+
 ## Official Documentation
 
-The official documentation for cytomarker using Docusaurus can be found [here](https://camlab-bioml.github.io/cytomarker-doc/docs/intro)
+The official documentation for cytomarker can be found [here](https://camlab-bioml.github.io/cytomarker-doc/docs/intro)
 
 ## Access
 
@@ -27,14 +31,13 @@ Once cloned, open RStudio and import the project using `File -> Open Project`, a
 
 ```
 library(devtools) # or, if devtools isn't installed
-install.packages('devtools')
-devtools::load_all(); cytomarker()
+install.packages(c('devtools', 'remotes'))
 ```
+
 
 This will prompt devtools to install all listed dependencies from the package. 
 
-Additional dependencies in R that are suggested by the package may also need to be explicitly
-installed:
+Additional dependencies in R that are suggested by the package may also need to be explicitly installed:
 
 ```
 additional_deps <- c('stringr',
@@ -60,6 +63,11 @@ additional_deps <- c('stringr',
   'plotly')
   
   BiocManager::install(additional_deps)
+```
+
+Once installed, the remaining dependencies should be automatically installed:
+```
+devtools::load_all();cytomarker()
 ```
 
 ### Running locally

@@ -1,4 +1,3 @@
-
 Package: cytomarker
 Title: Interactive cytometry panel design using single-cell RNA-seq
 Version: 0.1.0
@@ -42,7 +41,6 @@ Imports:
     stringr,
     rlang,
     rmarkdown,
-    rdrop2,
     lubridate,
     htmltools,
     fontawesome,
@@ -51,7 +49,8 @@ Imports:
     waiter,
     cicerone,
     shinyanimate,
-    feather
+    feather,
+    rdrop2
 Suggests:
   stringr,
   yardstick,
@@ -75,6 +74,7 @@ Suggests:
   heatmaply,
   plotly
 Remotes: 
+    github::karthik/rdrop2,
     github::MarioniLab/geneBasisR,
     github::camlab-bioml/inferorg,
     github::stephenturner/annotables,
@@ -82,6 +82,6 @@ Remotes:
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 Depends:
     R (>= 4.2.2)

@@ -70,7 +70,9 @@ warning_modal <- function(not_sce) { # Uploaded marker is not in SCE
 
 #' Show an input modal to select the markers to remove from the selected marker space to scratch
 #' @importFrom shiny modalDialog
-suggestion_modal <- function(failed = FALSE, suggestions, possible_removal) { # Marker removal suggestion
+#' @param suggestions The suggested gene list for the user to select from
+#' @param possible_removal List of genes that the user can move to the scratch space
+suggestion_modal <- function(failed = FALSE, suggestions, possible_removal=NULL) { # Marker removal suggestion
   modalDialog(
     selectInput("markers_to_remove",
                 "Select markers to remove",
