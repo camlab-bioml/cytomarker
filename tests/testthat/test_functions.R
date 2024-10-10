@@ -34,7 +34,7 @@ test_that("conversion functions are effective", {
 # 
 # })
 
-# context("parsing for the allowed genes in an Abcam subset works as intended")
+# context("parsing for the allowed genes in an registry subset works as intended")
 # 
 # test_that("Processing the antibody applications produces the intended data structures", {
 # 
@@ -356,7 +356,7 @@ test_that("Filtering sce objects by minimum count passes & retains original size
 })
 
 
-context("Antibody finding in the abcam table")
+context("Antibody finding in the registry table")
 
 test_that("Filtering sce objects by minimum count passes & retains original size", {
   antibody_info <- read_feather(system.file("catalog.feather", package = "cytomarker"))
@@ -426,30 +426,15 @@ test_that("download works as expected", {
                               placeholder_markers) |>
       # dplyr::distinct(ID, .keep_all = T) |>
       mutate(
-          # `Host Species` = factor(`Host Species`),
              Symbol = factor(Symbol),
-             
-             #        `Product Category Tier 3` = factor(`Product Category Tier 3`),
-             #        `KO Status` = factor(`KO Status`),
-             #        `Clone Number` = factor(`Clone Number`),
              `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`),
                                             paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
-                                                   'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
+                                                   'onClick=”_gaq.push([‘_trackEvent’, ‘registry_link’, ‘click’, ‘registry_link’, ‘registry_link’]);”',
                                                    ' target="_blank" rel="noopener noreferrer"',
                                                    '>', "View on ",
                                                    as.character(icon("external-link-alt")),
                                                    "Human Protein Atlas",
-                                                   '</a>'), "None"),
-             # `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"',
-             #                          `Product Name`, '"',
-             #                          'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
-             #                          ' target="_blank" rel="noopener noreferrer"',
-             #                          '>', "View on ",
-             #                          as.character(icon("external-link-alt")),
-             #                          ifelse(Vendor == "Abcam", "Abcam.com",
-             #                                 "bdbiosciences.com"),
-             #                          '</a>')
-             ) |>
+                                                   '</a>'), "None")) |>
       dplyr::select(-c(`Protein Expression`, `ensgene`))
     
     expect_false("BD Biosciences" %in% fake_table$Vendor)
@@ -527,7 +512,7 @@ test_that("Error modals throw errors", {
   expect_error(reupload_before_sce_modal())
   expect_error(reupload_warning_modal("title","body"))
   expect_error(current_pan_not_valid_modal("GENE"))
-
+  
   # expected class from a modal dialog box
   expect_is(reset_analysis_modal(), 'shiny.tag')
   expect_is(suggestion_modal(failed = T, c("Sug_1", "Sug_2"), c("Sug_1")), 'shiny.tag')

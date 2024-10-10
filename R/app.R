@@ -24,8 +24,8 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 
 yaml <- read_yaml(system.file("config.yml", package = "cytomarker"))
 USE_ANALYTICS <- yaml$use_google_analytics
-SUBSET_TO_ABCAM <- yaml$subset_only_abcam_catalog
-STAR_FOR_ABCAM <- yaml$star_for_abcam_product
+SUBSET_TO_REGISTRY <- yaml$subset_only_registry_catalog
+STAR_FOR_REGISTRY <- yaml$star_for_catalog_product
 ONLY_PROTEIN_CODING <- yaml$only_protein_coding
 
 #' Define main entrypoint of app
@@ -366,7 +366,7 @@ gtag('config', 'G-B26X9YQQGT');
                                        column(5, hidden(div(id = "marker_display",
                                                             tags$span(icon("circle-info")
                                                                       %>%
-                                                                        bs_embed_tooltip(title =  if(isTruthy(STAR_FOR_ABCAM)) get_tooltip('marker_display_abcam') else get_tooltip('marker_display_all'),
+                                                                        bs_embed_tooltip(title =  if(isTruthy(STAR_FOR_REGISTRY)) get_tooltip('marker_display_registry') else get_tooltip('marker_display_all'),
                                                                                          placement = "right", html = TRUE)))))),
                               fluidRow(column(4, align = "center", div(style="display: inline-block; font-size: 15px", 
                                                                        htmlOutput("scratch_marker_counts"))),
@@ -1517,7 +1517,7 @@ gtag('config', 'G-B26X9YQQGT');
                                Symbol = factor(Symbol),
                                `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`),
                                                               paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
-                                                                     'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
+                                                                     'onClick=”_gaq.push([‘_trackEvent’, ‘registry_link’, ‘click’, ‘registry_link’, ‘registry_link’]);”',
                                                                      ' target="_blank" rel="noopener noreferrer"',
                                                                      '>', "View on ",
                                                                      as.character(icon("external-link-alt")),
@@ -2496,10 +2496,10 @@ gtag('config', 'G-B26X9YQQGT');
                                                         markers$top_markers])
       
       # set the marker inclusion list depending on whether or not the configuration
-      # is subsetting to Abcam products or not
-      # Option 1: if the configuration is true, then have a star for any product in the Abcam catalogue
+      # is subsetting to catalog products or not
+      # Option 1: if the configuration is true, then have a star for any product in the registry catalogue
       # Option 2: if the configuration is false, then have a star if the marker was in the initial suggestions
-      marker_filtration <- if(isTruthy(STAR_FOR_ABCAM)) unique(antibody_info$Symbol) else original_panel()
+      marker_filtration <- if(isTruthy(STAR_FOR_REGISTRY)) unique(antibody_info$Symbol) else original_panel()
       
       labels_top <- lapply(markers$top_markers, 
                            function(x) div(x, map_gene_name_to_antibody_icon(x, marker_filtration), 
@@ -2766,8 +2766,7 @@ gtag('config', 'G-B26X9YQQGT');
       shinyjs::hide(id = "download_button")
       
       toggle(id = "analysis_button", condition = isTruthy(sce()))
-      # toggle(id = "apps", condition = isTruthy(SUBSET_TO_ABCAM))
-      
+
       input_assays <- c(names(SummarizedExperiment::assays(sce())))
       
       # set the current metrics to NULL
@@ -2858,7 +2857,7 @@ gtag('config', 'G-B26X9YQQGT');
     set_allowed_genes <- function() {
       
       # TODO: for now, do not use antibody app subsets because of the catalog format
-      # if (isTruthy(SUBSET_TO_ABCAM) | length(input$select_aa) > 0) 
+      # if (isTruthy(SUBSET_TO_REGISTRY) | length(input$select_aa) > 0) 
       #   allowed_genes(get_allowed_genes(input$select_aa, applications_parsed,
       #   sce()[,sce()$keep_for_analysis == "Yes"])) else
       
