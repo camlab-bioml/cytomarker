@@ -7,6 +7,11 @@ Calculates the overlap of gene vector with annotables}
 \usage{
 calculate_proportion_in_annotables(g, annotation)
 }
+\arguments{
+\item{g}{Gene to compute}
+
+\item{annotation}{Data frame of genes symbols to search}
+}
 \description{
 Helper function for \code{parse_gene_names}
 Calculates the overlap of gene vector with annotables

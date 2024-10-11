@@ -9,7 +9,7 @@ current_pan_not_valid_modal(missing_genes, location)
 \arguments{
 \item{missing_genes}{vector of genes that are not in the current SCE but in the current marker panel}
 
-\item{location}{Where the}
+\item{location}{Where the genes are missing from}
 }
 \description{
 Show an input modal if the current panel contains genes that are not valid (either not in the dataset or not permitted genes)

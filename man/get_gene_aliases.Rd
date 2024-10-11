@@ -11,7 +11,7 @@ get_gene_aliases(marker_list, gene_mapper, allowed_genes)
 
 \item{gene_mapper}{A data frame that maps gene symbols to Entrez IDs}
 
-\item{merge}{Boolean whether the aliases should be returned along with the original markers}
+\item{allowed_genes}{Vector of genes permitted in analysis}
 }
 \description{
 Get a list of aliases for the marker list (all possible gene IDs that match to an Entrez ID)

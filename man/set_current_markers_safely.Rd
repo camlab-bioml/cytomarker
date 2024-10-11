@@ -5,7 +5,7 @@
 \title{Controlled way of setting current markers
 Return them in a safe way!}
 \usage{
-set_current_markers_safely(markers, fms, default_type = NULL)
+set_current_markers_safely(markers, fms)
 }
 \arguments{
 \item{markers}{A list storing three lists of markers:

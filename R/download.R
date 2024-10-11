@@ -3,6 +3,21 @@
 #' @importFrom yaml write_yaml
 #' @importFrom zip zip
 #' @importFrom htmlwidgets saveWidget
+#' @param marker_list Vector of markers int the current panel
+#' @param input_file Name of the scRNAseq file used to generate the panel
+#' @param assay_used Name of scRNAseq assay used (common include counts or logcounts)
+#' @param het_source Name of cell stratifying column in colData
+#' @param panel_size Size of the panel created
+#' @param cell_cutoff_value Minimum number of cells per cell type to include in analysis
+#' @param subsample Whether subsetting of the dataset was done or not
+#' @param subsample_number If subsetting was used, the number of cells used in analysis
+#' @param marker_strat Type of panel building used. Options are cell-based or cell-free
+#' @param antibody_apps List of antibody applications associated with the current panel
+#' @param selected_cell_types All cell subtypes from het_source included in analysis
+#' @param precomputed_umap_used If precompute UMAP coordinates were used or not
+#' @param num_cells Number of cells in final analysis
+#' @param num_genes Number of genes in final analysis
+#' @param metrics Table of F1 scores per cell type from regression analysis
 create_run_param_list <- function(
                           marker_list,
                           input_file,
@@ -57,6 +72,15 @@ create_run_param_list <- function(
 #' @importFrom readr write_tsv
 #' @importFrom tibble tibble
 #' @importFrom rmarkdown render
+#' @param zip_filename Filepath where the zip output should be written
+#' @param config Run configuration list in YAML format
+#' @param plots List of session plots (UMAP, heatmap)
+#' @param heatmap Heatmap plot to export
+#' @param antibody_table Table of antibody products in the current panel
+#' @param markdown_path Path to the package markdown report to export as HTML
+#' @param run_metrics Table of F1 scores per cell type from regression analysis
+#' @param overall_metrics Balanced accuracy score from F1 scores for the current run
+#' @param markers_with_cell_type Named vector of current panel with associated cell type
 download_data <- function(zip_filename,
                           config,
                           plots,
@@ -110,6 +134,7 @@ download_data <- function(zip_filename,
 
 #' read back in a saved config yaml to resume analysis
 #' @importFrom yaml read_yaml
+#' @param yaml Path to a yaml file with a saved configuration
 read_back_in_saved_yaml <- function(yaml) {
   return(read_yaml(yaml))
 }

@@ -10,7 +10,7 @@ cell_type_ignored_modal(min_cat_count, excluded_cells)
 \arguments{
 \item{min_cat_count}{The current value of minimum cell cutoff (minimum of 2).}
 
-\item{the}{vector of the names of cell types below the cutoff to be ignored.}
+\item{excluded_cells}{vector of the names of cell types below the cutoff to be ignored.}
 }
 \description{
 Show a shinyalert warning if cell types retained for analysis are below the minimum cell cutoff.

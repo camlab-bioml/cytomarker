@@ -108,7 +108,7 @@ in_row <- function(applications, row) {
 #' Get a list of aliases for the marker list (all possible gene IDs that match to an Entrez ID)
 #' @param marker_list A vector of markers in gene symbol format
 #' @param gene_mapper A data frame that maps gene symbols to Entrez IDs
-#' @param merge Boolean whether the aliases should be returned along with the original markers
+#' @param allowed_genes Vector of genes permitted in analysis
 get_gene_aliases <- function(marker_list, gene_mapper, allowed_genes) {
   
   # get the list of entrez ids for the uploaded panel

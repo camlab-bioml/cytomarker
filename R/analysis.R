@@ -6,6 +6,7 @@
 #' @param sce A SingleCellExperiment object
 #' @param columns A vector storing columns
 #' @param pref_assay Assay loaded
+#' @param allowed_genes List of genes to be included in the expression analysis
 #' @param p_val_type The type of p-value to use in marker group calculation. Can be either all or any.
 #' 
 compute_fm <- function(sce, columns, pref_assay, allowed_genes,
@@ -244,13 +245,9 @@ get_associated_cell_types <- function(markers, fms) {
 #' @param markers A list storing three lists of markers: 
 #' recommended_markers, scratch_markers, and top_markers
 #' @param fms Stored findMarkers outputs
-set_current_markers_safely <- function(markers, fms, default_type = NULL) {
+set_current_markers_safely <- function(markers, fms) {
   
   markers$associated_cell_types <- get_associated_cell_types(markers, fms)
-  
-  # if (is.list(markers$associated_cell_types)) {
-  #   associated_cell_types <- unlist(associated_cell_types$associated_cell_types)
-  # }
   
   markers
 }
@@ -508,6 +505,8 @@ compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlation
 #' markers for a given cell type
 #' @importFrom tibble rownames_to_column
 #' @importFrom dplyr mutate_if mutate_at
+#' @param fm Output from findMarkers
+#' @param current_markers vector of markers in the current panel
 get_cell_type_add_markers_reactable <- function(fm, current_markers) {
   fm <- fm[!rownames(fm) %in% current_markers,]
   fm <- fm[fm$summary.logFC > 0,]
