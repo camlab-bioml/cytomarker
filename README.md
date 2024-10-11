@@ -2,7 +2,7 @@
 
 ![R check](https://github.com/camlab-bioml/cytomarker/actions/workflows/check-package.yml/badge.svg)
 
-:test_tube: Interactive design and validation of antibody panels using single-cell atlases | [www.cytomarker.ai](https://www.cytomarker.ai)
+Interactive design and validation of antibody panels using single-cell atlases | [www.cytomarker.ai](https://www.cytomarker.ai)
 
 <p align="center">
     <img src="cytomarker-schematic.png">
