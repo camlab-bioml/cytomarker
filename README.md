@@ -1,24 +1,34 @@
-# cytomarker
+# Cytomarker
 
 ![R check](https://github.com/camlab-bioml/cytomarker/actions/workflows/check-package.yml/badge.svg)
 
-Antibody panel selection for mass cytometry using scRNA-seq using R Shiny. cytomarker is currently hosted
-on a [public shinyapps.io server](https://camlab.shinyapps.io/cytomarker/)
+:test_tube: Interactive design and validation of antibody panels using single-cell atlases | [www.cytomarker.ai](https://www.cytomarker.ai)
 
 <p align="center">
-    <img src="cytomarker.png">
+    <img src="cytomarker-schematic.png">
 </p>
 
-## Official Documentation
+Cytomarker enables iterative design of antibody panels using single-cell atlases. Key features:
 
-The official documentation for cytomarker can be found [here](https://camlab-bioml.github.io/cytomarker-doc/docs/intro)
+* Pull scRNA-seq from Human Cell Atlas or upload custom data in common formats (`h5ad`, `Seurat`,`SingleCellExperiment`)
+* Multiple visualizations and panel quality score to help design
+* Identify marker redundancy and suggest substitutions
+* Links to antibody databases to filter by application and find clone IDs
 
-## Access
+## Get started
 
-cytomarker can be accessed through a public shinyapps.io server [here](https://camlab.shinyapps.io/cytomarker/)
+:desktop_computer: [Launch Cytomarker](https://camlab.shinyapps.io/cytomarker/)
+
+:open_book: [Read documentation](https://camlab-bioml.github.io/cytomarker-doc/docs/intro)
+
+## Supported antibody databases
+
+* The open-source version of Cytomarker hosted here contains antibody information parsed from the [antibody registry](https://www.antibodyregistry.org/)
+* The hosted version of Cytomarker contains proprietary antibody databases with additional information (e.g. antibody applications)
+* To contribute additional antibody information, please [contact us](mailto:kierancampbell@lunenfeld.ca)
 
 
-### Source code access
+## Installation from source
 
 For those with source code access to cytomarker, installation and access can be achieved through the following commands. Ensure that [R](https://cran.r-project.org/) and [RStudio Desktop from Posit](https://posit.co/download/rstudio-desktop/) are installed for your specific operating system. 
 
@@ -94,7 +104,9 @@ Alteratively, in the RStudio Desktop console:
 devtools::load_all(); cytomarker()
 ```
 
-## Developer guide
+## Developers
 
-The developer guide for cytomarker is in progress and being hosted [here](https://github.com/camlab-bioml/cytomarker/wiki/cytomarker-Developer-guide)
-
+* Matt Watson
+* Eunice Poon
+* Michael Geuenich
+* Kieran Campbell
