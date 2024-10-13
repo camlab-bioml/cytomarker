@@ -6,6 +6,9 @@
 \usage{
 read_back_in_saved_yaml(yaml)
 }
+\arguments{
+\item{yaml}{Path to a yaml file with a saved configuration}
+}
 \description{
 read back in a saved config yaml to resume analysis
 }

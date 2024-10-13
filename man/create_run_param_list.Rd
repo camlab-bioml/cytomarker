@@ -22,6 +22,37 @@ create_run_param_list(
   metrics
 )
 }
+\arguments{
+\item{marker_list}{Vector of markers int the current panel}
+
+\item{input_file}{Name of the scRNAseq file used to generate the panel}
+
+\item{assay_used}{Name of scRNAseq assay used (common include counts or logcounts)}
+
+\item{het_source}{Name of cell stratifying column in colData}
+
+\item{panel_size}{Size of the panel created}
+
+\item{cell_cutoff_value}{Minimum number of cells per cell type to include in analysis}
+
+\item{subsample}{Whether subsetting of the dataset was done or not}
+
+\item{subsample_number}{If subsetting was used, the number of cells used in analysis}
+
+\item{marker_strat}{Type of panel building used. Options are cell-based or cell-free}
+
+\item{antibody_apps}{List of antibody applications associated with the current panel}
+
+\item{selected_cell_types}{All cell subtypes from het_source included in analysis}
+
+\item{precomputed_umap_used}{If precompute UMAP coordinates were used or not}
+
+\item{num_cells}{Number of cells in final analysis}
+
+\item{num_genes}{Number of genes in final analysis}
+
+\item{metrics}{Table of F1 scores per cell type from regression analysis}
+}
 \description{
 create a list of the run parameters for download or run logging
 }

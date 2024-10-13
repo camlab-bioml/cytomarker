@@ -2,12 +2,13 @@
 % Please edit documentation in R/tooltips.R
 \name{get_tooltip}
 \alias{get_tooltip}
-\title{Returns the tooltip as stored
-in inst/tooltips.yml}
+\title{Returns the tooltip as stored in inst/tooltips.yml}
 \usage{
 get_tooltip(tip_name)
 }
+\arguments{
+\item{tip_name}{Name of the tooltip entry in the tooltips list}
+}
 \description{
-Returns the tooltip as stored
-in inst/tooltips.yml
+Returns the tooltip as stored in inst/tooltips.yml
 }

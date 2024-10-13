@@ -6,6 +6,9 @@
 \usage{
 too_large_to_show_modal(col_name)
 }
+\arguments{
+\item{col_name}{name of column in colData of current scRNAseq dataset}
+}
 \description{
 Show a shinyalert error if the user tries to render the distribution table with more than 100 unique elements
 }

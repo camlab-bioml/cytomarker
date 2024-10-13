@@ -17,6 +17,8 @@ curated_dataset_modal(
 \item{compartments_selected}{a vector of currently selected cell type supersets}
 
 \item{dataset_options}{a vector of the identifiers for the possible loadable datasets}
+
+\item{failed}{Whether to render the modal as an error or not (default is FALSE)}
 }
 \description{
 Show an input modal for the user to select a pre-curated cytomarker dataset

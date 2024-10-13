@@ -6,6 +6,11 @@
 \usage{
 time_zone_modal(possible_time_zones, current_input)
 }
+\arguments{
+\item{possible_time_zones}{Vector of possible global time zones}
+
+\item{current_input}{Currently selected time zone}
+}
 \description{
 Allow the user to change the time zone in the modal
 }

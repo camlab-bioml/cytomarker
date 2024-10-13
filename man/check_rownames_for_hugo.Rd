@@ -6,6 +6,11 @@
 \usage{
 check_rownames_for_hugo(sce, grch38)
 }
+\arguments{
+\item{sce}{SingleCellExperiment to parse}
+
+\item{grch38}{a human reference genome that is compatible with annotables}
+}
 \description{
 Checks if sce rownames can be used
 }

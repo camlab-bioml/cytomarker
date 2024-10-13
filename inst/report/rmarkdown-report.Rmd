@@ -53,11 +53,12 @@ reactable(params$df,
                searchable = TRUE,
                 filterable = TRUE,
                 groupBy = "Symbol",
-                columns = list(`Host Species` = colDef(aggregate = "unique",
+                columns = list(
+                  `Vendor` = colDef(aggregate = "unique",
                   filterInput = function(values, name) {
                     tags$select(
                       # Set to undefined to clear the filter
-                      onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
+                      onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value                     || undefined)", name),
                       # "All" has an empty value to clear the filter, and is the default option
                       tags$option(value = "", "All"),
                       tags$html(multiple = T),
@@ -68,19 +69,6 @@ reactable(params$df,
                   }
                 ),
                 # `Target` = colDef(aggregate = "unique"),
-                # `Product Category Tier 3` = colDef(
-                #   filterInput = function(values, name) {
-                #     tags$select(
-                #       # Set to undefined to clear the filter
-                #       onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
-                #       # "All" has an empty value to clear the filter, and is the default option
-                #       tags$option(value = "", "All"),
-                #       lapply(unique(values), tags$option),
-                #       "aria-label" = sprintf("Filter %s", name),
-                #       style = "width: 100%; height: 28px;"
-                #     )
-                #   }
-                # ),
 #                 `Listed Applications` = colDef(
 #                   filterable = TRUE,
 #                   # Filter by case-sensitive text match
@@ -90,7 +78,6 @@ reactable(params$df,
 #     return rows.filter(r => filterValues.includes(r.values[id]));
 # }")
 #                 ),
-                `External Link` = colDef(html = T),
                 `Human Protein Atlas` = colDef(html = T)
                 ),
                 sortable = TRUE,

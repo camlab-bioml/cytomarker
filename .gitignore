@@ -16,3 +16,5 @@ rsconnect/*
 curated/
 .httr-oauth
 tests/testthat/curated/
+README.html
+*tar.gz

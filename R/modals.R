@@ -34,6 +34,7 @@ invalid_modal <- function() { # Input file is invalid
 #' Show a shinyalert error if either 1. the selected column has only one type, or
 #' 2. the selected column has over 100 unique types
 #' @importFrom shinyalert shinyalert
+#' @param col Column in colData of the scRNAseq dataset in the current session
 unique_element_modal <- function(col) { # Column is invalid
   
   for(c in seq_len(length(col$colname))) {
@@ -60,6 +61,7 @@ unique_element_modal <- function(col) { # Column is invalid
 
 #' Show a shinyalert warning if the uploaded marker is not found in the sce used for analysis
 #' @importFrom shinyalert shinyalert
+#' @param not_sce name of gene not found in the current scRNAseq dataset
 warning_modal <- function(not_sce) { # Uploaded marker is not in SCE
   shinyalert(title = "Warning", 
              text = paste(paste(not_sce, collapse = ", "), " are not in SCE."), 
@@ -70,7 +72,10 @@ warning_modal <- function(not_sce) { # Uploaded marker is not in SCE
 
 #' Show an input modal to select the markers to remove from the selected marker space to scratch
 #' @importFrom shiny modalDialog
-suggestion_modal <- function(failed = FALSE, suggestions, possible_removal) { # Marker removal suggestion
+#' @param failed Whether to render the modal as an error or not (Default is FALSE)
+#' @param suggestions The suggested gene list for the user to select from
+#' @param possible_removal List of genes that the user can move to the scratch space
+suggestion_modal <- function(failed = FALSE, suggestions, possible_removal=NULL) { # Marker removal suggestion
   modalDialog(
     selectInput("markers_to_remove",
                 "Select markers to remove",
@@ -155,7 +160,7 @@ threshold_too_low_modal <- function() { # Input marker is not in the dataset
 #' cytomarker will ignore these for analysis and print their names during analysis.
 #' @importFrom shinyalert shinyalert
 #' @param min_cat_count The current value of minimum cell cutoff (minimum of 2).
-#' @param the vector of the names of cell types below the cutoff to be ignored.
+#' @param excluded_cells vector of the names of cell types below the cutoff to be ignored.
 cell_type_ignored_modal <- function(min_cat_count, excluded_cells) {
   shinyalert(title = "Warning",
              text = HTML(paste("Cell types with abundance below the set threshold of ",
@@ -225,6 +230,7 @@ markers_add_modal <- function(markers_addable, suggest_cell_types, session) {
 
 #' Show a shinyalert error if the user tries to render the distribution table with more than 100 unique elements
 #' @importFrom shinyalert shinyalert
+#' @param col_name name of column in colData of current scRNAseq dataset
 too_large_to_show_modal <- function(col_name) {
   shinyalert(
     title = "Error",
@@ -282,7 +288,7 @@ reset_analysis_modal <- function() {
 #' Show an input modal if the current panel contains genes that are not valid (either not in the dataset or not permitted genes)
 #' @importFrom shinyalert shinyalert
 #' @param missing_genes vector of genes that are not in the current SCE but in the current marker panel
-#' @param location Where the 
+#' @param location Where the genes are missing from
 current_pan_not_valid_modal <- function(missing_genes, location) { # Marker removal suggestion
   shinyalert(title = "Error",
              text = HTML(paste("The current panel contains the following genes that are not found in the ", location,
@@ -302,6 +308,7 @@ current_pan_not_valid_modal <- function(missing_genes, location) { # Marker remo
 #' @param compartment_options a vector of the possible cell type supersets as established by Tabula Sapiens
 #' @param compartments_selected a vector of currently selected cell type supersets
 #' @param dataset_options a vector of the identifiers for the possible loadable datasets
+#' @param failed Whether to render the modal as an error or not (default is FALSE)
 curated_dataset_modal <- function(compartment_options, compartments_selected,
                                   dataset_options, failed = FALSE) {
   modalDialog(
@@ -345,6 +352,8 @@ subsampling_error_modal <- function(cell_types) {
 
 #' Allow the user to change the time zone in the modal
 #' @importFrom shiny modalDialog
+#' @param possible_time_zones Vector of possible global time zones
+#' @param current_input Currently selected time zone
 time_zone_modal <- function(possible_time_zones, current_input) {
   
   time_zone <- ifelse(isTruthy(current_input), current_input, "EST")

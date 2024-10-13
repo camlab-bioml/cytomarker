@@ -24,8 +24,8 @@ options(shiny.maxRequestSize = 1000 * 200 * 1024 ^ 2, warn=-1,
 
 yaml <- read_yaml(system.file("config.yml", package = "cytomarker"))
 USE_ANALYTICS <- yaml$use_google_analytics
-SUBSET_TO_ABCAM <- yaml$subset_only_abcam_catalog
-STAR_FOR_ABCAM <- yaml$star_for_abcam_product
+SUBSET_TO_REGISTRY <- yaml$subset_only_registry_catalog
+STAR_FOR_REGISTRY <- yaml$star_for_catalog_product
 ONLY_PROTEIN_CODING <- yaml$only_protein_coding
 
 #' Define main entrypoint of app
@@ -70,7 +70,7 @@ cytomarker <- function(...) {
   
   rm(list = ls())
   
-  antibody_info <- read_feather(system.file("merged_catalog.feather", package = "cytomarker")) |>
+  antibody_info <- read_feather(system.file("catalog.feather", package = "cytomarker")) |>
     mutate(`Protein Expression`  = ifelse(!is.na(ensgene), paste("https://www.proteinatlas.org/", 
                                                                  ensgene,
                                                                  "-", Symbol, "/tissue", sep = ""), NA))
@@ -322,6 +322,7 @@ gtag('config', 'G-B26X9YQQGT');
                                                                                      selected = NULL,
                                                                                      multiple = F))),
                                                               # hidden(div(id = "apps",
+                                                              # TODO: for now, applications are blocked because of the catalog format
                                                               hidden(div(selectInput("select_aa", "Antibody applications:", 
                                                                                      NULL, multiple=TRUE) %>%
                                                                            shinyInput_label_embed(
@@ -365,7 +366,7 @@ gtag('config', 'G-B26X9YQQGT');
                                        column(5, hidden(div(id = "marker_display",
                                                             tags$span(icon("circle-info")
                                                                       %>%
-                                                                        bs_embed_tooltip(title =  if(isTruthy(STAR_FOR_ABCAM)) get_tooltip('marker_display_abcam') else get_tooltip('marker_display_all'),
+                                                                        bs_embed_tooltip(title =  if(isTruthy(STAR_FOR_REGISTRY)) get_tooltip('marker_display_registry') else get_tooltip('marker_display_all'),
                                                                                          placement = "right", html = TRUE)))))),
                               fluidRow(column(4, align = "center", div(style="display: inline-block; font-size: 15px", 
                                                                        htmlOutput("scratch_marker_counts"))),
@@ -1064,11 +1065,13 @@ gtag('config', 'G-B26X9YQQGT');
       req(current_markers())
       req(df_antibody())
       
+      
       reactable(df_antibody(),
                 searchable = TRUE,
                 filterable = TRUE,
                 groupBy = "Symbol",
-                columns = list(`Host Species` = colDef(aggregate = "unique",
+                columns = list(
+                  `Vendor` = colDef(aggregate = "unique",
                                                        filterInput = function(values, name) {
                                                          tags$select(
                                                            # Set to undefined to clear the filter
@@ -1083,19 +1086,6 @@ gtag('config', 'G-B26X9YQQGT');
                                                        }
                 ),
                 # `Target` = colDef(aggregate = "unique"),
-                # `Product Category Tier 3` = colDef(
-                #   filterInput = function(values, name) {
-                #     tags$select(
-                #       # Set to undefined to clear the filter
-                #       onchange = sprintf("Reactable.setFilter('antibody-select', '%s', event.target.value || undefined)", name),
-                #       # "All" has an empty value to clear the filter, and is the default option
-                #       tags$option(value = "", "All"),
-                #       lapply(unique(values), tags$option),
-                #       "aria-label" = sprintf("Filter %s", name),
-                #       style = "width: 100%; height: 28px;"
-                #     )
-                #   }
-                # ),
                 #                 `Listed Applications` = colDef(
                 #                   filterable = TRUE,
                 #                   # Filter by case-sensitive text match
@@ -1105,10 +1095,7 @@ gtag('config', 'G-B26X9YQQGT');
                 #     return rows.filter(r => filterValues.includes(r.values[id]));
                 # }")
                 #                 ),
-                # `External Link` = colDef(html = T),
                 `Human Protein Atlas` = colDef(html = T)
-                ,
-                `External Link` = colDef(html = T)
                 ),
                 sortable = TRUE,
                 elementId = "antibody-select")
@@ -1525,33 +1512,20 @@ gtag('config', 'G-B26X9YQQGT');
           df_antibody(dplyr::filter(clean_table, Symbol %in% 
                                       current_markers()$top_markers) |>
                         # dplyr::distinct(ID, .keep_all = T) |>
-                        mutate(`Host Species` = factor(`Host Species`),
+                        mutate(
+                          `Vendor` = factor(`Vendor`),
                                Symbol = factor(Symbol),
-                               
-                               #        `Product Category Tier 3` = factor(`Product Category Tier 3`),
-                               #        `KO Status` = factor(`KO Status`),
-                               #        `Clone Number` = factor(`Clone Number`),
                                `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`),
                                                               paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
-                                                                     'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
+                                                                     'onClick=”_gaq.push([‘_trackEvent’, ‘registry_link’, ‘click’, ‘registry_link’, ‘registry_link’]);”',
                                                                      ' target="_blank" rel="noopener noreferrer"',
                                                                      '>', "View on ",
                                                                      as.character(icon("external-link-alt")),
                                                                      "Human Protein Atlas",
-                                                                     '</a>'), "None"),
-                               `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"',
-                                                        `Product Name`, '"',
-                                                        'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
-                                                        ' target="_blank" rel="noopener noreferrer"',
-                                                        '>', "View on ",
-                                                        as.character(icon("external-link-alt")),
-                                                        ifelse(Vendor == "Abcam", "Abcam.com",
-                                                               "bdbiosciences.com"),
-                                                        '</a>')) |>
-                        dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`)))
+                                                                     '</a>'), "None")
+                               ) |> dplyr::select(-c(`Protein Expression`, `ensgene`)))
           
           update_analysis()
-          
           updateSelectizeInput(
             session = session,
             inputId = "umap_panel_options",
@@ -2522,10 +2496,10 @@ gtag('config', 'G-B26X9YQQGT');
                                                         markers$top_markers])
       
       # set the marker inclusion list depending on whether or not the configuration
-      # is subsetting to Abcam products or not
-      # Option 1: if the configuration is true, then have a star for any product in the Abcam catalogue
+      # is subsetting to catalog products or not
+      # Option 1: if the configuration is true, then have a star for any product in the registry catalogue
       # Option 2: if the configuration is false, then have a star if the marker was in the initial suggestions
-      marker_filtration <- if(isTruthy(STAR_FOR_ABCAM)) unique(antibody_info$Symbol) else original_panel()
+      marker_filtration <- if(isTruthy(STAR_FOR_REGISTRY)) unique(antibody_info$Symbol) else original_panel()
       
       labels_top <- lapply(markers$top_markers, 
                            function(x) div(x, map_gene_name_to_antibody_icon(x, marker_filtration), 
@@ -2792,8 +2766,7 @@ gtag('config', 'G-B26X9YQQGT');
       shinyjs::hide(id = "download_button")
       
       toggle(id = "analysis_button", condition = isTruthy(sce()))
-      # toggle(id = "apps", condition = isTruthy(SUBSET_TO_ABCAM))
-      
+
       input_assays <- c(names(SummarizedExperiment::assays(sce())))
       
       # set the current metrics to NULL
@@ -2883,7 +2856,8 @@ gtag('config', 'G-B26X9YQQGT');
     
     set_allowed_genes <- function() {
       
-      # if (isTruthy(SUBSET_TO_ABCAM) | length(input$select_aa) > 0) 
+      # TODO: for now, do not use antibody app subsets because of the catalog format
+      # if (isTruthy(SUBSET_TO_REGISTRY) | length(input$select_aa) > 0) 
       #   allowed_genes(get_allowed_genes(input$select_aa, applications_parsed,
       #   sce()[,sce()$keep_for_analysis == "Yes"])) else
       

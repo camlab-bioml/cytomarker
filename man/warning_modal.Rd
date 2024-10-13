@@ -6,6 +6,9 @@
 \usage{
 warning_modal(not_sce)
 }
+\arguments{
+\item{not_sce}{name of gene not found in the current scRNAseq dataset}
+}
 \description{
 Show a shinyalert warning if the uploaded marker is not found in the sce used for analysis
 }

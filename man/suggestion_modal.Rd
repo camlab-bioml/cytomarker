@@ -4,7 +4,14 @@
 \alias{suggestion_modal}
 \title{Show an input modal to select the markers to remove from the selected marker space to scratch}
 \usage{
-suggestion_modal(failed = FALSE, suggestions, possible_removal)
+suggestion_modal(failed = FALSE, suggestions, possible_removal = NULL)
+}
+\arguments{
+\item{failed}{Whether to render the modal as an error or not (Default is FALSE)}
+
+\item{suggestions}{The suggested gene list for the user to select from}
+
+\item{possible_removal}{List of genes that the user can move to the scratch space}
 }
 \description{
 Show an input modal to select the markers to remove from the selected marker space to scratch

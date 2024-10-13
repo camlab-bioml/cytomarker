@@ -13,6 +13,8 @@ compute_fm(sce, columns, pref_assay, allowed_genes, p_val_type = "all")
 
 \item{pref_assay}{Assay loaded}
 
+\item{allowed_genes}{List of genes to be included in the expression analysis}
+
 \item{p_val_type}{The type of p-value to use in marker group calculation. Can be either all or any.}
 }
 \description{

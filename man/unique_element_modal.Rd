@@ -22,6 +22,9 @@ actionButton("assay_select", "Select")
 \usage{
 unique_element_modal(col)
 }
+\arguments{
+\item{col}{Column in colData of the scRNAseq dataset in the current session}
+}
 \description{
 Show a shinyalert error if either 1. the selected column has only one type, or
 2. the selected column has over 100 unique types

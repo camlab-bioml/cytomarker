@@ -81,6 +81,8 @@ detect_assay_and_create_logcounts <- function(sce){
 #' 
 #' @importFrom magrittr %>% 
 #' @importFrom dplyr mutate filter pull
+#' @param g Gene to compute
+#' @param annotation Data frame of genes symbols to search
 calculate_proportion_in_annotables <- function(g, annotation){
   # Count how many of the input genes were found in annotables
   genes_found <- factor(g %in% annotation$symbol, levels = c(TRUE, FALSE))
@@ -98,6 +100,8 @@ calculate_proportion_in_annotables <- function(g, annotation){
 }
 
 #' Checks if sce rownames can be used
+#' @param sce SingleCellExperiment to parse
+#' @param grch38 a human reference genome that is compatible with annotables
 check_rownames_for_hugo <- function(sce, grch38){
   if(is.null(rownames(sce))){
     error_status <- "rownames_are_null"
@@ -131,6 +135,8 @@ check_rownames_for_hugo <- function(sce, grch38){
 
 #' Checks if there are any columns in rowData that contain gene names
 #' @importFrom stats na.omit
+#' @param sce SingleCellExperiment to parse
+#' @param grch38 a human reference genome that is compatible with annotables
 check_rowData_for_hugo <- function(sce, grch38){
   # List of possible rowData column names
   possible_symbol_rowData_names <- c("Gene", "gene", "Genes", "genes", "geneID", "GeneID", 
@@ -423,6 +429,7 @@ remove_null_and_va_from_cell_cat <- function(sce, input_column) {
 }
 
 #' Detect if the sce has any UMAP dimension assays 
+#' @param sce scRNAseq dataset
 detect_umap_dims_in_sce <- function(sce) {
   return(SingleCellExperiment::reducedDimNames(sce)[grepl("UMAP|umap|Umap|uMap|uMAP",
                           SingleCellExperiment::reducedDimNames(sce))])

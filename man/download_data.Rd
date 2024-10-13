@@ -16,6 +16,25 @@ download_data(
   markers_with_cell_type
 )
 }
+\arguments{
+\item{zip_filename}{Filepath where the zip output should be written}
+
+\item{config}{Run configuration list in YAML format}
+
+\item{plots}{List of session plots (UMAP, heatmap)}
+
+\item{heatmap}{Heatmap plot to export}
+
+\item{antibody_table}{Table of antibody products in the current panel}
+
+\item{markdown_path}{Path to the package markdown report to export as HTML}
+
+\item{run_metrics}{Table of F1 scores per cell type from regression analysis}
+
+\item{overall_metrics}{Balanced accuracy score from F1 scores for the current run}
+
+\item{markers_with_cell_type}{Named vector of current panel with associated cell type}
+}
 \description{
 Download all marker data to a zip file
 }

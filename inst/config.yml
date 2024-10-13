@@ -1,7 +1,7 @@
 use_google_analytics: yes
 
-subset_only_abcam_catalog: no
+subset_only_registry_catalog: no
 
-star_for_abcam_product: yes
+star_for_catalog_product: yes
 
 only_protein_coding: no

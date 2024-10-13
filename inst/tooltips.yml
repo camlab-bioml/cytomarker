@@ -16,12 +16,12 @@ panel_size: "Set the mumber of markers permitted while optimizing category separ
 
 subsample_sce: "Subsampling the single cell data will speed up all aspects of analysis. Especially recommended for larger datasets (i.e. > 2000 cells)."
 
-marker_display_abcam: "Markers are currently selected based on differential expression from one cluster against all other clusters.
+marker_display_registry: "Markers are currently selected based on differential expression from one cluster against all other clusters.
                 <br></br>
                 Colour denotes which category has significantly upregulated expression of the given marker, 
                 as a heuristic aid for deciding which markers will need a direct replacement if removed.
                 <br></br>
-                A star means that there is an antibody product online available for this target. The Antibody Explorer tab allows you to explore the product options available from the Internet for each target."
+                A star means that there is an antibody product online available for this target. The Antibody Explorer tab allows you to explore the product options listed in the Antibody Registry."
                 
 
 marker_display_all: "Markers are currently selected based on differential expression from one cluster against all other clusters.

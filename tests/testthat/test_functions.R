@@ -34,7 +34,7 @@ test_that("conversion functions are effective", {
 # 
 # })
 
-# context("parsing for the allowed genes in an Abcam subset works as intended")
+# context("parsing for the allowed genes in an registry subset works as intended")
 # 
 # test_that("Processing the antibody applications produces the intended data structures", {
 # 
@@ -356,10 +356,10 @@ test_that("Filtering sce objects by minimum count passes & retains original size
 })
 
 
-context("Antibody finding in the abcam table")
+context("Antibody finding in the registry table")
 
 test_that("Filtering sce objects by minimum count passes & retains original size", {
-  antibody_info <- read_feather(system.file("merged_catalog.feather", package = "cytomarker"))
+  antibody_info <- read_feather(system.file("catalog.feather", package = "cytomarker"))
 
 
   expect_equal(get_antibody_info("CD45", antibody_info)$status, "NO_GENE_FOUND")
@@ -418,37 +418,24 @@ test_that("download works as expected", {
     
     placeholder_markers <- c("EEF2", "RBM3", "MARCKS", "MSN", "FTL")
 
-    fake_table <- read_feather(system.file("merged_catalog.feather", package = "cytomarker")) |>
+    fake_table <- read_feather(system.file("catalog.feather", package = "cytomarker")) |>
                                         mutate(`Protein Expression`  = ifelse(!is.na(ensgene),
                                             paste("https://www.proteinatlas.org/", 
                                           ensgene,
                         "-", Symbol, "/tissue", sep = ""), NA))|> dplyr::filter(Symbol %in%
                               placeholder_markers) |>
       # dplyr::distinct(ID, .keep_all = T) |>
-      mutate(`Host Species` = factor(`Host Species`),
+      mutate(
              Symbol = factor(Symbol),
-             
-             #        `Product Category Tier 3` = factor(`Product Category Tier 3`),
-             #        `KO Status` = factor(`KO Status`),
-             #        `Clone Number` = factor(`Clone Number`),
              `Human Protein Atlas` = ifelse(!is.na(`Protein Expression`),
                                             paste0('<a href="',`Protein Expression`, '"', 'id=', '"', `Product Name`, '"',
-                                                   'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
+                                                   'onClick=”_gaq.push([‘_trackEvent’, ‘registry_link’, ‘click’, ‘registry_link’, ‘registry_link’]);”',
                                                    ' target="_blank" rel="noopener noreferrer"',
                                                    '>', "View on ",
                                                    as.character(icon("external-link-alt")),
                                                    "Human Protein Atlas",
-                                                   '</a>'), "None"),
-             `External Link` = paste0('<a href="',`Datasheet URL`, '"', 'id=', '"',
-                                      `Product Name`, '"',
-                                      'onClick=”_gaq.push([‘_trackEvent’, ‘abcam_link’, ‘click’, ‘abcam_link’, ‘abcam_link’]);”',
-                                      ' target="_blank" rel="noopener noreferrer"',
-                                      '>', "View on ",
-                                      as.character(icon("external-link-alt")),
-                                      ifelse(Vendor == "Abcam", "Abcam.com",
-                                             "bdbiosciences.com"),
-                                      '</a>')) |>
-      dplyr::select(-c(`Datasheet URL`, `Protein Expression`, `ensgene`))
+                                                   '</a>'), "None")) |>
+      dplyr::select(-c(`Protein Expression`, `ensgene`))
     
     expect_false("BD Biosciences" %in% fake_table$Vendor)
     expect_true("Abcam" %in% fake_table$Vendor)
@@ -525,10 +512,10 @@ test_that("Error modals throw errors", {
   expect_error(reupload_before_sce_modal())
   expect_error(reupload_warning_modal("title","body"))
   expect_error(current_pan_not_valid_modal("GENE"))
-
+  
   # expected class from a modal dialog box
   expect_is(reset_analysis_modal(), 'shiny.tag')
-  expect_is(suggestion_modal(failed = T, c("Sug_1", "Sug_2"), "Sug_1"), 'shiny.tag')
+  expect_is(suggestion_modal(failed = T, c("Sug_1", "Sug_2"), c("Sug_1")), 'shiny.tag')
   expect_is(curated_dataset_modal(c("cur_1", "cur_2"), c("cur_1", "cur_2"),
                                   c("cur_1", "cur_2"), failed = T), 'shiny.tag')
   expect_error(subsampling_error_modal(c("Type_1", "Type_2")))

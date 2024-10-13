@@ -7,6 +7,11 @@ markers for a given cell type}
 \usage{
 get_cell_type_add_markers_reactable(fm, current_markers)
 }
+\arguments{
+\item{fm}{Output from findMarkers}
+
+\item{current_markers}{vector of markers in the current panel}
+}
 \description{
 Get the reactable for the modal dialogue when add
 markers for a given cell type

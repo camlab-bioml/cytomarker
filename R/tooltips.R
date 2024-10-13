@@ -6,8 +6,8 @@ tooltips <- yaml::read_yaml(
 )
 
 
-#' Returns the tooltip as stored
-#' in inst/tooltips.yml
+#' Returns the tooltip as stored in inst/tooltips.yml
+#' @param tip_name Name of the tooltip entry in the tooltips list
 get_tooltip <- function(tip_name) {
   tooltips[[tip_name]]
 }

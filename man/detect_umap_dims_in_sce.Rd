@@ -6,6 +6,9 @@
 \usage{
 detect_umap_dims_in_sce(sce)
 }
+\arguments{
+\item{sce}{scRNAseq dataset}
+}
 \description{
 Detect if the sce has any UMAP dimension assays
 }

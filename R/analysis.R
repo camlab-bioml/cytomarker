@@ -6,6 +6,7 @@
 #' @param sce A SingleCellExperiment object
 #' @param columns A vector storing columns
 #' @param pref_assay Assay loaded
+#' @param allowed_genes List of genes to be included in the expression analysis
 #' @param p_val_type The type of p-value to use in marker group calculation. Can be either all or any.
 #' 
 compute_fm <- function(sce, columns, pref_assay, allowed_genes,
@@ -115,26 +116,6 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
         #top <- c(top, rownames(f)[seq_len(top_select)])
       }
       
-      # if(!is.null(cell_types_wout_markers)){
-      #   if (isTruthy(in_session)) {
-      #   throw_error_or_warning(type = 'notification',
-      #                          message = paste("No markers were found for the following cell types: ",
-      #                                          paste(cell_types_wout_markers, 
-      #                                                collapse = ", "), 
-      #                                          ". This is likely because there are too few cells of these types."),
-      #                          duration = 10)
-      #   } else {
-      #     message(paste("No markers were found for the following cell types: ",
-      #                   paste(cell_types_wout_markers,
-      #                         collapse = ", ")))
-      #   }
-      # }
-
-      #recommended_df <- group_by(recommended_df, marker, cell_type)
-      
-      # write.table(recommended_df, "recommendations.tsv", quote = F, row.names = F,
-      #           sep = "\t")
-      
       initial_recommendations <- recommended_df
       
       # Iteratively remove markers until number of markers equals panel size
@@ -165,7 +146,6 @@ get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
       
       recommended <- unique(recommended_df$marker)
       
-      # write.table(recommended, "recommended.txt", quote = F, row.names = F, col.names = F)
       # print cell types that have only markers that are expressed in multiple cell types
       genes_to_ignore <- c()
       count <- 0
@@ -265,13 +245,9 @@ get_associated_cell_types <- function(markers, fms) {
 #' @param markers A list storing three lists of markers: 
 #' recommended_markers, scratch_markers, and top_markers
 #' @param fms Stored findMarkers outputs
-set_current_markers_safely <- function(markers, fms, default_type = NULL) {
+set_current_markers_safely <- function(markers, fms) {
   
   markers$associated_cell_types <- get_associated_cell_types(markers, fms)
-  
-  # if (is.list(markers$associated_cell_types)) {
-  #   associated_cell_types <- unlist(associated_cell_types$associated_cell_types)
-  # }
   
   markers
 }
@@ -525,72 +501,12 @@ compute_alternatives <- function(gene_to_replace, sce, pref_assay, n_correlation
   
 }
 
-#' Parse out antibody applications
-#' 
-#' TODO: when the antibody application list is fixed, this can
-#' be parsed ahead of time
-get_antibody_applications <- function(antibody_info, 
-                                      column_gene = 'Symbol',
-                                      column_application = 'Listed Applications') {
-  app_split <- strsplit(antibody_info[[ column_application ]], ',')
-  app_split <- lapply(app_split, stringr::str_trim)
-  names(app_split) <- antibody_info[[ column_gene ]]
-  
-  unique_applications <- sapply(app_split, `[`) %>% 
-    unlist() %>% 
-    table() %>% 
-    sort(decreasing = TRUE)
-  
-  # Let's keep only those with > 500 genes/targets
-  unique_applications <- unique_applications[unique_applications > 500]
-  
-  application_gene_map <- lapply(names(unique_applications), function(application) {
-    v <- sapply(app_split, function(x) application %in% x)
-    names(v[v])
-  })
-  names(application_gene_map) <- names(unique_applications)
-  
-  ## Convert to label format
-  unique_applications2 <- names(unique_applications)
-  names(unique_applications2) <- paste0(names(unique_applications), " (", unique_applications, ")")
-  
-  list(
-    unique_applications = unique_applications2,
-    application_gene_map = application_gene_map
-  )
-  
-}
-
-#' Picks out allowed genes corresponding
-#' to antibody applications
-get_allowed_genes <- function(selected_applications, applications_parsed, sce) {
-  single_cell_genes <- rownames(sce)
-  
-  ## Get rid of RP[L|S] + MT + MALAT
-  single_cell_genes <- single_cell_genes[!grepl("^RP[L|S]|^MT-|^MALAT", single_cell_genes)]
-  
-  antibody_genes <- unique(unlist(applications_parsed$application_gene_map))
-  
-  if(is.null(selected_applications)) {
-    ## If no antibody application is selected,
-    ## return all genes
-    return(intersect(single_cell_genes, antibody_genes))
-  }
-  
-  
-  # ## Need to convert from the displayed application
-  # ## name (which includes the number) back to the key
-  # selected_applications <- plyr::mapvalues(selected_applications, 
-  #                                          from = applications_parsed$unique_applications,
-  #                                          to = names(applications_parsed$unique_applications))
-  # 
-  intersect(single_cell_genes, unique(unlist(applications_parsed$application_gene_map[selected_applications])))
-}
-
 #' Get the reactable for the modal dialogue when add
 #' markers for a given cell type
 #' @importFrom tibble rownames_to_column
 #' @importFrom dplyr mutate_if mutate_at
+#' @param fm Output from findMarkers
+#' @param current_markers vector of markers in the current panel
 get_cell_type_add_markers_reactable <- function(fm, current_markers) {
   fm <- fm[!rownames(fm) %in% current_markers,]
   fm <- fm[fm$summary.logFC > 0,]
