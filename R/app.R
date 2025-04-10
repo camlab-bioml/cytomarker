@@ -427,7 +427,7 @@ gtag('config', 'G-B26X9YQQGT');
                               br(),
                               splitLayout(cellWidths = c(320, 280),
                                           div(selectInput("display_options", 
-                                                          "Display expression or gene correlation", 
+                                                          "Mean expression or gene-gene correlation", 
                                                           choices = c("Marker-marker correlation"), width = "86%") %>%
                                                 shinyInput_label_embed(icon("circle-info") %>%
                                                                          bs_embed_tooltip(title = get_tooltip('heatmap_display_options'),
