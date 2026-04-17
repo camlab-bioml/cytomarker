@@ -158,7 +158,7 @@ test_that("get_markers and compute_fm returns valid output", {
   expect_equal(names(markers), c("recommended_markers", "scratch_markers", "top_markers"))
   expect_gt(length(markers$recommended_markers), 0)
   expect_gt(length(markers$top_markers), 0)
-
+  
   testthat::skip("geneBasisR appears deprecated") 
   
   markers_geneBasis <- get_markers(fms, panel_size = 24, marker_strategy = 'geneBasis',
