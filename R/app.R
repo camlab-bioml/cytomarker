@@ -299,9 +299,9 @@ gtag('config', 'G-B26X9YQQGT');
                                                                   icon("circle-info") %>%
                                                                     bs_embed_tooltip(title = get_tooltip('panel_size'),
                                                                                      placement = "right")),
-                                                              radioButtons("marker_strategy", label = "Marker selection strategy",
-                                                                           choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
-                                                                           selected="fm"),
+                                                                  radioButtons("marker_strategy", label = "Marker selection strategy",
+                                                                               choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
+                                                                               selected="fm"),
                                                               checkboxInput("subsample_sce", "Subsample cells", value = TRUE) %>%
                                                                 shinyInput_label_embed(
                                                                   icon("circle-info") %>%
@@ -427,7 +427,7 @@ gtag('config', 'G-B26X9YQQGT');
                               br(),
                               splitLayout(cellWidths = c(320, 280),
                                           div(selectInput("display_options", 
-                                                          "Display expression or gene correlation", 
+                                                          "Mean expression or gene-gene correlation", 
                                                           choices = c("Marker-marker correlation"), width = "86%") %>%
                                                 shinyInput_label_embed(icon("circle-info") %>%
                                                                          bs_embed_tooltip(title = get_tooltip('heatmap_display_options'),
@@ -538,7 +538,13 @@ gtag('config', 'G-B26X9YQQGT');
   
   server <- function(input, output, session) {
     
-    
+    # Disable the geneBasis selection after render as appears deprecated
+    session$onFlushed(function() {
+      shinyjs::disable(
+        selector = "#marker_strategy input[type='radio'][value='geneBasis']"
+      )
+    }, once = TRUE)
+      
     ### REACTIVE VARIABLES ###
     plots <- reactiveValues() # Save plots for download
     
@@ -1526,20 +1532,7 @@ gtag('config', 'G-B26X9YQQGT');
                                ) |> dplyr::select(-c(`Protein Expression`, `ensgene`)))
           
           update_analysis()
-          updateSelectizeInput(
-            session = session,
-            inputId = "umap_panel_options",
-            # choices = current_markers()$top_markers,
-            # selected = current_markers()$top_markers[1])
-            choices = allowed_genes(),
-            selected = current_markers()$top_markers[1],
-            server = T)
           
-          updateSelectizeInput(
-            session = session,
-            inputId = "genes_for_violin",
-            choices = allowed_genes(),
-            server = T)
           if (!isTruthy(first_render_outputs()) & isTruthy(current_markers())) {
             
             output$output_menu <- renderMenu(expr = {
@@ -2068,9 +2061,9 @@ gtag('config', 'G-B26X9YQQGT');
       
       
       if (file_ext(input$read_back_analysis$datapath) == "yml") {
-        
+
         yaml_back <- read_back_in_saved_yaml(input$read_back_analysis$datapath)
-        
+
         if (isTruthy(yaml_back$`Target panel size`)) {
           updateNumericInput(session, "panel_size", value = yaml_back$`Target panel size`)
         }
@@ -2101,12 +2094,12 @@ gtag('config', 'G-B26X9YQQGT');
           }
           if (isTruthy(yaml_back$`Heterogeneity source`)) {
             if (yaml_back$`Heterogeneity source` %in% colnames(SummarizedExperiment::colData(sce()))) {
-              
-              
+
               updateSelectInput(session, "coldata_column", choices = colnames(SummarizedExperiment::colData(sce())),
                                 selected = yaml_back$`Heterogeneity source`)
+              
               updateSelectInput(session, "user_selected_cells", 
-                                yaml_back$`Cell Types Analyzed`)
+                                choices = yaml_back$`Cell Types Analyzed`)
               
               types_to_add <- if(all(yaml_back$`Cell Types Analyzed` %in% unique(sce()[[yaml_back$`Heterogeneity source`]]))) 
                 yaml_back$`Cell Types Analyzed` else unique(sce()[[yaml_back$`Heterogeneity source`]])
@@ -2448,7 +2441,7 @@ gtag('config', 'G-B26X9YQQGT');
       
       if (!isTruthy(reupload_cell_types())) {
         updateSelectInput(session, "user_selected_cells",
-                          unique(sce()[[input$coldata_column]]))
+                          choices = unique(sce()[[input$coldata_column]]))
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
       
@@ -2581,6 +2574,23 @@ gtag('config', 'G-B26X9YQQGT');
         setProgress(value = 0.25)
         
         setProgress(value = 0.5)
+        
+        updateSelectizeInput(
+          session = session,
+          inputId = "umap_panel_options",
+          # choices = current_markers()$top_markers,
+          # selected = current_markers()$top_markers[1])
+          choices = c(current_markers()$top_markers, 
+                      allowed_genes()[!allowed_genes() %in% current_markers()$top_markers]),
+          selected = current_markers()$top_markers[1],
+          server = T)
+        
+        updateSelectizeInput(
+          session = session,
+          inputId = "genes_for_violin",
+          choices = c(current_markers()$top_markers, 
+                      allowed_genes()[!allowed_genes() %in% current_markers()$top_markers]),
+          server = T)
         
         # Update heatmap
         incProgress(detail = "Drawing heatmap")

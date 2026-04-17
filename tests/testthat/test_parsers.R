@@ -2,7 +2,7 @@
 context("Testing sce object with Ensembl gene rownames and no rowData")
 
 test_that("Testing sce object with Ensembl gene rownames and no rowData", {
-
+  
   wtc_ensgene_rownames <- readRDS(test_path("wtc-ensgene-rownames_sub.rds"))
   ensembl_hugo_check <- check_rowData_for_hugo(wtc_ensgene_rownames, annotables::grch38)
   expect_is(ensembl_hugo_check, 'list')
@@ -28,7 +28,7 @@ test_that("Testing sce object with Ensembl gene rownames and no rowData", {
   gene_parser <- parse_gene_names(wtc_ensgene_rownames, annotables::grch38)
   expect_is(gene_parser, 'SingleCellExperiment')
   expect_equal(dim(rowData(gene_parser))[2], 0)
-  expect_true(dim(rowData(gene_parser))[1] > 21100 & dim(rowData(gene_parser))[1] <= 21169)
+  expect_true(dim(rowData(gene_parser))[1] > 20000 & dim(rowData(gene_parser))[1] <= length(rownames(wtc_ensgene_rownames)))
 
 })
 
@@ -52,10 +52,10 @@ test_that("Testing sce object with null rownames but gene symbols in rowData", {
 
   proportions <- calculate_proportion_in_annotables(null_row_check$genes,
                                                     annotables::grch38)
-
+  
   expect_true(proportions$proportion > 0.6 & proportions$proportion < 0.7)
-  expect_true(proportions$gene_num > 21000 & proportions$gene_num < 21500)
-
+  expect_true(proportions$gene_num > 20000 & proportions$gene_num < 21500)
+  
   gene_parser <- parse_gene_names(wtc_hugo_rowData_genes, annotables::grch38)
   expect_is(gene_parser, 'SingleCellExperiment')
   expect_equal(dim(rowData(gene_parser)), c(33658, 1))

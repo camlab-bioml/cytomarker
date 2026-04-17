@@ -1,3 +1,4 @@
+
 #' Read the input single-cell RNA-seq dataset
 #' from compressed RDS file. Accepts either:
 #' (1) SingleCellExperiment
@@ -7,6 +8,7 @@
 #' @param filter_counts Boolean on whether to filter lowly expressed genes from the counts matrix(Default is True)
 #' @importFrom tools file_ext
 #' @importFrom Matrix rowSums
+#' @import SingleCellExperiment
 read_input_scrnaseq <- function(sce_path, filter_counts = T) {
   
   library(SingleCellExperiment, quiet = T)
