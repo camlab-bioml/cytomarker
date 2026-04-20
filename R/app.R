@@ -27,6 +27,7 @@ USE_ANALYTICS <- yaml$use_google_analytics
 SUBSET_TO_REGISTRY <- yaml$subset_only_registry_catalog
 STAR_FOR_REGISTRY <- yaml$star_for_catalog_product
 ONLY_PROTEIN_CODING <- yaml$only_protein_coding
+FILTER_HUMAN_GENE_NAMES <- yaml$filter_human_gene_names
 
 #' Define main entrypoint of app
 #' 
@@ -301,7 +302,8 @@ gtag('config', 'G-B26X9YQQGT');
                                                                                      placement = "right")),
                                                                   radioButtons("marker_strategy", label = "Marker selection strategy",
                                                                                choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
-                                                                               selected="fm"),
+                                                                               selected="fm") %>% bs_embed_tooltip(title = get_tooltip('marker_strategy'),
+                                                                                                               placement = "right"),
                                                               checkboxInput("subsample_sce", "Subsample cells", value = TRUE) %>%
                                                                 shinyInput_label_embed(
                                                                   icon("circle-info") %>%
@@ -2767,7 +2769,7 @@ gtag('config', 'G-B26X9YQQGT');
     
     post_upload_configuration <- function(input_sce) {
       input_sce <- detect_assay_and_create_logcounts(input_sce)
-      input_sce <- parse_gene_names(input_sce, grch38)
+      input_sce <- parse_gene_names(input_sce, grch38, FILTER_HUMAN_GENE_NAMES)
       # input_sce <- remove_confounding_genes(input_sce)
       sce(input_sce)
       

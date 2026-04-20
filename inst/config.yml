@@ -5,3 +5,5 @@ subset_only_registry_catalog: no
 star_for_catalog_product: yes
 
 only_protein_coding: no
+
+filter_human_gene_names: no

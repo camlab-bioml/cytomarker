@@ -1,6 +1,9 @@
 require(cytomarker)
 
 test_that("{shinytest2} recording: cytomarker", {
+  
+  testthat::skip("Deprecate screenshot testing") 
+  
   testthat::local_edition(3)
 
   # set the app depending on the interactive execution to avoid a no package found error

@@ -254,7 +254,8 @@ check_rownames_for_ensembl<- function(sce, grch38){
 #' @param sce SingleCellExperiment object
 #' @param grch38 Dataframe with two columns: \code{ensgene} and \code{symbol}, (originally from the annotables package)
 #' @param remove_confounding_genes If true (default) genes that frequently confound single cell
-#' analyses are removed. The following genes are removed: ribosobal proteins, mitochondrial ribosomal
+#' @param check_genes If TRUE, checks the genes against human genes. Otherwise, uses the gene names found in the dataset
+#' analyses are removed. The following genes are removed: ribosomal proteins, mitochondrial ribosomal
 #' and other mitochondrial proteins, heat shock proteins, Jun, Fos and Malat1
 #'
 #' @return genes A vector of gene names
@@ -263,7 +264,10 @@ check_rownames_for_ensembl<- function(sce, grch38){
 #' @importFrom dplyr mutate filter pull bind_rows
 #' @importFrom tibble tibble deframe
 #' @importFrom magrittr %>%
-parse_gene_names <- function(sce, grch38){
+parse_gene_names <- function(sce, grch38, check_genes = T){
+  if (!isTruthy(check_genes)) {
+    return(sce)
+  }
   ## STEP 1: Check if rownames can be used
   step1 <- check_rownames_for_hugo(sce, grch38)
   

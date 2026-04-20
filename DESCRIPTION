@@ -1,6 +1,6 @@
 Package: cytomarker
 Title: Interactive cytometry panel design using single-cell RNA-seq
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person(given = "Matthew",
            family = "Watson",
