@@ -348,7 +348,7 @@ get_scores_one_column <- function(sce_tr, column, mrkrs, pref_assay, max_cells =
 #' @importFrom nnet multinom
 #' @importFrom dplyr sample_n
 train_nb <- function(x,y, cell_types) {
-
+  
     flds <- caret::createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
     x <- scale(x)
     x <- x[,colMeans(is.na(x)) == 0]

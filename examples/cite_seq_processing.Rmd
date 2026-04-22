@@ -1,0 +1,109 @@
+---
+title: "CITE-SEQ processing"
+output: pdf_document
+---
+
+## CITE_seq processing
+
+Cytomarker v0.2.0 introduces support for CITE-seq assays. Below is an example of pre-processing a publicly available data set: https://zenodo.org/records/10839852
+
+## Before starting
+
+**IMPORTANT**: Running CITE-seq data is currently supported **ONLY** for local sessions/installations. Additionally, users must have the `filter_human_gene_names` variable in the [inst config file](../inst/config.yml) to run CITE-seq. This can be found in the `inst` sub-directory in the base directory of the repository. 
+
+## Libraries
+
+```{r import}
+library(Seurat)
+library(SingleCellExperiment)
+library(S4Vectors)
+library(scater)
+library(Matrix)
+```
+
+## Assay parsing
+
+The RNA and protein assays will be parsed out and transformed separately. 
+
+```{r parsing}
+cite_seq <- readRDS("small_pbmc.rds")
+
+# RNA (from SCT assay)
+rna_mat <- GetAssayData(cite_seq, assay = "SCT", layer = "data")
+
+# Protein (ADT)
+adt_mat <- GetAssayData(cite_seq, assay = "ADT", layer = "data")
+```
+
+## Transforming the RNA counts
+
+A standard log transformation is applied to the RNA counts, which can be output as an individual rds file for import into Cytomarker:
+
+```{r RNA}
+sce_rna <- SingleCellExperiment(
+  assays = list(counts = rna_mat))
+
+sce_rna <- computeLibraryFactors(sce_rna)
+sce_rna <- logNormCounts(sce_rna)
+
+rna_log <- assay(sce_rna, "logcounts")
+
+sce_rna <- SingleCellExperiment(
+  assays = list(logcounts = rna_log))
+
+colData(sce_rna) <- DataFrame(cite_seq@meta.data)
+
+saveRDS(sce_rna, "cite_seq_rna.rds")
+```
+
+## Transforming the protein counts
+
+Different types of transformations can be recommended for the protein counts. In this example, we use a [centered log ratio (CLR)](https://divingintogeneticsandgenomics.com/post/details-in-centered-log-ratio-clr-normalization-for-cite-seq-protein-count-data/) transformation:
+
+```{r protein}
+clr_transform <- function(mat) {
+  mat <- as.matrix(mat)
+  log_mat <- log1p(mat)
+  
+  sweep(
+    log_mat,
+    2,
+    colMeans(log_mat),
+    FUN = "-")
+}
+
+adt_clr <- clr_transform(adt_mat)
+
+sce_protein <- SingleCellExperiment(
+  assays = list(logcounts = adt_clr))
+
+colData(sce_protein) <- DataFrame(cite_seq@meta.data)
+
+saveRDS(sce_protein, "/cite_seq_protein.rds")
+```
+
+Similar to the RNA standalone rds, the protein-only rds can be imported into Cytomarker. 
+
+## Concatenating the matrices for joint panel design
+
+Users may also wish to concatenate the transformed matrices above to run join panel construction in Cytomarker with both modalities in the same session. In order to do this, it is important to give a pattern alias to the gene names in each modality so that 1. the names are unique and don't conflict, and 2. that the user is able to differentiate the modality for a marker in the panel that is present in both the RNA and protein assay.
+
+```{r merge}
+# Merge with unique modified gene names
+rownames(rna_log) <- paste0(rownames(rna_log), "_RNA")
+rownames(adt_clr) <- paste0(rownames(adt_clr), "_protein")
+
+stopifnot(colnames(rna_log) == colnames(adt_clr))
+
+combined_mat <- rbind(rna_log, adt_clr)
+
+sce_combined <- SingleCellExperiment(
+  assays = list(logcounts = combined_mat))
+
+colData(sce_combined) <- DataFrame(cite_seq@meta.data)
+
+saveRDS(sce_combined, "cite_seq_combined.rds")
+```
+
+The combined assay, when run in Cytomarker, will show gene names with either `_RNA` or `_protein` appended to the symbols. 
+
