@@ -2867,15 +2867,13 @@ gtag('config', 'G-B26X9YQQGT');
     
     set_allowed_genes <- function() {
       
-      # TODO: for now, do not use antibody app subsets because of the catalog format
-      # if (isTruthy(SUBSET_TO_REGISTRY) | length(input$select_aa) > 0) 
-      #   allowed_genes(get_allowed_genes(input$select_aa, applications_parsed,
-      #   sce()[,sce()$keep_for_analysis == "Yes"])) else
-      
       allowed_genes(rownames(sce()[,sce()$keep_for_analysis == "Yes"]))
       
       allowed_genes(if (isTruthy(ONLY_PROTEIN_CODING)) 
         allowed_genes()[allowed_genes() %in% cytomarker_data$protein_coding] else allowed_genes())
+      
+      allowed_genes(if (isTruthy(SUBSET_TO_REGISTRY)) 
+        allowed_genes()[allowed_genes() %in% antibody_info$Symbol] else allowed_genes())
       
       allowed_genes(remove_confounding_genes(allowed_genes()))
       
