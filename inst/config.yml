@@ -7,3 +7,5 @@ star_for_catalog_product: yes
 only_protein_coding: no
 
 filter_human_gene_names: no
+
+only_cell_surface_human: no

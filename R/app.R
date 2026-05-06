@@ -4,6 +4,8 @@ curated_datasets <- utils::read.delim(system.file("ts_datasets.tsv", package = "
 other_curated <- utils::read.delim(system.file("other_datasets.tsv", package = "cytomarker"),
                                    sep = "\t")
 
+cell_surface_proteins <- readRDS(system.file("cell_surface_proteins.rds", package = "cytomarker"))
+
 for (i in curated_datasets$tissue) {
   if (file.exists(file.path(tempdir(), "/", paste(i, ".rds", sep = "")))) {
     command <- paste('rm ', tempdir(), "/", paste(i, ".rds", sep = ""), sep = "")
@@ -27,6 +29,7 @@ SUBSET_TO_REGISTRY <- yaml$subset_only_registry_catalog
 STAR_FOR_REGISTRY <- yaml$star_for_catalog_product
 ONLY_PROTEIN_CODING <- yaml$only_protein_coding
 FILTER_HUMAN_GENE_NAMES <- yaml$filter_human_gene_names
+ONLY_CELL_SURFACE_HUMAN <- yaml$only_cell_surface_human
 
 #' Define main entrypoint of app
 #' 
@@ -2874,6 +2877,9 @@ gtag('config', 'G-B26X9YQQGT');
       
       allowed_genes(if (isTruthy(SUBSET_TO_REGISTRY)) 
         allowed_genes()[allowed_genes() %in% antibody_info$Symbol] else allowed_genes())
+      
+      allowed_genes(if (isTruthy(ONLY_CELL_SURFACE_HUMAN)) 
+        allowed_genes()[allowed_genes() %in% cell_surface_proteins$Gene] else allowed_genes())
       
       allowed_genes(remove_confounding_genes(allowed_genes()))
       
