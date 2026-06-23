@@ -18,3 +18,5 @@ curated/
 tests/testthat/curated/
 README.html
 *tar.gz
+examples/*.pdf
+examples/*.html

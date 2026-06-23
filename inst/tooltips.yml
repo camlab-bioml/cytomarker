@@ -82,3 +82,5 @@ reset_panel: "Be default, repeated runs of cytomarker will retain the first mark
 applications: "Marker panels can be generated for combinations of experimental protocols and laboratory assays. By default, all protocols listed here will be considered."
 
 subset_number: "cytomarker recommends subsetting a dataset of greater than 2000 cells for increased performance. By default cytomarker will subset such a dataset to 2000 cells, but the user may modify this value."
+
+marker_strategy: "Note: geneBasisR has been deprecated as a package and is no longer offered as a marker selection algorithm."

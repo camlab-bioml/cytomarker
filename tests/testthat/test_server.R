@@ -350,11 +350,15 @@ test_that("Re-upload works on server", {
   testServer(cytomarker::cytomarker(), expr = {
     
     expect_false(reupload_analysis())
-  
+    
     session$setInputs(input_scrnaseq = list(datapath =
-                                              test_path("pbmc_small.rds")),
-                      read_back_analysis = list(datapath =
-                                                  test_path("test_config.yml")))
+                        test_path("pbmc_small.rds")))
+    
+    expect_true(isTruthy(sce()))
+    
+    session$setInputs(read_back_analysis = list(datapath =
+                      test_path("test_config.yml")))
+    
     # verify re-upload analysis reactive worked
     expect_true(reupload_analysis())
     
@@ -400,9 +404,11 @@ test_that("Reset works on server", {
     expect_false(reupload_analysis())
     
     session$setInputs(input_scrnaseq = list(datapath =
-                                              test_path("pbmc_small.rds")),
+                        test_path("pbmc_small.rds")),
                       read_back_analysis = list(datapath =
                                                   test_path("test_config.yml")))
+    
+    expect_true(isTruthy(sce()))
     # verify reupload analysis reactive worked
     expect_true(reupload_analysis())
     
