@@ -59,8 +59,8 @@ ONLY_CELL_SURFACE_HUMAN <- yaml$only_cell_surface_human
 #' @importFrom stringr str_split_fixed
 #' @importFrom magrittr set_names
 #' @importFrom shinydashboard box dashboardBody dashboardHeader dashboardSidebar
-#' dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
-#' valueBoxOutput renderMenu updateTabItems tabBox renderValueBox valueBox
+#' @importFrom shinydashboard dashboardPage menuItem sidebarMenu sidebarMenuOutput tabItem tabItems
+#' @importFrom shinydashboard valueBoxOutput renderMenu updateTabItems tabBox renderValueBox valueBox
 #' @importFrom shinyBS bsCollapse bsCollapsePanel
 #' @importFrom yaml read_yaml
 #' @importFrom feather read_feather

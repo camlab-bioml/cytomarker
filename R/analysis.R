@@ -48,7 +48,6 @@ compute_fm <- function(sce, columns, pref_assay, allowed_genes,
 #' @param allowed_genes Set of allowed genes
 #' @param in_session whether the function is being called in a shiny session or not
 #' @importFrom dplyr mutate tally group_by filter pull slice_head arrange summarize ungroup
-#' @import geneBasisR
 get_markers <- function(fms, panel_size, marker_strategy, sce, allowed_genes,
                         in_session = T) {
   
