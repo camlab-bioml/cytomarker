@@ -31,7 +31,7 @@ Imports:
     inferorg (>= 0.1.0),
     magrittr,
     Matrix,
-    annotables (>= 0.1.91),
+    annotables (>= 0.2.0),
     RColorBrewer,
     shinytest2 (>= 0.2.0),
     tidyr,
@@ -75,7 +75,7 @@ Suggests:
 Remotes: 
     github::karthik/rdrop2,
     github::camlab-bioml/inferorg,
-    github::stephenturner/annotables,
+    github::stephenturner/annotables@v0.2.0,
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
