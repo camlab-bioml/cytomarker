@@ -80,6 +80,15 @@ Once installed, the remaining dependencies should be automatically installed:
 devtools::load_all();cytomarker()
 ```
 
+### Development
+
+Developers may wish to enforce that shinyapps always open in the browser as opposed to a local popup,
+as this window sometimes doesn't close properly in RStudio:
+
+```
+options(shiny.launch.browser = TRUE)
+```
+
 ### Running locally
 
 In the command line, execute the following commands:
@@ -103,6 +112,11 @@ Alteratively, in the RStudio Desktop console:
 ```
 devtools::load_all(); cytomarker()
 ```
+
+## Running CITE-seq
+
+As of v0.2.0, Cytomarker can support cite-seq data sets. An example of 
+data processing can be found in the [examples sub-directory](/examples/cite_seq_processing.Rmd)
 
 ## Developers
 

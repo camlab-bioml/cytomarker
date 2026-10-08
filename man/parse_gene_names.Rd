@@ -15,16 +15,18 @@ than 50\%/100 genes are in the symbol column of the annotables grch38 object
 \item If rownames are not NULL, check if they are ensembl ID's and convert to symbol
 }}
 \usage{
-parse_gene_names(sce, grch38)
+parse_gene_names(sce, grch38, check_genes = T)
 }
 \arguments{
 \item{sce}{SingleCellExperiment object}
 
 \item{grch38}{Dataframe with two columns: \code{ensgene} and \code{symbol}, (originally from the annotables package)}
 
-\item{remove_confounding_genes}{If true (default) genes that frequently confound single cell
-analyses are removed. The following genes are removed: ribosobal proteins, mitochondrial ribosomal
+\item{check_genes}{If TRUE, checks the genes against human genes. Otherwise, uses the gene names found in the dataset
+analyses are removed. The following genes are removed: ribosomal proteins, mitochondrial ribosomal
 and other mitochondrial proteins, heat shock proteins, Jun, Fos and Malat1}
+
+\item{remove_confounding_genes}{If true (default) genes that frequently confound single cell}
 }
 \value{
 genes A vector of gene names

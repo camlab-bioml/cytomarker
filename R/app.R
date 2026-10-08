@@ -1,9 +1,10 @@
-
 curated_datasets <- utils::read.delim(system.file("ts_datasets.tsv", package = "cytomarker"),
                                       sep = "\t")
 
 other_curated <- utils::read.delim(system.file("other_datasets.tsv", package = "cytomarker"),
                                    sep = "\t")
+
+cell_surface_proteins <- readRDS(system.file("cell_surface_proteins.rds", package = "cytomarker"))
 
 for (i in curated_datasets$tissue) {
   if (file.exists(file.path(tempdir(), "/", paste(i, ".rds", sep = "")))) {
@@ -27,6 +28,8 @@ USE_ANALYTICS <- yaml$use_google_analytics
 SUBSET_TO_REGISTRY <- yaml$subset_only_registry_catalog
 STAR_FOR_REGISTRY <- yaml$star_for_catalog_product
 ONLY_PROTEIN_CODING <- yaml$only_protein_coding
+FILTER_HUMAN_GENE_NAMES <- yaml$filter_human_gene_names
+ONLY_CELL_SURFACE_HUMAN <- yaml$only_cell_surface_human
 
 #' Define main entrypoint of app
 #' 
@@ -299,9 +302,10 @@ gtag('config', 'G-B26X9YQQGT');
                                                                   icon("circle-info") %>%
                                                                     bs_embed_tooltip(title = get_tooltip('panel_size'),
                                                                                      placement = "right")),
-                                                              radioButtons("marker_strategy", label = "Marker selection strategy",
-                                                                           choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
-                                                                           selected="fm"),
+                                                                  radioButtons("marker_strategy", label = "Marker selection strategy",
+                                                                               choices = list("Cell type based"="fm", "Cell type free (geneBasis)" = "geneBasis"),
+                                                                               selected="fm") %>% bs_embed_tooltip(title = get_tooltip('marker_strategy'),
+                                                                                                               placement = "right"),
                                                               checkboxInput("subsample_sce", "Subsample cells", value = TRUE) %>%
                                                                 shinyInput_label_embed(
                                                                   icon("circle-info") %>%
@@ -538,7 +542,13 @@ gtag('config', 'G-B26X9YQQGT');
   
   server <- function(input, output, session) {
     
-    
+    # Disable the geneBasis selection after render as appears deprecated
+    session$onFlushed(function() {
+      shinyjs::disable(
+        selector = "#marker_strategy input[type='radio'][value='geneBasis']"
+      )
+    }, once = TRUE)
+      
     ### REACTIVE VARIABLES ###
     plots <- reactiveValues() # Save plots for download
     
@@ -2055,9 +2065,9 @@ gtag('config', 'G-B26X9YQQGT');
       
       
       if (file_ext(input$read_back_analysis$datapath) == "yml") {
-        
+
         yaml_back <- read_back_in_saved_yaml(input$read_back_analysis$datapath)
-        
+
         if (isTruthy(yaml_back$`Target panel size`)) {
           updateNumericInput(session, "panel_size", value = yaml_back$`Target panel size`)
         }
@@ -2088,12 +2098,12 @@ gtag('config', 'G-B26X9YQQGT');
           }
           if (isTruthy(yaml_back$`Heterogeneity source`)) {
             if (yaml_back$`Heterogeneity source` %in% colnames(SummarizedExperiment::colData(sce()))) {
-              
-              
+
               updateSelectInput(session, "coldata_column", choices = colnames(SummarizedExperiment::colData(sce())),
                                 selected = yaml_back$`Heterogeneity source`)
+              
               updateSelectInput(session, "user_selected_cells", 
-                                yaml_back$`Cell Types Analyzed`)
+                                choices = yaml_back$`Cell Types Analyzed`)
               
               types_to_add <- if(all(yaml_back$`Cell Types Analyzed` %in% unique(sce()[[yaml_back$`Heterogeneity source`]]))) 
                 yaml_back$`Cell Types Analyzed` else unique(sce()[[yaml_back$`Heterogeneity source`]])
@@ -2435,7 +2445,7 @@ gtag('config', 'G-B26X9YQQGT');
       
       if (!isTruthy(reupload_cell_types())) {
         updateSelectInput(session, "user_selected_cells",
-                          unique(sce()[[input$coldata_column]]))
+                          choices = unique(sce()[[input$coldata_column]]))
         specific_cell_types_selected(unique(sce()[[input$coldata_column]]))
       }
       
@@ -2761,7 +2771,7 @@ gtag('config', 'G-B26X9YQQGT');
     
     post_upload_configuration <- function(input_sce) {
       input_sce <- detect_assay_and_create_logcounts(input_sce)
-      input_sce <- parse_gene_names(input_sce, grch38)
+      input_sce <- parse_gene_names(input_sce, grch38, FILTER_HUMAN_GENE_NAMES)
       # input_sce <- remove_confounding_genes(input_sce)
       sce(input_sce)
       
@@ -2860,15 +2870,16 @@ gtag('config', 'G-B26X9YQQGT');
     
     set_allowed_genes <- function() {
       
-      # TODO: for now, do not use antibody app subsets because of the catalog format
-      # if (isTruthy(SUBSET_TO_REGISTRY) | length(input$select_aa) > 0) 
-      #   allowed_genes(get_allowed_genes(input$select_aa, applications_parsed,
-      #   sce()[,sce()$keep_for_analysis == "Yes"])) else
-      
       allowed_genes(rownames(sce()[,sce()$keep_for_analysis == "Yes"]))
       
       allowed_genes(if (isTruthy(ONLY_PROTEIN_CODING)) 
         allowed_genes()[allowed_genes() %in% cytomarker_data$protein_coding] else allowed_genes())
+      
+      allowed_genes(if (isTruthy(SUBSET_TO_REGISTRY)) 
+        allowed_genes()[allowed_genes() %in% antibody_info$Symbol] else allowed_genes())
+      
+      allowed_genes(if (isTruthy(ONLY_CELL_SURFACE_HUMAN)) 
+        allowed_genes()[allowed_genes() %in% cell_surface_proteins$Gene] else allowed_genes())
       
       allowed_genes(remove_confounding_genes(allowed_genes()))
       
