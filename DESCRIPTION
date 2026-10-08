@@ -14,7 +14,7 @@ Imports:
     BiocManager (>= 1.30.19),
     nnet,
     dplyr,
-    shiny,
+    shiny (>= 1.3.0),
     sortable,
     readr,
     DT,
@@ -31,9 +31,9 @@ Imports:
     inferorg (>= 0.1.0),
     magrittr,
     Matrix,
-    annotables (>= 0.1.91),
+    annotables (>= 0.2.0),
     RColorBrewer,
-    shinytest2,
+    shinytest2 (>= 0.2.0),
     tidyr,
     htmlwidgets,
     shinydashboard,
@@ -45,7 +45,6 @@ Imports:
     htmltools,
     fontawesome,
     emojifont,
-    geneBasisR,
     waiter,
     cicerone,
     shinyanimate,
@@ -75,13 +74,11 @@ Suggests:
   plotly
 Remotes: 
     github::karthik/rdrop2,
-    github::MarioniLab/geneBasisR,
     github::camlab-bioml/inferorg,
-    github::stephenturner/annotables,
-    github::rstudio/shinytest2@v0.2.0
+    github::stephenturner/annotables@v0.2.0,
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 Depends:
-    R (>= 4.2.2)
-Config/roxygen2/version: 8.0.0
+    R (>= 4.3.0)
+Config/roxygen2/version: 8.1.0

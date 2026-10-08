@@ -3,101 +3,138 @@
 export(cytomarker)
 import(emojifont)
 import(fontawesome)
-import(geneBasisR)
 import(htmltools)
 import(reactable)
 import(shiny)
 import(shinytest2)
-importFrom(DT,DTOutput)
-importFrom(DT,datatable)
-importFrom(DT,renderDT)
+importFrom(DT,
+  DTOutput,
+  datatable,
+  renderDT
+)
 importFrom(Matrix,rowSums)
-importFrom(RColorBrewer,brewer.pal)
-importFrom(RColorBrewer,brewer.pal.info)
-importFrom(bsplus,bs_embed_tooltip)
-importFrom(bsplus,shinyInput_label_embed)
-importFrom(bsplus,shiny_iconlink)
-importFrom(bsplus,use_bs_popover)
-importFrom(bsplus,use_bs_tooltip)
-importFrom(cicerone,Cicerone)
-importFrom(cicerone,use_cicerone)
-importFrom(dplyr,arrange)
-importFrom(dplyr,bind_rows)
-importFrom(dplyr,desc)
-importFrom(dplyr,distinct)
-importFrom(dplyr,filter)
-importFrom(dplyr,group_by)
-importFrom(dplyr,mutate)
-importFrom(dplyr,mutate_at)
-importFrom(dplyr,mutate_if)
-importFrom(dplyr,pull)
-importFrom(dplyr,rename)
-importFrom(dplyr,sample_n)
-importFrom(dplyr,select)
-importFrom(dplyr,slice_head)
-importFrom(dplyr,summarize)
-importFrom(dplyr,tally)
-importFrom(dplyr,ungroup)
+importFrom(RColorBrewer,
+  brewer.pal,
+  brewer.pal.info
+)
+importFrom(bsplus,
+  bs_embed_tooltip,
+  shinyInput_label_embed,
+  shiny_iconlink,
+  use_bs_popover,
+  use_bs_tooltip
+)
+importFrom(cicerone,
+  Cicerone,
+  use_cicerone
+)
+importFrom(dplyr,
+  arrange,
+  bind_rows,
+  desc,
+  distinct,
+  filter,
+  group_by,
+  mutate,
+  mutate_at,
+  mutate_if,
+  pull,
+  rename,
+  sample_n,
+  select,
+  slice_head,
+  summarize,
+  tally,
+  ungroup
+)
 importFrom(feather,read_feather)
-importFrom(grDevices,col2rgb)
-importFrom(grDevices,dev.off)
-importFrom(grDevices,pdf)
+importFrom(grDevices,
+  col2rgb,
+  dev.off,
+  pdf
+)
 importFrom(htmlwidgets,saveWidget)
 importFrom(inferorg,inferorg)
 importFrom(lubridate,with_tz)
-importFrom(magrittr,"%>%")
-importFrom(magrittr,set_names)
+importFrom(magrittr,
+  "%>%",
+  set_names
+)
 importFrom(nnet,multinom)
 importFrom(randomcoloR,distinctColorPalette)
 importFrom(rdrop2,drop_download)
-importFrom(readr,read_csv)
-importFrom(readr,read_tsv)
-importFrom(readr,write_lines)
-importFrom(readr,write_tsv)
+importFrom(readr,
+  read_csv,
+  read_tsv,
+  write_lines,
+  write_tsv
+)
 importFrom(rlang,is_empty)
 importFrom(rmarkdown,render)
 importFrom(shiny,modalDialog)
-importFrom(shinyBS,bsCollapse)
-importFrom(shinyBS,bsCollapsePanel)
-importFrom(shinyalert,shinyalert)
-importFrom(shinyalert,useShinyalert)
-importFrom(shinyanimate,startAnim)
-importFrom(shinyanimate,withAnim)
-importFrom(shinydashboard,box)
-importFrom(shinydashboard,dashboardBody)
-importFrom(shinydashboard,dashboardHeader)
-importFrom(shinydashboard,dashboardPage)
-importFrom(shinydashboard,dashboardSidebar)
-importFrom(shinydashboard,menuItem)
-importFrom(shinydashboard,renderMenu)
-importFrom(shinydashboard,renderValueBox)
-importFrom(shinydashboard,sidebarMenu)
-importFrom(shinydashboard,sidebarMenuOutput)
-importFrom(shinydashboard,tabBox)
-importFrom(shinydashboard,tabItem)
-importFrom(shinydashboard,tabItems)
-importFrom(shinydashboard,updateTabItems)
-importFrom(shinydashboard,valueBox)
-importFrom(shinydashboard,valueBoxOutput)
-importFrom(shinyjs,delay)
-importFrom(shinyjs,hidden)
-importFrom(shinyjs,reset)
-importFrom(shinyjs,toggle)
-importFrom(shinyjs,useShinyjs)
-importFrom(sortable,add_rank_list)
-importFrom(sortable,bucket_list)
-importFrom(stats,cor)
-importFrom(stats,na.omit)
+importFrom(shinyBS,
+  bsCollapse,
+  bsCollapsePanel
+)
+importFrom(shinyalert,
+  shinyalert,
+  useShinyalert
+)
+importFrom(shinyanimate,
+  startAnim,
+  withAnim
+)
+importFrom(shinydashboard,
+  box,
+  dashboardBody,
+  dashboardHeader,
+  dashboardPage,
+  dashboardSidebar,
+  menuItem,
+  renderMenu,
+  renderValueBox,
+  sidebarMenu,
+  sidebarMenuOutput,
+  tabBox,
+  tabItem,
+  tabItems,
+  updateTabItems,
+  valueBox,
+  valueBoxOutput
+)
+importFrom(shinyjs,
+  delay,
+  hidden,
+  reset,
+  toggle,
+  useShinyjs
+)
+importFrom(sortable,
+  add_rank_list,
+  bucket_list
+)
+importFrom(stats,
+  cor,
+  na.omit
+)
 importFrom(stringr,str_split_fixed)
-importFrom(tibble,deframe)
-importFrom(tibble,rownames_to_column)
-importFrom(tibble,tibble)
-importFrom(tidyr,drop_na)
-importFrom(tidyr,pivot_longer)
+importFrom(tibble,
+  deframe,
+  rownames_to_column,
+  tibble
+)
+importFrom(tidyr,
+  drop_na,
+  pivot_longer
+)
 importFrom(tools,file_ext)
 importFrom(viridis,viridis)
-importFrom(waiter,Waitress)
-importFrom(waiter,useWaitress)
-importFrom(yaml,read_yaml)
-importFrom(yaml,write_yaml)
+importFrom(waiter,
+  Waitress,
+  useWaitress
+)
+importFrom(yaml,
+  read_yaml,
+  write_yaml
+)
 importFrom(zip,zip)
